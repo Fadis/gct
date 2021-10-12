@@ -1,0 +1,152 @@
+add_executable( glsl_include glsl_include.cpp )
+target_link_libraries( glsl_include
+  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+)
+
+add_library( gct SHARED
+  gct/get_instance_version.cpp
+  gct/get_instance_layers.cpp
+  gct/get_instance_extensions.cpp
+  gct/get_device_layers.cpp
+  gct/get_device_extensions.cpp
+  gct/to_json.cpp
+  gct/queue_family_properties.cpp
+  gct/physical_device_properties.cpp
+  gct/physical_device_memory_properties.cpp
+  gct/physical_device_features.cpp
+  gct/physical_device.cpp
+  gct/instance.cpp
+  gct/surface.cpp
+  gct/surface_capabilities.cpp
+  gct/queue.cpp
+  gct/device_create_info.cpp
+  gct/device.cpp
+  gct/command_pool.cpp
+  gct/allocator.cpp
+  gct/image_create_info.cpp
+  gct/image.cpp
+  gct/allocated_image.cpp
+  gct/swapchain_image.cpp
+  gct/buffer_create_info.cpp
+  gct/buffer.cpp
+  gct/extension.cpp
+  gct/swapchain_create_info.cpp
+  gct/swapchain.cpp
+  gct/descriptor_pool_create_info.cpp
+  gct/descriptor_pool.cpp
+  gct/descriptor_set_layout_create_info.cpp
+  gct/descriptor_set_layout.cpp
+  gct/descriptor_set_allocate_info.cpp
+  gct/descriptor_set.cpp
+  gct/specialized_info.cpp
+  gct/pipeline_cache_create_info.cpp
+  gct/pipeline_cache.cpp
+  gct/pipeline_layout_create_info.cpp
+  gct/pipeline_layout.cpp
+  gct/pipeline_vertex_input_state_create_info.cpp
+  gct/pipeline_shader_stage_create_info.cpp
+  gct/pipeline_input_assembly_state_create_info.cpp
+  gct/pipeline_tessellation_state_create_info.cpp
+  gct/pipeline_rasterization_state_create_info.cpp 
+  gct/pipeline_multisample_state_create_info.cpp 
+  gct/pipeline_depth_stencil_state_create_info.cpp 
+  gct/pipeline_viewport_state_create_info.cpp
+  gct/pipeline_color_blend_state_create_info.cpp 
+  gct/pipeline_dynamic_state_create_info.cpp 
+  gct/compute_pipeline_create_info.cpp
+  gct/compute_pipeline.cpp
+  gct/graphics_pipeline_create_info.cpp
+  gct/graphics_pipeline.cpp
+  gct/descriptor_image_info.cpp
+  gct/descriptor_buffer_info.cpp
+  gct/write_descriptor_set.cpp
+  gct/subpass_description.cpp
+  gct/render_pass_create_info.cpp
+  gct/render_pass.cpp
+  gct/image_view_create_info.cpp
+  gct/image_view.cpp
+  gct/framebuffer_create_info.cpp
+  gct/framebuffer.cpp
+  gct/buffer_view_create_info.cpp
+  gct/buffer_view.cpp
+  gct/shader_module_create_info.cpp
+  gct/shader_module.cpp
+  gct/sampler_create_info.cpp
+  gct/sampler.cpp
+  gct/semaphore_create_info.cpp
+  gct/semaphore.cpp
+  gct/fence_create_info.cpp
+  gct/fence.cpp
+  gct/command_buffer_allocate_info.cpp
+  gct/command_buffer_begin_info.cpp
+  gct/command_buffer.cpp
+  gct/command_buffer_recorder.cpp
+  gct/load_buffer.cpp
+  gct/load_image.cpp
+  gct/copy_buffer.cpp
+  gct/copy_image.cpp
+  gct/copy_buffer_to_image.cpp
+  gct/barrier.cpp
+  gct/present_info.cpp
+  gct/wait_for_sync.cpp
+  gct/bind_descriptor_set.cpp
+  gct/bind_pipeline.cpp
+  gct/format_to_aspect.cpp
+  gct/submit_info.cpp
+  gct/gltf.cpp
+  gct/shader_flag.cpp
+  gct/load_gltf.cpp
+  gct/load_mesh.cpp
+  gct/load_node.cpp
+  gct/vma.cpp
+)
+
+target_link_libraries(
+  gct
+  Threads::Threads
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+)
+
+add_library( gct_glfw SHARED
+  gct/glfw.cpp
+)
+
+target_link_libraries(
+  gct
+  Threads::Threads
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+  ${GLFW_LIBRARIES}
+)
+
+add_executable( test_gct
+  example/main.cpp
+)
+
+target_link_libraries(
+  test_gct
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+  ${GLFW_LIBRARIES}
+)
+
+add_executable( compute
+  example/compute.cpp
+)
+
+target_link_libraries(
+  compute
+  gct
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+)
+
