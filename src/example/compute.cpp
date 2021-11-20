@@ -125,7 +125,7 @@ int main() {
           .set_specialization_info(
             gct::specialization_info_t< spec_t >()
               .set_data(
-                spec_t{ 8, 4, 0.5f }
+                spec_t{ 8, 4, 1.0f }
               )
               .add_map< std::uint32_t >( 1, offsetof( spec_t, local_x_size ) )
               .add_map< std::uint32_t >( 2, offsetof( spec_t, local_y_size ) )

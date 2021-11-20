@@ -120,12 +120,12 @@ target_link_libraries(
   ${GLFW_LIBRARIES}
 )
 
-add_executable( test_gct
-  example/main.cpp
+add_executable( graphics
+  example/graphics.cpp
 )
 
 target_link_libraries(
-  test_gct
+  graphics
   gct
   gct_glfw
   Threads::Threads
