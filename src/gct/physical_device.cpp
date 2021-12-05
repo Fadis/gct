@@ -2,36 +2,28 @@
 #include <gct/device.hpp>
 #include <gct/physical_device.hpp>
 namespace gct {
-  nlohmann::json to_json( const physical_device_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "props" ] = to_json( v.get_props() );
-    root[ "features" ] = to_json( v.get_features() );
-    return root;
+  void to_json( nlohmann::json &root, const physical_device_t &v ) {
+    root = nlohmann::json::object();
+    root[ "props" ] = v.get_props();
+    root[ "features" ] = v.get_features();
   }
   
-  nlohmann::json to_json( const physical_devices_t &v ) {
-    auto root = nlohmann::json::array();
-    for( auto &device: v )
-      if( device )
-        root.push_back( to_json( *device ) );
+  void to_json( nlohmann::json &root, const physical_devices_t &v ) {
+    root = nlohmann::json::array();
+    for( const auto &e: v ) {
+      if( e )
+        root.push_back( nlohmann::json( *e ) );
       else
         root.push_back( nullptr );
-    return root;
+    }
   }
 
-  nlohmann::json to_json( const device_group_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "devices" ] = to_json( v.devices );
+  void to_json( nlohmann::json &root, const device_group_t &v ) {
+    root = nlohmann::json::object();
+    root[ "devices" ] = v.devices;
     root[ "subset_allocation" ] = v.subset_allocation;
-    return root;
   }
 
-  nlohmann::json to_json( const device_groups_t &v ) {
-    auto root = nlohmann::json::array();
-    for( auto &group: v )
-      root.push_back( to_json( group ) );
-    return root;
-  }
   physical_device_t::physical_device_t(
     const std::shared_ptr< instance_t > &instance_,
     vk::PhysicalDevice handle_,

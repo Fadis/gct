@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 
 namespace gct {
@@ -26,6 +27,8 @@ namespace gct {
     descriptor_pool_create_info_t &set_descriptor_pool_size( vk::DescriptorType type, std::uint32_t count );
     descriptor_pool_create_info_t &clear_descriptor_pool_size();
   };
+  void to_json( nlohmann::json &root, const descriptor_pool_create_info_t &v );
+  void from_json( const nlohmann::json &root, descriptor_pool_create_info_t &v );
 }
 
 #endif

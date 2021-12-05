@@ -8,58 +8,46 @@
 #include <gct/present_info.hpp>
 #include <gct/physical_device_properties.hpp>
 #include <gct/to_json.hpp>
+#include <vulkan2json/QueueFlags.hpp>
+#include <vulkan2json/Extent3D.hpp>
+#include <vulkan2json/QueueGlobalPriorityEXT.hpp>
 
 namespace gct {
 
-  nlohmann::json to_json( const queue_requirement_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "flags" ] = std::uint32_t( v.flags );
+  void to_json( nlohmann::json &root, const queue_requirement_t &v ) {
+    root = nlohmann::json::object();
+    root[ "flags" ] = v.flags;
     root[ "timestamp_valid_bits" ] = v.timestamp_valid_bits;
-    root[ "image_transfer_granularity" ] = to_json( v.image_transfer_granularity );
+    root[ "image_transfer_granularity" ] = v.image_transfer_granularity;
 #ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-    if( v.global_priority )
-      root[ "global_priority" ] = std::uint32_t( *v.global_priority );
+    if( v.global_priority ) {
+      root[ "global_priority" ] = *v.global_priority;
+    }
 #endif
-    return root;
   }
   
-  nlohmann::json to_json( const activated_queue_family_count_t &v ) {
-    auto root = nlohmann::json::object();
+  void to_json( nlohmann::json &root, const activated_queue_family_count_t &v ) {
+    root = nlohmann::json::object();
     root[ "available_queue_family_index" ] = v.available_queue_family_index;
     root[ "activated_queue_family_index" ] = v.activated_queue_family_index;
 #ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-    if( v.global_priority )
-      root[ "global_priority" ] = std::uint32_t( *v.global_priority );
+    if( v.global_priority ) {
+      root[ "global_priority" ] = *v.global_priority;
+    }
 #endif
     root[ "count" ] = v.count;
-    return root;
   }
   
-  nlohmann::json to_json( const activated_queue_family_counts_t &v ) {
-    auto root = nlohmann::json::array();
-    for( const auto &e: v )
-      root.push_back( to_json( e ) );
-    return root;
-  }
-  
-  nlohmann::json to_json( const activated_queue_mapping_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "req" ] = to_json( v.req );
+  void to_json( nlohmann::json &root, const activated_queue_mapping_t &v ) {
+    root = nlohmann::json::object();
+    root[ "req" ] = v.req;
     root[ "order" ] = v.order;
     root[ "rarity" ] = v.rarity;
     root[ "available_queue_family_index" ] = v.available_queue_family_index;
     root[ "activated_queue_family_index" ] = v.activated_queue_family_index;
     root[ "queue_count_index" ] = v.queue_count_index;
-    return root;
   }
   
-  nlohmann::json to_json( const activated_queue_mappings_t &v ) {
-    auto root = nlohmann::json::array();
-    for( const auto &e: v )
-      root.push_back( to_json( e ) );
-    return root;
-  }
-
   bool is_capable(
     const vk::PhysicalDevice &pdev,
     const queue_family_properties_t &qf,

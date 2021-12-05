@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -26,6 +27,8 @@ namespace gct {
     descriptor_set_layout_create_info_t &add_binding( const vk::DescriptorSetLayoutBinding &v );
     descriptor_set_layout_create_info_t &clear_binding();
   };
+  void to_json( nlohmann::json &root, const descriptor_set_layout_create_info_t &v );
+  void from_json( const nlohmann::json &root, descriptor_set_layout_create_info_t &v );
 }
 
 #endif

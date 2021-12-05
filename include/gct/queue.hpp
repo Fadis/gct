@@ -7,7 +7,7 @@
 #include <gct/created_from.hpp>
 
 namespace gct {
-  nlohmann::json to_json( const queue_requirement_t& );
+  void to_json( nlohmann::json &, const queue_requirement_t& );
 
   using queue_requirements_t =
     std::vector< queue_requirement_t >;
@@ -72,12 +72,12 @@ namespace gct {
     vk::CommandPoolCreateFlagBits command_pool_create_flags = vk::CommandPoolCreateFlagBits{};
   };
   
-  nlohmann::json to_json( const activated_queue_family_count_t& );
+  void to_json( nlohmann::json &, const activated_queue_family_count_t& );
 
   using activated_queue_family_counts_t =
     std::vector< activated_queue_family_count_t >;
   
-  nlohmann::json to_json( const activated_queue_family_counts_t& );
+  void to_json( nlohmann::json, const activated_queue_family_counts_t& );
 
   struct activated_queue_mapping_t {
     queue_requirement_t req;
@@ -88,12 +88,12 @@ namespace gct {
     std::uint32_t queue_count_index = 0u;
   };
   
-  nlohmann::json to_json( const activated_queue_mapping_t& );
+  void to_json( nlohmann::json &, const activated_queue_mapping_t& );
 
   using activated_queue_mappings_t =
     std::vector< activated_queue_mapping_t >;
 
-  nlohmann::json to_json( const activated_queue_mappings_t& );
+  void to_json( nlohmann::json&, const activated_queue_mappings_t& );
 
   struct physical_device_properties_t;
   std::tuple<

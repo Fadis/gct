@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 
 namespace gct {
@@ -20,6 +21,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::ExportFenceWin32HandleInfoKHR, export_fence_win32_handle )
 #endif
   };
+  void to_json( nlohmann::json &root, const fence_create_info_t &v );
+  void from_json( const nlohmann::json &root, fence_create_info_t &v );
 }
 
 #endif

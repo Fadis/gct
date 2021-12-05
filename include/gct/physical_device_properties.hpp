@@ -273,7 +273,7 @@ public:
     }
 #endif
   };
-  nlohmann::json to_json( const physical_device_properties_t& );
+  void to_json( nlohmann::json&, const physical_device_properties_t& );
 }
 
 #endif

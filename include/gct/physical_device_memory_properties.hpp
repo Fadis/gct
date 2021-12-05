@@ -2,7 +2,7 @@
 #define LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_MEMORY_PROPERTIES_HPP
 #include <iostream>
 #include <optional>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/get_extensions.hpp>
 
@@ -35,7 +35,7 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMemoryBudgetPropertiesEXT , budget )
 #endif
   };
-  nlohmann::json to_json( const physical_device_memory_properties_t &v );
+  void to_json( nlohmann::json&, const physical_device_memory_properties_t &v );
 }
 
 #endif

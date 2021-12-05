@@ -69,7 +69,7 @@ int main() {
     VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
     VK_KHR_MAINTENANCE1_EXTENSION_NAME
   } );
-  std::cout << to_json( groups[ 0 ] ).dump( 2 ) << std::endl;
+  std::cout << nlohmann::json( groups[ 0 ] ).dump( 2 ) << std::endl;
 
   std::uint32_t width = 1920u;
   std::uint32_t height = 1080u;
@@ -78,7 +78,7 @@ int main() {
   window.set_on_closed( []( auto & ) { std::cout << "closed" << std::endl; } );
   gct::glfw::get().poll();
   auto surface = window.get_surface( *groups[ 0 ].devices[ 0 ] );
-  std::cout << gct::to_json( *surface ).dump( 2 ) << std::endl;
+  std::cout << nlohmann::json( *surface ).dump( 2 ) << std::endl;
  
   std::vector< gct::queue_requirement_t > queue_requirements{
     gct::queue_requirement_t{

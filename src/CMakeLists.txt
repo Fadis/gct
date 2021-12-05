@@ -25,6 +25,7 @@ add_library( gct SHARED
   gct/allocator.cpp
   gct/image_create_info.cpp
   gct/image.cpp
+  gct/acceleration_structure_create_info.cpp
   gct/allocated_image.cpp
   gct/swapchain_image.cpp
   gct/buffer_create_info.cpp
@@ -106,6 +107,7 @@ target_link_libraries(
   Threads::Threads
   ${Vulkan_LIBRARIES}
   ${OIIO_LIBRARIES}
+  ${VULKAN2JSON_LIBRARIES}
 )
 
 add_library( gct_glfw SHARED

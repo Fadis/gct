@@ -367,7 +367,7 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR , zero_initialize_workgroup_memory )
 #endif
   };
-  nlohmann::json to_json( const physical_device_features_t &v );
+  void to_json( nlohmann::json&, const physical_device_features_t& );
 }
 
 #endif

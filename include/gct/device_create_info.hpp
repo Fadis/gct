@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 
 namespace gct {
@@ -28,7 +29,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::DevicePrivateDataCreateInfoEXT , private_data )
 #endif
   };
-
+  void to_json( nlohmann::json &root, const device_create_info_t &v );
+  void from_json( const nlohmann::json &root, device_create_info_t &v );
 }
 
 #endif

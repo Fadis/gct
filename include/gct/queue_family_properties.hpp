@@ -8,8 +8,6 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  nlohmann::json to_json( const vk::QueueFamilyProperties &v );
-
   struct queue_family_properties_t {
     using self_type = queue_family_properties_t;
     self_type &activate( const extension_map_t& );
@@ -41,7 +39,7 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::VideoQueueFamilyProperties2KHR , video )
 #endif
   };
-  nlohmann::json to_json( const queue_family_properties_t& );
+  void to_json( nlohmann::json&, const queue_family_properties_t& );
 }
 
 #endif

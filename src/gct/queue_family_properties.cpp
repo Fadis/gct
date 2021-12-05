@@ -1,53 +1,23 @@
 #include <gct/to_json.hpp>
 #include <gct/queue_family_properties.hpp>
+#include <vulkan2json/QueueFamilyProperties.hpp>
+#ifdef VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
+#include <vulkan2json/QueueFamilyCheckpointPropertiesNV.hpp>
+#endif
+#if defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) && defined(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME)
+#include <vulkan2json/QueueFamilyCheckpointProperties2NV.hpp>
+#endif
+#ifdef VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME
+#include <vulkan2json/QueueFamilyGlobalPriorityPropertiesEXT.hpp>
+#endif
+#ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#include <vulkan2json/VideoQueueFamilyProperties2KHR.hpp>
+#endif
 
 namespace gct {
-  nlohmann::json to_json( const vk::QueueFamilyProperties &v ) {
-    auto root = nlohmann::json::object();
-    root[ "queueFlags" ] = std::uint32_t( v.queueFlags );
-    root[ "queueCount" ] = v.queueCount;
-    root[ "timestampValidBits" ] = v.timestampValidBits;
-    root[ "minImageTransferGranularity" ] = to_json( v.minImageTransferGranularity );
-    return root;
-  }
-
-#if defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) && defined(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::QueueFamilyCheckpointProperties2NV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "checkpointExecutionStageMask" ] = std::uint64_t( v.checkpointExecutionStageMask );
-    return root;
-  }
-#endif
-
-#ifdef VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::QueueFamilyCheckpointPropertiesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "checkpointExecutionStageMask" ] = std::uint32_t( v.checkpointExecutionStageMask );
-    return root;
-  }
-#endif
-
-#ifdef VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::QueueFamilyGlobalPriorityPropertiesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "priorities" ] = nlohmann::json::array();
-    for( auto i = 0u; i != v.priorityCount; ++i )
-      root[ "priorities" ].push_back( std::uint32_t( v.priorities[ i ] ) );
-    return root;
-  }
-#endif
-
-#ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::VideoQueueFamilyProperties2KHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "videoCodecOperations" ] = std::uint32_t( v.videoCodecOperations );
-    return root;
-  }
-#endif
-
-  nlohmann::json to_json( const queue_family_properties_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "basic" ] = to_json( v.get_basic() );
+  void to_json( nlohmann::json &root, const queue_family_properties_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
 #ifdef VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( checkpoint )
 #endif
@@ -60,7 +30,6 @@ namespace gct {
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( video )
 #endif
-    return root;
   }
 
   queue_family_properties_t &queue_family_properties_t::rebuild_chain() {

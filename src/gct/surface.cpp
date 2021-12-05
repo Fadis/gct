@@ -1,13 +1,15 @@
 #include <gct/instance.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/surface.hpp>
+#ifdef VK_KHR_SURFACE_EXTENSION_NAME
+#include <vulkan2json/SurfaceCapabilitiesKHR.hpp>
+#endif
 
 namespace gct {
 #ifdef VK_KHR_SURFACE_EXTENSION_NAME
-  nlohmann::json to_json( const surface_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "caps" ] = to_json( v.get_caps() );
-    return root;
+  void to_json( nlohmann::json &root, const surface_t &v ) {
+    root = nlohmann::json::object();
+    root[ "caps" ] = v.get_caps();
   }
 
   surface_t::surface_t(

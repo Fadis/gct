@@ -62,6 +62,7 @@ find_package(Vulkan REQUIRED)
 find_package(JSON REQUIRED)
 find_package(FXGLTF REQUIRED)
 find_package(OpenImageIO REQUIRED)
+pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -73,11 +74,13 @@ INCLUDE_DIRECTORIES(
   ${FXGLTF_INCLUDE_DIRS}
   ${Vulkan_INCLUDE_DIRS}
   ${OIIO_INCLUDE_DIR}
+  ${VULKAN2JSON_INCLUDE_DIR}
 )
 link_directories(
   ${Boost_LIBRARY_DIRS}
   ${Vulkan_LIBRARY_DIRS}
   ${OIIO_LIBRARY_DIR}
+  ${VULKAN2JSON_LIBRARY_DIR}
 )
 
 add_definitions( -DVK_ENABLE_BETA_EXTENSIONS )

@@ -1,70 +1,40 @@
-#include <gct/to_json.hpp>
 #include <gct/instance.hpp>
 #include <gct/surface_capabilities.hpp>
-
-namespace gct {
+#ifdef VK_KHR_SURFACE_EXTENSION_NAME
+#include <vulkan2json/SurfaceFormatKHR.hpp>
+#ifdef VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME
+#include <vulkan2json/SurfaceCapabilitiesKHR.hpp>
+#include <vulkan2json/SurfaceCapabilities2KHR.hpp>
+#else
+#include <vulkan2json/SurfaceCapabilitiesKHR.hpp>
+#endif
 #ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::DisplayNativeHdrSurfaceCapabilitiesAMD &v ) {
-    auto root = nlohmann::json::object();
-    root[ "localDimmingSupport" ] = v.localDimmingSupport;
-    return root;
-  }
+#include <vulkan2json/DisplayNativeHdrSurfaceCapabilitiesAMD.hpp>
 #endif
 #ifdef VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SharedPresentSurfaceCapabilitiesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "sharedPresentSupportedUsageFlags" ] = std::uint32_t( v.sharedPresentSupportedUsageFlags );
-    return root;
-  }
+#include <vulkan2json/SharedPresentSurfaceCapabilitiesKHR.hpp>
 #endif
 #ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceCapabilitiesFullScreenExclusiveEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fullScreenExclusiveSupported" ] = v.fullScreenExclusiveSupported;
-    return root;
-  }
+#include <vulkan2json/SurfaceCapabilitiesFullScreenExclusiveEXT.hpp>
 #endif
 #ifdef VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceProtectedCapabilitiesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "supportsProtected" ] = v.supportsProtected;
-    return root;
-  }
+#include <vulkan2json/SurfaceProtectedCapabilitiesKHR.hpp>
+#endif
 #endif
 
-#ifdef VK_KHR_SURFACE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceCapabilitiesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "minImageCount" ] = v.minImageCount;
-    root[ "maxImageCount" ] = v.maxImageCount;
-    root[ "currentExtent" ] = to_json( v.currentExtent );
-    root[ "minImageExtent" ] = to_json( v.minImageExtent );
-    root[ "maxImageExtent" ] = to_json( v.maxImageExtent );
-    root[ "maxImageArrayLayers" ] = v.maxImageArrayLayers;
-    root[ "supportedTransforms" ] = std::uint32_t( v.supportedTransforms );
-    root[ "currentTransform" ] = std::uint32_t( v.currentTransform );
-    root[ "supportedCompositeAlpha" ] = std::uint32_t( v.supportedCompositeAlpha );
-    root[ "supportedUsageFlags" ] = std::uint32_t( v.supportedUsageFlags );
-    return root;
-  }
+namespace gct {
 
-  nlohmann::json to_json( const surface_format_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "basic" ] = to_json( v.basic );
-    return root;
+#ifdef VK_KHR_SURFACE_EXTENSION_NAME
+
+  void to_json( nlohmann::json &root, const surface_format_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.basic;
   }
   
-  nlohmann::json to_json( const surface_formats_t &v ) {
-    auto root = nlohmann::json::array();
-    for( const auto &e: v )
-      root.push_back( to_json( e ) );
-    return root;
-  }
-
-  nlohmann::json to_json( const surface_capabilities_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "basic" ] = to_json( v.get_basic() );
-    root[ "formats" ] = to_json( v.get_formats() );
+  void to_json( nlohmann::json &root, const surface_capabilities_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
+    root[ "formats" ] = v.get_formats();
 #ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( display_native_hdr )
 #endif
@@ -77,7 +47,6 @@ namespace gct {
 #ifdef VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( surface_protected_capabilities )
 #endif
-    return root;
   }
 
   surface_capabilities_t::surface_capabilities_t(

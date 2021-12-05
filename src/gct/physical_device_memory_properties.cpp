@@ -5,50 +5,30 @@
 #include <gct/physical_device_memory_properties.hpp>
 #include <gct/queue_family_properties.hpp>
 
+
+#if defined(VK_VERSION_1_1) || defined(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceMemoryProperties.hpp>
+#ifdef VK_VERSION_1_1
+#include <vulkan2json/PhysicalDeviceMemoryProperties2.hpp>
+#else
+#include <vulkan2json/PhysicalDeviceMemoryProperties2KHR.hpp>
+#endif
+#else
+#include <vulkan2json/PhysicalDeviceMemoryProperties.hpp>
+#endif
+#ifdef VK_EXT_MEMORY_BUDGET_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMemoryBudgetPropertiesEXT.hpp>
+#endif
+#include <vulkan2json/MemoryType.hpp>
+#include <vulkan2json/MemoryHeap.hpp>
+
 namespace gct {
-  nlohmann::json to_json( const vk::MemoryType &v ) {
-    auto root = nlohmann::json::object();
-    root[ "propertyFlags" ] = std::uint32_t( v.propertyFlags );
-    root[ "heapIndex" ] = v.heapIndex;
-    return root;
-  }
-  nlohmann::json to_json( const vk::MemoryHeap &v ) {
-    auto root = nlohmann::json::object();
-    root[ "size" ] = v.size;
-    root[ "flags" ] = std::uint32_t( v.flags );
-    return root;
-  }
+  void to_json( nlohmann::json &root, const physical_device_memory_properties_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
 #ifdef VK_EXT_MEMORY_BUDGET_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMemoryBudgetPropertiesEXT& v, std::uint32_t heap_count ) {
-    auto root = nlohmann::json::object();
-    root[ "heapBudget" ] = nlohmann::json::array();
-    for( std::uint32_t i = 0; i != heap_count; ++i )
-      root[ "heapBudget" ].push_back( v.heapBudget[ i ] );
-    root[ "heapUsage" ] = nlohmann::json::array();
-    for( std::uint32_t i = 0; i != heap_count; ++i )
-      root[ "heapUsage" ].push_back( v.heapUsage[ i ] );
-    return root;
-  }
+    LIBGCT_EXTENSION_TO_JSON( budget )
 #endif
-  nlohmann::json to_json( const vk::PhysicalDeviceMemoryProperties &v ) {
-    auto root = nlohmann::json::object();
-    root[ "memoryTypes" ] = nlohmann::json::array();
-    for( std::uint32_t i = 0; i != v.memoryTypeCount; ++i )
-      root[ "memoryTypes" ].push_back( to_json( v.memoryTypes[ i ] ) );
-    root[ "memoryHeaps" ] = nlohmann::json::array();
-    for( std::uint32_t i = 0; i != v.memoryHeapCount; ++i )
-      root[ "memoryHeaps" ].push_back( to_json( v.memoryHeaps[ i ] ) );
-    return root;
-  }
-  nlohmann::json to_json( const physical_device_memory_properties_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "basic" ] = to_json( v.get_basic() );
-#ifdef VK_EXT_MEMORY_BUDGET_EXTENSION_NAME
-    if( v.has_budget() ) {
-      root[ "budget" ] = to_json( v.get_budget(), v.get_basic().memoryHeapCount );
-    }
-#endif
-    return root;
   }
   physical_device_memory_properties_t::physical_device_memory_properties_t(
     instance_t &instance,

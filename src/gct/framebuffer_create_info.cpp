@@ -1,8 +1,27 @@
 #include <gct/image.hpp>
 #include <gct/image_view.hpp>
 #include <gct/framebuffer_create_info.hpp>
-
+#include <vulkan2json/FramebufferCreateInfo.hpp>
+#ifdef VK_VERSION_1_2
+#include <vulkan2json/FramebufferAttachmentsCreateInfo.hpp>
+#elif defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
+#include <vulkan2json/FramebufferAttachmentsCreateInfoKHR.hpp>
+#endif
 namespace gct {
+  void to_json( nlohmann::json &root, const framebuffer_create_info_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( attachments )
+#endif
+  }
+  void from_json( const nlohmann::json &root, framebuffer_create_info_t &v ) {
+    if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to framebuffer_create_info_t", __FILE__, __LINE__ );
+    LIBGCT_EXTENSION_FROM_JSON( basic )
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
+    LIBGCT_EXTENSION_FROM_JSON( attachments )
+#endif
+  }
   framebuffer_create_info_t &framebuffer_create_info_t::rebuild_chain() {
     raw_attachment.clear();
     raw_attachment.reserve( attachment.size() );

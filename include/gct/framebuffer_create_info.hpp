@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -28,6 +29,8 @@ namespace gct {
     std::uint32_t get_width() const;
     std::uint32_t get_height() const;
   };
+  void to_json( nlohmann::json &root, const framebuffer_create_info_t &v );
+  void from_json( const nlohmann::json &root, framebuffer_create_info_t &v );
 }
 
 #endif

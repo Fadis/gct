@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <gct/deep_copy.hpp>
+#include <stamp/exception.h>
 
 #define LIBGCT_BASIC_SETTER_INDIRECT( member ) \
     self_type &set_basic ( const basic_t &v ) { \
@@ -36,6 +37,9 @@
     } \
     const basic_t &get_basic () const { \
       return basic. member ; \
+    } \
+    constexpr bool has_basic() const { \
+      return true; \
     }
 
 #define LIBGCT_BASIC_SETTER_DIRECT \
@@ -57,6 +61,9 @@
     } \
     const basic_t &get_basic () const { \
       return basic; \
+    } \
+    constexpr bool has_basic() const { \
+      return true; \
     }
 
 #define LIBGCT_BASIC_SETTER( type ) \
@@ -128,7 +135,11 @@ public: \
 
 #define LIBGCT_EXTENSION_TO_JSON( name ) \
     if( v.has_ ## name () ) { \
-      root[ # name ] = to_json( v.get_ ## name () ); \
+      root[ # name ] = v.get_ ## name (); \
+    }
+#define LIBGCT_EXTENSION_FROM_JSON( name ) \
+    if( root.find( # name ) != root.end() ) { \
+      v.set_ ## name ( root[ # name ] ); \
     }
 
 #define LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN \
@@ -161,6 +172,7 @@ struct chainable_t {
 
 namespace gct {
   void **get_chain_tail( const void *v );
+  LIBSTAMP_EXCEPTION( invalid_argument, incompatible_json, "incompatible JSON" )
 }
  
 

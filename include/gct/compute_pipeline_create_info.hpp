@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
 
@@ -30,6 +31,8 @@ namespace gct {
     compute_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     compute_pipeline_create_info_t &clear_layout();
   };
+  void to_json( nlohmann::json &root, const compute_pipeline_create_info_t &v );
+  void from_json( const nlohmann::json &root, compute_pipeline_create_info_t &v );
 }
 
 #endif

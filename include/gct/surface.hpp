@@ -11,7 +11,7 @@ namespace gct {
   class instance_t;
   struct surface_t;
   class physical_device_t;
-  nlohmann::json to_json( const surface_t &v );
+  void to_json( nlohmann::json&, const surface_t &v );
   struct surface_t : public created_from< instance_t > {
   public:
     surface_t(

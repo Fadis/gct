@@ -8,23 +8,10 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-#ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::DisplayNativeHdrSurfaceCapabilitiesAMD &v );
-#endif
-#ifdef VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SharedPresentSurfaceCapabilitiesKHR &v );
-#endif
-#ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceCapabilitiesFullScreenExclusiveEXT &v );
-#endif
-#ifdef VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceProtectedCapabilitiesKHR &v );
-#endif
 
 #ifdef VK_KHR_SURFACE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::SurfaceCapabilitiesKHR &v );
   struct surface_capabilities_t;
-  nlohmann::json to_json( const surface_capabilities_t &v );
+  void to_json( nlohmann::json &root, const surface_capabilities_t &v );
 
   struct surface_format_t {
   public:

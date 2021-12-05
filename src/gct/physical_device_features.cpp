@@ -1,955 +1,353 @@
 #include <gct/instance.hpp>
 #include <gct/physical_device_properties.hpp>
 #include <gct/physical_device_features.hpp>
+#include <vulkan2json/PhysicalDeviceFeatures.hpp>
 
-namespace gct {
-  nlohmann::json to_json( const vk::PhysicalDeviceFeatures &v ) {
-    auto root = nlohmann::json::object();
-    root[ "robustBufferAccess" ] = bool( v.robustBufferAccess );
-    root[ "fullDrawIndexUint32" ] = bool( v.fullDrawIndexUint32 );
-    root[ "imageCubeArray" ] = bool( v.imageCubeArray );
-    root[ "independentBlend" ] = bool( v.independentBlend );
-    root[ "geometryShader" ] = bool( v.geometryShader );
-    root[ "tessellationShader" ] = bool( v.tessellationShader );
-    root[ "sampleRateShading" ] = bool( v.sampleRateShading );
-    root[ "dualSrcBlend" ] = bool( v.dualSrcBlend );
-    root[ "logicOp" ] = bool( v.logicOp );
-    root[ "multiDrawIndirect" ] = bool( v.multiDrawIndirect );
-    root[ "drawIndirectFirstInstance" ] = bool( v.drawIndirectFirstInstance );
-    root[ "depthClamp" ] = bool( v.depthClamp );
-    root[ "depthBiasClamp" ] = bool( v.depthBiasClamp );
-    root[ "fillModeNonSolid" ] = bool( v.fillModeNonSolid );
-    root[ "depthBounds" ] = bool( v.depthBounds );
-    root[ "wideLines" ] = bool( v.wideLines );
-    root[ "largePoints" ] = bool( v.largePoints );
-    root[ "alphaToOne" ] = bool( v.alphaToOne );
-    root[ "multiViewport" ] = bool( v.multiViewport );
-    root[ "samplerAnisotropy" ] = bool( v.samplerAnisotropy );
-    root[ "textureCompressionETC2" ] = bool( v.textureCompressionETC2 );
-    root[ "textureCompressionASTC_LDR" ] = bool( v.textureCompressionASTC_LDR );
-    root[ "textureCompressionBC" ] = bool( v.textureCompressionBC );
-    root[ "occlusionQueryPrecise" ] = bool( v.occlusionQueryPrecise );
-    root[ "pipelineStatisticsQuery" ] = bool( v.pipelineStatisticsQuery );
-    root[ "vertexPipelineStoresAndAtomics" ] = bool( v.vertexPipelineStoresAndAtomics );
-    root[ "fragmentStoresAndAtomics" ] = bool( v.fragmentStoresAndAtomics );
-    root[ "shaderTessellationAndGeometryPointSize" ] = bool( v.shaderTessellationAndGeometryPointSize );
-    root[ "shaderImageGatherExtended" ] = bool( v.shaderImageGatherExtended );
-    root[ "shaderStorageImageExtendedFormats" ] = bool( v.shaderStorageImageExtendedFormats );
-    root[ "shaderStorageImageMultisample" ] = bool( v.shaderStorageImageMultisample );
-    root[ "shaderStorageImageReadWithoutFormat" ] = bool( v.shaderStorageImageReadWithoutFormat );
-    root[ "shaderStorageImageWriteWithoutFormat" ] = bool( v.shaderStorageImageWriteWithoutFormat );
-    root[ "shaderUniformBufferArrayDynamicIndexing" ] = bool( v.shaderUniformBufferArrayDynamicIndexing );
-    root[ "shaderSampledImageArrayDynamicIndexing" ] = bool( v.shaderSampledImageArrayDynamicIndexing );
-    root[ "shaderStorageBufferArrayDynamicIndexing" ] = bool( v.shaderStorageBufferArrayDynamicIndexing );
-    root[ "shaderStorageImageArrayDynamicIndexing" ] = bool( v.shaderStorageImageArrayDynamicIndexing );
-    root[ "shaderClipDistance" ] = bool( v.shaderClipDistance );
-    root[ "shaderCullDistance" ] = bool( v.shaderCullDistance );
-    root[ "shaderFloat64" ] = bool( v.shaderFloat64 );
-    root[ "shaderInt64" ] = bool( v.shaderInt64 );
-    root[ "shaderInt16" ] = bool( v.shaderInt16 );
-    root[ "shaderResourceResidency" ] = bool( v.shaderResourceResidency );
-    root[ "shaderResourceMinLod" ] = bool( v.shaderResourceMinLod );
-    root[ "sparseBinding" ] = bool( v.sparseBinding );
-    root[ "sparseResidencyBuffer" ] = bool( v.sparseResidencyBuffer );
-    root[ "sparseResidencyImage2D" ] = bool( v.sparseResidencyImage2D );
-    root[ "sparseResidencyImage3D" ] = bool( v.sparseResidencyImage3D );
-    root[ "sparseResidency2Samples" ] = bool( v.sparseResidency2Samples );
-    root[ "sparseResidency4Samples" ] = bool( v.sparseResidency4Samples );
-    root[ "sparseResidency8Samples" ] = bool( v.sparseResidency8Samples );
-    root[ "sparseResidency16Samples" ] = bool( v.sparseResidency16Samples );
-    root[ "sparseResidencyAliased" ] = bool( v.sparseResidencyAliased );
-    root[ "variableMultisampleRate" ] = bool( v.variableMultisampleRate );
-    root[ "inheritedQueries" ] = bool( v.inheritedQueries );
-    return root; 
-  }
-#if defined(VK_VERSION_1_1) || defined(VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDevice16BitStorageFeatures &v ) {
+#include <vulkan2json/PhysicalDevice16BitStorageFeatures.hpp>
 #elif defined(VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDevice16BitStorageFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "storageBuffer16BitAccess" ] = bool( v.storageBuffer16BitAccess );
-    root[ "uniformAndStorageBuffer16BitAccess" ] = bool( v.uniformAndStorageBuffer16BitAccess );
-    root[ "storagePushConstant16" ] = bool( v.storagePushConstant16 );
-    root[ "storageInputOutput16" ] = bool( v.storageInputOutput16 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevice16BitStorageFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_4444_FORMATS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevice4444FormatsFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "formatA4R4G4B4" ] = bool( v.formatA4R4G4B4 );
-    root[ "formatA4B4G4R4" ] = bool( v.formatA4B4G4R4 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevice4444FormatsFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDevice8BitStorageFeatures &v ) {
+#include <vulkan2json/PhysicalDevice8BitStorageFeatures.hpp>
 #elif defined(VK_KHR_8BIT_STORAGE_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::VkPhysicalDevice8BitStorageFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "storageBuffer8BitAccess" ] = bool( v.storageBuffer8BitAccess );
-    root[ "uniformAndStorageBuffer8BitAccess" ] = bool( v.uniformAndStorageBuffer8BitAccess );
-    root[ "storagePushConstant8" ] = bool( v.storagePushConstant8 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevice8BitStorageFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceASTCDecodeFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "decodeModeSharedExponent" ] = bool( v.decodeModeSharedExponent );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceASTCDecodeFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceAccelerationStructureFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "accelerationStructure" ] = bool( v.accelerationStructure );
-    root[ "accelerationStructureCaptureReplay" ] = bool( v.accelerationStructureCaptureReplay );
-    root[ "accelerationStructureIndirectBuild" ] = bool( v.accelerationStructureIndirectBuild );
-    root[ "accelerationStructureHostCommands" ] = bool( v.accelerationStructureHostCommands );
-    root[ "descriptorBindingAccelerationStructureUpdateAfterBind" ] = bool( v.descriptorBindingAccelerationStructureUpdateAfterBind );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceAccelerationStructureFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceBlendOperationAdvancedFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "advancedBlendCoherentOperations" ] = bool( v.advancedBlendCoherentOperations );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceBlendOperationAdvancedFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceBorderColorSwizzleFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "borderColorSwizzle" ] = bool( v.borderColorSwizzle );
-    root[ "borderColorSwizzleFromImage" ] = bool( v.borderColorSwizzleFromImage );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceBorderColorSwizzleFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceBufferDeviceAddressFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceBufferDeviceAddressFeatures.hpp>
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceBufferDeviceAddressFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "bufferDeviceAddress" ] = bool( v.bufferDeviceAddress );
-    root[ "bufferDeviceAddressCaptureReplay" ] = bool( v.bufferDeviceAddressCaptureReplay );
-    root[ "bufferDeviceAddressMultiDevice" ] = bool( v.bufferDeviceAddressMultiDevice );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceBufferDeviceAddressFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "bufferDeviceAddress" ] = bool( v.bufferDeviceAddress );
-    root[ "bufferDeviceAddressCaptureReplay" ] = bool( v.bufferDeviceAddressCaptureReplay );
-    root[ "bufferDeviceAddressMultiDevice" ] = bool( v.bufferDeviceAddressMultiDevice );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceBufferDeviceAddressFeaturesEXT.hpp>
 #endif
 #ifdef VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceCoherentMemoryFeaturesAMD &v ) {
-    auto root = nlohmann::json::object();
-    root[ "deviceCoherentMemory" ] = bool( v.deviceCoherentMemory );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceCoherentMemoryFeaturesAMD.hpp>
 #endif
 #ifdef VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceColorWriteEnableFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "colorWriteEnable" ] = bool( v.colorWriteEnable );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceColorWriteEnableFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceComputeShaderDerivativesFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "computeDerivativeGroupQuads" ] = bool( v.computeDerivativeGroupQuads );
-    root[ "computeDerivativeGroupLinear" ] = bool( v.computeDerivativeGroupLinear );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceComputeShaderDerivativesFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceConditionalRenderingFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "conditionalRendering" ] = bool( v.conditionalRendering );
-    root[ "inheritedConditionalRendering" ] = bool( v.inheritedConditionalRendering );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceConditionalRenderingFeaturesEXT.hpp>
 #endif
+
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceCooperativeMatrixFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "cooperativeMatrix" ] = bool( v.cooperativeMatrix );
-    root[ "cooperativeMatrixRobustBufferAccess" ] = bool( v.cooperativeMatrixRobustBufferAccess );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceCooperativeMatrixFeaturesNV.hpp>
 #endif
 #ifdef VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceCornerSampledImageFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "cornerSampledImage" ] = bool( v.cornerSampledImage );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceCornerSampledImageFeaturesNV.hpp>
 #endif
 #ifdef VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceCoverageReductionModeFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "coverageReductionMode" ] = bool( v.coverageReductionMode );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceCoverageReductionModeFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceCustomBorderColorFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "customBorderColors" ] = bool( v.customBorderColors );
-    root[ "customBorderColorWithoutFormat" ] = bool( v.customBorderColorWithoutFormat );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceCustomBorderColorFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "dedicatedAllocationImageAliasing" ] = bool( v.dedicatedAllocationImageAliasing );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceDepthClipEnableFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "depthClipEnable" ] = bool( v.depthClipEnable );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDepthClipEnableFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceDescriptorIndexingFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceDescriptorIndexingFeatures.hpp>
 #elif defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceDescriptorIndexingFeaturesEXT &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "shaderInputAttachmentArrayDynamicIndexing" ] = bool( v.shaderInputAttachmentArrayDynamicIndexing );
-    root[ "shaderUniformTexelBufferArrayDynamicIndexing" ] = bool( v.shaderUniformTexelBufferArrayDynamicIndexing );
-    root[ "shaderStorageTexelBufferArrayDynamicIndexing" ] = bool( v.shaderStorageTexelBufferArrayDynamicIndexing );
-    root[ "shaderUniformBufferArrayNonUniformIndexing" ] = bool( v.shaderUniformBufferArrayNonUniformIndexing );
-    root[ "shaderSampledImageArrayNonUniformIndexing" ] = bool( v.shaderSampledImageArrayNonUniformIndexing );
-    root[ "shaderStorageBufferArrayNonUniformIndexing" ] = bool( v.shaderStorageBufferArrayNonUniformIndexing );
-    root[ "shaderStorageImageArrayNonUniformIndexing" ] = bool( v.shaderStorageImageArrayNonUniformIndexing );
-    root[ "shaderInputAttachmentArrayNonUniformIndexing" ] = bool( v.shaderInputAttachmentArrayNonUniformIndexing );
-    root[ "shaderUniformTexelBufferArrayNonUniformIndexing" ] = bool( v.shaderUniformTexelBufferArrayNonUniformIndexing );
-    root[ "shaderStorageTexelBufferArrayNonUniformIndexing" ] = bool( v.shaderStorageTexelBufferArrayNonUniformIndexing );
-    root[ "descriptorBindingUniformBufferUpdateAfterBind" ] = bool( v.descriptorBindingUniformBufferUpdateAfterBind );
-    root[ "descriptorBindingSampledImageUpdateAfterBind" ] = bool( v.descriptorBindingSampledImageUpdateAfterBind );
-    root[ "descriptorBindingStorageImageUpdateAfterBind" ] = bool( v.descriptorBindingStorageImageUpdateAfterBind );
-    root[ "descriptorBindingStorageBufferUpdateAfterBind" ] = bool( v.descriptorBindingStorageBufferUpdateAfterBind );
-    root[ "descriptorBindingUniformTexelBufferUpdateAfterBind" ] = bool( v.descriptorBindingUniformTexelBufferUpdateAfterBind );
-    root[ "descriptorBindingStorageTexelBufferUpdateAfterBind" ] = bool( v.descriptorBindingStorageTexelBufferUpdateAfterBind );
-    root[ "descriptorBindingUpdateUnusedWhilePending" ] = bool( v.descriptorBindingUpdateUnusedWhilePending );
-    root[ "descriptorBindingPartiallyBound" ] = bool( v.descriptorBindingPartiallyBound );
-    root[ "descriptorBindingVariableDescriptorCount" ] = bool( v.descriptorBindingVariableDescriptorCount );
-    root[ "runtimeDescriptorArray" ] = bool( v.runtimeDescriptorArray );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDescriptorIndexingFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceDeviceGeneratedCommandsFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "deviceGeneratedCommands" ] = bool( v.deviceGeneratedCommands );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDeviceGeneratedCommandsFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceDeviceMemoryReportFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "deviceMemoryReport" ] = bool( v.deviceMemoryReport );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDeviceMemoryReportFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceDiagnosticsConfigFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "diagnosticsConfig" ] = bool( v.diagnosticsConfig );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceDiagnosticsConfigFeaturesNV.hpp>
 #endif
 #ifdef VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceExclusiveScissorFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "exclusiveScissor" ] = bool( v.exclusiveScissor );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceExclusiveScissorFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceExtendedDynamicState2FeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "extendedDynamicState2" ] = bool( v.extendedDynamicState2 );
-    root[ "extendedDynamicState2LogicOp" ] = bool( v.extendedDynamicState2LogicOp );
-    root[ "extendedDynamicState2PatchControlPoints" ] = bool( v.extendedDynamicState2PatchControlPoints );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceExtendedDynamicState2FeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "extendedDynamicState" ] = bool( v.extendedDynamicState );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceExtendedDynamicStateFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_EXTERNAL_MEMORY_RDMA_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceExternalMemoryRDMAFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "externalMemoryRDMA" ] = bool( v.externalMemoryRDMA );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceExternalMemoryRDMAFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentDensityMap2FeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fragmentDensityMapDeferred" ] = bool( v.fragmentDensityMapDeferred );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentDensityMap2FeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentDensityMapFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fragmentDensityMap" ] = bool( v.fragmentDensityMap );
-    root[ "fragmentDensityMapDynamic" ] = bool( v.fragmentDensityMapDynamic );
-    root[ "fragmentDensityMapNonSubsampledImages" ] = bool( v.fragmentDensityMapNonSubsampledImages );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentDensityMapFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentShaderBarycentricFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fragmentShaderBarycentric" ] = bool( v.fragmentShaderBarycentric );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentShaderBarycentricFeaturesNV.hpp>
 #endif
+
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentShaderInterlockFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fragmentShaderSampleInterlock" ] = bool( v.fragmentShaderSampleInterlock );
-    root[ "fragmentShaderPixelInterlock" ] = bool( v.fragmentShaderPixelInterlock );
-    root[ "fragmentShaderShadingRateInterlock" ] = bool( v.fragmentShaderShadingRateInterlock );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentShaderInterlockFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentShadingRateEnumsFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "fragmentShadingRateEnums" ] = bool( v.fragmentShadingRateEnums );
-    root[ "supersampleFragmentShadingRates" ] = bool( v.supersampleFragmentShadingRates );
-    root[ "noInvocationFragmentShadingRates" ] = bool( v.noInvocationFragmentShadingRates );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentShadingRateEnumsFeaturesNV.hpp>
 #endif
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceFragmentShadingRateFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "pipelineFragmentShadingRate" ] = bool( v.pipelineFragmentShadingRate );
-    root[ "primitiveFragmentShadingRate" ] = bool( v.primitiveFragmentShadingRate );
-    root[ "attachmentFragmentShadingRate" ] = bool( v.attachmentFragmentShadingRate );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceFragmentShadingRateFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceGlobalPriorityQueryFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "globalPriorityQuery" ] = bool( v.globalPriorityQuery );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceHostQueryResetFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceHostQueryResetFeatures.hpp>
 #elif defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceHostQueryResetFeaturesEXT &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "hostQueryReset" ] = bool( v.hostQueryReset );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceHostQueryResetFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
-  nlohmann::json to_json( const vk::PhysicalDeviceImageRobustnessFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "robustImageAccess" ] = bool( v.robustImageAccess );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceImageRobustnessFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceImagelessFramebufferFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceImagelessFramebufferFeatures.hpp>
 #elif defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceImagelessFramebufferFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "imagelessFramebuffer" ] = bool( v.imagelessFramebuffer );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceImagelessFramebufferFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceIndexTypeUint8FeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "indexTypeUint8" ] = bool( v.indexTypeUint8 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceIndexTypeUint8FeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceInheritedViewportScissorFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "inheritedViewportScissor2D" ] = bool( v.inheritedViewportScissor2D );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceInheritedViewportScissorFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceInlineUniformBlockFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "inlineUniformBlock" ] = bool( v.inlineUniformBlock );
-    root[ "descriptorBindingInlineUniformBlockUpdateAfterBind" ] = bool( v.descriptorBindingInlineUniformBlockUpdateAfterBind );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceInlineUniformBlockFeaturesEXT.hpp>
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceInvocationMaskFeaturesHUAWEI &v ) {
-    auto root = nlohmann::json::object();
-    root[ "invocationMask" ] = bool( v.invocationMask );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceInvocationMaskFeaturesHUAWEI.hpp>
 #endif
 #ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceLineRasterizationFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "rectangularLines" ] = bool( v.rectangularLines );
-    root[ "bresenhamLines" ] = bool( v.bresenhamLines );
-    root[ "smoothLines" ] = bool( v.smoothLines );
-    root[ "stippledRectangularLines" ] = bool( v.stippledRectangularLines );
-    root[ "stippledBresenhamLines" ] = bool( v.stippledBresenhamLines );
-    root[ "stippledSmoothLines" ] = bool( v.stippledSmoothLines );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceLineRasterizationFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMaintenance4FeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "maintenance4" ] = bool( v.maintenance4 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMaintenance4FeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMemoryPriorityFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "memoryPriority" ] = bool( v.memoryPriority );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMemoryPriorityFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMeshShaderFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "taskShader" ] = bool( v.taskShader );
-    root[ "meshShader" ] = bool( v.meshShader );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMeshShaderFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMultiDrawFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "multiDraw" ] = bool( v.multiDraw );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMultiDrawFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_1) || defined(VK_KHR_MULTIVIEW_EXTENSION_NAME)
+
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDeviceMultiviewFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceMultiviewFeatures.hpp>
 #elif defined(VK_KHR_MULTIVIEW_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceMultiviewFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "multiview" ] = bool( v.multiview );
-    root[ "multiviewGeometryShader" ] = bool( v.multiviewGeometryShader );
-    root[ "multiviewTessellationShader" ] = bool( v.multiviewTessellationShader );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMultiviewFeaturesKHR.hpp>
 #endif
 #ifdef VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceMutableDescriptorTypeFeaturesVALVE &v ) {
-    auto root = nlohmann::json::object();
-    root[ "mutableDescriptorType" ] = bool( v.mutableDescriptorType );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceMutableDescriptorTypeFeaturesVALVE.hpp>
 #endif
 #ifdef VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePageableDeviceLocalMemoryFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "pageableDeviceLocalMemory" ] = bool( v.pageableDeviceLocalMemory );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePerformanceQueryFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "performanceCounterQueryPools" ] = bool( v.performanceCounterQueryPools );
-    root[ "performanceCounterMultipleQueryPools" ] = bool( v.performanceCounterMultipleQueryPools );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePerformanceQueryFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePipelineCreationCacheControlFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "pipelineCreationCacheControl" ] = bool( v.pipelineCreationCacheControl );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePipelineCreationCacheControlFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePipelineExecutablePropertiesFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "pipelineExecutableInfo" ] = bool( v.pipelineExecutableInfo );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePipelineExecutablePropertiesFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePortabilitySubsetFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "constantAlphaColorBlendFactors" ] = bool( v.constantAlphaColorBlendFactors );
-    root[ "events" ] = bool( v.events );
-    root[ "imageViewFormatReinterpretation" ] = bool( v.imageViewFormatReinterpretation );
-    root[ "imageViewFormatSwizzle" ] = bool( v.imageViewFormatSwizzle );
-    root[ "imageView2DOn3DImage" ] = bool( v.imageView2DOn3DImage );
-    root[ "multisampleArrayImage" ] = bool( v.multisampleArrayImage );
-    root[ "mutableComparisonSamplers" ] = bool( v.mutableComparisonSamplers );
-    root[ "pointPolygons" ] = bool( v.pointPolygons );
-    root[ "samplerMipLodBias" ] = bool( v.samplerMipLodBias );
-    root[ "separateStencilMaskRef" ] = bool( v.separateStencilMaskRef );
-    root[ "shaderSampleRateInterpolationFunctions" ] = bool( v.shaderSampleRateInterpolationFunctions );
-    root[ "tessellationIsolines" ] = bool( v.tessellationIsolines );
-    root[ "tessellationPointMode" ] = bool( v.tessellationPointMode );
-    root[ "triangleFans" ] = bool( v.triangleFans );
-    root[ "vertexAttributeAccessBeyondStride" ] = bool( v.vertexAttributeAccessBeyondStride );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePortabilitySubsetFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_PRESENT_ID_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePresentIdFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "presentId" ] = bool( v.presentId );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePresentIdFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_PRESENT_WAIT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePresentWaitFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "presentWait" ] = bool( v.presentWait );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePresentWaitFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "primitiveTopologyListRestart" ] = bool( v.primitiveTopologyListRestart );
-    root[ "primitiveTopologyPatchListRestart" ] = bool( v.primitiveTopologyPatchListRestart );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDevicePrivateDataFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "privateData" ] = bool( v.privateData );
-    return root;
-  }
+#include <vulkan2json/PhysicalDevicePrivateDataFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDeviceProtectedMemoryFeatures &v ) {
-    auto root = nlohmann::json::object();
-    root[ "protectedMemory" ] = bool( v.protectedMemory );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceProtectedMemoryFeatures.hpp>
 #endif
 #ifdef VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceProvokingVertexFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "provokingVertexLast" ] = bool( v.provokingVertexLast );
-    root[ "transformFeedbackPreservesProvokingVertex" ] = bool( v.transformFeedbackPreservesProvokingVertex );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceProvokingVertexFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_RGBA10X6_FORMATS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRGBA10X6FormatsFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "formatRgba10x6WithoutYCbCrSampler" ] = bool( v.formatRgba10x6WithoutYCbCrSampler );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRGBA10X6FormatsFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_RAY_QUERY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRayQueryFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "rayQuery" ] = bool( v.rayQuery );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRayQueryFeaturesKHR.hpp>
 #endif
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRayTracingMotionBlurFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "rayTracingMotionBlur" ] = bool( v.rayTracingMotionBlur );
-    root[ "rayTracingMotionBlurPipelineTraceRaysIndirect" ] = bool( v.rayTracingMotionBlurPipelineTraceRaysIndirect );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRayTracingMotionBlurFeaturesNV.hpp>
 #endif
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRayTracingPipelineFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "rayTracingPipeline" ] = bool( v.rayTracingPipeline );
-    root[ "rayTracingPipelineShaderGroupHandleCaptureReplay" ] = bool( v.rayTracingPipelineShaderGroupHandleCaptureReplay );
-    root[ "rayTracingPipelineShaderGroupHandleCaptureReplayMixed" ] = bool( v.rayTracingPipelineShaderGroupHandleCaptureReplayMixed );
-    root[ "rayTracingPipelineTraceRaysIndirect" ] = bool( v.rayTracingPipelineTraceRaysIndirect );
-    root[ "rayTraversalPrimitiveCulling" ] = bool( v.rayTraversalPrimitiveCulling );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRayTracingPipelineFeaturesKHR.hpp>
 #endif
+
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRepresentativeFragmentTestFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "representativeFragmentTest" ] = bool( v.representativeFragmentTest );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRepresentativeFragmentTestFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_ROBUSTNESS_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceRobustness2FeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "robustBufferAccess2" ] = bool( v.robustBufferAccess2 );
-    root[ "robustImageAccess2" ] = bool( v.robustImageAccess2 );
-    root[ "nullDescriptor" ] = bool( v.nullDescriptor );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceRobustness2FeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_1) || defined(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDeviceSamplerYcbcrConversionFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceSamplerYcbcrConversionFeatures.hpp>
 #elif defined(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR &v ) {
+#include <vulkan2json/PhysicalDeviceSamplerYcbcrConversionFeaturesKHR.hpp>
 #endif
-    auto root = nlohmann::json::object();
-    root[ "samplerYcbcrConversion" ] = bool( v.samplerYcbcrConversion );
-    return root;
-  }
-#endif
-#if defined(VK_VERSION_1_2) || defined(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceScalarBlockLayoutFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceScalarBlockLayoutFeatures.hpp>
 #elif defined(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceScalarBlockLayoutFeaturesEXT &v ) {
+#include <vulkan2json/PhysicalDeviceScalarBlockLayoutFeaturesEXT.hpp>
 #endif
-    auto root = nlohmann::json::object();
-    root[ "scalarBlockLayout" ] = bool( v.scalarBlockLayout );
-    return root;
-  }
-#endif
-#if defined(scalar_block_layout) || defined(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceSeparateDepthStencilLayoutsFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceSeparateDepthStencilLayoutsFeatures.hpp>
 #elif defined(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "separateDepthStencilLayouts" ] = bool( v.separateDepthStencilLayouts );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_SHADER_ATOMIC_FLOAT_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceSeparateDepthStencilLayoutsFeatures &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderBufferFloat16Atomics" ] = bool( v.shaderBufferFloat16Atomics );
-    root[ "shaderBufferFloat16AtomicAdd" ] = bool( v.shaderBufferFloat16AtomicAdd );
-    root[ "shaderBufferFloat16AtomicMinMax" ] = bool( v.shaderBufferFloat16AtomicMinMax );
-    root[ "shaderBufferFloat32AtomicMinMax" ] = bool( v.shaderBufferFloat32AtomicMinMax );
-    root[ "shaderBufferFloat64AtomicMinMax" ] = bool( v.shaderBufferFloat64AtomicMinMax );
-    root[ "shaderSharedFloat16Atomics" ] = bool( v.shaderSharedFloat16Atomics );
-    root[ "shaderSharedFloat16AtomicAdd" ] = bool( v.shaderSharedFloat16AtomicAdd );
-    root[ "shaderSharedFloat16AtomicMinMax" ] = bool( v.shaderSharedFloat16AtomicMinMax );
-    root[ "shaderSharedFloat32AtomicMinMax" ] = bool( v.shaderSharedFloat32AtomicMinMax );
-    root[ "shaderSharedFloat64AtomicMinMax" ] = bool( v.shaderSharedFloat64AtomicMinMax );
-    root[ "shaderImageFloat32AtomicMinMax" ] = bool( v.shaderImageFloat32AtomicMinMax );
-    root[ "sparseImageFloat32AtomicMinMax" ] = bool( v.sparseImageFloat32AtomicMinMax );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderAtomicFloat2FeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderAtomicFloatFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderBufferFloat32Atomics" ] = bool( v.shaderBufferFloat32Atomics );
-    root[ "shaderBufferFloat32AtomicAdd" ] = bool( v.shaderBufferFloat32AtomicAdd );
-    root[ "shaderBufferFloat64Atomics" ] = bool( v.shaderBufferFloat64Atomics );
-    root[ "shaderBufferFloat64AtomicAdd" ] = bool( v.shaderBufferFloat64AtomicAdd );
-    root[ "shaderSharedFloat32Atomics" ] = bool( v.shaderSharedFloat32Atomics );
-    root[ "shaderSharedFloat32AtomicAdd" ] = bool( v.shaderSharedFloat32AtomicAdd );
-    root[ "shaderSharedFloat64Atomics" ] = bool( v.shaderSharedFloat64Atomics );
-    root[ "shaderSharedFloat64AtomicAdd" ] = bool( v.shaderSharedFloat64AtomicAdd );
-    root[ "shaderImageFloat32Atomics" ] = bool( v.shaderImageFloat32Atomics );
-    root[ "shaderImageFloat32AtomicAdd" ] = bool( v.shaderImageFloat32AtomicAdd );
-    root[ "sparseImageFloat32Atomics" ] = bool( v.sparseImageFloat32Atomics );
-    root[ "sparseImageFloat32AtomicAdd" ] = bool( v.sparseImageFloat32AtomicAdd );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderAtomicFloatFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderAtomicInt64Features &v ) {
+#include <vulkan2json/PhysicalDeviceShaderAtomicInt64Features.hpp>
 #elif defined(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderAtomicInt64FeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "shaderBufferInt64Atomics" ] = bool( v.shaderBufferInt64Atomics );
-    root[ "shaderSharedInt64Atomics" ] = bool( v.shaderSharedInt64Atomics );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderAtomicInt64FeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_SHADER_CLOCK_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderClockFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderSubgroupClock" ] = bool( v.shaderSubgroupClock );
-    root[ "shaderDeviceClock" ] = bool( v.shaderDeviceClock );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderClockFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderDemoteToHelperInvocation" ] = bool( v.shaderDemoteToHelperInvocation );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderDrawParametersFeatures &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderDrawParameters" ] = bool( v.shaderDrawParameters );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderDrawParametersFeatures.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderFloat16Int8Features &v ) {
+#include <vulkan2json/PhysicalDeviceShaderFloat16Int8Features.hpp>
 #elif defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderFloat16Int8Features &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "shaderFloat16" ] = bool( v.shaderFloat16 );
-    root[ "shaderInt8" ] = bool( v.shaderInt8 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderFloat16Int8FeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderImageAtomicInt64FeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderImageInt64Atomics" ] = bool( v.shaderImageInt64Atomics );
-    root[ "sparseImageInt64Atomics" ] = bool( v.sparseImageInt64Atomics );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderImageAtomicInt64FeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderImageFootprintFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "imageFootprint" ] = bool( v.imageFootprint );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderImageFootprintFeaturesNV.hpp>
 #endif
 #ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderIntegerDotProductFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderIntegerDotProduct" ] = bool( v.shaderIntegerDotProduct );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderIntegerDotProductFeaturesKHR.hpp>
 #endif
+
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderIntegerFunctions2FeaturesINTEL &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderIntegerFunctions2" ] = bool( v.shaderIntegerFunctions2 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderIntegerFunctions2FeaturesINTEL.hpp>
 #endif
 #ifdef VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderSMBuiltinsFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderSMBuiltins" ] = bool( v.shaderSMBuiltins );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderSMBuiltinsFeaturesNV.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderSubgroupExtendedTypesFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceShaderSubgroupExtendedTypesFeatures.hpp>
 #elif defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "shaderSubgroupExtendedTypes" ] = bool( v.shaderSubgroupExtendedTypes );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderSubgroupUniformControlFlow" ] = bool( v.shaderSubgroupUniformControlFlow );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShaderTerminateInvocationFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderTerminateInvocation" ] = bool( v.shaderTerminateInvocation );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShaderTerminateInvocationFeaturesKHR.hpp>
 #endif
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceShadingRateImageFeaturesNV &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shadingRateImage" ] = bool( v.shadingRateImage );
-    root[ "shadingRateCoarseSampleOrder" ] = bool( v.shadingRateCoarseSampleOrder );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceShadingRateImageFeaturesNV.hpp>
 #endif
 #ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
-  nlohmann::json to_json( const vk::PhysicalDeviceSubgroupSizeControlFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "subgroupSizeControl" ] = bool( v.subgroupSizeControl );
-    root[ "computeFullSubgroups" ] = bool( v.computeFullSubgroups );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceSubgroupSizeControlFeaturesEXT.hpp>
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceSubpassShadingFeaturesHUAWEI &v ) {
-    auto root = nlohmann::json::object();
-    root[ "subpassShading" ] = bool( v.subpassShading );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceSubpassShadingFeaturesHUAWEI.hpp>
 #endif
 #ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceSynchronization2FeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "synchronization2" ] = bool( v.synchronization2 );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceSynchronization2FeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceTexelBufferAlignmentFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "texelBufferAlignment" ] = bool( v.texelBufferAlignment );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceTexelBufferAlignmentFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "textureCompressionASTC_HDR" ] = bool( v.textureCompressionASTC_HDR );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceTimelineSemaphoreFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceTimelineSemaphoreFeatures.hpp>
 #elif defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceTimelineSemaphoreFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "timelineSemaphore" ] = bool( v.timelineSemaphore );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceTimelineSemaphoreFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceTransformFeedbackFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "transformFeedback" ] = bool( v.transformFeedback );
-    root[ "geometryStreams" ] = bool( v.geometryStreams );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceTransformFeedbackFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceUniformBufferStandardLayoutFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceUniformBufferStandardLayoutFeatures.hpp>
 #elif defined(VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceUniformBufferStandardLayoutFeaturesKHR &v ) {
+#include <vulkan2json/PhysicalDeviceUniformBufferStandardLayoutFeaturesKHR.hpp>
 #endif
-    auto root = nlohmann::json::object();
-    root[ "uniformBufferStandardLayout" ] = bool( v.uniformBufferStandardLayout );
-    return root;
-  }
-#endif
-#if defined(VK_VERSION_1_1) || defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
 #ifdef VK_VERSION_1_1
-  nlohmann::json to_json( const vk::PhysicalDeviceVariablePointersFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceVariablePointersFeatures.hpp>
 #elif defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
-  nlohmann::json to_json( const vk::PhysicalDeviceVariablePointersFeaturesKHR &v ) {
+#include <vulkan2json/PhysicalDeviceVariablePointersFeaturesKHR.hpp>
 #endif
-    auto root = nlohmann::json::object();
-    root[ "variablePointersStorageBuffer" ] = bool( v.variablePointersStorageBuffer );
-    root[ "variablePointers" ] = bool( v.variablePointers );
-    return root;
-  }
-#endif
+
 #ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceVertexAttributeDivisorFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "vertexAttributeInstanceRateDivisor" ] = bool( v.vertexAttributeInstanceRateDivisor );
-    root[ "vertexAttributeInstanceRateZeroDivisor" ] = bool( v.vertexAttributeInstanceRateZeroDivisor );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceVertexAttributeDivisorFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceVertexInputDynamicStateFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "vertexInputDynamicState" ] = bool( v.vertexInputDynamicState );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceVertexInputDynamicStateFeaturesEXT.hpp>
 #endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME)
 #ifdef VK_VERSION_1_2
-  nlohmann::json to_json( const vk::PhysicalDeviceVulkanMemoryModelFeatures &v ) {
+#include <vulkan2json/PhysicalDeviceVulkanMemoryModelFeatures.hpp>
 #elif VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceVulkanMemoryModelFeaturesKHR &v ) {
-#endif
-    auto root = nlohmann::json::object();
-    root[ "vulkanMemoryModel" ] = bool( v.vulkanMemoryModel );
-    root[ "vulkanMemoryModelDeviceScope" ] = bool( v.vulkanMemoryModelDeviceScope );
-    root[ "vulkanMemoryModelAvailabilityVisibilityChains" ] = bool( v.vulkanMemoryModelAvailabilityVisibilityChains );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceVulkanMemoryModelFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "workgroupMemoryExplicitLayout" ] = bool( v.workgroupMemoryExplicitLayout );
-    root[ "workgroupMemoryExplicitLayoutScalarBlockLayout" ] = bool( v.workgroupMemoryExplicitLayoutScalarBlockLayout );
-    root[ "workgroupMemoryExplicitLayout8BitAccess" ] = bool( v.workgroupMemoryExplicitLayout8BitAccess );
-    root[ "workgroupMemoryExplicitLayout16BitAccess" ] = bool( v.workgroupMemoryExplicitLayout16BitAccess );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "ycbcr2plane444Formats" ] = bool( v.ycbcr2plane444Formats );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceYcbcrImageArraysFeaturesEXT &v ) {
-    auto root = nlohmann::json::object();
-    root[ "ycbcrImageArrays" ] = bool( v.ycbcrImageArrays );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceYcbcrImageArraysFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
-  nlohmann::json to_json( const vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR &v ) {
-    auto root = nlohmann::json::object();
-    root[ "shaderZeroInitializeWorkgroupMemory" ] = bool( v.shaderZeroInitializeWorkgroupMemory );
-    return root;
-  }
+#include <vulkan2json/PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR.hpp>
 #endif
-  nlohmann::json to_json( const physical_device_features_t &v ) {
-    auto root = nlohmann::json::object();
-    root[ "basic" ] = to_json( v.get_basic() );
+
+namespace gct {
+  void to_json( nlohmann::json &root, const physical_device_features_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_16BIT_STORAGE_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( storage_16bit )
 #endif
@@ -1250,7 +648,6 @@ namespace gct {
 #ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( zero_initialize_workgroup_memory )
 #endif
-    return root;
   }
 
   physical_device_features_t::physical_device_features_t(

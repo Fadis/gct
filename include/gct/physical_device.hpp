@@ -64,10 +64,9 @@ namespace gct {
   using device_groups_t =
     std::vector< device_group_t >;
   
-  nlohmann::json to_json( const physical_device_t &v );
-  nlohmann::json to_json( const physical_devices_t &v );
-  nlohmann::json to_json( const device_group_t &v );
-  nlohmann::json to_json( const device_groups_t &v );
+  void to_json( nlohmann::json&, const physical_device_t &v );
+  void to_json( nlohmann::json&, const physical_devices_t &v );
+  void to_json( nlohmann::json&, const device_group_t &v );
 }
 
 #endif
