@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_RASTERIZATION_STATE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -30,6 +31,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::PipelineRasterizationStateStreamCreateInfoEXT, stream )
 #endif
   };
+  void to_json( nlohmann::json &root, const pipeline_rasterization_state_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_rasterization_state_create_info_t &v );
 }
 
 #endif

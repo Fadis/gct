@@ -2,6 +2,7 @@
 #define GCT_SHADER_MODULE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -19,6 +20,8 @@ namespace gct {
   public:
     shader_module_create_info_t &load( const std::string& );
   };
+  void to_json( nlohmann::json &root, const shader_module_create_info_t &v );
+  void from_json( const nlohmann::json &root, shader_module_create_info_t &v );
 }
 
 #endif

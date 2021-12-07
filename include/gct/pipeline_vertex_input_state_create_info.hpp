@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -23,6 +24,8 @@ namespace gct {
     pipeline_vertex_input_state_create_info_t &add_vertex_input_attribute_description( const vk::VertexInputAttributeDescription& );
     pipeline_vertex_input_state_create_info_t &clear_vertex_input_attribute_description();
   };
+  void to_json( nlohmann::json &root, const pipeline_vertex_input_state_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_vertex_input_state_create_info_t &v );
 }
 
 #endif

@@ -2,6 +2,7 @@
 #define GCT_IMAGE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -54,6 +55,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::VideoProfilesKHR , video_profiles )
 #endif
   };
+  void to_json( nlohmann::json &root, const image_create_info_t &v );
+  void from_json( const nlohmann::json &root, image_create_info_t &v );
 }
 
 #endif

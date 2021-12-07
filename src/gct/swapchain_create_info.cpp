@@ -1,8 +1,79 @@
 #include <gct/surface.hpp>
 #include <gct/swapchain_create_info.hpp>
+#ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
+#include <vulkan2json/SwapchainCreateInfoKHR.hpp>
+#if defined(VK_VERSION_1_1) || defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)
+#include <vulkan2json/DeviceGroupSwapchainCreateInfoKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_2
+#include <vulkan2json/ImageFormatListCreateInfo.hpp>
+#elif defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+#include <vulkan2json/ImageFormatListCreateInfoKHR.hpp>
+#endif
+#ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+#include <vulkan2json/SurfaceFullScreenExclusiveInfoEXT.hpp>
+#ifdef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#include <vulkan2json/SurfaceFullScreenExclusiveWin32InfoEXT.hpp>
+#endif
+#endif
+#ifdef VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME
+#include <vulkan2json/SwapchainCounterCreateInfoEXT.hpp>
+#endif
+#ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
+#include <vulkan2json/SwapchainDisplayNativeHdrCreateInfoAMD.hpp>
+#endif
+#endif
 
 namespace gct {
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  void to_json( nlohmann::json &root, const swapchain_create_info_t &v ) {
+     root = nlohmann::json::object();
+     root[ "basic" ] = v.get_basic();
+#if defined(VK_VERSION_1_1) || defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( device_group )
+#endif
+#ifdef VK_VERSION_1_2
+    LIBGCT_EXTENSION_TO_JSON( format_list )
+#elif defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( format_list )
+#endif
+#ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( full_screen_exclusive )
+#ifdef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( full_screen_exclusive_win32 )
+#endif
+#endif
+#ifdef VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( counter )
+#endif
+#ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( display_antive_hdr )
+#endif
+  }
+  void from_json( const nlohmann::json &root, swapchain_create_info_t &v ) {
+    if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to swapchain_create_info_t", __FILE__, __LINE__ );
+    LIBGCT_EXTENSION_FROM_JSON( basic )
+#if defined(VK_VERSION_1_1) || defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)
+    LIBGCT_EXTENSION_FROM_JSON( device_group )
+#endif
+#ifdef VK_VERSION_1_2
+    LIBGCT_EXTENSION_FROM_JSON( format_list )
+#elif defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    LIBGCT_EXTENSION_FROM_JSON( format_list )
+#endif
+#ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( full_screen_exclusive )
+#ifdef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( full_screen_exclusive_win32 )
+#endif
+#endif
+#ifdef VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( counter )
+#endif
+#ifdef VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( display_antive_hdr )
+#endif
+  }
   swapchain_create_info_t &swapchain_create_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)

@@ -28,6 +28,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::SamplerYcbcrConversionInfoKHR , ycbcr_conversion )
 #endif
   };
+  void to_json( nlohmann::json &root, const sampler_create_info_t &v );
+  void from_json( const nlohmann::json &root, sampler_create_info_t &v );
 }
 
 #endif

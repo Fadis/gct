@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_DYNAMIC_STATE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -17,6 +18,8 @@ namespace gct {
     pipeline_dynamic_state_create_info_t &add_dynamic_state( vk::DynamicState );
     pipeline_dynamic_state_create_info_t &clear_dynamic_state();
   };
+  void to_json( nlohmann::json &root, const pipeline_dynamic_state_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_dynamic_state_create_info_t &v );
 }
 
 #endif

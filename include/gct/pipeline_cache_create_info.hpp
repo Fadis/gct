@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -18,6 +19,8 @@ namespace gct {
   public:
     pipeline_cache_create_info_t &load( const std::string &filename );
   };
+  void to_json( nlohmann::json &root, const pipeline_cache_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_cache_create_info_t &v );
 }
 
 #endif

@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_SHADER_STAGE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/specialization_info.hpp>
@@ -31,6 +32,8 @@ namespace gct {
       return *this;
     }
   };
+  void to_json( nlohmann::json &root, const pipeline_shader_stage_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_shader_stage_create_info_t &v );
 }
 
 #endif

@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/subpass_description.hpp>
@@ -37,6 +38,8 @@ namespace gct {
     render_pass_create_info_t &add_dependency( const vk::SubpassDependency& );
     render_pass_create_info_t &clear_subpass();
   };
+  void to_json( nlohmann::json &root, const render_pass_create_info_t &v );
+  void from_json( const nlohmann::json &root, render_pass_create_info_t &v );
 }
 
 #endif

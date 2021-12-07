@@ -1,9 +1,19 @@
 #include <fstream>
 #include <iterator>
+#include <vulkan2json/PipelineCacheCreateInfo.hpp>
 #include <gct/surface.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
 
 namespace gct {
+
+  void to_json( nlohmann::json &root, const pipeline_cache_create_info_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
+  }
+  void from_json( const nlohmann::json &root, pipeline_cache_create_info_t &v ) {
+    if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to pipeline_cache_create_info_t", __FILE__, __LINE__ );
+    LIBGCT_EXTENSION_FROM_JSON( basic )
+  }
   pipeline_cache_create_info_t &pipeline_cache_create_info_t::rebuild_chain() {
     if( data.empty() )
       basic

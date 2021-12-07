@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -23,6 +24,8 @@ namespace gct {
     pipeline_color_blend_state_create_info_t &add_attachment( const vk::PipelineColorBlendAttachmentState& ); 
     pipeline_color_blend_state_create_info_t &clear_attachment(); 
   };
+  void to_json( nlohmann::json &root, const pipeline_color_blend_state_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_color_blend_state_create_info_t &v );
 }
 
 #endif

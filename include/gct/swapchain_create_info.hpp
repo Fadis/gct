@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -49,6 +50,8 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::SwapchainDisplayNativeHdrCreateInfoAMD, display_antive_hdr )
 #endif
   };
+  void to_json( nlohmann::json &root, const swapchain_create_info_t &v );
+  void from_json( const nlohmann::json &root, swapchain_create_info_t &v );
 #endif
 }
 

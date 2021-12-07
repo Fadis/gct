@@ -2,6 +2,7 @@
 #define GCT_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO_HPP
 #include <memory>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -24,6 +25,8 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::PipelineSampleLocationsStateCreateInfoEXT, sample_locations )
 #endif
   };
+  void to_json( nlohmann::json &root, const pipeline_multisample_state_create_info_t &v );
+  void from_json( const nlohmann::json &root, pipeline_multisample_state_create_info_t &v );
 }
 
 #endif
