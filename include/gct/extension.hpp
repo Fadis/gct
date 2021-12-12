@@ -153,17 +153,40 @@ public: \
     return *this;
 
 #define LIBGCT_EXTENSION_REBUILD_CHAIN_DEF \
-private: \
-    void *head = nullptr; \
-    bool chained = true; \
 public: \
-    const void *get_head() const { \
-      return head; \
-    } \
     self_type &rebuild_chain(); \
     self_type copy() const { \
       return *this; \
     }
+
+class chained_t {
+public:
+  chained_t() :
+    head( nullptr ),
+    chained( false ) {}
+  chained_t( const chained_t & ) :
+    head( nullptr ),
+    chained( false ) {}
+  chained_t( chained_t && ) :
+    head( nullptr ),
+    chained( false ) {}
+  chained_t &operator=( const chained_t & ) {
+    head = nullptr;
+    chained = false;
+    return *this;
+  }
+  chained_t &operator=( chained_t && ) {
+    head = nullptr;
+    chained = false;
+    return *this;
+  }
+  const void *get_head() const {
+    return head;
+  }
+protected:
+  void *head = nullptr;
+  bool chained = false;
+};
 
 struct chainable_t {
   vk::StructureType sType;

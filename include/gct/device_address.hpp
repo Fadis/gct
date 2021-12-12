@@ -1,0 +1,60 @@
+#ifndef GCT_DEVICE_ADDRESS_HPP
+#define GCT_DEVICE_ADDRESS_HPP
+
+#include <vulkan/vulkan.hpp>
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <memory>
+#include <variant>
+#include <nlohmann/json_fwd.hpp>
+#include <gct/created_from.hpp>
+#include <gct/extension.hpp>
+namespace gct {
+  class buffer_t;
+  class acceleration_structure_t;
+  class device_address_t :
+    public std::enable_shared_from_this< device_address_t > {
+  public:
+    device_address_t(
+      const std::shared_ptr< buffer_t > &buffer_,
+      vk::DeviceAddress address_
+    );
+    device_address_t(
+      const std::shared_ptr< acceleration_structure_t > &buffer_,
+      vk::DeviceAddress address_
+    );
+    vk::DeviceAddress operator*() {
+      return address;
+    }
+    device_address_t &operator+=( std::int64_t value );
+    device_address_t &operator-=( std::int64_t value ) {
+      operator+=( -value );
+      return *this;
+    }
+    device_address_t &operator++() {
+      operator+=( 1 );
+      return *this;
+    }
+    device_address_t &operator--() {
+      operator-=( 1 );
+      return *this;
+    }
+    std::int64_t operator-( const device_address_t &r ) const {
+      return std::int64_t( r.offset ) - std::int64_t( offset );
+    }
+    device_address_t operator+( std::int64_t value ) const;
+    device_address_t operator-( std::int64_t value ) const;
+    void to_json( nlohmann::json& ) const;
+  private:
+    std::variant<
+      std::shared_ptr< buffer_t >,
+      std::shared_ptr< acceleration_structure_t >
+    > from;
+    vk::DeviceAddress address = 0u;
+    std::int64_t offset = 0u;
+  };
+  void to_json( nlohmann::json&, const device_address_t& );
+}
+#endif
+
+#endif
+

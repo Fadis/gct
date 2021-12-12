@@ -7,7 +7,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  class pipeline_dynamic_state_create_info_t {
+  class pipeline_dynamic_state_create_info_t : public chained_t {
   public:
     using self_type = pipeline_dynamic_state_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

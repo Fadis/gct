@@ -1,7 +1,7 @@
 #include <iostream>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
-
+#include <gct/vulkanhpp.hpp>
 namespace gct {
   bool is_valid_vulkan_version( std::uint32_t version ) {
     return
@@ -16,6 +16,7 @@ namespace gct {
     const std::vector< const char* > &iext,
     const std::vector< const char* > &ilayers
   ) : api_version( api_version_ ) {
+    vulkanhpp::init();
     if( !is_valid_vulkan_version( api_version ) )
       throw -1;
     const auto app_info = vk::ApplicationInfo(
@@ -47,6 +48,7 @@ namespace gct {
         .setEnabledLayerCount( ilayers.size() )
         .setPpEnabledLayerNames( ilayers.data() )
     );
+    VULKAN_HPP_DEFAULT_DISPATCHER.init( *handle );
   }
   device_groups_t
   instance_t::get_physical_devices(

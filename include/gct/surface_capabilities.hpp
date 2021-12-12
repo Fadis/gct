@@ -22,7 +22,7 @@ namespace gct {
 
   class physical_device_t;
 
-  struct surface_capabilities_t {
+  struct surface_capabilities_t : public chained_t {
   public:
     surface_capabilities_t(
       const physical_device_t&,

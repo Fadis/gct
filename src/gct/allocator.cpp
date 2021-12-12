@@ -5,16 +5,16 @@
 
 namespace gct {
   allocator_t::allocator_t(
-    const std::shared_ptr< device_t > &device
+    const std::shared_ptr< device_t > &device,
+    const VmaAllocatorCreateInfo &create_info
   ) :
-    created_from< device_t >( device ) {
-    VmaAllocatorCreateInfo allocator_info = {};
-    allocator_info.instance = **device->get_factory();
-    allocator_info.physicalDevice = **device->get_physical_device_group().devices[ 0 ];
-    allocator_info.device = **device;
+    created_from< device_t >( device ), props( create_info ) {
+    props.instance = **device->get_factory();
+    props.physicalDevice = **device->get_physical_device_group().devices[ 0 ];
+    props.device = **device;
     VmaAllocator allocator;
     {
-      const auto result = vmaCreateAllocator( &allocator_info, &allocator );
+      const auto result = vmaCreateAllocator( &props, &allocator );
       if( result != VK_SUCCESS ) vk::throwResultException( vk::Result( result ), "アロケータを作成できない" );
     }
     handle.reset(

@@ -6,7 +6,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  class command_buffer_allocate_info_t {
+  class command_buffer_allocate_info_t : public chained_t {
   public:
     using self_type = command_buffer_allocate_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

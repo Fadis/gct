@@ -6,7 +6,7 @@
 
 namespace gct {
   class descriptor_set_layout_t;
-  class descriptor_set_allocate_info_t {
+  class descriptor_set_allocate_info_t : public chained_t {
   public:
     using self_type = descriptor_set_allocate_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

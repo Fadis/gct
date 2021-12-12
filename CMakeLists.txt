@@ -83,7 +83,7 @@ link_directories(
   ${VULKAN2JSON_LIBRARY_DIR}
 )
 
-add_definitions( -DVK_ENABLE_BETA_EXTENSIONS )
+add_definitions( -DVK_ENABLE_BETA_EXTENSIONS -DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 )
 
 subdirs( include src )
 

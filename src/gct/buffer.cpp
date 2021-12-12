@@ -1,9 +1,14 @@
 #include <gct/allocator.hpp>
 #include <gct/buffer_view.hpp>
 #include <gct/buffer_view_create_info.hpp>
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <gct/acceleration_structure.hpp>
+#include <gct/acceleration_structure_create_info.hpp>
+#endif
 #include <gct/buffer_create_info.hpp>
 #include <gct/buffer.hpp>
-
+#include <gct/device.hpp>
+#include <gct/buffer_device_address_info.hpp>
 namespace gct {
   buffer_t::buffer_t(
     const std::shared_ptr< allocator_t > &allocator,
@@ -70,6 +75,48 @@ namespace gct {
       )
     );
   }
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    std::shared_ptr< acceleration_structure_t > buffer_t::create_acceleration_structure(
+      const acceleration_structure_create_info_t &create_info
+    ) {
+      return std::shared_ptr< acceleration_structure_t >(
+        new acceleration_structure_t(
+          shared_from_this(),
+          create_info
+        )
+      );
+    }
+    std::shared_ptr< acceleration_structure_t > buffer_t::create_acceleration_structure(
+      const vk::AccelerationStructureTypeKHR &type
+    ) {
+      return create_acceleration_structure(
+        acceleration_structure_create_info_t()
+          .set_basic(
+            vk::AccelerationStructureCreateInfoKHR()
+              .setOffset( 0 )
+              .setSize( get_props().get_basic().size )
+              .setType( type )
+          )
+      );
+    }
+#endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+    device_address_t buffer_t::get_address( const buffer_device_address_info_t &info ) {
+      auto copied = info;
+      copied.set_buffer( shared_from_this() ).rebuild_chain();
+      return device_address_t(
+        shared_from_this(),
+        (*get_device())->getBufferAddress(
+          copied.get_basic()
+        )
+      );
+    }
+    device_address_t buffer_t::get_address() {
+      return get_address(
+        buffer_device_address_info_t()
+      );
+    }
+#endif
   const std::shared_ptr< device_t > &buffer_t::get_device() const {
     return get_factory()->get_factory();
   }
@@ -81,6 +128,10 @@ namespace gct {
   }
   void unmap_memory( const std::shared_ptr< allocator_t > &allocator, const std::shared_ptr< VmaAllocation > &allocation ) {
     vmaUnmapMemory( **allocator, *allocation );
+  }
+  void to_json( nlohmann::json &root, const buffer_t &v ) {
+    root = nlohmann::json::object();
+    root[ "props" ] = v.get_props();
   }
 }
 

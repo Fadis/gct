@@ -1,6 +1,8 @@
 #ifndef GCT_DEVICE_HPP
 #define GCT_DEVICE_HPP
 #include <memory>
+#include <vector>
+#include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/command_pool.hpp>
@@ -9,7 +11,10 @@
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/render_pass.hpp>
-
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <gct/acceleration_structure_build_sizes_info.hpp>
+#endif
+struct VmaAllocatorCreateInfo;
 namespace gct {
   struct device_group_t;
   struct device_create_info_t;
@@ -33,6 +38,9 @@ namespace gct {
   class fence_create_info_t;
   class fence_t;
   class queue_t;
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+  class acceleration_structure_build_geometry_info_t;
+#endif
   class device_t : public created_from< instance_t >, public std::enable_shared_from_this< device_t > {
   public:
     device_t(
@@ -55,6 +63,7 @@ namespace gct {
     }
     std::shared_ptr< queue_t > get_queue( std::uint32_t );
     std::shared_ptr< allocator_t > get_allocator();
+    std::shared_ptr< allocator_t > get_allocator( const VmaAllocatorCreateInfo& );
     std::shared_ptr< swapchain_t > get_swapchain( const swapchain_create_info_t& );
     std::shared_ptr< swapchain_t > get_swapchain( const std::shared_ptr< surface_t > &surface );
     std::shared_ptr< descriptor_pool_t > get_descriptor_pool( const descriptor_pool_create_info_t& );
@@ -73,6 +82,13 @@ namespace gct {
     std::vector< std::uint32_t > to_queue_family_list(
       const std::vector< std::uint32_t > &logical_queue_index
     );
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    acceleration_structure_build_sizes_info_t get_acceleration_structure_build_size(
+      vk::AccelerationStructureBuildTypeKHR build_type,
+      const acceleration_structure_build_geometry_info_t &build_info,
+      const std::vector< std::uint32_t > &max_primitive_counts
+    );
+#endif
   private:
     void create_command_pools( std::uint32_t activated_queue_family_index );
     device_group_t group;

@@ -9,7 +9,7 @@ namespace gct {
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
   class semaphore_t;
   class swapchain_t;
-  class present_info_t {
+  class present_info_t : public chained_t {
   public:
     using self_type = present_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

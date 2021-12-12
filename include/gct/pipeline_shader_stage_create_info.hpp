@@ -9,7 +9,7 @@
 
 namespace gct {
   class shader_module_t;
-  class pipeline_shader_stage_create_info_t {
+  class pipeline_shader_stage_create_info_t : public chained_t {
   public:
     using self_type = pipeline_shader_stage_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

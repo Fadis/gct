@@ -19,6 +19,10 @@
 #include <gct/fence_create_info.hpp>
 #include <gct/queue.hpp>
 #include <gct/device.hpp>
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <gct/acceleration_structure_build_geometry_info.hpp>
+#include <gct/acceleration_structure_geometry.hpp>
+#endif
 
 namespace gct {
 
@@ -136,11 +140,17 @@ namespace gct {
       )
     );
   }
-  std::shared_ptr< allocator_t > device_t::get_allocator() {
+  std::shared_ptr< allocator_t > device_t::get_allocator( const VmaAllocatorCreateInfo &create_info ) {
     return std::shared_ptr< allocator_t >(
       new allocator_t(
-        shared_from_this()
+        shared_from_this(),
+        create_info
       )
+    );
+  }
+  std::shared_ptr< allocator_t > device_t::get_allocator() {
+    return get_allocator(
+      VmaAllocatorCreateInfo{}
     );
   }
   std::shared_ptr< swapchain_t > device_t::get_swapchain( const swapchain_create_info_t &create_info ) {
@@ -271,5 +281,25 @@ namespace gct {
       fence_create_info_t()
     );
   }
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+  acceleration_structure_build_sizes_info_t device_t::get_acceleration_structure_build_size(
+    vk::AccelerationStructureBuildTypeKHR build_type,
+    const acceleration_structure_build_geometry_info_t &build_info,
+    const std::vector< std::uint32_t > &max_primitive_counts
+  ) {
+    auto copied = build_info;
+    copied.rebuild_chain();
+    acceleration_structure_build_sizes_info_t temp;
+    if( copied.get_basic().geometryCount != max_primitive_counts.size() ) throw -1;
+    temp.set_basic(
+      handle->getAccelerationStructureBuildSizesKHR(
+        build_type,
+        copied.get_basic(),
+        max_primitive_counts
+      )
+    );
+    return temp;
+  }
+#endif
 }
 

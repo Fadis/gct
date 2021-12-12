@@ -11,7 +11,7 @@
 namespace gct {
   class instance_t;
 #ifdef VK_KHR_DISPLAY_EXTENSION_NAME
-  struct display_plane_t {
+  struct display_plane_t : public chained_t {
     vk::DisplayPlaneCapabilitiesKHR basic;
   };
   struct display_mode_t {
@@ -25,7 +25,7 @@ namespace gct {
   };
 #endif
 
-  class physical_device_properties_t {
+  class physical_device_properties_t : public chained_t {
 public:
     physical_device_properties_t(
       instance_t &instance,

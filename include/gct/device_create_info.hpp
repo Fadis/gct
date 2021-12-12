@@ -7,7 +7,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  struct device_create_info_t {
+  struct device_create_info_t : public chained_t {
     using self_type = device_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::DeviceCreateInfo )

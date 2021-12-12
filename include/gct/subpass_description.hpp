@@ -7,7 +7,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  class subpass_description_t {
+  class subpass_description_t : public chained_t {
   public:
     using self_type = subpass_description_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

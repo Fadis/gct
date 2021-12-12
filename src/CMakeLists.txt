@@ -26,10 +26,19 @@ add_library( gct SHARED
   gct/image_create_info.cpp
   gct/image.cpp
   gct/acceleration_structure_create_info.cpp
+  gct/acceleration_structure.cpp
+  gct/acceleration_structure_geometry_triangles_data.cpp
+  gct/acceleration_structure_geometry_aabbs_data.cpp
+  gct/acceleration_structure_geometry_instances_data.cpp
+  gct/acceleration_structure_geometry.cpp
+  gct/acceleration_structure_build_sizes_info.cpp
+  gct/acceleration_structure_build_geometry_info.cpp
+  gct/acceleration_structure_device_address_info.cpp
   gct/allocated_image.cpp
   gct/swapchain_image.cpp
   gct/buffer_create_info.cpp
   gct/buffer.cpp
+  gct/buffer_device_address_info.cpp
   gct/extension.cpp
   gct/swapchain_create_info.cpp
   gct/swapchain.cpp
@@ -100,6 +109,10 @@ add_library( gct SHARED
   gct/load_mesh.cpp
   gct/load_node.cpp
   gct/vma.cpp
+  gct/dispatch_loader.cpp
+  gct/vulkanhpp.cpp
+  gct/device_address.cpp
+  gct/device_or_host_address_const.cpp
 )
 
 target_link_libraries(
@@ -152,3 +165,18 @@ target_link_libraries(
   ${OIIO_LIBRARIES}
 )
 
+add_executable( test
+  example/test.cpp
+)
+
+target_link_libraries(
+  test
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+  ${GLFW_LIBRARIES}
+)

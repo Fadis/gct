@@ -7,7 +7,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  class shader_module_create_info_t {
+  class shader_module_create_info_t : public chained_t {
   public:
     using self_type = shader_module_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

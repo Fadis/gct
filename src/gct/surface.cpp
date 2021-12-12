@@ -19,9 +19,7 @@ namespace gct {
     created_from< instance_t >( pdev.get_factory() ),
     handle(
       raw_handle,
-      vk::ObjectDestroy< vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE >(
-        **get_factory(), nullptr, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE ()
-      )
+      **pdev.get_factory()
     ),
     caps(
       pdev,

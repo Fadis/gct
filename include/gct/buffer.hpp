@@ -13,7 +13,7 @@
 #pragma GCC diagnostic pop
 #include <gct/created_from.hpp>
 #include <gct/buffer_create_info.hpp>
-
+#include <gct/device_address.hpp>
 namespace gct {
   template< typename T >
   class buffer_range_t {
@@ -54,6 +54,13 @@ namespace gct {
   struct allocator_t;
   struct buffer_view_t;
   struct buffer_view_create_info_t;
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+  struct buffer_device_address_info_t;
+#endif
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+  struct acceleration_structure_t;
+  struct acceleration_structure_create_info_t;
+#endif
   void unmap_memory( const std::shared_ptr< allocator_t >&, const std::shared_ptr< VmaAllocation >& );
   class buffer_t : public created_from< allocator_t >, public std::enable_shared_from_this< buffer_t > {
   public:
@@ -114,6 +121,18 @@ namespace gct {
     std::shared_ptr< buffer_view_t > get_view(
       const buffer_view_create_info_t&
     );
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
+      const acceleration_structure_create_info_t&
+    ); 
+    std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
+      const vk::AccelerationStructureTypeKHR&
+    );
+#endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+    device_address_t get_address( const buffer_device_address_info_t& );
+    device_address_t get_address();
+#endif
     const std::shared_ptr< device_t > &get_device() const;
   private:
     void *map_raw() const;
@@ -122,6 +141,7 @@ namespace gct {
     std::shared_ptr< VmaAllocation > allocation;
     vk::UniqueHandle< vk::BufferView, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > buffer_view;
   };
+  void to_json( nlohmann::json&, const buffer_t& );
 }
 
 #endif

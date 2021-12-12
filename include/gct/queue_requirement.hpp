@@ -1,6 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_QUEUE_REQUIREMENT_HPP
 #define LIBGCT_INCLUDE_GCT_QUEUE_REQUIREMENT_HPP
-
+#include <optional>
 #include <nlohmann/json.hpp>
 #include <vulkan/vulkan.hpp>
 

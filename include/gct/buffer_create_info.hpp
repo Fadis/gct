@@ -6,7 +6,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 namespace gct {
-  class buffer_create_info_t {
+  class buffer_create_info_t : public chained_t {
   public:
     using self_type = buffer_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

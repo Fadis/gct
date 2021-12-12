@@ -11,7 +11,7 @@ namespace gct {
   class surface_t;
   class surface_format_t;
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
-  class swapchain_create_info_t {
+  class swapchain_create_info_t : public chained_t {
   public:
     using self_type = swapchain_create_info_t;
     swapchain_create_info_t &set_surface(

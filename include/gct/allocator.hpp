@@ -14,6 +14,7 @@
 #include <gct/created_from.hpp>
 #include <gct/buffer.hpp>
 #include <gct/image.hpp>
+#include <vk_mem_alloc.h>
 
 namespace gct {
   class device_t;
@@ -21,7 +22,8 @@ namespace gct {
   class allocator_t : public created_from< device_t >, public std::enable_shared_from_this< allocator_t > {
   public:
     allocator_t(
-      const std::shared_ptr< device_t > &device
+      const std::shared_ptr< device_t > &device,
+      const VmaAllocatorCreateInfo &create_info
     );
     allocator_t( const allocator_t& ) = delete;
     allocator_t( allocator_t&& ) = default;
@@ -42,7 +44,9 @@ namespace gct {
       vk::BufferUsageFlags,
       VmaMemoryUsage usage
     );
+    const VmaAllocatorCreateInfo &get_props() const { return props; }
   private:
+    VmaAllocatorCreateInfo props;
     std::shared_ptr< VmaAllocator > handle;
   };
 }

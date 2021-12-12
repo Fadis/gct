@@ -9,7 +9,7 @@ namespace gct {
   nlohmann::json to_json( const vk::PhysicalDeviceFeatures &v );
   struct instance_t;
   struct physical_device_properties_t;
-  class physical_device_features_t {
+  class physical_device_features_t : public chained_t {
   public:
     physical_device_features_t(
       instance_t &instance,

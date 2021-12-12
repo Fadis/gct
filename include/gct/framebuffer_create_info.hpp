@@ -10,7 +10,7 @@
 namespace gct {
   class image_view_t;
   class render_pass_t;
-  class framebuffer_create_info_t {
+  class framebuffer_create_info_t : public chained_t {
   public:
     using self_type = framebuffer_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

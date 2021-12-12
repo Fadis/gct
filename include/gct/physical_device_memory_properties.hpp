@@ -8,7 +8,7 @@
 
 namespace gct {
   class instance_t;
-  class physical_device_memory_properties_t {
+  class physical_device_memory_properties_t : public chained_t {
 public:
     physical_device_memory_properties_t(
       instance_t &instance,

@@ -8,7 +8,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  struct queue_family_properties_t {
+  struct queue_family_properties_t : public chained_t {
     using self_type = queue_family_properties_t;
     self_type &activate( const extension_map_t& );
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

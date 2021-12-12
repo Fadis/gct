@@ -1,5 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_QUEUE_HPP
 #define LIBGCT_INCLUDE_GCT_QUEUE_HPP
+#include <optional>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <vulkan/vulkan.hpp>

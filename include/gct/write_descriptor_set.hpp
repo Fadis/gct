@@ -9,7 +9,7 @@
 #include <gct/deep_copy.hpp>
 
 namespace gct {
-  class write_descriptor_set_t {
+  class write_descriptor_set_t : public chained_t {
   public:
     using self_type = write_descriptor_set_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

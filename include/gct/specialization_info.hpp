@@ -6,7 +6,7 @@
 #include <gct/extension.hpp>
 
 namespace gct {
-  class basic_specialization_info_t {
+  class basic_specialization_info_t : public chained_t {
   public:
     using self_type = basic_specialization_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

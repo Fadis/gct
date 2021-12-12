@@ -9,7 +9,7 @@
 #include <gct/subpass_description.hpp>
 
 namespace gct {
-  class render_pass_create_info_t {
+  class render_pass_create_info_t : public chained_t {
   public:
     using self_type = render_pass_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

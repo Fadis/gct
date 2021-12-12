@@ -9,7 +9,7 @@
 
 namespace gct {
   class pipeline_layout_t;
-  class compute_pipeline_create_info_t {
+  class compute_pipeline_create_info_t : public chained_t {
   public:
     using self_type = compute_pipeline_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF

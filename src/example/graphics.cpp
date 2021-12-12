@@ -58,6 +58,7 @@ int main() {
       }
     )
   );
+
   auto groups = instance->get_physical_devices( {} );
   auto selected = groups[ 0 ].with_extensions( {
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,

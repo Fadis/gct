@@ -8,7 +8,8 @@
 
 namespace gct {
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
-  class acceleration_structure_create_info_t {
+  class buffer_t;
+  class acceleration_structure_create_info_t : public chained_t {
   public:
     using self_type = acceleration_structure_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
@@ -16,6 +17,11 @@ namespace gct {
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::AccelerationStructureMotionInfoNV , motion )
 #endif
+  public:
+    acceleration_structure_create_info_t &set_buffer( const std::shared_ptr< buffer_t >& );
+    const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }
+  private:
+    std::shared_ptr< buffer_t > buffer;
   };
   void to_json( nlohmann::json &root, const acceleration_structure_create_info_t &v );
   void from_json( const nlohmann::json &root, acceleration_structure_create_info_t &v );
