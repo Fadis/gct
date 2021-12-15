@@ -88,6 +88,11 @@ public: \
       chained = false; \
       return *this; \
     } \
+    self_type &clear_ ## name () { \
+      name .reset(); \
+      chained = false; \
+      return *this; \
+    } \
     self_type &operator=( const type &v ) { \
       name .reset( new type ( v ) ); \
       chained = false; \
@@ -95,11 +100,6 @@ public: \
     } \
     self_type &operator=( type &&v ) { \
       name .reset( new type ( std::move( v ) ) ); \
-      chained = false; \
-      return *this; \
-    } \
-    self_type &remove_ ## name () { \
-      name .reset(); \
       chained = false; \
       return *this; \
     } \

@@ -6,9 +6,9 @@
 #include <gct/extension.hpp>
 #include <gct/descriptor_image_info.hpp>
 #include <gct/descriptor_buffer_info.hpp>
-#include <gct/deep_copy.hpp>
 
 namespace gct {
+  class acceleration_structure_t;
   class write_descriptor_set_t : public chained_t {
   public:
     using self_type = write_descriptor_set_t;
@@ -28,11 +28,19 @@ namespace gct {
     std::vector< vk::DescriptorImageInfo > raw_image;
     std::vector< descriptor_buffer_info_t > buffer;
     std::vector< vk::DescriptorBufferInfo > raw_buffer;
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    std::vector< std::shared_ptr< gct::acceleration_structure_t > > acceleration_structure_handles;
+    std::vector< vk::AccelerationStructureKHR > raw_acceleration_structure;
+#endif
   public:
     write_descriptor_set_t &add_image( const descriptor_image_info_t& );
     write_descriptor_set_t &clear_image();
     write_descriptor_set_t &add_buffer( const descriptor_buffer_info_t& );
     write_descriptor_set_t &clear_buffer();
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    write_descriptor_set_t &add_acceleration_structure_handle( const std::shared_ptr< gct::acceleration_structure_t >& );
+    write_descriptor_set_t &clear_acceleration_structure_handle();
+#endif
   };
 }
 
