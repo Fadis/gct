@@ -24,12 +24,14 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::WriteDescriptorSetInlineUniformBlockEXT, inline_uniform_block )
 #endif
   private:
-    deep_copy_unique_ptr< descriptor_image_info_t > image;
-    deep_copy_unique_ptr< descriptor_buffer_info_t > buffer;
+    std::vector< descriptor_image_info_t > image;
+    std::vector< vk::DescriptorImageInfo > raw_image;
+    std::vector< descriptor_buffer_info_t > buffer;
+    std::vector< vk::DescriptorBufferInfo > raw_buffer;
   public:
-    write_descriptor_set_t &set_image( const descriptor_image_info_t& );
+    write_descriptor_set_t &add_image( const descriptor_image_info_t& );
     write_descriptor_set_t &clear_image();
-    write_descriptor_set_t &set_buffer( const descriptor_buffer_info_t& );
+    write_descriptor_set_t &add_buffer( const descriptor_buffer_info_t& );
     write_descriptor_set_t &clear_buffer();
   };
 }

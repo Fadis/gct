@@ -163,9 +163,8 @@ int main() {
           vk::WriteDescriptorSet()
             .setDstBinding( 0 )
             .setDescriptorType( vk::DescriptorType::eStorageBuffer )
-            .setDescriptorCount( 1 )
         )
-        .set_buffer(
+        .add_buffer(
           gct::descriptor_buffer_info_t()
             .set_buffer( device_local_buffer )
             .set_basic(

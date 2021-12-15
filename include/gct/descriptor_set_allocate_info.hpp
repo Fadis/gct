@@ -19,8 +19,10 @@ namespace gct {
   private:
     std::vector< std::shared_ptr< descriptor_set_layout_t > > layout;
     std::vector< vk::DescriptorSetLayout > raw_layout;
+    std::vector< std::uint32_t > counts;
   public:
     descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >& );
+    descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >&, std::uint32_t );
     descriptor_set_allocate_info_t &clear_layout();
   };
 }

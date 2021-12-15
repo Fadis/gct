@@ -439,16 +439,22 @@ namespace gct::gltf {
     const auto &image = images[ texture.source ];
     texture_t texture_;
     texture_.set_unorm(
-      vk::DescriptorImageInfo()
-        .setImageLayout( vk::ImageLayout::eShaderReadOnlyOptimal )
-        .setImageView( **image.unorm_view )
-        .setSampler( **sampler )
+      descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+            .setImageLayout( vk::ImageLayout::eShaderReadOnlyOptimal )
+        )
+        .set_image_view( image.unorm_view )
+        .set_sampler( sampler )
     );
     texture_.set_srgb(
-      vk::DescriptorImageInfo()
-        .setImageLayout( vk::ImageLayout::eShaderReadOnlyOptimal )
-        .setImageView( **image.srgb_view )
-        .setSampler( **sampler )
+      descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+            .setImageLayout( vk::ImageLayout::eShaderReadOnlyOptimal )
+        )
+        .set_image_view( image.srgb_view )
+        .set_sampler( sampler )
     );
     return texture_;
   }

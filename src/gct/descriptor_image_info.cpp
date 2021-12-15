@@ -9,12 +9,8 @@ namespace gct {
     if( chained ) return *this;
     if( sampler )
       basic.setSampler( **sampler );
-    else
-      basic.setSampler( nullptr );
     if( image_view )
       basic.setImageView( **image_view );
-    else
-      basic.setImageView( nullptr );
     chained = true;
     return *this;
   }

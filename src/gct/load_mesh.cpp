@@ -214,9 +214,8 @@ namespace gct::gltf {
             vk::WriteDescriptorSet()
               .setDstBinding( 0 )
               .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-              .setDescriptorCount( 1 )
           )
-          .set_buffer(
+          .add_buffer(
             gct::descriptor_buffer_info_t()
               .set_buffer( uniform_buffer )
               .set_basic(
@@ -232,9 +231,8 @@ namespace gct::gltf {
             vk::WriteDescriptorSet()
               .setDstBinding( 7 )
               .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-              .setDescriptorCount( 1 )
           )
-          .set_buffer(
+          .add_buffer(
             gct::descriptor_buffer_info_t()
               .set_buffer( dynamic_uniform_buffer[ i ] )
               .set_basic(
@@ -255,9 +253,8 @@ namespace gct::gltf {
               vk::WriteDescriptorSet()
                 .setDstBinding( 1 )
                 .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-                .setDescriptorCount( 1 )
             )
-            .set_image(
+            .add_image(
               bct_texture.srgb
             )
         );
@@ -272,9 +269,8 @@ namespace gct::gltf {
               vk::WriteDescriptorSet()
                 .setDstBinding( 2 )
                 .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-                .setDescriptorCount( 1 )
             )
-            .set_image(
+            .add_image(
               mrt_texture.unorm
             )
         );
@@ -289,9 +285,8 @@ namespace gct::gltf {
               vk::WriteDescriptorSet()
                 .setDstBinding( 3 )
                 .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-                .setDescriptorCount( 1 )
             )
-            .set_image(
+            .add_image(
               nt_texture.unorm
             )
         );
@@ -306,9 +301,8 @@ namespace gct::gltf {
               vk::WriteDescriptorSet()
                 .setDstBinding( 4 )
                 .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-                .setDescriptorCount( 1 )
             )
-            .set_image(
+            .add_image(
               oct_texture.unorm
             )
         );
@@ -323,9 +317,8 @@ namespace gct::gltf {
               vk::WriteDescriptorSet()
                 .setDstBinding( 5 )
                 .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-                .setDescriptorCount( 1 )
             )
-            .set_image(
+            .add_image(
               emt_texture.srgb
             )
         );
