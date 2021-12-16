@@ -2,6 +2,7 @@
 #include <gct/device.hpp>
 #include <gct/image_view_create_info.hpp>
 #include <gct/image_view.hpp>
+#include <gct/image.hpp>
 
 namespace gct {
   image_view_t::image_view_t(
@@ -11,12 +12,18 @@ namespace gct {
     created_from< image_t >( image ),
     props( create_info ) {
     auto basic = props.get_basic();
-    basic
-      .setImage( **image )
-      .setFormat( image->get_props().get_basic().format );
+    basic.setImage( **image );
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    if( !image->get_props().has_format_list() )
+      basic.setFormat( image->get_props().get_basic().format );
+#else
+    basic.setFormat( image->get_props().get_basic().format );
+#endif
     props
       .set_basic( basic )
       .rebuild_chain();
+    nlohmann::json j = image->get_props();
+    std::cout << j.dump( 2 ) << std::endl;
     handle = (*image->get_device())->createImageViewUnique(
       props.get_basic()
     );

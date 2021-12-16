@@ -301,5 +301,11 @@ namespace gct {
     return temp;
   }
 #endif
+  const extension_map_t &device_t::get_activated_extensions() const {
+    return get_physical_device_group().devices[ 0 ]->get_props().get_activated_extensions();
+  }
+  std::uint32_t device_t::get_api_version() const {
+    return get_physical_device_group().devices[ 0 ]->get_props().get_api_version();
+  }
 }
 

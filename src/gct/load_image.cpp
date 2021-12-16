@@ -4,8 +4,12 @@
 #include <gct/command_pool.hpp>
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/version.h>
+#include <gct/device.hpp>
+#include <gct/queue.hpp>
+#include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
+#include <gct/get_device.hpp>
 
 namespace gct {
   std::uint32_t get_pot( std::uint32_t v ) {
@@ -143,25 +147,54 @@ namespace gct {
       vk::Format::eR8G8B8A8Srgb,
       vk::Format::eR8G8B8A8Srgb
     };
-    auto final_image = allocator->create_image(
-      image_create_info_t()
-        .set_basic(
-          vk::ImageCreateInfo()
-            .setImageType( vk::ImageType::e2D )
-            .setFormat( srgb ? srgb_formats[ spec.nchannels ] : unorm_formats[ spec.nchannels ] )
-            .setExtent( { (uint32_t)spec.width, (uint32_t)spec.height, 1 } )
-            .setMipLevels( mipmap_count )
-            .setArrayLayers( 1 )
-            .setSamples( vk::SampleCountFlagBits::e1 )
-            .setTiling( vk::ImageTiling::eOptimal )
-            .setUsage( usage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled )
-            .setSharingMode( vk::SharingMode::eExclusive )
-            .setQueueFamilyIndexCount( 0 )
-            .setPQueueFamilyIndices( nullptr )
-            .setInitialLayout( vk::ImageLayout::eUndefined )
-        ),
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
+    const auto api_version = get_device( *this ).get_api_version();
+    const auto &exts = get_device( *this ).get_activated_extensions();
+    const bool use_format_list = api_version >= VK_API_VERSION_1_2 || exts.find( "VK_KHR_image_format_list" ) != exts.end();
+    std::shared_ptr< image_t > final_image;
+    if( use_format_list ) {
+      final_image = allocator->create_image(
+        image_create_info_t()
+          .set_basic(
+            vk::ImageCreateInfo()
+              .setImageType( vk::ImageType::e2D )
+              .setFormat( unorm_formats[ spec.nchannels ] )
+              .setExtent( { (uint32_t)spec.width, (uint32_t)spec.height, 1 } )
+              .setMipLevels( mipmap_count )
+              .setArrayLayers( 1 )
+              .setSamples( vk::SampleCountFlagBits::e1 )
+              .setTiling( vk::ImageTiling::eOptimal )
+              .setUsage( usage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled )
+              .setSharingMode( vk::SharingMode::eExclusive )
+              .setQueueFamilyIndexCount( 0 )
+              .setPQueueFamilyIndices( nullptr )
+              .setInitialLayout( vk::ImageLayout::eUndefined )
+          )
+          .add_format( unorm_formats[ spec.nchannels ] )
+          .add_format( srgb_formats[ spec.nchannels ] ),
+          VMA_MEMORY_USAGE_GPU_ONLY
+      );
+    }
+    else {
+      final_image = allocator->create_image(
+        image_create_info_t()
+          .set_basic(
+            vk::ImageCreateInfo()
+              .setImageType( vk::ImageType::e2D )
+              .setFormat( srgb ? srgb_formats[ spec.nchannels ] : unorm_formats[ spec.nchannels ] )
+              .setExtent( { (uint32_t)spec.width, (uint32_t)spec.height, 1 } )
+              .setMipLevels( mipmap_count )
+              .setArrayLayers( 1 )
+              .setSamples( vk::SampleCountFlagBits::e1 )
+              .setTiling( vk::ImageTiling::eOptimal )
+              .setUsage( usage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled )
+              .setSharingMode( vk::SharingMode::eExclusive )
+              .setQueueFamilyIndexCount( 0 )
+              .setPQueueFamilyIndices( nullptr )
+              .setInitialLayout( vk::ImageLayout::eUndefined )
+          ),
+          VMA_MEMORY_USAGE_GPU_ONLY
+      );
+    }
     auto temporary_buffer = allocator->create_buffer(
       spec.width * spec.height * ( spec.nchannels == 3 ? 4 : spec.nchannels ),
       vk::BufferUsageFlagBits::eTransferSrc,

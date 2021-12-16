@@ -89,6 +89,8 @@ namespace gct {
       const std::vector< std::uint32_t > &max_primitive_counts
     );
 #endif
+    std::uint32_t get_api_version() const;
+    const extension_map_t &get_activated_extensions() const;
   private:
     void create_command_pools( std::uint32_t activated_queue_family_index );
     device_group_t group;
@@ -97,6 +99,7 @@ namespace gct {
     vk::UniqueHandle< vk::Device, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
     std::vector< std::shared_ptr< command_pool_t > > command_pools;
   };
+
 }
 
 #endif

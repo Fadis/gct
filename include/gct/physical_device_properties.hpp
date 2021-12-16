@@ -43,7 +43,9 @@ public:
       vk::PhysicalDevice &pdev,
       const std::vector< const char* > &layers
     );
+    std::uint32_t get_api_version() const { return api_version; }
 private:
+    std::uint32_t api_version;
     extension_map_t available_extensions;
     extension_map_t activated_extensions;
     std::vector< const char* > activated_extension_names;

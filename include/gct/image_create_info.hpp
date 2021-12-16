@@ -54,6 +54,14 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileKHR , video_profile )
     LIBGCT_EXTENSION_SETTER( vk::VideoProfilesKHR , video_profiles )
 #endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+  private:
+    std::vector< vk::Format > format_list_formats;
+  public:
+    image_create_info_t &add_format( vk::Format );
+    image_create_info_t &clear_format();
+    const std::vector< vk::Format > &get_format_list_formats() const { return format_list_formats; }
+#endif
   };
   void to_json( nlohmann::json &root, const image_create_info_t &v );
   void from_json( const nlohmann::json &root, image_create_info_t &v );

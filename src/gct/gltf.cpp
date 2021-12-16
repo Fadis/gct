@@ -22,6 +22,12 @@
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/gltf.hpp>
+#include <gct/device.hpp>
+#include <gct/queue.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_buffer_recorder.hpp>
+#include <gct/get_device.hpp>
 
 namespace gct::gltf {
   vk::Filter to_vulkan_mag_filter( fx::gltf::Sampler::MagFilter v ) {
@@ -210,6 +216,9 @@ namespace gct::gltf {
       images.push_back( image_pair_t() );
       std::cout << "[" << cur << "/" << doc.images.size() <<  "] " << image_path.string() << " をロード中..." << std::flush;
       const vk::UniqueHandle< vk::Semaphore, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > null_semaphore;
+      const auto api_version = get_device( command_buffer ).get_api_version();
+      const auto &exts = get_device( command_buffer ).get_activated_extensions();
+      const bool use_format_list = api_version >= VK_API_VERSION_1_2 || exts.find( "VK_KHR_image_format_list" ) != exts.end();
       images.back().set_unorm(
         command_buffer.load_image(
           allocator,
@@ -219,21 +228,64 @@ namespace gct::gltf {
           false
         )
       );
-      images.back().set_unorm_view(
-        images.back().unorm->get_view( vk::ImageAspectFlagBits::eColor )
-      );
-      images.back().set_srgb(
-        command_buffer.load_image(
-          allocator,
-          image_path.string(),
-          vk::ImageUsageFlagBits::eSampled,
-          true,
-          true
-        )
-      );
-      images.back().set_srgb_view(
-        images.back().srgb->get_view( vk::ImageAspectFlagBits::eColor )
-      );
+      if( !use_format_list ) {
+        images.back().set_unorm_view(
+          images.back().unorm->get_view( vk::ImageAspectFlagBits::eColor )
+        );
+        images.back().set_srgb(
+          command_buffer.load_image(
+            allocator,
+            image_path.string(),
+            vk::ImageUsageFlagBits::eSampled,
+            true,
+            true
+          )
+        );
+        images.back().set_srgb_view(
+          images.back().srgb->get_view( vk::ImageAspectFlagBits::eColor )
+        );
+      }
+      else {
+        images.back().set_unorm_view(
+          images.back().unorm->get_view(
+            image_view_create_info_t()
+              .set_basic(
+                vk::ImageViewCreateInfo()
+                  .setSubresourceRange(
+                    vk::ImageSubresourceRange()
+                      .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                      .setBaseMipLevel( 0 )
+                      .setLevelCount( images.back().unorm->get_props().get_basic().mipLevels )
+                      .setBaseArrayLayer( 0 )
+                      .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
+                  )
+                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType ) )
+                  .setFormat( images.back().unorm->get_props().get_format_list_formats().front() )
+              )
+              .rebuild_chain()
+          )
+        );
+        images.back().set_srgb_view(
+          images.back().unorm->get_view(
+            image_view_create_info_t()
+              .set_basic(
+                vk::ImageViewCreateInfo()
+                  .setSubresourceRange(
+                    vk::ImageSubresourceRange()
+                      .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                      .setBaseMipLevel( 0 )
+                      .setLevelCount( images.back().unorm->get_props().get_basic().mipLevels )
+                      .setBaseArrayLayer( 0 )
+                      .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
+                  )
+                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType ) )
+                  .setFormat( images.back().unorm->get_props().get_format_list_formats().back() )
+              )
+              .rebuild_chain()
+
+          )
+        );
+      }
       std::cout << " OK" << std::endl;
       ++cur;
     }

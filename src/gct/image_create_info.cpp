@@ -83,6 +83,13 @@ namespace gct {
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( video_profiles )
 #endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    if( !v.get_format_list_formats().empty() ) {
+      if( root.find( "format_list" ) == root.end() )
+        root[ "format_list" ] = nlohmann::json::object();
+      root[ "format_list" ][ "pViewFormats" ] = v.get_format_list_formats();
+    }
+#endif
   }
   void from_json( const nlohmann::json &root, image_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to image_create_info_t", __FILE__, __LINE__ );
@@ -123,11 +130,34 @@ namespace gct {
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( video_profiles )
 #endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    if( root.find( "format_list" ) != root.end() ) {
+      if( root[ "format_list" ].find( "pViewFormats" ) != root.end() ) {
+        if( !root[ "format_list" ][ "pViewFormats" ].is_array() ) throw incompatible_json( "The JSON is incompatible to image_create_info_t", __FILE__, __LINE__ );
+        v.clear_format();
+        for( auto &e: root[ "format_list" ][ "pViewFormats" ] )
+          v.add_format( e );
+      }
+    }
+#endif
   }
   image_create_info_t &image_create_info_t::rebuild_chain() {
+    if( chained ) return *this;
     if( basic.mipLevels == 0u ) basic.setMipLevels( 1u );
     if( basic.arrayLayers == 0u ) basic.setArrayLayers( 1u );
     if( basic.extent.depth == 0u ) basic.extent.setDepth( 1u );
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    if( !format_list_formats.empty() ) {
+      set_format_list(
+        vk::ImageFormatListCreateInfo()
+          .setViewFormatCount( format_list_formats.size() )
+          .setPViewFormats( format_list_formats.data() )
+      );
+    }
+    if( has_format_list() ) {
+      basic.flags |= vk::ImageCreateFlagBits::eMutableFormat;
+    }
+#endif
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( buffer_collection_image ) 
@@ -167,5 +197,19 @@ namespace gct {
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+  image_create_info_t &image_create_info_t::add_format( vk::Format v ) {
+    format_list_formats.push_back( v );
+    format_list.reset();
+    chained = false;
+    return *this;
+  }
+  image_create_info_t &image_create_info_t::clear_format() {
+    format_list_formats.clear();
+    format_list.reset();
+    chained = false;
+    return *this;
+  }
+#endif
 }
 

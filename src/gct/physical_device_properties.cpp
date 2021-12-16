@@ -385,7 +385,7 @@ namespace gct {
     instance_t &instance,
     vk::PhysicalDevice &pdev,
     const std::vector< const char* > &layers
-  ) {
+  ) : api_version( instance.get_api_version() ) {
     available_layers = get_device_layers( pdev );
     activated_layer_names = layers;
     for( const auto &l: layers ) {
