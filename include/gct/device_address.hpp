@@ -11,6 +11,7 @@
 namespace gct {
   class buffer_t;
   class acceleration_structure_t;
+  class strided_device_address_region_t;
   class device_address_t :
     public std::enable_shared_from_this< device_address_t > {
   public:
@@ -43,6 +44,12 @@ namespace gct {
     }
     device_address_t operator+( std::int64_t value ) const;
     device_address_t operator-( std::int64_t value ) const;
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+    std::shared_ptr< strided_device_address_region_t > get_strided(
+      vk::DeviceSize stride,
+      vk::DeviceSize size
+    );
+#endif
     void to_json( nlohmann::json& ) const;
   private:
     std::variant<

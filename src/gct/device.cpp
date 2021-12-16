@@ -23,7 +23,9 @@
 #include <gct/acceleration_structure_build_geometry_info.hpp>
 #include <gct/acceleration_structure_geometry.hpp>
 #endif
-
+#ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+#include <gct/deferred_operation.hpp>
+#endif
 namespace gct {
 
   device_t::device_t(
@@ -299,6 +301,15 @@ namespace gct {
       )
     );
     return temp;
+  }
+#endif
+#ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+  std::shared_ptr< deferred_operation_t > device_t::get_deferred_operation() {
+    return std::shared_ptr< deferred_operation_t >(
+      new deferred_operation_t(
+        shared_from_this()
+      )
+    );
   }
 #endif
   const extension_map_t &device_t::get_activated_extensions() const {

@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <gct/buffer.hpp>
 #include <gct/acceleration_structure.hpp>
+#include <gct/strided_device_address_region.hpp>
 namespace gct {
   device_address_t::device_address_t(
       const std::shared_ptr< buffer_t > &buffer_,
@@ -53,6 +54,20 @@ namespace gct {
     }
     else throw -1;
   }
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+  std::shared_ptr< strided_device_address_region_t > device_address_t::get_strided(
+    vk::DeviceSize stride,
+    vk::DeviceSize size
+  ) {
+    return std::shared_ptr< strided_device_address_region_t >(
+      new strided_device_address_region_t(
+        shared_from_this(),
+        stride,
+        size
+      )
+    );
+  }
+#endif
 }
 #endif
 

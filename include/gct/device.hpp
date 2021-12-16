@@ -41,6 +41,9 @@ namespace gct {
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
   class acceleration_structure_build_geometry_info_t;
 #endif
+#ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+  class deferred_operation_t;
+#endif
   class device_t : public created_from< instance_t >, public std::enable_shared_from_this< device_t > {
   public:
     device_t(
@@ -78,6 +81,9 @@ namespace gct {
     std::shared_ptr< semaphore_t > get_semaphore();
     std::shared_ptr< fence_t > get_fence( const fence_create_info_t& );
     std::shared_ptr< fence_t > get_fence();
+#ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
+    std::shared_ptr< deferred_operation_t > get_deferred_operation();
+#endif
     const device_group_t &get_physical_device_group() const { return group; }
     std::vector< std::uint32_t > to_queue_family_list(
       const std::vector< std::uint32_t > &logical_queue_index

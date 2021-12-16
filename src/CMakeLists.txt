@@ -113,6 +113,9 @@ add_library( gct SHARED
   gct/vulkanhpp.cpp
   gct/device_address.cpp
   gct/device_or_host_address_const.cpp
+  gct/strided_device_address_region.cpp
+  gct/deferred_operation.cpp
+  gct/pipeline_library_create_info.cpp
   gct/mp4.cpp
 )
 
