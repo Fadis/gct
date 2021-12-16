@@ -68,6 +68,7 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/minimp4
   ${Boost_INCLUDE_DIRS}
   ${GLFW_INCLUDE_DIR}
   ${JSON_INCLUDE_DIRS}

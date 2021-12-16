@@ -113,6 +113,7 @@ add_library( gct SHARED
   gct/vulkanhpp.cpp
   gct/device_address.cpp
   gct/device_or_host_address_const.cpp
+  gct/mp4.cpp
 )
 
 target_link_libraries(
