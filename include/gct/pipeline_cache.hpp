@@ -11,6 +11,11 @@ namespace gct {
   class compute_pipeline_create_info_t;
   class graphics_pipeline_t;
   class graphics_pipeline_create_info_t;
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+  class ray_tracing_pipeline_t;
+  class deferred_operation_t;
+  class ray_tracing_pipeline_create_info_t;
+#endif
   class pipeline_cache_t : public created_from< device_t >, public std::enable_shared_from_this< pipeline_cache_t > {
   public:
     pipeline_cache_t(
@@ -38,6 +43,12 @@ namespace gct {
     std::shared_ptr< graphics_pipeline_t > get_pipeline(
       const graphics_pipeline_create_info_t&
     );
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+    std::shared_ptr< ray_tracing_pipeline_t > get_pipeline(
+      const std::shared_ptr< deferred_operation_t >&,
+      const ray_tracing_pipeline_create_info_t&
+    );
+#endif
   private:
     pipeline_cache_create_info_t props;
     vk::UniqueHandle< vk::PipelineCache, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

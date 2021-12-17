@@ -195,7 +195,7 @@ int main() {
   );
   auto as2a = as2->get_address();
   std::cout << nlohmann::json( *as2a ).dump( 2 ) << std::endl;
-
+  auto deferred = device->get_deferred_operation();
 
 }
 

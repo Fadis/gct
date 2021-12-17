@@ -22,8 +22,6 @@ namespace gct {
     props
       .set_basic( basic )
       .rebuild_chain();
-    nlohmann::json j = image->get_props();
-    std::cout << j.dump( 2 ) << std::endl;
     handle = (*image->get_device())->createImageViewUnique(
       props.get_basic()
     );

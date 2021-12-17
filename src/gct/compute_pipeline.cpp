@@ -7,7 +7,7 @@ namespace gct {
     const std::shared_ptr< pipeline_cache_t > &cache,
     const compute_pipeline_create_info_t &create_info
   ) :
-    created_from< pipeline_cache_t >( cache ),
+    pipeline_t( cache ),
     props( create_info ) {
     props.rebuild_chain();
 
@@ -17,3 +17,4 @@ namespace gct {
     handle = std::move( wrapped.value[ 0 ] );
   }
 }
+

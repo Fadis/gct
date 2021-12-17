@@ -116,6 +116,10 @@ add_library( gct SHARED
   gct/strided_device_address_region.cpp
   gct/deferred_operation.cpp
   gct/pipeline_library_create_info.cpp
+  gct/ray_tracing_shader_group_create_info.cpp
+  gct/ray_tracing_pipeline_interface_create_info.cpp
+  gct/ray_tracing_pipeline_create_info.cpp
+  gct/ray_tracing_pipeline.cpp
   gct/mp4.cpp
 )
 
