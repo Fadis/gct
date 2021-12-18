@@ -24,6 +24,7 @@ namespace gct {
     std::shared_ptr< deferred_operation_t > deferred_operation;
     ray_tracing_pipeline_create_info_t props;
   };
+  void to_json( nlohmann::json &root, const ray_tracing_pipeline_t &v );
 }
 
 #endif

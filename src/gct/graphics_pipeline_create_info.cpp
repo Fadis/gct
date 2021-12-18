@@ -4,6 +4,37 @@
 #include <gct/pipeline_layout.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
+#include <vulkan2json/GraphicsPipelineCreateInfo.hpp>
+#ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+#include <vulkan2json/AttachmentSampleCountInfoAMD.hpp>
+#endif
+#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+#include <vulkan2json/GraphicsPipelineShaderGroupsCreateInfoNV.hpp>
+#endif
+#if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
+#include <vulkan2json/MultiviewPerViewAttributesInfoNVX.hpp>
+#endif
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+#include <vulkan2json/PipelineCreationFeedbackCreateInfoEXT.hpp>
+#endif
+#ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
+#include <vulkan2json/PipelineCompilerControlCreateInfoAMD.hpp>
+#endif
+#ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
+#include <vulkan2json/PipelineDiscardRectangleStateCreateInfoEXT.hpp>
+#endif
+#ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
+#include <vulkan2json/PipelineFragmentShadingRateEnumStateCreateInfoNV.hpp>
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
+#include <vulkan2json/PipelineFragmentShadingRateStateCreateInfoKHR.hpp>
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+#include <vulkan2json/PipelineRenderingCreateInfoKHR.hpp>
+#endif
+#ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+#include <vulkan2json/PipelineRepresentativeFragmentTestStateCreateInfoNV.hpp>
+#endif 
 
 namespace gct {
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::rebuild_chain() {
@@ -133,6 +164,9 @@ namespace gct {
 #endif
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( multiview_per_view_attributes ) 
+#endif
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
 #endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( compiler_control ) 
@@ -275,6 +309,77 @@ namespace gct {
     dynamic.reset();
     chained = false;
     return *this;
+  }
+  void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
+    root[ "basic" ][ "pStages" ] = v.stage;
+    if( v.vertex_input )
+      root[ "basic" ][ "pVertexInputState" ] = *v.vertex_input;
+    else
+      root[ "basic" ][ "pVertexInputState" ] = nullptr;
+    if( v.input_assembly )
+      root[ "basic" ][ "pInputAssemblyState" ] = *v.input_assembly;
+    else
+      root[ "basic" ][ "pInputAssemblyState" ] = nullptr;
+    if( v.tessellation )
+      root[ "basic" ][ "pTessellationState" ] = *v.tessellation;
+    else
+      root[ "basic" ][ "pTessellationState" ] = nullptr;
+    if( v.viewport )
+      root[ "basic" ][ "pViewportState" ] = *v.viewport;
+    else
+      root[ "basic" ][ "pViewportState" ] = nullptr;
+    if( v.rasterization )
+      root[ "basic" ][ "pRasterizationState" ] = *v.rasterization;
+    else
+      root[ "basic" ][ "pRasterizationState" ] = nullptr;
+    if( v.multisample )
+      root[ "basic" ][ "pMultisampleState" ] = *v.multisample;
+    else
+      root[ "basic" ][ "pMultisampleState" ] = nullptr;
+    if( v.depth_stencil )
+      root[ "basic" ][ "pDepthStencilState" ] = *v.depth_stencil;
+    else
+      root[ "basic" ][ "pDepthStencilState" ] = nullptr;
+    if( v.color_blend )
+      root[ "basic" ][ "pColorBlendState" ] = *v.color_blend;
+    else
+      root[ "basic" ][ "pColorBlendState" ] = nullptr;
+    if( v.dynamic )
+      root[ "basic" ][ "pDynamicState" ] = *v.dynamic;
+    else
+      root[ "basic" ][ "pDynamicState" ] = nullptr;
+#ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( attachment_sample_count ) 
+#endif
+#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( shader_group ) 
+#endif
+#if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( multiview_per_view_attributes ) 
+#endif
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( creation_feedback )
+#endif
+#ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( compiler_control ) 
+#endif
+#ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( discard_rectangle ) 
+#endif
+#ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_shading_rate_nv ) 
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_shading_rate ) 
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( rendering ) 
+#endif
+#ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( representative_fragment_test ) 
+#endif 
   }
 }
 

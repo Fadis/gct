@@ -19,6 +19,7 @@ namespace gct {
   class pipeline_layout_t;
   class render_pass_t;
   class graphics_pipeline_create_info_t : public chained_t {
+    friend void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
   public:
     using self_type = graphics_pipeline_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
@@ -31,6 +32,9 @@ namespace gct {
 #endif
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::MultiviewPerViewAttributesInfoNVX , multiview_per_view_attributes )
+#endif
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT, creation_feedback )
 #endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineCompilerControlCreateInfoAMD , compiler_control )
@@ -90,7 +94,9 @@ namespace gct {
     graphics_pipeline_create_info_t &clear_layout();
     graphics_pipeline_create_info_t &set_render_pass( const std::shared_ptr< render_pass_t >&, std::uint32_t );
     graphics_pipeline_create_info_t &clear_render_pass();
+    void to_json( nlohmann::json &root );
   };
+  void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
 }
 
 #endif

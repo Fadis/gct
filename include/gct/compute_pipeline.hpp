@@ -21,6 +21,7 @@ namespace gct {
   private:
     compute_pipeline_create_info_t props;
   };
+  void to_json( nlohmann::json &root, const compute_pipeline_t &v );
 }
 
 #endif

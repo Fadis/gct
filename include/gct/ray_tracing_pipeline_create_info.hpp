@@ -14,7 +14,7 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::RayTracingPipelineCreateInfoKHR )
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT , feedback )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT , creation_feedback )
 #endif
   };
   void to_json( nlohmann::json &root, const ray_tracing_pipeline_create_info_t &v );

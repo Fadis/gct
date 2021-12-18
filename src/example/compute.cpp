@@ -50,7 +50,9 @@ int main() {
     )
   );
   auto groups = instance->get_physical_devices( {} );
-  auto selected = groups[ 0 ].with_extensions( {} );
+  auto selected = groups[ 0 ].with_extensions( {
+    VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+  } );
  
   auto device = selected.create_device(
     std::vector< gct::queue_requirement_t >{
@@ -134,7 +136,8 @@ int main() {
       )
       .set_layout( pipeline_layout )
   );
-
+  nlohmann::json pipeline_json = *pipeline;
+  std::cout << pipeline_json.dump( 2 ) << std::endl;
   auto allocator = device->get_allocator();
   
   auto staging_buffer = allocator->create_buffer(

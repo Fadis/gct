@@ -10,21 +10,21 @@ namespace gct {
      root = nlohmann::json::object();
      root[ "basic" ] = v.get_basic();
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( feedback )
+    LIBGCT_EXTENSION_TO_JSON( creation_feedback )
 #endif
   }
   void from_json( const nlohmann::json &root, ray_tracing_pipeline_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to ray_tracing_pipeline_create_info_t", __FILE__, __LINE__ );
     LIBGCT_EXTENSION_FROM_JSON( basic )
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_FROM_JSON( feedback )
+    LIBGCT_EXTENSION_FROM_JSON( creation_feedback )
 #endif
   }
   ray_tracing_pipeline_create_info_t &ray_tracing_pipeline_create_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( feedback )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
 #endif
   }
 }

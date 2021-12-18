@@ -21,6 +21,7 @@ namespace gct {
   private:
     graphics_pipeline_create_info_t props;
   };
+  void to_json( nlohmann::json &root, const graphics_pipeline_t &v );
 }
 
 #endif

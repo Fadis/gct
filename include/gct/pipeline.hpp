@@ -3,6 +3,7 @@
 #include <memory>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
+#include <gct/pipeline_creation_feedback.hpp>
 
 namespace gct {
   class pipeline_cache_t;
@@ -27,8 +28,16 @@ namespace gct {
     const vk::Pipeline *operator->() const {
       return &handle.get();
     }
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    const pipeline_creation_feedback_t &get_feedback() const {
+      return feedback;
+    }
+#endif
   protected:
     vk::UniqueHandle< vk::Pipeline, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
+#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    pipeline_creation_feedback_t feedback;
+#endif
   };
 }
 
