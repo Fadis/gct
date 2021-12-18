@@ -56,7 +56,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 find_package(Threads REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.68.0 COMPONENTS program_options system REQUIRED )
+find_package(Boost 1.68.0 COMPONENTS program_options context system REQUIRED )
 find_package(GLFW REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(JSON REQUIRED)

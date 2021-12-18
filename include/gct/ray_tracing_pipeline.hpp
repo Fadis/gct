@@ -12,7 +12,6 @@ namespace gct {
   public:
     ray_tracing_pipeline_t(
       const std::shared_ptr< pipeline_cache_t >&,
-      const std::shared_ptr< deferred_operation_t >&,
       const ray_tracing_pipeline_create_info_t&
     );
     ray_tracing_pipeline_t( const ray_tracing_pipeline_t& ) = delete;
@@ -21,7 +20,6 @@ namespace gct {
     ray_tracing_pipeline_t &operator=( ray_tracing_pipeline_t&& ) = default;
     const ray_tracing_pipeline_create_info_t &get_props() const { return props; }
   private:
-    std::shared_ptr< deferred_operation_t > deferred_operation;
     ray_tracing_pipeline_create_info_t props;
   };
   void to_json( nlohmann::json &root, const ray_tracing_pipeline_t &v );

@@ -40,13 +40,11 @@ namespace gct {
   }
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
   std::shared_ptr< ray_tracing_pipeline_t > pipeline_cache_t::get_pipeline(
-    const std::shared_ptr< deferred_operation_t > &deferred_operation,
     const ray_tracing_pipeline_create_info_t &create_info
   ) {
     return std::shared_ptr< ray_tracing_pipeline_t >(
       new ray_tracing_pipeline_t(
         shared_from_this(),
-        deferred_operation,
         create_info
       )
     );

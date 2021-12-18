@@ -121,6 +121,8 @@ add_library( gct SHARED
   gct/ray_tracing_pipeline_create_info.cpp
   gct/ray_tracing_pipeline.cpp
   gct/mp4.cpp
+  gct/io_context.cpp
+  gct/async.cpp
 )
 
 target_link_libraries(
@@ -153,6 +155,7 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
+  Boost::context
   Boost::system
   ${Vulkan_LIBRARIES}
   ${OIIO_LIBRARIES}

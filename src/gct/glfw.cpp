@@ -1,6 +1,7 @@
 #include <iostream>
 #include <gct/glfw.hpp>
 #include <gct/vulkanhpp.hpp>
+#include <gct/io_context.hpp>
 namespace gct {
   void glfw_window_deleter::operator()( GLFWwindow *p ) const {
     if( p ) glfwDestroyWindow( p );
@@ -195,6 +196,7 @@ namespace gct {
 
   glfw::glfw() {
     vulkanhpp::init();
+    thread_pool::init();
     if( !glfwInit() ) {
       const char *p;
       glfwGetError( &p );

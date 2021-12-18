@@ -2,6 +2,7 @@
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/vulkanhpp.hpp>
+#include <gct/io_context.hpp>
 namespace gct {
   bool is_valid_vulkan_version( std::uint32_t version ) {
     return
@@ -17,6 +18,7 @@ namespace gct {
     const std::vector< const char* > &ilayers
   ) : api_version( api_version_ ) {
     vulkanhpp::init();
+    thread_pool::init();
     if( !is_valid_vulkan_version( api_version ) )
       throw -1;
     const auto app_info = vk::ApplicationInfo(

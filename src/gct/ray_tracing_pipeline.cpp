@@ -4,18 +4,18 @@
 #include <gct/deferred_operation.hpp>
 #include <gct/device.hpp>
 #include <gct/get_device.hpp>
+#include <gct/async.hpp>
 #include <vulkan2json/ShaderStageFlags.hpp>
 #include <vulkan2json/PipelineCreationFeedbackEXT.hpp>
 
 namespace gct {
   ray_tracing_pipeline_t::ray_tracing_pipeline_t(
     const std::shared_ptr< pipeline_cache_t > &cache,
-    const std::shared_ptr< deferred_operation_t > &deferred_operation_,
     const ray_tracing_pipeline_create_info_t &create_info
   ) :
     pipeline_t( cache ),
-    deferred_operation( deferred_operation_ ),
     props( create_info ) {
+    auto deferred_operation = get_device( *this ).get_deferred_operation();
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     const auto &exts = get_device( *this ).get_activated_extensions();
     std::vector< vk::PipelineCreationFeedbackEXT > feedback_;
@@ -33,8 +33,13 @@ namespace gct {
     props.rebuild_chain();
 
     auto wrapped = (*cache->get_factory())->createRayTracingPipelinesKHRUnique( **deferred_operation, **cache, { props.get_basic() } );
-    if( wrapped.result != vk::Result::eSuccess )
+    if( wrapped.result != vk::Result::eSuccess ) {
       vk::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+    }
+    auto future = async( deferred_operation );
+    if( future.get() != vk::Result::eSuccess ) {
+      vk::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+    }
     handle = std::move( wrapped.value[ 0 ] );
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     if( use_feedback ) {
