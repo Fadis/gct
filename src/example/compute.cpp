@@ -40,13 +40,19 @@ int main() {
   std::vector< const char* > iext{};
   std::shared_ptr< gct::instance_t > instance(
     new gct::instance_t(
-      "test_gct",
-      VK_MAKE_VERSION( 1, 0, 0 ),
-      VK_MAKE_VERSION( 1, 2, 0 ),
-      iext,
-      std::vector< const char* >{
-        "VK_LAYER_KHRONOS_validation"
-      }
+      gct::instance_create_info_t()
+        .set_application_info(
+          vk::ApplicationInfo()
+            .setPApplicationName( "my_application" )
+            .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
+            .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
+        )
+        .add_layer(
+          "VK_LAYER_KHRONOS_validation"
+        )
+        .add_extension(
+          iext.begin(), iext.end()
+        )
     )
   );
   auto groups = instance->get_physical_devices( {} );

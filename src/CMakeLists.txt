@@ -15,6 +15,7 @@ add_library( gct SHARED
   gct/physical_device_memory_properties.cpp
   gct/physical_device_features.cpp
   gct/physical_device.cpp
+  gct/instance_create_info.cpp
   gct/instance.cpp
   gct/surface.cpp
   gct/surface_capabilities.cpp

@@ -5,25 +5,21 @@
 #include <nlohmann/json.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/physical_device.hpp>
+#include <gct/instance_create_info.hpp>
 
 namespace gct {
   class instance_t;
-
   bool is_valid_vulkan_version( std::uint32_t version );
 
   class instance_t : public std::enable_shared_from_this< instance_t > {
   public:
     instance_t(
-      const std::string &application_name,
-      uint32_t application_version,
-      uint32_t api_version,
-      const std::vector< const char* > &iext,
-      const std::vector< const char* > &ilayers
+      const instance_create_info_t&
     );
     device_groups_t get_physical_devices(
       const std::vector< const char* > &dlayers
     );
-    std::uint32_t get_api_version() const { return api_version; }
+    std::uint32_t get_api_version() const;
     const layer_map_t &get_activated_layers() const { return activated_layers; }
     const extension_map_t &get_activated_extensions() const { return activated_extensions; }
     vk::Instance &operator*() {
@@ -38,8 +34,9 @@ namespace gct {
     const vk::Instance* operator->() const {
       return &handle.get();
     }
+    const instance_create_info_t &get_props() const { return props; }
   private:
-    std::uint32_t api_version;
+    instance_create_info_t props;
     layer_map_t activated_layers;
     extension_map_t activated_extensions;
     vk::UniqueHandle< vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

@@ -11,44 +11,29 @@ namespace gct {
   }
 
   instance_t::instance_t(
-    const std::string &application_name,
-    uint32_t application_version,
-    uint32_t api_version_,
-    const std::vector< const char* > &iext,
-    const std::vector< const char* > &ilayers
-  ) : api_version( api_version_ ) {
+    const instance_create_info_t &create_info
+  ) : props( create_info ) {
+    props.rebuild_chain();
     vulkanhpp::init();
     thread_pool::init();
-    if( !is_valid_vulkan_version( api_version ) )
+    if( !is_valid_vulkan_version( get_api_version() ) )
       throw -1;
-    const auto app_info = vk::ApplicationInfo(
-      application_name.c_str(),
-      application_version,
-      "gct",
-      VK_MAKE_VERSION(1, 0, 0),
-      api_version
-    );
     auto available_layers = get_instance_layers();
-    for( const auto &l: ilayers ) {
+    for( const auto &l: create_info.get_layer() ) {
       auto found = available_layers.find( l );
       if( found == available_layers.end() )
         throw -1;
       else activated_layers.insert( *found );
     }
-    auto available_extensions = get_instance_extensions( ilayers );
-    for( const auto &e: iext ) {
+    auto available_extensions = get_instance_extensions( create_info.get_layer() );
+    for( const auto &e: create_info.get_extension() ) {
       auto found = available_extensions.find( e );
       if( found == available_extensions.end() )
         throw -1;
       else activated_extensions.insert( *found );
     }
     handle = vk::createInstanceUnique(
-      vk::InstanceCreateInfo()
-        .setPApplicationInfo( &app_info )
-        .setEnabledExtensionCount( iext.size() )
-        .setPpEnabledExtensionNames( iext.data() )
-        .setEnabledLayerCount( ilayers.size() )
-        .setPpEnabledLayerNames( ilayers.data() )
+      props.get_basic()
     );
     VULKAN_HPP_DEFAULT_DISPATCHER.init( *handle );
   }
@@ -75,7 +60,7 @@ namespace gct {
     device_groups_t groups;
 
 #ifdef VK_VERSION_1_1
-    if( api_version >= VK_MAKE_VERSION( 1, 1, 0 ) ) {
+    if( get_api_version() >= VK_MAKE_VERSION( 1, 1, 0 ) ) {
       // this produces invalid validation VUID-VkPhysicalDeviceGroupProperties-sType-sType
       for( auto &group: handle->enumeratePhysicalDeviceGroups() ) {
         device_group_t group_;
@@ -121,6 +106,9 @@ namespace gct {
 #else
 #endif
     return groups;
+  }
+  std::uint32_t instance_t::get_api_version() const {
+    return props.get_basic().pApplicationInfo->apiVersion;
   }
 }
 
