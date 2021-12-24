@@ -129,6 +129,7 @@ add_library( gct SHARED
 target_link_libraries(
   gct
   Threads::Threads
+  ${CMAKE_DL_LIBS}
   ${Vulkan_LIBRARIES}
   ${OIIO_LIBRARIES}
   ${VULKAN2JSON_LIBRARIES}
@@ -138,13 +139,32 @@ add_library( gct_glfw SHARED
   gct/glfw.cpp
 )
 
-target_link_libraries(
+set_target_properties(
   gct
+  PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
+)
+
+install( TARGETS gct )
+
+target_link_libraries(
+  gct_glfw
   Threads::Threads
+  ${CMAKE_DL_LIBS}
   ${Vulkan_LIBRARIES}
   ${OIIO_LIBRARIES}
   ${GLFW_LIBRARIES}
 )
+
+set_target_properties(
+  gct_glfw
+  PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
+)
+
+install( TARGETS gct_glfw )
 
 add_executable( graphics
   example/graphics.cpp
@@ -192,3 +212,4 @@ target_link_libraries(
   ${OIIO_LIBRARIES}
   ${GLFW_LIBRARIES}
 )
+

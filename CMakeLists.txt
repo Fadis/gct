@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-PROJECT(libgct)
+PROJECT(
+  libgct
+  LANGUAGES CXX
+  HOMEPAGE_URL https://github.com/Fadis/gct
+  DESCRIPTION "GPU Computing Toolkit"
+  VERSION 0.1.0
+)
 include(CheckIncludeFiles)
 include(FindPkgConfig)
 include(CheckCXXSourceCompiles)
@@ -85,6 +91,36 @@ link_directories(
 )
 
 add_definitions( -DVK_ENABLE_BETA_EXTENSIONS -DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 )
+
+configure_file(libgct.pc.in libgct.pc @ONLY)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/libgct.pc
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+configure_file(libgct_glfw.pc.in libgct_glfw.pc @ONLY)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/libgct_glfw.pc
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+
+set( EASYPACK_VENDOR "fadis" )
+set( EASYPACK_RELEASE "1" )
+set( EASYPACK_MAINTAINER "Naomasa Matsubayashi <foo@exmple.com>" )
+set( EASYPACK_COMPRESSION_TYPE "xz" )
+set( EASYPACK_LICENSE_NAME "MIT" )
+include(EasyPack)
 
 subdirs( include src )
 
