@@ -11,6 +11,7 @@ PROJECT(
 include(CheckIncludeFiles)
 include(FindPkgConfig)
 include(CheckCXXSourceCompiles)
+include(GNUInstallDirs)
 
 # build type
 set(CMAKE_BUILD_TYPE Debug)
@@ -48,14 +49,20 @@ list( APPEND ADDITIONAL_COMPILE_FLAGS "-Wall" )
 if( ENABLE_WERROR )
   list( APPEND ADDITIONAL_COMPILE_FLAGS "-Werror" )
 endif()
+option( ENABLE_CXX20 "build with -std=c++20" OFF)
+if( ENABLE_CXX20 )
+  set( CMAKE_CXX_STANDARD "20" )
+else()
+  set( CMAKE_CXX_STANDARD "17" )
+endif()
 
 # compile option (Debug) 
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++2a -O0 -g ${ADDITIONAL_COMPILER_FLAGS}")
-set(CMAKE_C_FLAGS_DEBUG "-std=c14 -O0 -g ${ADDITIONAL_COMPILER_FLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${ADDITIONAL_COMPILER_FLAGS}")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g ${ADDITIONAL_COMPILER_FLAGS}")
 
 # compile option (Release)
-set(CMAKE_CXX_FLAGS_RELEASE "-std=c++2a -march=native -O2 ${ADDITIONAL_COMPILER_FLAGS}")
-set(CMAKE_C_FLAGS_RELEASE "-std=c14 -march=native -O2 ${ADDITIONAL_COMPILER_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -O2 ${ADDITIONAL_COMPILER_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-march=native -O2 ${ADDITIONAL_COMPILER_FLAGS}")
 
 #if you don't want the full compiler output, remove the following line
 set(CMAKE_VERBOSE_MAKEFILE OFF)

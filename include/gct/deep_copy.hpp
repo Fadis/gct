@@ -9,7 +9,11 @@
 namespace gct {
   template< typename T >
   struct deep_copy_t : public T {
+#if __cplusplus >= 202002L
     using value_type = std::remove_cvref_t< decltype( *std::declval< T >() ) >;
+#else
+    using value_type = std::remove_reference_t< std::remove_cv_t< decltype( *std::declval< T >() ) > >;
+#endif
     using T::T;
     deep_copy_t( const deep_copy_t &v ) {
       if( v )
