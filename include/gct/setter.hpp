@@ -1,5 +1,5 @@
-#ifndef LIBSTAMP_SETTER_H
-#define LIBSTAMP_SETTER_H
+#ifndef LIBGCT_SETTER_HPP
+#define LIBGCT_SETTER_HPP
 /*
  * Copyright (C) 2020 Naomasa Matsubayashi
  *
@@ -22,7 +22,7 @@
  * IN THE SOFTWARE.
  */
 #include <typeinfo>
-#define LIBSTAMP_SETTER( name ) \
+#define LIBGCT_SETTER( name ) \
   template< typename ArgType > \
   decltype(auto) set_ ## name ( ArgType v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) <= sizeof( void* ) ) >* = nullptr ) { \
     this -> name = v; \

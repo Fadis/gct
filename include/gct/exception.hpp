@@ -1,5 +1,5 @@
-#ifndef LIBSTAMP_EXCEPTION_H
-#define LIBSTAMP_EXCEPTION_H
+#ifndef LIBGCT_EXCEPTION_HPP
+#define LIBGCT_EXCEPTION_HPP
 /*
  * Copyright (C) 2020 Naomasa Matsubayashi
  *
@@ -22,7 +22,7 @@
  * IN THE SOFTWARE.
  */
 #include <stdexcept>
-#define LIBSTAMP_GENERATE_EXCEPTION( base ) \
+#define LIBGCT_GENERATE_EXCEPTION( base ) \
   class base : public std:: base { \
   public: \
     base ( const std::string &what ) : std:: base ( what ), where_( nullptr ), line_( 0 ) {} \
@@ -34,24 +34,24 @@
     const char *where_; \
     int line_; \
   };
-namespace stamp::exception {
-  LIBSTAMP_GENERATE_EXCEPTION( logic_error )
-  LIBSTAMP_GENERATE_EXCEPTION( domain_error )
-  LIBSTAMP_GENERATE_EXCEPTION( invalid_argument )
-  LIBSTAMP_GENERATE_EXCEPTION( length_error )
-  LIBSTAMP_GENERATE_EXCEPTION( out_of_range )
-  LIBSTAMP_GENERATE_EXCEPTION( runtime_error )
-  LIBSTAMP_GENERATE_EXCEPTION( range_error )
-  LIBSTAMP_GENERATE_EXCEPTION( overflow_error )
-  LIBSTAMP_GENERATE_EXCEPTION( underflow_error )
+namespace gct::exception {
+  LIBGCT_GENERATE_EXCEPTION( logic_error )
+  LIBGCT_GENERATE_EXCEPTION( domain_error )
+  LIBGCT_GENERATE_EXCEPTION( invalid_argument )
+  LIBGCT_GENERATE_EXCEPTION( length_error )
+  LIBGCT_GENERATE_EXCEPTION( out_of_range )
+  LIBGCT_GENERATE_EXCEPTION( runtime_error )
+  LIBGCT_GENERATE_EXCEPTION( range_error )
+  LIBGCT_GENERATE_EXCEPTION( overflow_error )
+  LIBGCT_GENERATE_EXCEPTION( underflow_error )
 }
-#undef LIBSTAMP_GENERATE_EXCEPTION
-#define LIBSTAMP_EXCEPTION( base, name, description ) \
-  struct name : public ::stamp::exception:: base { \
-    name () : ::stamp::exception:: base ( description ) {} \
-    name ( const std::string &what ) : ::stamp::exception:: base ( what ) {} \
-    name ( const char *what ) : ::stamp::exception:: base ( what ) {} \
-    name ( const char *what, const char *w, int l ) : ::stamp::exception:: base ( what, w, l ) {} \
+#undef LIBGCT_GENERATE_EXCEPTION
+#define LIBGCT_EXCEPTION( base, name, description ) \
+  struct name : public ::gct::exception:: base { \
+    name () : ::gct::exception:: base ( description ) {} \
+    name ( const std::string &what ) : ::gct::exception:: base ( what ) {} \
+    name ( const char *what ) : ::gct::exception:: base ( what ) {} \
+    name ( const char *what, const char *w, int l ) : ::gct::exception:: base ( what, w, l ) {} \
   };
 #endif
 

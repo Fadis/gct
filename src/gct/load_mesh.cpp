@@ -24,7 +24,7 @@
 #include <fx/gltf.h>
 #include <glm/mat4x4.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <stamp/exception.h>
+#include <gct/exception.hpp>
 #include <gct/gltf.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/write_descriptor_set.hpp>

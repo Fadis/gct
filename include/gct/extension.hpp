@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <gct/deep_copy.hpp>
-#include <stamp/exception.h>
+#include <gct/exception.hpp>
 
 #define LIBGCT_BASIC_SETTER_INDIRECT( member ) \
     self_type &set_basic ( const basic_t &v ) { \
@@ -195,7 +195,7 @@ struct chainable_t {
 
 namespace gct {
   void **get_chain_tail( const void *v );
-  LIBSTAMP_EXCEPTION( invalid_argument, incompatible_json, "incompatible JSON" )
+  LIBGCT_EXCEPTION( invalid_argument, incompatible_json, "incompatible JSON" )
 }
  
 
