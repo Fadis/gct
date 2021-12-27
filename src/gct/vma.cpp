@@ -27,6 +27,6 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wreorder"
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
-#include <vk_mem_alloc.h>
+#include <gct/vk_mem_alloc.h>
 #pragma GCC diagnostic pop
 

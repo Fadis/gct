@@ -77,10 +77,21 @@ find_package(FXGLTF REQUIRED)
 find_package(OpenImageIO REQUIRED)
 pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
 
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include/vk_mem_alloc.h
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/vk_mem_alloc.h
+  COPYONLY
+)
+INSTALL(
+  FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/vk_mem_alloc.h
+  DESTINATION
+  include/gct/
+)
+
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include
   ${CMAKE_CURRENT_SOURCE_DIR}/external/minimp4
   ${Boost_INCLUDE_DIRS}
   ${GLFW_INCLUDE_DIR}

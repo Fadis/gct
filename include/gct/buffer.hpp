@@ -9,7 +9,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wreorder"
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
-#include <vk_mem_alloc.h>
+#include <gct/vk_mem_alloc.h>
 #pragma GCC diagnostic pop
 #include <gct/created_from.hpp>
 #include <gct/buffer_create_info.hpp>
