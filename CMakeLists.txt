@@ -3,7 +3,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 PROJECT(
   libgct
-  LANGUAGES CXX
+  LANGUAGES CXX C
   HOMEPAGE_URL https://github.com/Fadis/gct
   DESCRIPTION "GPU Computing Toolkit"
   VERSION 0.1.0
@@ -85,6 +85,17 @@ configure_file(
 INSTALL(
   FILES
   ${CMAKE_CURRENT_BINARY_DIR}/include/gct/vk_mem_alloc.h
+  DESTINATION
+  include/gct/
+)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Reflect/spirv_reflect.h
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/spirv_reflect.h
+  COPYONLY
+)
+INSTALL(
+  FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/spirv_reflect.h
   DESTINATION
   include/gct/
 )
