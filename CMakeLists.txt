@@ -99,6 +99,17 @@ INSTALL(
   DESTINATION
   include/gct/
 )
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Reflect/include/spirv/unified1/spirv.h
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/include/spirv/unified1/spirv.h
+  COPYONLY
+)
+INSTALL(
+  FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/include/spirv/unified1/spirv.h
+  DESTINATION
+  include/gct/include/spirv/unified1/
+)
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include

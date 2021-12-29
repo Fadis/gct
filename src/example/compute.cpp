@@ -104,9 +104,9 @@ int main() {
   auto descriptor_set = descriptor_pool->allocate( descriptor_set_layout );
 
   auto shader = device->get_shader_module(
-    gct::shader_module_create_info_t()
-      .load( "../shaders/add.comp.spv" )
+    "../shaders/add.comp.spv"
   );
+  std::cout << nlohmann::json( *shader ).dump( 2 ) << std::endl;
   auto pipeline_layout = device->get_pipeline_layout(
     gct::pipeline_layout_create_info_t()
       .add_descriptor_set_layout( descriptor_set_layout )
@@ -125,11 +125,6 @@ int main() {
       .set_stage(
         gct::pipeline_shader_stage_create_info_t()
           .set_shader_module( shader )
-          .set_basic(
-            vk::PipelineShaderStageCreateInfo()
-              .setStage( vk::ShaderStageFlagBits::eCompute )
-              .setPName( "main" )
-          )
           .set_specialization_info(
             gct::specialization_info_t< spec_t >()
               .set_data(

@@ -249,6 +249,12 @@ namespace gct {
       )
     );
   }
+  std::shared_ptr< shader_module_t > device_t::get_shader_module( const std::string &filename ) {
+    return get_shader_module(
+      shader_module_create_info_t()
+        .load( filename )
+    );
+  }
   std::shared_ptr< sampler_t > device_t::get_sampler( const sampler_create_info_t &create_info ) {
     return std::shared_ptr< sampler_t >(
       new sampler_t(

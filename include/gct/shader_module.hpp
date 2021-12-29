@@ -2,6 +2,7 @@
 #define GCT_SHADER_MODULE_HPP
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/created_from.hpp>
 #include <gct/shader_module_create_info.hpp>
 
@@ -35,6 +36,7 @@ namespace gct {
     shader_module_create_info_t props;
     vk::UniqueHandle< vk::ShaderModule, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
+  void to_json( nlohmann::json &root, const shader_module_t &v );
 }
 
 #endif

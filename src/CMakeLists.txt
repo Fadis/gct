@@ -124,6 +124,7 @@ add_library( gct SHARED
   gct/mp4.cpp
   gct/io_context.cpp
   gct/async.cpp
+  gct/spv2json.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

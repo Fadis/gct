@@ -4,6 +4,7 @@
 #include <gct/pipeline_layout.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
+#include <gct/shader_module.hpp>
 #include <vulkan2json/GraphicsPipelineCreateInfo.hpp>
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #include <vulkan2json/AttachmentSampleCountInfoAMD.hpp>
@@ -191,6 +192,16 @@ namespace gct {
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const pipeline_shader_stage_create_info_t &v ) {
     stage.push_back( v );
     chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const std::shared_ptr< shader_module_t > &v ) {
+    if( !v->get_props().has_reflection() )
+      throw exception::invalid_argument( "Reflection is required to set shader directly to pipeline", __FILE__, __LINE__ );
+    add_stage(
+      pipeline_shader_stage_create_info_t()
+        .set_shader_module( v )
+        .rebuild_chain()
+    );
     return *this;
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_stage() {

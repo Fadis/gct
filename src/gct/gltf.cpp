@@ -663,24 +663,8 @@ namespace gct::gltf {
 
     return pipeline_cache->get_pipeline(
       graphics_pipeline_create_info_t()
-        .add_stage(
-          pipeline_shader_stage_create_info_t()
-            .set_shader_module( vs )
-            .set_basic(
-              vk::PipelineShaderStageCreateInfo()
-                .setStage( vk::ShaderStageFlagBits::eVertex )
-                .setPName( "main" )
-            )
-        )
-        .add_stage(
-          pipeline_shader_stage_create_info_t()
-            .set_shader_module( fs )
-            .set_basic(
-              vk::PipelineShaderStageCreateInfo()
-                .setStage( vk::ShaderStageFlagBits::eFragment )
-                .setPName( "main" )
-            )
-        )
+        .add_stage( vs )
+        .add_stage( fs )
         .set_vertex_input( vertex_input )
         .set_input_assembly(
           pipeline_input_assembly_state_create_info_t()

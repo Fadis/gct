@@ -43,17 +43,16 @@ namespace gct::gltf {
     shader_t shader;
     for( auto &path: std::filesystem::directory_iterator( shader_dir ) ) {
       auto flag = get_shader_flag( path.path() );
-      std::cout << path.path().string() << " をロード中..." << std::flush;
       if( flag ) {
+        std::cout << path.path().string() << " をロード中..." << std::flush;
         shader.emplace(
           *flag,
           device->get_shader_module(
-            shader_module_create_info_t()
-              .load( path.path().string() )
+            path.path().string()
           )
         );
+        std::cout << " OK" << std::endl;
       }
-      std::cout << " OK" << std::endl;
     }
     document.set_sampler( create_sampler(
       doc,

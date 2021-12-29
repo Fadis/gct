@@ -28,6 +28,7 @@ namespace gct {
     std::shared_ptr< pipeline_layout_t > layout;
   public:
     compute_pipeline_create_info_t &set_stage( const pipeline_shader_stage_create_info_t& );
+    compute_pipeline_create_info_t &set_stage( const std::shared_ptr< shader_module_t >& );
     compute_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     compute_pipeline_create_info_t &clear_layout();
   };

@@ -71,6 +71,7 @@ namespace gct {
     std::uint32_t subpass = 0u;
   public:
     graphics_pipeline_create_info_t &add_stage( const pipeline_shader_stage_create_info_t& );
+    graphics_pipeline_create_info_t &add_stage( const std::shared_ptr< shader_module_t >& );
     graphics_pipeline_create_info_t &clear_stage();
     graphics_pipeline_create_info_t &set_vertex_input( const pipeline_vertex_input_state_create_info_t& );
     graphics_pipeline_create_info_t &clear_vertex_input();

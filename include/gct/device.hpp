@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include <string>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/command_pool.hpp>
@@ -76,6 +77,7 @@ namespace gct {
     std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );
     std::shared_ptr< render_pass_t > get_render_pass( const render_pass_create_info_t& );
     std::shared_ptr< shader_module_t > get_shader_module( const shader_module_create_info_t& );
+    std::shared_ptr< shader_module_t > get_shader_module( const std::string& );
     std::shared_ptr< sampler_t > get_sampler( const sampler_create_info_t& );
     std::shared_ptr< semaphore_t > get_semaphore( const semaphore_create_info_t& );
     std::shared_ptr< semaphore_t > get_semaphore();
