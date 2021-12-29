@@ -211,9 +211,7 @@ namespace gct::gltf {
       updates.push_back(
         gct::write_descriptor_set_t()
           .set_basic(
-            vk::WriteDescriptorSet()
-              .setDstBinding( 0 )
-              .setDescriptorType( vk::DescriptorType::eUniformBuffer )
+            (*descriptor_set.back())[ "uniforms" ]
           )
           .add_buffer(
             gct::descriptor_buffer_info_t()
@@ -228,9 +226,7 @@ namespace gct::gltf {
       updates.push_back(
         gct::write_descriptor_set_t()
           .set_basic(
-            vk::WriteDescriptorSet()
-              .setDstBinding( 7 )
-              .setDescriptorType( vk::DescriptorType::eUniformBuffer )
+            (*descriptor_set.back())[ "dynamic_uniforms" ]
           )
           .add_buffer(
             gct::descriptor_buffer_info_t()
@@ -250,9 +246,7 @@ namespace gct::gltf {
         updates.push_back(
           gct::write_descriptor_set_t()
             .set_basic(
-              vk::WriteDescriptorSet()
-                .setDstBinding( 1 )
-                .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+              (*descriptor_set.back())[ "base_color" ]
             )
             .add_image(
               bct_texture.srgb
@@ -266,9 +260,7 @@ namespace gct::gltf {
         updates.push_back(
           gct::write_descriptor_set_t()
             .set_basic(
-              vk::WriteDescriptorSet()
-                .setDstBinding( 2 )
-                .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+              (*descriptor_set.back())[ "metallic_roughness" ]
             )
             .add_image(
               mrt_texture.unorm
@@ -282,9 +274,7 @@ namespace gct::gltf {
         updates.push_back(
           gct::write_descriptor_set_t()
             .set_basic(
-              vk::WriteDescriptorSet()
-                .setDstBinding( 3 )
-                .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+              (*descriptor_set.back())[ "normal_map" ]
             )
             .add_image(
               nt_texture.unorm
@@ -298,9 +288,7 @@ namespace gct::gltf {
         updates.push_back(
           gct::write_descriptor_set_t()
             .set_basic(
-              vk::WriteDescriptorSet()
-                .setDstBinding( 4 )
-                .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+              (*descriptor_set.back())[ "occlusion" ]
             )
             .add_image(
               oct_texture.unorm
@@ -314,9 +302,7 @@ namespace gct::gltf {
         updates.push_back(
           gct::write_descriptor_set_t()
             .set_basic(
-              vk::WriteDescriptorSet()
-                .setDstBinding( 5 )
-                .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+              (*descriptor_set.back())[ "emissive" ]
             )
             .add_image(
               emt_texture.srgb

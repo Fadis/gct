@@ -491,7 +491,7 @@ void to_json( nlohmann::json &root, const SpvReflectInterfaceVariable &v ) {
   if( v.name )
     root[ "name" ] = v.name;
   root[ "location" ] = v.location;
-  root[ "torage_class" ] = v.storage_class;
+  root[ "storage_class" ] = v.storage_class;
   if( v.semantic )
     root[ "semantic" ] = v.semantic;
   root[ "decoration_flags" ] = v.decoration_flags;

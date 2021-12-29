@@ -21,6 +21,7 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/graphics_pipeline.hpp>
+#include <gct/shader_module.hpp>
 #include <gct/gltf.hpp>
 #include <gct/device.hpp>
 #include <gct/queue.hpp>
@@ -548,75 +549,17 @@ namespace gct::gltf {
     std::shared_ptr< pipeline_layout_t >
   >
   create_pipeline_layout(
-    const std::shared_ptr< device_t > &device
+    const std::shared_ptr< device_t > &device,
+    const shader_t &shader
   ) {
+    gct::descriptor_set_layout_create_info_t descriptor_set_layout_create_info;
+    for( const auto &s: shader )
+      descriptor_set_layout_create_info
+        .add_binding( s.second->get_props().get_reflection() );
+    descriptor_set_layout_create_info
+      .rebuild_chain();
     auto descriptor_set_layout = device->get_descriptor_set_layout(
-      gct::descriptor_set_layout_create_info_t()
-        .add_binding(
-          vk::DescriptorSetLayoutBinding()
-            .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-            .setDescriptorCount( 1 )
-            .setBinding( 0 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // base color
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 1 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // roughness metallness
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 2 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // normal
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 3 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // occlusion
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 4 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // emissive
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 5 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // shadow
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-            .setDescriptorCount( 1 )
-            .setBinding( 6 )
-            .setStageFlags( vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .add_binding(
-          vk::DescriptorSetLayoutBinding() // dynamic uniform
-            .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-            .setDescriptorCount( 1 )
-            .setBinding( 7 )
-            .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
-            .setPImmutableSamplers( nullptr )
-        )
-        .rebuild_chain()
+      descriptor_set_layout_create_info
     );
     auto pipeline_layout = device->get_pipeline_layout(
       gct::pipeline_layout_create_info_t()
@@ -628,6 +571,7 @@ namespace gct::gltf {
             .setSize( sizeof( gct::gltf::push_constants_t ) )
         )
     );
+    std::cout << nlohmann::json( *descriptor_set_layout ).dump( 2 ) << std::endl;
     return std::make_tuple( descriptor_set_layout, pipeline_layout );
   }
   std::shared_ptr< graphics_pipeline_t > create_pipeline(

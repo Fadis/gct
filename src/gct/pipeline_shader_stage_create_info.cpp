@@ -1,43 +1,12 @@
 #include <gct/shader_module.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
+#include <gct/spv2vk.hpp>
 #include <vulkan2json/PipelineShaderStageCreateInfo.hpp>
 #ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
 #include <vulkan2json/PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT.hpp>
 #endif
 
 namespace gct {
-  vk::ShaderStageFlagBits spv2vk( SpvReflectShaderStageFlagBits v ) {
-    if( v == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT )
-      return vk::ShaderStageFlagBits::eVertex;
-    else if( v == SPV_REFLECT_SHADER_STAGE_TESSELLATION_CONTROL_BIT )
-      return vk::ShaderStageFlagBits::eTessellationControl;
-    else if( v == SPV_REFLECT_SHADER_STAGE_TESSELLATION_EVALUATION_BIT )
-      return vk::ShaderStageFlagBits::eTessellationEvaluation;
-    else if( v == SPV_REFLECT_SHADER_STAGE_GEOMETRY_BIT )
-      return vk::ShaderStageFlagBits::eGeometry;
-    else if( v == SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT )
-      return vk::ShaderStageFlagBits::eFragment;
-    else if( v == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT )
-      return vk::ShaderStageFlagBits::eCompute;
-    else if( v == SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV )
-      return vk::ShaderStageFlagBits::eTaskNV;
-    else if( v == SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV )
-      return vk::ShaderStageFlagBits::eMeshNV;
-    else if( v == SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR )
-      return vk::ShaderStageFlagBits::eRaygenKHR;
-    else if( v == SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR )
-      return vk::ShaderStageFlagBits::eAnyHitKHR;
-    else if( v == SPV_REFLECT_SHADER_STAGE_CLOSEST_HIT_BIT_KHR )
-      return vk::ShaderStageFlagBits::eClosestHitKHR;
-    else if( v == SPV_REFLECT_SHADER_STAGE_MISS_BIT_KHR )
-      return vk::ShaderStageFlagBits::eMissKHR;
-    else if( v == SPV_REFLECT_SHADER_STAGE_INTERSECTION_BIT_KHR )
-      return vk::ShaderStageFlagBits::eIntersectionKHR;
-    else if( v == SPV_REFLECT_SHADER_STAGE_CALLABLE_BIT_KHR )
-      return vk::ShaderStageFlagBits::eCallableKHR;
-    else
-      throw exception::invalid_argument( "unknown SpvReflectShaderStageFlagBits value", __FILE__, __LINE__ );
-  }
 
   void to_json( nlohmann::json &root, const pipeline_shader_stage_create_info_t &v ) {
      root = nlohmann::json::object();

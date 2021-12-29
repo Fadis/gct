@@ -1,5 +1,6 @@
 #include <gct/device.hpp>
 #include <gct/descriptor_set_layout.hpp>
+#include <nlohmann/json.hpp>
 
 namespace gct {
   descriptor_set_layout_t::descriptor_set_layout_t(
@@ -12,6 +13,10 @@ namespace gct {
     handle = (*device)->createDescriptorSetLayoutUnique(
       props.get_basic()
     );
+  }
+  void to_json( nlohmann::json &root, const descriptor_set_layout_t &v ) {
+    root = nlohmann::json::object();
+    root[ "props" ] = v.get_props();
   }
 }
 

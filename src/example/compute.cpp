@@ -88,25 +88,23 @@ int main() {
       .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 5 )
       .rebuild_chain()
   );
+  
+  auto shader = device->get_shader_module(
+    "../shaders/add.comp.spv"
+  );
+  std::cout << nlohmann::json( *shader ).dump( 2 ) << std::endl;
+  
   auto descriptor_set_layout = device->get_descriptor_set_layout(
     gct::descriptor_set_layout_create_info_t()
       .add_binding(
-        vk::DescriptorSetLayoutBinding()
-          .setDescriptorType( vk::DescriptorType::eStorageBuffer )
-          .setDescriptorCount( 1 )
-          .setBinding( 0 )
-          .setStageFlags( vk::ShaderStageFlagBits::eCompute )
-          .setPImmutableSamplers( nullptr )
+        shader->get_props().get_reflection()
       )
       .rebuild_chain()
   );
 
   auto descriptor_set = descriptor_pool->allocate( descriptor_set_layout );
+  std::cout << nlohmann::json( *descriptor_set_layout ).dump( 2 ) << std::endl;
 
-  auto shader = device->get_shader_module(
-    "../shaders/add.comp.spv"
-  );
-  std::cout << nlohmann::json( *shader ).dump( 2 ) << std::endl;
   auto pipeline_layout = device->get_pipeline_layout(
     gct::pipeline_layout_create_info_t()
       .add_descriptor_set_layout( descriptor_set_layout )
@@ -159,14 +157,14 @@ int main() {
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  
+ 
+  const auto &name_to_binding = descriptor_set->get_name_to_binding();
+
   descriptor_set->update(
     {
       gct::write_descriptor_set_t()
         .set_basic(
-          vk::WriteDescriptorSet()
-            .setDstBinding( 0 )
-            .setDescriptorType( vk::DescriptorType::eStorageBuffer )
+          (*descriptor_set)[ "layout1" ]
         )
         .add_buffer(
           gct::descriptor_buffer_info_t()

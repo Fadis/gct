@@ -24,6 +24,7 @@ namespace gct {
     descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >&, std::uint32_t );
     descriptor_set_allocate_info_t &clear_layout();
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &get_layout() const { return layout; }
   };
 }
 

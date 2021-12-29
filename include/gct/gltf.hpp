@@ -304,7 +304,8 @@ namespace gct::gltf {
     std::shared_ptr< pipeline_layout_t >
   >
   create_pipeline_layout(
-    const std::shared_ptr< device_t > &device
+    const std::shared_ptr< device_t > &device,
+    const shader_t &
   );
   std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,

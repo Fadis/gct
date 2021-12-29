@@ -125,6 +125,7 @@ add_library( gct SHARED
   gct/io_context.cpp
   gct/async.cpp
   gct/spv2json.cpp
+  gct/spv2vk.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

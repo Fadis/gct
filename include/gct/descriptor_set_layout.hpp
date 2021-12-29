@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/descriptor_set_layout_create_info.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 namespace gct {
   class device_t;
@@ -33,6 +34,7 @@ namespace gct {
     descriptor_set_layout_create_info_t props;
     vk::UniqueHandle< vk::DescriptorSetLayout, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
+  void to_json( nlohmann::json &root, const descriptor_set_layout_t &v );
 
 }
 

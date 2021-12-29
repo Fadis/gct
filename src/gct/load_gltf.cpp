@@ -74,7 +74,8 @@ namespace gct::gltf {
       document.default_sampler
     ) );
     auto [descriptor_set_layout,pipeline_layout] = create_pipeline_layout(
-      device
+      device,
+      shader
     );
     document.set_mesh( create_mesh(
       doc, //
