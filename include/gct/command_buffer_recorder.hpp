@@ -47,6 +47,12 @@ namespace gct {
       bool mipmap,
       bool srgb
     );
+    void dump_image(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::shared_ptr< image_t > &image,
+      const std::string &filename,
+      unsigned int mipmap
+    );
     void buffer_to_image(
       bool mipmap,
       const std::shared_ptr< buffer_t > &temporary,
@@ -121,6 +127,49 @@ namespace gct {
       const std::shared_ptr< buffer_t > &src,
       const std::shared_ptr< image_t > &dest,
       vk::ImageLayout final_layout
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      const std::vector< vk::BufferImageCopy > &range,
+      vk::ImageLayout final_layout
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      const vk::BufferImageCopy &range,
+      vk::ImageLayout final_layout
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      vk::ImageLayout final_layout
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      const std::vector< vk::BufferImageCopy > &range
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      const vk::BufferImageCopy &range
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest
+    );
+    void blit(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< image_t > &dest,
+      const std::vector< vk::ImageBlit > &range,
+      vk::Filter filter
+    );
+    void blit(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< image_t > &dest,
+      const vk::ImageBlit &range,
+      vk::Filter filter
     );
     void barrier(
       vk::AccessFlagBits,

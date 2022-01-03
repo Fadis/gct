@@ -432,6 +432,7 @@ int main() {
          0u
        );
        rec->endRenderPass();
+//       rec.dump_image( allocator, fb.color,  "test.png", 0u );
     }
     sync.command_buffer->execute(
       gct::submit_info_t()

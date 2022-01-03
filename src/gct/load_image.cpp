@@ -75,41 +75,18 @@ namespace gct {
     //if( destination.size != temporary.size ) vk::throwResultException( vk::Result( result ), "destinationとtemporaryのサイズが合わない" );
     uint32_t mipmap_count = 1u;
     bool mipable = destination->get_props().get_basic().extent.width == destination->get_props().get_basic().extent.height && is_pot( destination->get_props().get_basic().extent.width );
-    if( mipmap && mipable ) {
+    bool gen_mip = mipmap && mipable; 
+    if( gen_mip ) {
       mipmap_count = get_pot( destination->get_props().get_basic().extent.width );
     }
-    convert_image( destination, 0, mipmap_count, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal );
-    (*get_factory())->copyBufferToImage(
-      **temporary,
-      **destination,
-      vk::ImageLayout::eTransferDstOptimal,
-      {
-        vk::BufferImageCopy()
-          .setBufferOffset( vk::DeviceSize( 0 ) )
-          .setImageSubresource(
-            vk::ImageSubresourceLayers()
-              .setAspectMask( vk::ImageAspectFlagBits::eColor )
-              .setMipLevel( 0 )
-              .setLayerCount( 1 )
-          )
-          .setImageExtent(
-            vk::Extent3D()
-              .setWidth( destination->get_props().get_basic().extent.width )
-              .setHeight( destination->get_props().get_basic().extent.height )
-              .setDepth( 1 )
-          )
-      }
-    );
-    //uint32_t mip_width = destination.width;
-    //uint32_t mip_height = destination.height;
-    if( mipmap && mipable ) {
+    copy( temporary, destination, gen_mip ? vk::ImageLayout::eTransferDstOptimal : vk::ImageLayout::eShaderReadOnlyOptimal );
+    if( gen_mip ) {
       create_mipmap(
         destination,
         vk::ImageLayout::eTransferDstOptimal,
         vk::ImageLayout::eShaderReadOnlyOptimal
       );
     }
-    get_factory()->unbound()->keep.push_back( temporary );
   }
   std::shared_ptr< image_t > command_buffer_recorder_t::load_image(
     const std::shared_ptr< allocator_t > &allocator,
@@ -219,5 +196,94 @@ namespace gct {
     }
     buffer_to_image( mipmap, temporary_buffer, final_image );
     return final_image;
+  }
+
+  void command_buffer_recorder_t::dump_image(
+    const std::shared_ptr< allocator_t > &allocator,
+    const std::shared_ptr< image_t > &image,
+    const std::string &filename,
+    unsigned int mipmap
+  ) {
+    const auto width = image->get_props().get_basic().extent.width >> mipmap;
+    const auto height = image->get_props().get_basic().extent.height >> mipmap;
+    unsigned int element_size = 1u;
+    if( image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat )
+      element_size = 4u;
+    else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm )
+      element_size = 1u;
+    else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Unorm )
+      element_size = 1u;
+    else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Srgb )
+      element_size = 1u;
+    else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Srgb )
+      element_size = 1u;
+    else
+      throw -1;
+    const auto temporary = allocator->create_buffer(
+      width * height * element_size * 4, /////
+      vk::BufferUsageFlagBits::eTransferDst,
+      VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+
+    copy(
+      image,
+      temporary,
+      vk::BufferImageCopy()
+        .setBufferOffset( vk::DeviceSize( 0 ) )
+        .setImageSubresource(
+          vk::ImageSubresourceLayers()
+            .setAspectMask( vk::ImageAspectFlagBits::eColor )
+            .setMipLevel( mipmap )
+            .setLayerCount( 1 )
+        )
+        .setImageExtent(
+          vk::Extent3D()
+            .setWidth( width )
+            .setHeight( height )
+            .setDepth( 1 )
+        )
+    );
+    get_factory()->unbound()->keep.push_back( image );
+    get_factory()->unbound()->keep.push_back( temporary );
+    get_factory()->unbound()->cbs.push_back(
+      [image,temporary,width,height,filename,allocator]( vk::Result result ) {
+        using namespace OIIO_NAMESPACE;
+        auto out = ImageOutput::create( filename );
+        if( !out ) throw -1;
+        auto oiio_type = TypeDesc::UINT8;
+        bool is_bgra = false;
+        if( image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat )
+          oiio_type = TypeDesc::FLOAT;
+        else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm )
+          oiio_type = TypeDesc::UINT8;
+        else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Unorm ) {
+          oiio_type = TypeDesc::UINT8;
+          is_bgra = true;
+        }
+        else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Srgb )
+          oiio_type = TypeDesc::UINT8;
+        else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Srgb ) {
+          oiio_type = TypeDesc::UINT8;
+          is_bgra = true;
+        }
+        else
+          throw -1;
+        ImageSpec spec( width, height, 4, oiio_type );
+        out->open( filename, spec );
+        {
+          auto mapped = temporary->map< std::uint8_t >();
+          if( is_bgra ) {
+            const auto size = std::distance( mapped.begin(), mapped.end() );
+            auto iter = mapped.begin();
+            for( unsigned int i = 0u; i < size; i += 4u, iter = std::next( iter, 4u ) ) {
+              std::swap( *iter, *std::next( iter, 2u ) );
+            }
+          }
+          out->write_image( oiio_type, mapped.begin() );
+        }
+        out->close();
+        
+      }
+    );
   }
 }

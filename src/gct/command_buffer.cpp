@@ -30,6 +30,13 @@ namespace gct {
   void command_buffer_t::reset() {
     handle->reset( vk::CommandBufferResetFlags( 0 ) );
     keep.clear();
+    cbs.clear();
+  }
+  void command_buffer_t::on_executed( vk::Result result ) {
+    for( auto &cb: cbs ) {
+      cb( result );        
+    }
+    reset();
   }
   bound_command_buffer_t::bound_command_buffer_t(
     const std::shared_ptr< bound_command_pool_t > &pool,
@@ -62,9 +69,15 @@ namespace gct {
     auto result = (*get_factory()->get_factory()->get_factory())->waitForFences( 1, &**fence, true, timeout );
     auto reset_result = (*get_factory()->get_factory()->get_factory())->resetFences( 1, &**fence );
     if( reset_result != vk::Result::eSuccess ) throw -1;
-    if( result == vk::Result::eSuccess ) return true;
+    if( result == vk::Result::eSuccess ) {
+      unbound()->on_executed( result );
+      return true;
+    }
     if( result == vk::Result::eTimeout ) return false;
-    else throw -1;
+    else {
+      unbound()->on_executed( result );
+      throw -1;
+    }
   }
   command_buffer_recorder_t bound_command_buffer_t::begin(
     const command_buffer_begin_info_t &begin_info

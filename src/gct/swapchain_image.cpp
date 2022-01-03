@@ -22,6 +22,7 @@ namespace gct {
           .setSharingMode( v.imageSharingMode )
           .setQueueFamilyIndexCount( v.queueFamilyIndexCount )
           .setPQueueFamilyIndices( v.pQueueFamilyIndices )
+          .setInitialLayout( vk::ImageLayout::ePresentSrcKHR )
       )
       .rebuild_chain();
   }

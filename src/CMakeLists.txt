@@ -97,6 +97,8 @@ add_library( gct SHARED
   gct/copy_buffer.cpp
   gct/copy_image.cpp
   gct/copy_buffer_to_image.cpp
+  gct/copy_image_to_buffer.cpp
+  gct/blit.cpp
   gct/barrier.cpp
   gct/present_info.cpp
   gct/wait_for_sync.cpp

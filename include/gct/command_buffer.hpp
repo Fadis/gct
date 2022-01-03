@@ -14,9 +14,11 @@ namespace gct {
   struct bound_command_pool_t;
   class fence_t;
   class submit_info_t;
+  class bound_command_buffer_t;
   class command_buffer_t : public created_from< command_pool_t >, public std::enable_shared_from_this< command_buffer_t > {
   public:
     friend command_buffer_recorder_t;
+    friend bound_command_buffer_t;
     command_buffer_t(
       const std::shared_ptr< command_pool_t >&,
       const command_buffer_allocate_info_t&
@@ -45,9 +47,11 @@ namespace gct {
     bool wait_for_executed();
     bool wait_for_executed( std::uint64_t );
   private:
+    void on_executed( vk::Result );
     command_buffer_allocate_info_t props;
     vk::UniqueHandle< vk::CommandBuffer, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
     std::vector< std::any > keep;
+    std::vector< std::function< void( vk::Result ) > > cbs;
   };
   class bound_command_buffer_t : public created_from< bound_command_pool_t >, public std::enable_shared_from_this< bound_command_buffer_t > {
   public:
