@@ -44,6 +44,23 @@ namespace gct {
       vk::BufferUsageFlags,
       VmaMemoryUsage usage
     );
+
+    std::shared_ptr< pixel_buffer_t > create_pixel_buffer(
+      const buffer_create_info_t &create_info,
+      VmaMemoryUsage usage,
+      const vk::Extent3D &extent,
+      vk::Format format
+    );
+    std::shared_ptr< pixel_buffer_t > create_pixel_buffer(
+      vk::BufferUsageFlags buffer_usage,
+      VmaMemoryUsage usage,
+      const vk::Extent3D &extent,
+      vk::Format format
+    );
+    std::shared_ptr< pixel_buffer_t > load_image(
+      const std::string &filename,
+      bool srgb
+    );
     const VmaAllocatorCreateInfo &get_props() const { return props; }
   private:
     VmaAllocatorCreateInfo props;

@@ -2,6 +2,9 @@
 #include <gct/device.hpp>
 #include <gct/allocated_image.hpp>
 #include <gct/allocator.hpp>
+#include <gct/format.hpp>
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/version.h>
 
 namespace gct {
   allocator_t::allocator_t(
@@ -67,6 +70,101 @@ namespace gct {
         ),
       usage
     );
+  }
+  std::shared_ptr< pixel_buffer_t > allocator_t::create_pixel_buffer(
+    const buffer_create_info_t &create_info,
+    VmaMemoryUsage usage,
+    const vk::Extent3D &extent,
+    vk::Format format
+  ) {
+    return std::shared_ptr< pixel_buffer_t >(
+      new pixel_buffer_t(
+        shared_from_this(),
+        create_info,
+        usage,
+        extent,
+        format
+      )
+    );
+  }
+  std::shared_ptr< pixel_buffer_t > allocator_t::create_pixel_buffer(
+    vk::BufferUsageFlags buffer_usage,
+    VmaMemoryUsage usage,
+    const vk::Extent3D &extent,
+    vk::Format format
+  ) {
+    const auto ps = format_to_size( format );
+    const auto ppex = pixel_per_element_x( format );
+    const auto ppey = pixel_per_element_y( format );
+    return create_pixel_buffer(
+      buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( ( extent.width / ppex ) * ( extent.height / ppey ) * extent.depth * ps )
+            .setUsage( buffer_usage )
+        ),
+      usage,
+      extent,
+      format
+    );
+  }
+
+  vk::Format channels_to_format( unsigned int c, bool srgb ) {
+    if( srgb ) {
+      if( c == 1 ) return vk::Format::eR8Srgb;
+      else if( c == 2 ) return vk::Format::eR8G8Srgb;
+      else if( c == 3 ) return vk::Format::eR8G8B8A8Srgb;
+      else if( c == 4 ) return vk::Format::eR8G8B8A8Srgb;
+      return vk::Format::eUndefined;
+    }
+    else {
+      if( c == 1 ) return vk::Format::eR8Unorm;
+      else if( c == 2 ) return vk::Format::eR8G8Unorm;
+      else if( c == 3 ) return vk::Format::eR8G8B8A8Unorm;
+      else if( c == 4 ) return vk::Format::eR8G8B8A8Unorm;
+      return vk::Format::eUndefined;
+    }
+  }
+
+  std::shared_ptr< pixel_buffer_t > allocator_t::load_image(
+    const std::string &filename,
+    bool srgb
+  ) {
+    using namespace OIIO_NAMESPACE;
+#if OIIO_VERSION_MAJOR >= 2 
+    auto texture_file = ImageInput::open( filename );
+#else
+    std::shared_ptr< ImageInput > texture_file(
+      ImageInput::open( filename ),
+      []( auto p ) { if( p ) ImageInput::destroy( p ); }
+    );
+#endif
+    if( !texture_file ) throw -1;
+    const ImageSpec &spec = texture_file->spec();
+    auto temporary_buffer = create_pixel_buffer(
+      vk::BufferUsageFlagBits::eTransferSrc,
+      VMA_MEMORY_USAGE_CPU_TO_GPU,
+      vk::Extent3D{ uint32_t( spec.width ), uint32_t( spec.height ), 1u },
+      channels_to_format( spec.nchannels, srgb )
+    );
+    {
+      auto mapped = temporary_buffer->map< std::uint8_t >();
+      if( spec.nchannels == 3 ) {
+        std::vector< uint8_t > temp( spec.width * spec.height * 4u );
+        texture_file->read_image( TypeDesc::UINT8, temp.data() );
+        for( size_t i = spec.width * spec.height - 1; i; --i ) {
+          temp[ i * 4 ] = temp[ i * spec.nchannels ];
+          temp[ i * 4 + 1 ] = temp[ i * spec.nchannels + 1 ];
+          temp[ i * 4 + 2 ] = temp[ i * spec.nchannels + 2 ];
+          temp[ i * 4 + 3 ] = 255u;
+        }
+        std::copy( temp.begin(), temp.end(), mapped.begin() );
+      }
+      else {
+        texture_file->read_image( TypeDesc::UINT8, mapped.begin() );
+      }
+    }
+    return temporary_buffer;
   }
   
   /*std::shared_ptr< image_t > allocator_t::get_image(

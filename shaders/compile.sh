@@ -232,5 +232,7 @@ cat special5.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o special5.vert.spv --t
 
 echo add.comp
 cat add.comp|${GLSLI}|${GLSLC} -fshader-stage=comp -o add.comp.spv --target-env=vulkan1.2 -
+echo invert.comp
+cat invert.comp|${GLSLI}|${GLSLC} -fshader-stage=comp -o invert.comp.spv --target-env=vulkan1.2 -
 echo grad.comp
 cat grad.comp|${GLSLI}|${GLSLC} -fshader-stage=comp -o grad.comp.spv --target-env=vulkan1.2 -

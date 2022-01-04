@@ -142,6 +142,24 @@ namespace gct {
     vk::UniqueHandle< vk::BufferView, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > buffer_view;
   };
   void to_json( nlohmann::json&, const buffer_t& );
+  class pixel_buffer_t : public buffer_t {
+  public:
+    pixel_buffer_t(
+      const std::shared_ptr< allocator_t >&,
+      const buffer_create_info_t&,
+      VmaMemoryUsage usage,
+      const vk::Extent3D&,
+      vk::Format
+    );
+    void dump_image(
+      const std::string &filename
+    );
+    const vk::Extent3D &get_extent() const { return extent; }
+    vk::Format get_format() const { return format; }
+  private:
+    vk::Extent3D extent;
+    vk::Format format;
+  };
 }
 
 #endif

@@ -1,0 +1,20 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+layout (binding = 0, rgba8) readonly uniform image2D src_image;
+layout (binding = 1) writeonly uniform image2D dest_image;
+
+layout(local_size_x_id = 1, local_size_y_id = 2 ) in;
+
+void main() {
+  const uint x = gl_GlobalInvocationID.x;
+  const uint y = gl_GlobalInvocationID.y;
+  vec4 color = imageLoad( src_image, ivec2( x, y ) );
+  imageStore( dest_image, ivec2( x, y ), vec4( 1.0 - color.x, 1.0 - color.y, 1.0 - color.z, 1.0 ) );
+}
+
+

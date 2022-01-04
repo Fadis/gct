@@ -1,4 +1,4 @@
-#include <gct/format_to_aspect.hpp>
+#include <gct/format.hpp>
 
 namespace gct {
   vk::Flags<vk::ImageAspectFlagBits> format_to_aspect( vk::Format format ) {

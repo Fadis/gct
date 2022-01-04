@@ -9,6 +9,10 @@
 #include <gct/buffer.hpp>
 #include <gct/device.hpp>
 #include <gct/buffer_device_address_info.hpp>
+#include <gct/format.hpp>
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/version.h>
+
 namespace gct {
   buffer_t::buffer_t(
     const std::shared_ptr< allocator_t > &allocator,
@@ -132,6 +136,144 @@ namespace gct {
   void to_json( nlohmann::json &root, const buffer_t &v ) {
     root = nlohmann::json::object();
     root[ "props" ] = v.get_props();
+  }
+  pixel_buffer_t::pixel_buffer_t(
+    const std::shared_ptr< allocator_t > &allocator,
+    const buffer_create_info_t &create_info,
+    VmaMemoryUsage usage,
+    const vk::Extent3D &extent_,
+      vk::Format format_
+  ) : buffer_t(
+    allocator,
+    create_info,
+    usage
+  ),
+  extent( extent_ ),
+  format( format_ ) {}
+  void pixel_buffer_t::dump_image(
+    const std::string &filename
+  ) {
+    using namespace OIIO_NAMESPACE;
+    auto out = ImageOutput::create( filename );
+    if( !out )
+      throw exception::runtime_error( "Unable to open output file", __FILE__, __LINE__ );
+    const auto oiio_type = format_to_type( format );
+    if( oiio_type == TypeDesc::UNKNOWN )
+      throw exception::invalid_argument( "Unsupported element type", __FILE__, __LINE__ );
+    const bool is_rgba_ = is_rgba( format );
+    const bool is_bgra_ = is_bgra( format );
+    if( !is_rgba_ && !is_bgra_ )
+      throw exception::invalid_argument( "Unsupported channel order", __FILE__, __LINE__ );
+    const auto channels = format_to_channels( format );
+    if( !channels )
+      throw exception::invalid_argument( "Unsupported channel count", __FILE__, __LINE__ );
+    ImageSpec spec( extent.width, extent.height, channels, oiio_type );
+    out->open( filename, spec );
+    {
+      if( oiio_type == TypeDesc::UINT8 ) {
+        auto mapped = map< std::uint8_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::INT8 ) {
+        auto mapped = map< std::int8_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::UINT16 ) {
+        auto mapped = map< std::uint16_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::INT16 ) {
+        auto mapped = map< std::int16_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::UINT32 ) {
+        auto mapped = map< std::uint32_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::INT32 ) {
+        auto mapped = map< std::int32_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::HALF ) {
+        auto mapped = map< std::uint16_t >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::FLOAT ) {
+        auto mapped = map< float >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else if( oiio_type == TypeDesc::DOUBLE ) {
+        auto mapped = map< double >();
+        if( is_bgra_ && channels >= 3u ) {
+          const auto size = std::distance( mapped.begin(), mapped.end() );
+          auto iter = mapped.begin();
+          for( unsigned int i = 0u; i < size; i += channels, iter = std::next( iter, channels ) ) {
+            std::swap( *iter, *std::next( iter, 2u ) );
+          }
+        }
+        out->write_image( oiio_type, mapped.begin() );
+      }
+      else
+        throw exception::invalid_argument( "Unsupported format 5", __FILE__, __LINE__ );
+    }
+    out->close();
+    
   }
 }
 

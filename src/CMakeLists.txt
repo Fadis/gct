@@ -105,6 +105,13 @@ add_library( gct SHARED
   gct/bind_descriptor_set.cpp
   gct/bind_pipeline.cpp
   gct/format_to_aspect.cpp
+  gct/format_to_size.cpp
+  gct/format_to_type.cpp
+  gct/format_to_channels.cpp
+  gct/pixel_per_element_x.cpp
+  gct/pixel_per_element_y.cpp
+  gct/is_rgba.cpp
+  gct/is_bgra.cpp
   gct/submit_info.cpp
   gct/gltf.cpp
   gct/shader_flag.cpp
@@ -218,3 +225,18 @@ target_link_libraries(
   ${GLFW_LIBRARIES}
 )
 
+add_executable( image
+  example/image.cpp
+)
+
+target_link_libraries(
+  image
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+  ${GLFW_LIBRARIES}
+)

@@ -5,7 +5,7 @@
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
-#include <gct/format_to_aspect.hpp>
+#include <gct/format.hpp>
 
 namespace gct {
   void command_buffer_recorder_t::blit(

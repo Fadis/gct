@@ -6,7 +6,7 @@
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
-#include <gct/format_to_aspect.hpp>
+#include <gct/format.hpp>
 #include <gct/compute_pipeline.hpp>
 
 namespace gct {
