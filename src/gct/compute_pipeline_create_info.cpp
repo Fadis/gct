@@ -43,12 +43,12 @@ namespace gct {
 #endif
   }
   compute_pipeline_create_info_t &compute_pipeline_create_info_t::rebuild_chain() {
+    if( chained ) return *this;
     stage.rebuild_chain();
     basic.setStage( stage.get_basic() );
     if( layout ) {
       basic.setLayout( **layout );
     }
-
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( compiler_control ) 

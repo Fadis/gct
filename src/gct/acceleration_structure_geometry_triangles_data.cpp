@@ -17,14 +17,16 @@ namespace gct {
       index_data->rebuild_chain();
     if( transform_data )
       transform_data->rebuild_chain();
-    auto basic = get_basic();
-    if( vertex_data )
-      basic.setVertexData( **vertex_data );
-    if( index_data )
-      basic.setIndexData( **index_data );
-    if( transform_data )
-      basic.setTransformData( **transform_data );
-    set_basic( std::move( basic ) );
+    {
+      auto basic = get_basic();
+      if( vertex_data )
+        basic.setVertexData( **vertex_data );
+      if( index_data )
+        basic.setIndexData( **index_data );
+      if( transform_data )
+        basic.setTransformData( **transform_data );
+      set_basic( std::move( basic ) );
+    }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( motion ) 

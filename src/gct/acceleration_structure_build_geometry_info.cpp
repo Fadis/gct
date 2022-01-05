@@ -9,22 +9,24 @@
 namespace gct {
   acceleration_structure_build_geometry_info_t &acceleration_structure_build_geometry_info_t::rebuild_chain() {
     if( chained ) throw -1;
-    auto basic = get_basic();
-    if( src )
-      basic.setSrcAccelerationStructure( **src );
-    if( dst )
-      basic.setDstAccelerationStructure( **dst );
-    raw_geometry.clear();
-    raw_geometry.reserve( geometry.size() );
-    std::transform( geometry.begin(), geometry.end(), std::back_inserter( raw_geometry ), []( auto &v ) {
-      v.rebuild_chain();
-      return &v.get_basic();
-    } );
-    basic
-      .setPGeometries( nullptr )
-      .setGeometryCount( raw_geometry.size() )
-      .setPpGeometries( raw_geometry.data() );
-    set_basic( std::move( basic ) );
+    {
+      auto basic = get_basic();
+      if( src )
+        basic.setSrcAccelerationStructure( **src );
+      if( dst )
+        basic.setDstAccelerationStructure( **dst );
+      raw_geometry.clear();
+      raw_geometry.reserve( geometry.size() );
+      std::transform( geometry.begin(), geometry.end(), std::back_inserter( raw_geometry ), []( auto &v ) {
+        v.rebuild_chain();
+        return &v.get_basic();
+      } );
+      basic
+        .setPGeometries( nullptr )
+        .setGeometryCount( raw_geometry.size() )
+        .setPpGeometries( raw_geometry.data() );
+      set_basic( std::move( basic ) );
+    }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

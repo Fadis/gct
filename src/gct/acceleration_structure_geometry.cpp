@@ -5,24 +5,26 @@
 namespace gct {
   acceleration_structure_geometry_t &acceleration_structure_geometry_t::rebuild_chain() {
     if( chained ) throw -1;
-    auto basic = get_basic();
-    if( std::holds_alternative< int >( geometry ) ) {}
-    else if( std::holds_alternative< acceleration_structure_geometry_triangles_data_t >( geometry ) ) {
-      std::get< acceleration_structure_geometry_triangles_data_t >( geometry ).rebuild_chain();
-      basic.setGeometryType( vk::GeometryTypeKHR::eTriangles );
-      basic.geometry.setTriangles( *std::get< acceleration_structure_geometry_triangles_data_t >( geometry ) );
+    {
+      auto basic = get_basic();
+      if( std::holds_alternative< int >( geometry ) ) {}
+      else if( std::holds_alternative< acceleration_structure_geometry_triangles_data_t >( geometry ) ) {
+        std::get< acceleration_structure_geometry_triangles_data_t >( geometry ).rebuild_chain();
+        basic.setGeometryType( vk::GeometryTypeKHR::eTriangles );
+        basic.geometry.setTriangles( *std::get< acceleration_structure_geometry_triangles_data_t >( geometry ) );
+      }
+      else if( std::holds_alternative< acceleration_structure_geometry_aabbs_data_t >( geometry ) ) {
+        std::get< acceleration_structure_geometry_aabbs_data_t >( geometry ).rebuild_chain();
+        basic.setGeometryType( vk::GeometryTypeKHR::eAabbs );
+        basic.geometry.setAabbs( *std::get< acceleration_structure_geometry_aabbs_data_t >( geometry ) );
+      }
+      else if( std::holds_alternative< acceleration_structure_geometry_instances_data_t >( geometry ) ) {
+        std::get< acceleration_structure_geometry_instances_data_t >( geometry ).rebuild_chain();
+        basic.setGeometryType( vk::GeometryTypeKHR::eInstances );
+        basic.geometry.setInstances( *std::get< acceleration_structure_geometry_instances_data_t >( geometry ) );
+      }
+      else throw -1;
     }
-    else if( std::holds_alternative< acceleration_structure_geometry_aabbs_data_t >( geometry ) ) {
-      std::get< acceleration_structure_geometry_aabbs_data_t >( geometry ).rebuild_chain();
-      basic.setGeometryType( vk::GeometryTypeKHR::eAabbs );
-      basic.geometry.setAabbs( *std::get< acceleration_structure_geometry_aabbs_data_t >( geometry ) );
-    }
-    else if( std::holds_alternative< acceleration_structure_geometry_instances_data_t >( geometry ) ) {
-      std::get< acceleration_structure_geometry_instances_data_t >( geometry ).rebuild_chain();
-      basic.setGeometryType( vk::GeometryTypeKHR::eInstances );
-      basic.geometry.setInstances( *std::get< acceleration_structure_geometry_instances_data_t >( geometry ) );
-    }
-    else throw -1;
     set_basic( std::move( basic ) );
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN

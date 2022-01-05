@@ -4,7 +4,7 @@
 #include <optional>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
-
+#include <nlohmann/json_fwd.hpp>
 namespace gct {
   class semaphore_t;
   class submit_info_t : public chained_t {
@@ -49,6 +49,8 @@ namespace gct {
     submit_info_t &add_signal_to( const std::shared_ptr< semaphore_t > &s );
     submit_info_t &clear_signal_to();
   };
+  void to_json( nlohmann::json&, const submit_info_t& );
+  void from_json( const nlohmann::json&, submit_info_t& );
 }
 
 #endif

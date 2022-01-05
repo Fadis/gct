@@ -23,6 +23,7 @@ namespace gct {
 #endif
   }
   framebuffer_create_info_t &framebuffer_create_info_t::rebuild_chain() {
+    if( chained ) return *this;
     raw_attachment.clear();
     raw_attachment.reserve( attachment.size() );
     std::transform(

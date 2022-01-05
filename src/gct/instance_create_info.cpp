@@ -21,21 +21,23 @@
 namespace gct {
   instance_create_info_t &instance_create_info_t::rebuild_chain() {
     if( chained ) return *this;
-    auto basic = get_basic();
-    if( application_info ) {
-      application_info->pEngineName = "gct";
-      application_info->engineVersion = VK_MAKE_VERSION( 1, 0, 0 );
-      basic.setPApplicationInfo( application_info.get() );
+    {
+      auto basic = get_basic();
+      if( application_info ) {
+        application_info->pEngineName = "gct";
+        application_info->engineVersion = VK_MAKE_VERSION( 1, 0, 0 );
+        basic.setPApplicationInfo( application_info.get() );
+      }
+      if( !layer.empty() )
+        basic
+          .setEnabledLayerCount( layer.size() )
+          .setPpEnabledLayerNames( layer.data() );
+      if( !extension.empty() )
+        basic
+          .setEnabledExtensionCount( extension.size() )
+          .setPpEnabledExtensionNames( extension.data() );
+      set_basic( std::move( basic ) );
     }
-    if( !layer.empty() )
-      basic
-        .setEnabledLayerCount( layer.size() )
-        .setPpEnabledLayerNames( layer.data() );
-    if( !extension.empty() )
-      basic
-        .setEnabledExtensionCount( extension.size() )
-        .setPpEnabledExtensionNames( extension.data() );
-    set_basic( std::move( basic ) );
 #ifdef VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME
     {
       auto validation_features = vk::ValidationFeaturesEXT();

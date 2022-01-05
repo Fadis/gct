@@ -8,11 +8,13 @@ namespace gct {
   acceleration_structure_geometry_instances_data_t &acceleration_structure_geometry_instances_data_t::rebuild_chain() {
     if( chained ) return *this;
     data->rebuild_chain();
-    auto basic = get_basic();
-    if( data )
-      basic
-        .setData( **data );
-    set_basic( std::move( basic ) );
+    {
+      auto basic = get_basic();
+      if( data )
+        basic
+          .setData( **data );
+      set_basic( std::move( basic ) );
+    }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

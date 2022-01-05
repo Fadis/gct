@@ -30,6 +30,7 @@ namespace gct {
 #endif
   }
   descriptor_pool_create_info_t &descriptor_pool_create_info_t::rebuild_chain() {
+    if( chained ) return *this;
     sequential.clear();
     sequential.reserve( unique_types.size() );
     std::transform(
