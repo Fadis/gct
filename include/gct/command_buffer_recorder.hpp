@@ -17,6 +17,8 @@ namespace gct {
   class descriptor_set_t;
   class pipeline_layout_t;
   class compute_pipeline_t;
+  class acceleration_structure_build_geometry_info_t;
+  class acceleration_structure_build_region_info_t;
   std::uint32_t get_pot( std::uint32_t v );
   bool is_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
@@ -30,6 +32,12 @@ namespace gct {
     command_buffer_recorder_t( command_buffer_recorder_t&& ) = default;
     command_buffer_recorder_t &operator=( const command_buffer_recorder_t& ) = delete;
     command_buffer_recorder_t &operator=( command_buffer_recorder_t&& ) = default;
+    std::shared_ptr< buffer_t > load_buffer(
+      const std::shared_ptr< allocator_t > &allocator,
+      const void * addr,
+      std::size_t size,
+      vk::BufferUsageFlags usage
+    );
     std::shared_ptr< buffer_t > load_buffer(
       const std::shared_ptr< allocator_t > &allocator,
       const std::vector< uint8_t > &data,
@@ -220,6 +228,14 @@ namespace gct {
     void bind_pipeline(
       vk::PipelineBindPoint bind_point,
       std::shared_ptr< compute_pipeline_t > pipeline
+    );
+    void build_acceleration_structure(
+      const std::vector< gct::acceleration_structure_build_geometry_info_t >&,
+      const std::vector< std::vector< vk::AccelerationStructureBuildRangeInfoKHR > >&
+    );
+    void build_acceleration_structure(
+      const gct::acceleration_structure_build_geometry_info_t&,
+      const std::vector< vk::AccelerationStructureBuildRangeInfoKHR >&
     );
     const command_buffer_begin_info_t &get_props() const { return props; }
     vk::CommandBuffer &operator*();

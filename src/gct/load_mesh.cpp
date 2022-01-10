@@ -157,6 +157,8 @@ namespace gct::gltf {
         )
       );
     }
+    primitive_.set_vertex_input_binding( vertex_input_binding );
+    primitive_.set_vertex_input_attribute( vertex_input_attribute );
     primitive_.set_pipeline( std::move( pipelines ) );
     primitive_.set_pipeline_layout( pipeline_layout );
     primitive_.set_vertex_buffer( vertex_buffer );

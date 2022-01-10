@@ -100,6 +100,7 @@ add_library( gct SHARED
   gct/copy_image_to_buffer.cpp
   gct/blit.cpp
   gct/barrier.cpp
+  gct/build_acceleration_structure.cpp
   gct/present_info.cpp
   gct/wait_for_sync.cpp
   gct/bind_descriptor_set.cpp
@@ -118,11 +119,14 @@ add_library( gct SHARED
   gct/load_gltf.cpp
   gct/load_mesh.cpp
   gct/load_node.cpp
+  gct/generate_blas.cpp
+  gct/generate_tlas.cpp
   gct/vma.cpp
   gct/dispatch_loader.cpp
   gct/vulkanhpp.cpp
   gct/device_address.cpp
   gct/device_or_host_address_const.cpp
+  gct/device_or_host_address.cpp
   gct/strided_device_address_region.cpp
   gct/deferred_operation.cpp
   gct/pipeline_library_create_info.cpp

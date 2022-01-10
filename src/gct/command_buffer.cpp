@@ -67,16 +67,16 @@ namespace gct {
   }
   bool bound_command_buffer_t::wait_for_executed( std::uint64_t timeout ) {
     auto result = (*get_factory()->get_factory()->get_factory())->waitForFences( 1, &**fence, true, timeout );
-    auto reset_result = (*get_factory()->get_factory()->get_factory())->resetFences( 1, &**fence );
-    if( reset_result != vk::Result::eSuccess ) throw -1;
     if( result == vk::Result::eSuccess ) {
+      auto reset_result = (*get_factory()->get_factory()->get_factory())->resetFences( 1, &**fence );
+      if( reset_result != vk::Result::eSuccess ) throw -1;
       unbound()->on_executed( result );
       return true;
     }
     if( result == vk::Result::eTimeout ) return false;
     else {
       unbound()->on_executed( result );
-      throw -1;
+      vk::throwResultException( vk::Result( result ), "wait_for_executed failed." );
     }
   }
   command_buffer_recorder_t bound_command_buffer_t::begin(

@@ -23,7 +23,7 @@ namespace gct {
       const std::shared_ptr< acceleration_structure_t > &buffer_,
       vk::DeviceAddress address_
     );
-    vk::DeviceAddress operator*() {
+    const vk::DeviceAddress &operator*() const {
       return address;
     }
     device_address_t &operator+=( std::int64_t value );
@@ -45,7 +45,7 @@ namespace gct {
     device_address_t operator+( std::int64_t value ) const;
     device_address_t operator-( std::int64_t value ) const;
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-    std::shared_ptr< strided_device_address_region_t > get_strided(
+    strided_device_address_region_t get_strided(
       vk::DeviceSize stride,
       vk::DeviceSize size
     );

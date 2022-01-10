@@ -166,6 +166,8 @@ namespace gct::gltf {
     LIBGCT_SETTER( min )
     LIBGCT_SETTER( max )
     LIBGCT_SETTER( uniform_buffer )
+    LIBGCT_SETTER( vertex_input_binding )
+    LIBGCT_SETTER( vertex_input_attribute )
     std::vector< std::shared_ptr< graphics_pipeline_t > > pipeline;
     std::shared_ptr< pipeline_layout_t > pipeline_layout;
     std::unordered_map< std::uint32_t, buffer_window_t > vertex_buffer;
@@ -177,6 +179,8 @@ namespace gct::gltf {
     glm::vec3 min;
     glm::vec3 max;
     std::shared_ptr< buffer_t > uniform_buffer;
+    std::vector< vk::VertexInputBindingDescription > vertex_input_binding;
+    std::vector< vk::VertexInputAttributeDescription > vertex_input_attribute;
   };
   using shader_t = std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > >;
   struct mesh_t {

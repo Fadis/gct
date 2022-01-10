@@ -1,3 +1,4 @@
+#include <iostream>
 #include <gct/acceleration_structure_build_geometry_info.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <gct/acceleration_structure_geometry.hpp>
@@ -8,13 +9,14 @@
 
 namespace gct {
   acceleration_structure_build_geometry_info_t &acceleration_structure_build_geometry_info_t::rebuild_chain() {
-    if( chained ) throw -1;
+    if( chained ) return *this;
     {
       auto basic = get_basic();
       if( src )
         basic.setSrcAccelerationStructure( **src );
       if( dst )
         basic.setDstAccelerationStructure( **dst );
+      basic.scratchData = *scratch;
       raw_geometry.clear();
       raw_geometry.reserve( geometry.size() );
       std::transform( geometry.begin(), geometry.end(), std::back_inserter( raw_geometry ), []( auto &v ) {
@@ -59,6 +61,16 @@ namespace gct {
   }
   acceleration_structure_build_geometry_info_t &acceleration_structure_build_geometry_info_t::clear_dst() {
     dst.reset();
+    chained = false;
+    return *this;
+  }
+  acceleration_structure_build_geometry_info_t &acceleration_structure_build_geometry_info_t::set_scratch( const device_or_host_address_t &v ) {
+    scratch = v;
+    chained = false;
+    return *this;
+  }
+  acceleration_structure_build_geometry_info_t &acceleration_structure_build_geometry_info_t::clear_scratch() {
+    scratch = device_or_host_address_t();
     chained = false;
     return *this;
   }

@@ -55,16 +55,14 @@ namespace gct {
     else throw -1;
   }
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-  std::shared_ptr< strided_device_address_region_t > device_address_t::get_strided(
+  strided_device_address_region_t device_address_t::get_strided(
     vk::DeviceSize stride,
     vk::DeviceSize size
   ) {
-    return std::shared_ptr< strided_device_address_region_t >(
-      new strided_device_address_region_t(
-        shared_from_this(),
-        stride,
-        size
-      )
+    return strided_device_address_region_t(
+      shared_from_this(),
+      stride,
+      size
     );
   }
 #endif

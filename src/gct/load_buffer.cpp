@@ -9,12 +9,51 @@
 namespace gct {
   std::shared_ptr< buffer_t > command_buffer_recorder_t::load_buffer(
     const std::shared_ptr< allocator_t > &allocator,
+    const void * addr,
+    std::size_t size,
+    vk::BufferUsageFlags usage
+  ) {
+    auto final_buffer = allocator->create_buffer(
+      size,
+      usage | vk::BufferUsageFlagBits::eTransferDst |
+      vk::BufferUsageFlagBits::eShaderDeviceAddress,
+      VMA_MEMORY_USAGE_GPU_ONLY
+    );
+    auto temporary_buffer = allocator->create_buffer(
+      size,
+      vk::BufferUsageFlagBits::eTransferSrc,
+      VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
+    {
+      auto mapped = temporary_buffer->map< std::uint8_t >();
+      std::copy(
+        reinterpret_cast< const std::uint8_t* >( addr ),
+        std::next( reinterpret_cast< const std::uint8_t* >( addr ), size ),
+        mapped.begin()
+      );
+    }
+    (*get_factory())->copyBuffer(
+      **temporary_buffer,
+      **final_buffer,
+      {
+        vk::BufferCopy()
+          .setSrcOffset( 0 )
+          .setDstOffset( 0 )
+          .setSize( size )
+      }
+    );
+    get_factory()->unbound()->keep.push_back( std::move( temporary_buffer ) );
+    return final_buffer;
+  }
+  std::shared_ptr< buffer_t > command_buffer_recorder_t::load_buffer(
+    const std::shared_ptr< allocator_t > &allocator,
     const std::vector< uint8_t > &data,
     vk::BufferUsageFlags usage
   ) {
     auto final_buffer = allocator->create_buffer(
       data.size(),
-      usage | vk::BufferUsageFlagBits::eTransferDst,
+      usage | vk::BufferUsageFlagBits::eTransferDst |
+      vk::BufferUsageFlagBits::eShaderDeviceAddress,
       VMA_MEMORY_USAGE_GPU_ONLY
     );
     auto temporary_buffer = allocator->create_buffer(

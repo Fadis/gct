@@ -1,0 +1,6 @@
+add_executable( vulkan-list_devices vulkan.cpp )
+target_link_libraries( vulkan-list_devices ${Vulkan_LIBRARIES} gct )
+add_executable( vulkan_hpp-list_devices vulkan_hpp.cpp )
+target_link_libraries( vulkan_hpp-list_devices ${Vulkan_LIBRARIES} gct )
+add_executable( gct-list_devices gct.cpp )
+target_link_libraries( gct-list_devices ${Vulkan_LIBRARIES} gct )

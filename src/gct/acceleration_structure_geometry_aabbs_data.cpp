@@ -7,18 +7,19 @@
 namespace gct {
   acceleration_structure_geometry_aabbs_data_t &acceleration_structure_geometry_aabbs_data_t::rebuild_chain() {
     if( chained ) return *this;
-    data->rebuild_chain();
+    if( data )
+      data.rebuild_chain();
     {
       auto basic = get_basic();
       if( data )
         basic
-          .setData( **data );
+          .setData( *data );
       set_basic( std::move( basic ) );
     }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
-  acceleration_structure_geometry_aabbs_data_t &acceleration_structure_geometry_aabbs_data_t::set_data( const std::shared_ptr< device_or_host_address_const_t > &v ) {
+  acceleration_structure_geometry_aabbs_data_t &acceleration_structure_geometry_aabbs_data_t::set_data( const device_or_host_address_const_t &v ) {
     data = v;
     chained = false;
     return *this;
@@ -31,7 +32,7 @@ namespace gct {
   void acceleration_structure_geometry_aabbs_data_t::to_json( nlohmann::json &root ) const {
     root = nlohmann::json::object();
     root[ "basic" ] = basic;
-    root[ "basic" ][ "data" ] = *data;
+    root[ "basic" ][ "data" ] = data;
   }
   void to_json( nlohmann::json &root, const acceleration_structure_geometry_aabbs_data_t &v ) {
     v.to_json( root );

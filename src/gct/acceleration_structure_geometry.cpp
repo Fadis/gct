@@ -1,17 +1,21 @@
+#include <iostream>
 #include <gct/acceleration_structure_geometry.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <nlohmann/json.hpp>
 #include <vulkan2json/AccelerationStructureGeometryKHR.hpp>
+#include <vulkan2json/AccelerationStructureGeometryTrianglesDataKHR.hpp>
+#include <vulkan2json/AccelerationStructureGeometryInstancesDataKHR.hpp>
 namespace gct {
   acceleration_structure_geometry_t &acceleration_structure_geometry_t::rebuild_chain() {
-    if( chained ) throw -1;
+    if( chained ) *this;
     {
       auto basic = get_basic();
-      if( std::holds_alternative< int >( geometry ) ) {}
+      if( std::holds_alternative< int >( geometry ) ) {
+      }
       else if( std::holds_alternative< acceleration_structure_geometry_triangles_data_t >( geometry ) ) {
         std::get< acceleration_structure_geometry_triangles_data_t >( geometry ).rebuild_chain();
         basic.setGeometryType( vk::GeometryTypeKHR::eTriangles );
-        basic.geometry.setTriangles( *std::get< acceleration_structure_geometry_triangles_data_t >( geometry ) );
+        basic.geometry.setTriangles( *std::get< acceleration_structure_geometry_triangles_data_t >( geometry ).rebuild_chain() );
       }
       else if( std::holds_alternative< acceleration_structure_geometry_aabbs_data_t >( geometry ) ) {
         std::get< acceleration_structure_geometry_aabbs_data_t >( geometry ).rebuild_chain();
@@ -24,8 +28,8 @@ namespace gct {
         basic.geometry.setInstances( *std::get< acceleration_structure_geometry_instances_data_t >( geometry ) );
       }
       else throw -1;
+      set_basic( std::move( basic ) );
     }
-    set_basic( std::move( basic ) );
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
@@ -59,13 +63,15 @@ namespace gct {
     root = nlohmann::json::object();
     root[ "basic" ] = basic;
     if( std::holds_alternative< acceleration_structure_geometry_triangles_data_t >( geometry ) ) {
-      root[ "basic" ][ "geometry" ] = std::get< acceleration_structure_geometry_triangles_data_t >( geometry );
+      root[ "geometry" ] = std::get< acceleration_structure_geometry_triangles_data_t >( geometry );
+      root[ "triangle" ] = basic.geometry.triangles;
     }
     else if( std::holds_alternative< acceleration_structure_geometry_aabbs_data_t >( geometry ) ) {
-      root[ "basic" ][ "geometry" ] = std::get< acceleration_structure_geometry_aabbs_data_t >( geometry );
+      root[ "geometry" ] = std::get< acceleration_structure_geometry_aabbs_data_t >( geometry );
     }
     else if( std::holds_alternative< acceleration_structure_geometry_instances_data_t >( geometry ) ) {
-      root[ "basic" ][ "geometry" ] = std::get< acceleration_structure_geometry_instances_data_t >( geometry );
+      root[ "geometry" ] = std::get< acceleration_structure_geometry_instances_data_t >( geometry );
+      root[ "instance" ] = basic.geometry.instances;
     }
   }
   void to_json( nlohmann::json &root, const acceleration_structure_geometry_t &v ) {

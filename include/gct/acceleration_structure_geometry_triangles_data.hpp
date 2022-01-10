@@ -8,6 +8,7 @@
 #include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
+#include <gct/device_or_host_address_const.hpp>
 namespace gct {
   class device_or_host_address_const_t;
   class acceleration_structure_geometry_triangles_data_t : public chained_t {
@@ -19,13 +20,12 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::AccelerationStructureGeometryMotionTrianglesDataNV , motion )
 #endif
   public:
-    acceleration_structure_geometry_triangles_data_t &set_vertex_data( const std::shared_ptr< device_or_host_address_const_t >& );
+    acceleration_structure_geometry_triangles_data_t &set_vertex_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_triangles_data_t &clear_vertex_data();
-    acceleration_structure_geometry_triangles_data_t &set_index_data( const std::shared_ptr< device_or_host_address_const_t >& );
+    acceleration_structure_geometry_triangles_data_t &set_index_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_triangles_data_t &clear_index_data();
-    acceleration_structure_geometry_triangles_data_t &set_transform_data( const std::shared_ptr< device_or_host_address_const_t >& );
+    acceleration_structure_geometry_triangles_data_t &set_transform_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_triangles_data_t &clear_transform_data();
-    void to_json( nlohmann::json &j ) const;
     vk::AccelerationStructureGeometryTrianglesDataKHR &operator*() {
       return basic;
     }
@@ -39,9 +39,9 @@ namespace gct {
       return &basic;
     }
   private:
-    std::shared_ptr< device_or_host_address_const_t > vertex_data;
-    std::shared_ptr< device_or_host_address_const_t > index_data;
-    std::shared_ptr< device_or_host_address_const_t > transform_data;
+    device_or_host_address_const_t vertex_data;
+    device_or_host_address_const_t index_data;
+    device_or_host_address_const_t transform_data;
   };
   void to_json( nlohmann::json &root, const acceleration_structure_geometry_triangles_data_t &v );
 }

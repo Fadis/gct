@@ -308,7 +308,8 @@ namespace gct::gltf {
         command_buffer.load_buffer_from_file(
           allocator,
           buffer_path.string(),
-          vk::BufferUsageFlagBits::eVertexBuffer|vk::BufferUsageFlagBits::eIndexBuffer
+          vk::BufferUsageFlagBits::eVertexBuffer|vk::BufferUsageFlagBits::eIndexBuffer|
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
         )
       );
       std::cout << " OK" << std::endl;
@@ -571,7 +572,6 @@ namespace gct::gltf {
             .setSize( sizeof( gct::gltf::push_constants_t ) )
         )
     );
-    std::cout << nlohmann::json( *descriptor_set_layout ).dump( 2 ) << std::endl;
     return std::make_tuple( descriptor_set_layout, pipeline_layout );
   }
   std::shared_ptr< graphics_pipeline_t > create_pipeline(

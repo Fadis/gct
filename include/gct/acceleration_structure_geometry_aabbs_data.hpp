@@ -8,15 +8,15 @@
 #include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
+#include <gct/device_or_host_address_const.hpp>
 namespace gct {
-  class device_or_host_address_const_t;
   class acceleration_structure_geometry_aabbs_data_t : public chained_t {
   public:
     using self_type = acceleration_structure_geometry_aabbs_data_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::AccelerationStructureGeometryAabbsDataKHR )
   public:
-    acceleration_structure_geometry_aabbs_data_t &set_data( const std::shared_ptr< device_or_host_address_const_t >& );
+    acceleration_structure_geometry_aabbs_data_t &set_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_aabbs_data_t &clear_data();
     void to_json( nlohmann::json &j ) const;
     vk::AccelerationStructureGeometryAabbsDataKHR &operator*() {
@@ -32,7 +32,7 @@ namespace gct {
       return &basic;
     }
   private:
-    std::shared_ptr< device_or_host_address_const_t > data;
+    device_or_host_address_const_t data;
   };
   void to_json( nlohmann::json &root, const acceleration_structure_geometry_aabbs_data_t &v );
 }

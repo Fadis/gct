@@ -166,7 +166,12 @@ int main() {
         .rebuild_chain()
     ) );
   }
-  auto allocator = device->get_allocator();
+  VmaAllocatorCreateInfo allocator_create_info{};
+  allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  auto allocator = device->get_allocator(
+    allocator_create_info
+  );
+  
   
   std::vector< fb_resources_t > framebuffers;
 
