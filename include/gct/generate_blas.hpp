@@ -20,6 +20,16 @@ namespace gct {
       command_buffer_recorder_t &command_buffer,
       const std::shared_ptr< allocator_t > &allocator
     );
+
+    std::shared_ptr< acceleration_structure_t >
+    generate_blas(
+      const std::shared_ptr< buffer_t > &vertex,
+      std::uint32_t vertex_offset,
+      std::uint32_t vertex_count,
+      const pipeline_vertex_input_state_create_info_t &vistat,
+      command_buffer_recorder_t &rec,
+      const std::shared_ptr< allocator_t > &allocator
+    );
   }
 }
 #endif

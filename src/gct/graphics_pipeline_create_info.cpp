@@ -191,6 +191,7 @@ namespace gct {
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const pipeline_shader_stage_create_info_t &v ) {
     stage.push_back( v );
+    stage.back().rebuild_chain();
     chained = false;
     return *this;
   }
@@ -200,7 +201,6 @@ namespace gct {
     add_stage(
       pipeline_shader_stage_create_info_t()
         .set_shader_module( v )
-        .rebuild_chain()
     );
     return *this;
   }

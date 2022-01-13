@@ -3,10 +3,12 @@
 #include <memory>
 #include <vector>
 #include <any>
+#include <tuple>
 #include <boost/range/iterator_range.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/command_buffer_begin_info.hpp>
+#include <gct/pipeline_vertex_input_state_create_info.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -17,8 +19,10 @@ namespace gct {
   class descriptor_set_t;
   class pipeline_layout_t;
   class compute_pipeline_t;
+  class ray_tracing_pipeline_t;
   class acceleration_structure_build_geometry_info_t;
   class acceleration_structure_build_region_info_t;
+  class strided_device_address_region_t;
   std::uint32_t get_pot( std::uint32_t v );
   bool is_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
@@ -229,6 +233,10 @@ namespace gct {
       vk::PipelineBindPoint bind_point,
       std::shared_ptr< compute_pipeline_t > pipeline
     );
+    void bind_pipeline(
+      vk::PipelineBindPoint bind_point,
+      std::shared_ptr< ray_tracing_pipeline_t > pipeline
+    );
     void build_acceleration_structure(
       const std::vector< gct::acceleration_structure_build_geometry_info_t >&,
       const std::vector< std::vector< vk::AccelerationStructureBuildRangeInfoKHR > >&
@@ -237,6 +245,25 @@ namespace gct {
       const gct::acceleration_structure_build_geometry_info_t&,
       const std::vector< vk::AccelerationStructureBuildRangeInfoKHR >&
     );
+    void trace_rays(
+      const strided_device_address_region_t&,
+      const strided_device_address_region_t&,
+      const strided_device_address_region_t&,
+      const strided_device_address_region_t&,
+      std::uint32_t,
+      std::uint32_t,
+      std::uint32_t
+    );
+    std::tuple<
+      std::shared_ptr< buffer_t >,
+      pipeline_vertex_input_state_create_info_t,
+      std::uint32_t
+    >
+    generate_triangle(
+      const std::shared_ptr< allocator_t >&
+    );
+
+
     const command_buffer_begin_info_t &get_props() const { return props; }
     vk::CommandBuffer &operator*();
     const vk::CommandBuffer &operator*() const;

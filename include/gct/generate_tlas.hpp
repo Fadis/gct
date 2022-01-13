@@ -19,6 +19,12 @@ namespace gct {
       const std::vector< std::shared_ptr< gct::buffer_t > > &as_buf,
       const std::vector< std::uint32_t > &mesh2instance
     );
+    std::shared_ptr< acceleration_structure_t >
+    generate_tlas(
+      command_buffer_recorder_t &rec,
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::vector< std::shared_ptr< acceleration_structure_t > > &blas
+    );
   }
 }
 #endif

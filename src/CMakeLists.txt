@@ -26,6 +26,7 @@ add_library( gct SHARED
   gct/allocator.cpp
   gct/image_create_info.cpp
   gct/image.cpp
+  gct/round_up.cpp
   gct/acceleration_structure_create_info.cpp
   gct/acceleration_structure.cpp
   gct/acceleration_structure_geometry_triangles_data.cpp
@@ -119,6 +120,7 @@ add_library( gct SHARED
   gct/load_gltf.cpp
   gct/load_mesh.cpp
   gct/load_node.cpp
+  gct/generate_triangle.cpp
   gct/generate_blas.cpp
   gct/generate_tlas.cpp
   gct/vma.cpp
@@ -134,6 +136,7 @@ add_library( gct SHARED
   gct/ray_tracing_pipeline_interface_create_info.cpp
   gct/ray_tracing_pipeline_create_info.cpp
   gct/ray_tracing_pipeline.cpp
+  gct/trace_rays.cpp
   gct/mp4.cpp
   gct/io_context.cpp
   gct/async.cpp
@@ -228,6 +231,23 @@ target_link_libraries(
   ${OIIO_LIBRARIES}
   ${GLFW_LIBRARIES}
 )
+
+add_executable( test2
+  example/test2.cpp
+)
+
+target_link_libraries(
+  test2
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${Vulkan_LIBRARIES}
+  ${OIIO_LIBRARIES}
+  ${GLFW_LIBRARIES}
+)
+
 
 add_executable( image
   example/image.cpp

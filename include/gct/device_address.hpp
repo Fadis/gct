@@ -12,8 +12,7 @@ namespace gct {
   class buffer_t;
   class acceleration_structure_t;
   class strided_device_address_region_t;
-  class device_address_t :
-    public std::enable_shared_from_this< device_address_t > {
+  class device_address_t {
   public:
     device_address_t(
       const std::shared_ptr< buffer_t > &buffer_,

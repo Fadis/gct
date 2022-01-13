@@ -1,5 +1,14 @@
-GLSLC=~/vulkansdk/1.2.141.2/x86_64/bin/glslc 
+GLSLC=glslc 
 GLSLI=../build/src/glsl_include
+
+echo simple.rgen
+cat simple.rgen|${GLSLI}|${GLSLC} -fshader-stage=rgen -o simple.rgen.spv --target-env=vulkan1.2 -
+echo simple.rchit
+cat simple.rchit|${GLSLI}|${GLSLC} -fshader-stage=rchit -o simple.rchit.spv --target-env=vulkan1.2 -
+echo simple.rmiss
+cat simple.rmiss|${GLSLI}|${GLSLC} -fshader-stage=rmiss -o simple.rmiss.spv --target-env=vulkan1.2 -
+echo simple2.rmiss
+cat simple2.rmiss|${GLSLI}|${GLSLC} -fshader-stage=rmiss -o simple2.rmiss.spv --target-env=vulkan1.2 -
 
 echo world.vert
 cat world.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o world.vert.spv --target-env=vulkan1.2 -

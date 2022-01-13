@@ -138,6 +138,7 @@ int main() {
       .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 400 )
       .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 400 )
       .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 4000 )
+      .set_descriptor_pool_size( vk::DescriptorType::eAccelerationStructureKHR, 400 )
       .rebuild_chain()
   );
   
@@ -150,6 +151,9 @@ int main() {
   const auto rmiss = device->get_shader_module(
     "../shaders/simple.rmiss.spv"
   );
+  const auto rmiss2 = device->get_shader_module(
+    "../shaders/simple2.rmiss.spv"
+  );
   
   const auto descriptor_set_layout = device->get_descriptor_set_layout(
     gct::descriptor_set_layout_create_info_t()
@@ -160,11 +164,14 @@ int main() {
         rmiss->get_props().get_reflection()
       )
       .add_binding(
+        rmiss2->get_props().get_reflection()
+      )
+      .add_binding(
         rchit->get_props().get_reflection()
       )
       .rebuild_chain()
   );
-  
+ 
   const auto descriptor_set = descriptor_pool->allocate( descriptor_set_layout );
 
   std::cout << nlohmann::json( *descriptor_set_layout ).dump( 2 ) << std::endl; 
@@ -189,6 +196,7 @@ int main() {
     gct::ray_tracing_pipeline_create_info_t()
     .add_stage( rgen )
     .add_stage( rmiss )
+    .add_stage( rmiss2 )
     .add_stage( rchit )
     .set_layout( pipeline_layout )
   );
@@ -284,112 +292,134 @@ int main() {
         .rebuild_chain()
     );
 
-  std::vector< std::shared_ptr< gct::buffer_t > > staging_dynamic_uniform;
-  std::vector< std::shared_ptr< gct::buffer_t > > dynamic_uniform;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    staging_dynamic_uniform.emplace_back(
-      allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferSrc )
-          ),
-          VMA_MEMORY_USAGE_CPU_TO_GPU
-       )
-    );
-    dynamic_uniform.emplace_back(
-      allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer )
-          ),
-          VMA_MEMORY_USAGE_GPU_ONLY
-       )
-    );
-  }
+  struct Vertex {
+    float pos[3];
+  };
+  std::vector<Vertex> vertex_data = {
+    { {  1.0f,  1.0f, 0.0f } },
+    { { -1.0f,  1.0f, 0.0f } },
+    { {  0.0f, -1.0f, 0.0f } }
+  };
 
-  const std::uint32_t raygen_shader_count = 1u;
-  const std::uint32_t miss_shader_count = 1u;
-  const std::uint32_t hit_shader_count = 1u;
+  std::vector<uint32_t> index_data = { 0, 1, 2 };
+  auto index_count = static_cast<uint32_t>(index_data.size());
 
-  const std::uint32_t raygen_shader_binding_offset = 0;
-  const std::uint32_t raygen_shader_binding_stride = rtprops.shaderGroupHandleSize;
-  const std::uint32_t raygen_shader_table_size = raygen_shader_count * raygen_shader_binding_stride;
-
-  const std::uint32_t miss_shader_binding_offset =
-    raygen_shader_binding_offset +
-    gct::round_up( raygen_shader_table_size, rtprops.shaderGroupBaseAlignment );
-  std::cout << __FILE__ << " " << __LINE__ << " "  << miss_shader_binding_offset << " " << raygen_shader_table_size << " " << rtprops.shaderGroupBaseAlignment << std::endl;
-  const std::uint32_t miss_shader_binding_stride = rtprops.shaderGroupHandleSize;
-  const std::uint32_t miss_shader_table_size = miss_shader_count * miss_shader_binding_stride;
-
-  const std::uint32_t hit_shader_binding_offset =
-    miss_shader_binding_offset +
-    gct::round_up( miss_shader_table_size, rtprops.shaderGroupBaseAlignment );
-  const std::uint32_t hit_shader_binding_stride = rtprops.shaderGroupHandleSize;
-  const std::uint32_t hit_shader_table_size = hit_shader_count * hit_shader_binding_stride;
-
-  const std::uint32_t shader_binding_table_size = hit_shader_binding_offset + hit_shader_table_size;
-
-
+  vk::TransformMatrixKHR transform_data{
+    std::array< std::array< float, 4 >, 3 >{
+      std::array< float, 4 >{ 1.0f, 0.0f, 0.0f, 0.0f },
+        std::array< float, 4 >{ 0.0f, 1.0f, 0.0f, 0.0f },
+        std::array< float, 4 >{ 0.0f, 0.0f, 1.0f, 0.0f }
+    }
+  };
 
   auto gcb = queue->get_command_pool()->allocate();
-  gct::gltf::document_t doc;
-  std::uint32_t instance_id = 0u;
-  std::vector< std::shared_ptr< gct::acceleration_structure_t > > blas;
-  //std::vector< std::shared_ptr< gct::buffer_t > > blas_buf;
-  std::vector< std::uint32_t > mesh2instance;
-  std::shared_ptr< gct::acceleration_structure_t > tlas;
-  std::shared_ptr< gct::buffer_t > shader_binding_table;
-  std::shared_ptr< gct::buffer_t > triangle_buf;
+  std::shared_ptr< gct::buffer_t > vertex;
+  std::shared_ptr< gct::buffer_t > index;
+  std::shared_ptr< gct::buffer_t > transform;
+  std::shared_ptr< gct::buffer_t > blas_buffer;
+  std::shared_ptr< gct::acceleration_structure_t > blas;
   {
     auto rec = gcb->begin();
-    //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
-    auto [triangle_buf_,triangle_vistat,triangle_vcount] =
-      rec.generate_triangle(
-        allocator
-      );
-    triangle_buf = triangle_buf_;
-    /*doc = gct::gltf::load_gltf(
-      "/home/fadis/gltf/Sponza/glTF/Sponza.gltf",
-      device,
-      rec,
+    vertex = rec.load_buffer(
       allocator,
-      descriptor_pool,
-      render_pass,
-      "/home/fadis/git/gct/shaders",
-      0,
-      swapchain_images.size(),
-      0,
-      dynamic_uniform,
-      float( width ) / float( height )
+      vertex_data.data(),
+      vertex_data.size() * sizeof(Vertex),
+      vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
     );
-    std::tie( blas, blas_buf, mesh2instance ) = gct::gltf::generate_blas(
-      doc,
-      rec,
-      allocator
-    );
-    tlas = gct::gltf::generate_tlas(
-      doc,
-      rec,
+    index = rec.load_buffer(
       allocator,
-      blas,
-      blas_buf,
-      mesh2instance
+      index_data.data(),
+      index_data.size() * sizeof(std::uint32_t),
+      vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
     );
-    */
-    blas.push_back(
-      gct::gltf::generate_blas(
-        triangle_buf,
-        0u,
-        triangle_vcount,
-        triangle_vistat,
-        rec,
-        allocator
+    transform = rec.load_buffer(
+      allocator,
+      index_data.data(),
+      sizeof( vk::TransformMatrixKHR ),
+      vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
+    );
+    
+    auto asbgi = gct::acceleration_structure_build_geometry_info_t()
+      .set_basic(
+        vk::AccelerationStructureBuildGeometryInfoKHR()
+          .setType(
+            vk::AccelerationStructureTypeKHR::eBottomLevel
+          )
+          .setFlags(
+            vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+          )
+          .setMode(
+            vk::BuildAccelerationStructureModeKHR::eBuild
+          )
       )
+      .add_geometry(
+        gct::acceleration_structure_geometry_t()
+          .set_triangle(
+            gct::acceleration_structure_geometry_triangles_data_t()
+              .set_basic(
+                vk::AccelerationStructureGeometryTrianglesDataKHR()
+                  .setIndexType( vk::IndexType::eUint32 )
+                  .setVertexFormat( vk::Format::eR32G32B32Sfloat )
+                  .setVertexStride( sizeof( Vertex ) )
+                  .setMaxVertex( 3 )
+              )
+              .set_vertex_data(
+                vertex->get_address()
+              )
+              .set_index_data(
+                index->get_address()
+              )
+              .set_transform_data(
+                transform->get_address()
+              )
+          )
+      );
+    std::vector< std::uint32_t > max_primitive_count{ 1 };
+    auto size = device->get_acceleration_structure_build_size(
+      vk::AccelerationStructureBuildTypeKHR::eDevice,
+      asbgi,
+      max_primitive_count
+    );
+    std::cout << __FILE__ << " " << __LINE__ << " " << nlohmann::json( size ).dump( 2 ) << std::endl;
+    auto scratch_buffer_addr = allocator->create_buffer(
+      gct::buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size.get_basic().buildScratchSize )
+            .setUsage(
+              vk::BufferUsageFlagBits::eStorageBuffer|
+              vk::BufferUsageFlagBits::eShaderDeviceAddress
+            )
+        ),
+      VMA_MEMORY_USAGE_GPU_ONLY
+    )->get_address();
+    blas_buffer = allocator->create_buffer(
+      gct::buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size.get_basic().accelerationStructureSize )
+            .setUsage(
+              vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR|
+              vk::BufferUsageFlagBits::eShaderDeviceAddress
+            )
+        ),
+      VMA_MEMORY_USAGE_GPU_ONLY
+    );
+    blas = blas_buffer->create_acceleration_structure(
+        vk::AccelerationStructureTypeKHR::eBottomLevel
+      );
+    asbgi
+      .set_src( blas )
+      .set_dst( blas )
+      .set_scratch( scratch_buffer_addr )
+      .rebuild_chain();
+    std::cout << __FILE__ << " " << __LINE__ << " " << nlohmann::json( asbgi ).dump( 2 ) << std::endl;
+    rec.build_acceleration_structure(
+      asbgi,
+      std::vector< vk::AccelerationStructureBuildRangeInfoKHR >{
+        vk::AccelerationStructureBuildRangeInfoKHR()
+          .setPrimitiveCount( 1 )
+      }
     );
   }
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
@@ -401,58 +431,100 @@ int main() {
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
   
   auto gcb2 = queue->get_command_pool()->allocate();
+  std::shared_ptr< gct::buffer_t > instance_buffer;
+  std::shared_ptr< gct::buffer_t > tlas_buffer;
+  std::shared_ptr< gct::acceleration_structure_t > tlas;
   {
     auto rec = gcb2->begin();
-    tlas = gct::gltf::generate_tlas(
-      rec,
+
+    std::vector< vk::AccelerationStructureInstanceKHR > instance_data;
+    instance_data.push_back(
+      vk::AccelerationStructureInstanceKHR()
+        .setTransform( transform_data )
+        .setInstanceCustomIndex( 0 )
+        .setMask( 0xFF )
+        .setInstanceShaderBindingTableRecordOffset( 0 )
+        .setFlags( vk::GeometryInstanceFlagBitsKHR::eTriangleFacingCullDisable )
+        .setAccelerationStructureReference( *blas->get_address() )
+    );
+
+    instance_buffer = rec.load_buffer(
       allocator,
-      blas
+      reinterpret_cast< const void* >( instance_data.data() ),
+      sizeof( vk::AccelerationStructureInstanceKHR ) * instance_data.size(),
+      vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
     );
-    std::vector< std::uint8_t > shader_binding_table_data( shader_binding_table_size );
-    const auto get_raygen_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
-      **ray_tracing_pipeline,
-      0u,
-      1u,
-      raygen_shader_table_size,
-      std::next( shader_binding_table_data.data(), raygen_shader_binding_offset )
+
+    auto asbgi = gct::acceleration_structure_build_geometry_info_t()
+      .set_basic(
+        vk::AccelerationStructureBuildGeometryInfoKHR()
+          .setType(
+            vk::AccelerationStructureTypeKHR::eTopLevel
+          )
+          .setFlags(
+            vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+          )
+          .setMode(
+            vk::BuildAccelerationStructureModeKHR::eBuild
+          )
+      )
+      .add_geometry(
+        gct::acceleration_structure_geometry_t()
+          .set_instance(
+            gct::acceleration_structure_geometry_instances_data_t()
+              .set_basic(
+                vk::AccelerationStructureGeometryInstancesDataKHR()
+                  .setArrayOfPointers( false )
+              )
+              .set_data( instance_buffer->get_address() )
+          )
+      );
+    std::vector< std::uint32_t > max_primitive_count{ 1 };
+    auto size = device->get_acceleration_structure_build_size(
+      vk::AccelerationStructureBuildTypeKHR::eDevice,
+      asbgi,
+      max_primitive_count
     );
-    if( get_raygen_handles_result != vk::Result::eSuccess ) {
-      vk::throwResultException( get_raygen_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
-    }
-    const auto get_miss_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
-      **ray_tracing_pipeline,
-      1u,
-      1u,
-      miss_shader_table_size,
-      std::next( shader_binding_table_data.data(), miss_shader_binding_offset )
+    std::cout << __FILE__ << " " << __LINE__ << " " << nlohmann::json( size ).dump( 2 ) << std::endl;
+    auto scratch_buffer_addr = allocator->create_buffer(
+      gct::buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size.get_basic().buildScratchSize )
+            .setUsage(
+              vk::BufferUsageFlagBits::eStorageBuffer|
+              vk::BufferUsageFlagBits::eShaderDeviceAddress
+            )
+        ),
+      VMA_MEMORY_USAGE_GPU_ONLY
+    )->get_address();
+    tlas_buffer = allocator->create_buffer(
+      gct::buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size.get_basic().accelerationStructureSize )
+            .setUsage(
+              vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR|
+              vk::BufferUsageFlagBits::eShaderDeviceAddress
+            )
+        ),
+      VMA_MEMORY_USAGE_GPU_ONLY
     );
-    if( get_miss_handles_result != vk::Result::eSuccess ) {
-      vk::throwResultException( get_miss_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
-    }
-    const auto get_hit_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
-      **ray_tracing_pipeline,
-      2u,
-      1u,
-      hit_shader_table_size,
-      std::next( shader_binding_table_data.data(), hit_shader_binding_offset )
-    );
-    if( get_hit_handles_result != vk::Result::eSuccess ) {
-      vk::throwResultException( get_hit_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
-    }
-    std::cout << nlohmann::json( shader_binding_table_data ) << std::endl;
-    shader_binding_table = rec.load_buffer(
-      allocator,
-      shader_binding_table_data,
-      vk::BufferUsageFlagBits::eShaderBindingTableKHR
-    );
-    rec.barrier(
-      vk::AccessFlagBits::eTransferWrite,
-      vk::AccessFlagBits::eShaderRead,
-      vk::PipelineStageFlagBits::eTransfer,
-      vk::PipelineStageFlagBits::eRayTracingShaderKHR,
-      vk::DependencyFlagBits( 0 ),
-      { shader_binding_table },
-      {}
+    tlas = tlas_buffer->create_acceleration_structure(
+        vk::AccelerationStructureTypeKHR::eTopLevel
+      );
+    asbgi
+      .set_src( tlas )
+      .set_dst( tlas )
+      .set_scratch( scratch_buffer_addr )
+      .rebuild_chain();
+    std::cout << __FILE__ << " " << __LINE__ << " " << nlohmann::json( asbgi ).dump( 2 ) << std::endl;
+    rec.build_acceleration_structure(
+      asbgi,
+      std::vector< vk::AccelerationStructureBuildRangeInfoKHR >{
+        vk::AccelerationStructureBuildRangeInfoKHR()
+          .setPrimitiveCount( 1 )
+      }
     );
     rec.convert_image( dest_image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral );
   }
@@ -463,7 +535,7 @@ int main() {
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
   gcb2->wait_for_executed();
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
-  
+
   descriptor_set->update(
     {
       gct::write_descriptor_set_t()
@@ -490,6 +562,82 @@ int main() {
     }
   );
 
+
+  const std::uint32_t raygen_shader_count = 1u;
+  const std::uint32_t miss_shader_count = 2u;
+  const std::uint32_t hit_shader_count = 1u;
+
+  const std::uint32_t raygen_shader_binding_offset = 0;
+  const std::uint32_t raygen_shader_binding_stride = rtprops.shaderGroupHandleSize;
+  const std::uint32_t raygen_shader_table_size = raygen_shader_count * raygen_shader_binding_stride;
+
+  const std::uint32_t miss_shader_binding_offset =
+    raygen_shader_binding_offset +
+    gct::round_up( raygen_shader_table_size, rtprops.shaderGroupBaseAlignment );
+  std::cout << __FILE__ << " " << __LINE__ << " "  << miss_shader_binding_offset << " " << raygen_shader_table_size << " " << rtprops.shaderGroupBaseAlignment << std::endl;
+  const std::uint32_t miss_shader_binding_stride = rtprops.shaderGroupHandleSize;
+  const std::uint32_t miss_shader_table_size = miss_shader_count * miss_shader_binding_stride;
+
+  const std::uint32_t hit_shader_binding_offset =
+    miss_shader_binding_offset +
+    gct::round_up( miss_shader_table_size, rtprops.shaderGroupBaseAlignment );
+  const std::uint32_t hit_shader_binding_stride = rtprops.shaderGroupHandleSize;
+  const std::uint32_t hit_shader_table_size = hit_shader_count * hit_shader_binding_stride;
+
+  const std::uint32_t shader_binding_table_size = hit_shader_binding_offset + hit_shader_table_size;
+
+  std::vector< std::uint8_t > shader_binding_table_data( shader_binding_table_size );
+  const auto get_raygen_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
+    **ray_tracing_pipeline,
+    0u,
+    raygen_shader_count,
+    raygen_shader_table_size,
+    std::next( shader_binding_table_data.data(), raygen_shader_binding_offset )
+  );
+  if( get_raygen_handles_result != vk::Result::eSuccess ) {
+    vk::throwResultException( get_raygen_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+  }
+  const auto get_miss_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
+    **ray_tracing_pipeline,
+    raygen_shader_count,
+    miss_shader_count,
+    miss_shader_table_size,
+    std::next( shader_binding_table_data.data(), miss_shader_binding_offset )
+  );
+  if( get_miss_handles_result != vk::Result::eSuccess ) {
+    vk::throwResultException( get_miss_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+  }
+  const auto get_hit_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
+    **ray_tracing_pipeline,
+    raygen_shader_count + miss_shader_count,
+    hit_shader_count,
+    hit_shader_table_size,
+    std::next( shader_binding_table_data.data(), hit_shader_binding_offset )
+  );
+  if( get_hit_handles_result != vk::Result::eSuccess ) {
+    vk::throwResultException( get_hit_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+  }
+
+  auto gcb3 = queue->get_command_pool()->allocate();
+  std::shared_ptr< gct::buffer_t > shader_binding_table;
+  {
+    auto rec = gcb3->begin();
+    std::cout << nlohmann::json( shader_binding_table_data ) << std::endl;
+    shader_binding_table = rec.load_buffer(
+      allocator,
+      shader_binding_table_data,
+      vk::BufferUsageFlagBits::eShaderBindingTableKHR
+    );
+  }
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
+  gcb3->execute(
+    gct::submit_info_t()
+  );
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
+  gcb3->wait_for_executed();
+  std::cout << __FILE__ << " " << __LINE__ << std::endl;
+
+
   auto draw_commands = queue->get_command_pool()->allocate();
   {
     auto rec = draw_commands->begin();
@@ -502,6 +650,7 @@ int main() {
       vk::PipelineBindPoint::eRayTracingKHR,
       ray_tracing_pipeline
     );
+    std::cout << __FILE__ << " " << __LINE__ << " " << hit_shader_binding_offset << std::endl;
     rec.trace_rays(
       shader_binding_table->get_address().get_strided(
         raygen_shader_binding_stride,
@@ -515,10 +664,7 @@ int main() {
         hit_shader_binding_stride,
         hit_shader_table_size
       ),
-      shader_binding_table->get_address().get_strided(
-        raygen_shader_binding_stride,
-        raygen_shader_table_size
-      ),
+      gct::strided_device_address_region_t(),
       1920,
       1080,
       1
@@ -547,5 +693,6 @@ int main() {
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
 
   dest_buffer->dump_image( "out.png" );
+
 }
 

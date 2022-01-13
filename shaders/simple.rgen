@@ -1,0 +1,42 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+
+layout( binding = 2 ) uniform accelerationStructureEXT as;
+layout( binding = 1, rgba8 ) writeonly uniform image2D dest_image;
+layout( location = 0 ) rayPayloadEXT vec3 payload;
+
+void main() {
+  const vec2 uv = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy - 1);
+  const vec3 origin = vec3( uv.x, 1.0f - uv.y, -1.0f);
+  const vec3 direction = vec3(1.0f, 1.0f, 1.0f);
+
+  //const uint ray_flags = gl_RayFlagsNoneEXT;
+  const uint ray_flags = gl_RayFlagsOpaqueEXT;
+  const uint cull_mask = 0xFF;
+  const uint sbt_offset = 0;
+  const uint sbt_stride = 1;
+  const uint miss_index = 0;
+  const float near = 0.0f;
+  const float far = 10000.0f;
+  const int payload_location = 0;
+
+  traceRayEXT(
+    as,
+    ray_flags,
+    cull_mask,
+    sbt_offset,
+    sbt_stride,
+    miss_index,
+    origin,
+    near,
+    direction,
+    far,
+    payload_location
+  );
+
+  imageStore(
+    dest_image,
+    ivec2(gl_LaunchIDEXT.xy),
+    vec4(payload, 1.0f)
+  );
+}

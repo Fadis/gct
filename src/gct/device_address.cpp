@@ -60,7 +60,8 @@ namespace gct {
     vk::DeviceSize size
   ) {
     return strided_device_address_region_t(
-      shared_from_this(),
+      from,
+      address,
       stride,
       size
     );

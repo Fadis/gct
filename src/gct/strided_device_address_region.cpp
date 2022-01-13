@@ -5,15 +5,25 @@
 #include <vulkan2json/StridedDeviceAddressRegionKHR.hpp>
 namespace gct {
   strided_device_address_region_t::strided_device_address_region_t(
-    const std::shared_ptr< device_address_t > &head_,
+    const std::variant<
+      std::shared_ptr< buffer_t >,
+      std::shared_ptr< acceleration_structure_t >
+    > &from_,
+    vk::DeviceAddress address_,
     vk::DeviceSize stride_,
     vk::DeviceSize size_
   ) :
-    created_from( head_ ) {
+    from( from_ ) {
       raw
-        .setDeviceAddress( **head_ )
+        .setDeviceAddress( address_ )
         .setStride( stride_ )
         .setSize( size_ );
+  }
+  strided_device_address_region_t::strided_device_address_region_t() {
+      raw
+        .setDeviceAddress( 0u )
+        .setStride( 0u )
+        .setSize( 0u );
   }
   void strided_device_address_region_t::to_json( nlohmann::json &root ) const {
     root = raw;

@@ -33,7 +33,7 @@ namespace gct {
     props.rebuild_chain();
 
     auto wrapped = (*cache->get_factory())->createRayTracingPipelinesKHRUnique( **deferred_operation, **cache, { props.get_basic() } );
-    if( wrapped.result != vk::Result::eSuccess ) {
+    if( wrapped.result != vk::Result::eSuccess && wrapped.result != vk::Result::eOperationDeferredKHR ) {
       vk::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
     }
     auto future = async( deferred_operation );
