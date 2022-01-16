@@ -14,6 +14,7 @@ namespace gct {
   ) :
     pipeline_t( cache ),
     props( create_info ) {
+    props.rebuild_chain();
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     const auto &exts = get_device( *this ).get_activated_extensions();
     std::vector< vk::PipelineCreationFeedbackEXT > feedback_;
