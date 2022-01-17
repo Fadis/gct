@@ -13,7 +13,7 @@ namespace gct {
     created_from< allocator_t >( allocator ),
     allocation( new VmaAllocation() ) {
     VmaAllocationCreateInfo image_alloc_info = {};
-    VkImageCreateInfo raw_image_create_info = create_info.get_basic();
+    VkImageCreateInfo raw_image_create_info = props.get_basic();
     image_alloc_info.usage = usage;
     VkImage image_;
     const auto result = vmaCreateImage( **allocator, &raw_image_create_info, &image_alloc_info, &image_, allocation.get(), nullptr );
