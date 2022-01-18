@@ -48,7 +48,8 @@ namespace gct {
       subpass.begin(),
       subpass.end(),
       std::back_inserter( subpass_sequential ),
-      []( const auto &v ) {
+      []( auto &v ) {
+        v.rebuild_chain();
         return v.get_basic();
       }
     );
