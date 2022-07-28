@@ -9,7 +9,10 @@
 #include <glm/mat4x4.hpp>
 #include <gct/exception.hpp>
 #include <gct/setter.hpp>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
 #include <fx/gltf.h>
+#pragma GCC diagnostic pop
 #include <vulkan/vulkan.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/descriptor_image_info.hpp>

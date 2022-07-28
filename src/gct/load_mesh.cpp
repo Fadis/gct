@@ -21,7 +21,10 @@
  */
 #include <iostream>
 #include <vulkan/vulkan.hpp>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
 #include <fx/gltf.h>
+#pragma GCC diagnostic pop
 #include <glm/mat4x4.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <gct/exception.hpp>

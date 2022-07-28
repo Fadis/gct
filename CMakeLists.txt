@@ -8,6 +8,7 @@ PROJECT(
   DESCRIPTION "GPU Computing Toolkit"
   VERSION 0.1.0
 )
+cmake_policy( SET CMP0074 NEW )
 include(CheckIncludeFiles)
 include(FindPkgConfig)
 include(CheckCXXSourceCompiles)
@@ -70,8 +71,8 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 find_package(Threads REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost 1.68.0 COMPONENTS program_options context system REQUIRED )
-find_package(GLFW REQUIRED)
-find_package(Vulkan REQUIRED)
+pkg_check_modules(GLFW REQUIRED glfw3)
+pkg_check_modules(Vulkan REQUIRED vulkan)
 find_package(JSON REQUIRED)
 find_package(FXGLTF REQUIRED)
 find_package(OpenImageIO REQUIRED)

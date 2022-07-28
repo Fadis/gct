@@ -3,7 +3,6 @@
 #include <memory>
 #include <tuple>
 #include <vector>
-#include <fx/gltf.h>
 #include <vulkan/vulkan.hpp>
 namespace gct {
   class acceleration_structure_t;

@@ -149,9 +149,9 @@ target_link_libraries(
   gct
   Threads::Threads
   ${CMAKE_DL_LIBS}
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${VULKAN2JSON_LIBRARIES}
+  ${pkgcfg_lib_VULKAN2JSON_vulkan2json}
 )
 
 add_library( gct_glfw SHARED
@@ -171,9 +171,9 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   ${CMAKE_DL_LIBS}
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${GLFW_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw3}
 )
 
 set_target_properties(
@@ -197,9 +197,9 @@ target_link_libraries(
   Boost::program_options
   Boost::context
   Boost::system
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${GLFW_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw3}
 )
 
 add_executable( compute
@@ -212,7 +212,7 @@ target_link_libraries(
   Threads::Threads
   Boost::program_options
   Boost::system
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
 )
 
@@ -227,9 +227,9 @@ target_link_libraries(
   Threads::Threads
   Boost::program_options
   Boost::system
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${GLFW_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw3}
 )
 
 add_executable( test2
@@ -243,9 +243,9 @@ target_link_libraries(
   Threads::Threads
   Boost::program_options
   Boost::system
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${GLFW_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw3}
 )
 
 
@@ -260,7 +260,7 @@ target_link_libraries(
   Threads::Threads
   Boost::program_options
   Boost::system
-  ${Vulkan_LIBRARIES}
+  ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${GLFW_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw3}
 )
