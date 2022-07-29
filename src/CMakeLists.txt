@@ -142,6 +142,7 @@ add_library( gct SHARED
   gct/async.cpp
   gct/spv2json.cpp
   gct/spv2vk.cpp
+  gct/image_layout.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -173,7 +174,7 @@ target_link_libraries(
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${pkgcfg_lib_GLFW_glfw3}
+  ${pkgcfg_lib_GLFW_glfw}
 )
 
 set_target_properties(
@@ -199,7 +200,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${pkgcfg_lib_GLFW_glfw3}
+  ${pkgcfg_lib_GLFW_glfw}
 )
 
 add_executable( compute
@@ -229,7 +230,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${pkgcfg_lib_GLFW_glfw3}
+  ${pkgcfg_lib_GLFW_glfw}
 )
 
 add_executable( test2
@@ -245,7 +246,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${pkgcfg_lib_GLFW_glfw3}
+  ${pkgcfg_lib_GLFW_glfw}
 )
 
 
@@ -262,5 +263,5 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
-  ${pkgcfg_lib_GLFW_glfw3}
+  ${pkgcfg_lib_GLFW_glfw}
 )

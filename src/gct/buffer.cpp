@@ -24,7 +24,7 @@ namespace gct {
     allocation( new VmaAllocation() ) {
     props.rebuild_chain();
     VmaAllocationCreateInfo buffer_alloc_info = {};
-    VkBufferCreateInfo raw_buffer_create_info = props.get_basic();
+    VkBufferCreateInfo raw_buffer_create_info = static_cast< VkBufferCreateInfo >( props.get_basic() );
     buffer_alloc_info.usage = usage;
     VkBuffer buffer_;
     const auto result = vmaCreateBuffer( **allocator, &raw_buffer_create_info, &buffer_alloc_info, &buffer_, allocation.get(), nullptr );
