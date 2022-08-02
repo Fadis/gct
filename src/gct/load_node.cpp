@@ -46,25 +46,12 @@ namespace gct::gltf {
     const std::array< float, 4 > &r,
     const std::array< float, 3 > &s
   ) {
-    glm::tmat4x4< float > m( 1.0f );
-    auto trans = glm::tmat4x4< float >{
-      1.f, 0.f, 0.f, 0.f,
-      0.f, 1.f, 0.f, 0.f,
-      0.f, 0.f, 1.f, 0.f,
-      -t[ 0 ], t[ 1 ], t[ 2 ], 1.f,
-    };
-    auto scale = glm::tmat4x4< float >{
-      -s[ 0 ], 0.f, 0.f, 0.f,
-      0.f, s[ 1 ], 0.f, 0.f,
-      0.f, 0.f, s[ 2 ], 0.f,
-      0.f, 0.f, 0.f, 1.f,
-    };
-    m = glm::scale( m, glm::tvec3< float >( s[ 0 ], s[ 1 ], s[ 2 ] ) );
+    glm::tmat4x4< float > dest( 1.0f );
+    dest = glm::translate( dest, glm::tvec3< float >( t[ 0 ], t[ 1 ], t[ 2 ] ) );
     auto rot = glm::tquat< float >( r[ 3 ], r[ 0 ], r[ 1 ], r[ 2 ] );
-    auto rotm = glm::transpose( glm::mat4_cast( rot ) );
-    m = m * rotm;
-    m = glm::translate( m, glm::tvec3< float >( t[ 0 ], t[ 1 ], t[ 2 ] ) );
-    return ( trans * rotm ) * scale;
+    glm::tmat4x4< float > quatMat = glm::mat4_cast( rot );
+    dest *= quatMat;
+    return glm::scale( dest, glm::tvec3< float >( s[ 0 ], s[ 1 ], s[ 2 ] ) );
   }
   glm::tmat4x4< float > to_matrix(
     const std::array< float, 16 > &t
@@ -178,7 +165,7 @@ namespace gct::gltf {
     if( index < 0 || doc.scenes.size() <= size_t( index ) ) throw invalid_gltf( "参照されたsceneが存在しない", __FILE__, __LINE__ );
     const auto &scene = doc.scenes[ index ];
     node_t root;
-    root.set_matrix( glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1) );
+    root.set_matrix( glm::mat4(1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1) );
     glm::vec3 min(
       std::numeric_limits< float >::max(),
       std::numeric_limits< float >::max(),

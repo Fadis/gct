@@ -117,6 +117,7 @@ int main() {
   auto swapchain_images = swapchain->get_images();
   std::cout << "swapchain images : " << swapchain_images.size() << std::endl;
 
+  // 11 * n
   auto descriptor_pool = device->get_descriptor_pool(
     gct::descriptor_pool_create_info_t()
       .set_basic(
@@ -124,8 +125,8 @@ int main() {
           .setFlags( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet )
           .setMaxSets( 400 )
       )
-      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 400 )
-      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 400 )
+      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 2 )
+      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 9 )
       .rebuild_chain()
   );
 
@@ -295,6 +296,7 @@ int main() {
     auto rec = gcb->begin();
     //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
     doc = gct::gltf::load_gltf(
+      //"/home/fadis/gltf/pi.gltf",
       "/home/fadis/gltf/Sponza/glTF/Sponza.gltf",
       device,
       rec,
@@ -387,7 +389,6 @@ int main() {
       camera_pos + camera_direction,
       glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
     );
-    std::cout << glm::to_string( camera_pos ) << std::endl;
     auto &sync = framebuffers[ current_frame ];
     if( !sync.initial ) {
       sync.command_buffer->wait_for_executed();

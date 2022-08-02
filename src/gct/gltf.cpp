@@ -562,6 +562,7 @@ namespace gct::gltf {
     auto descriptor_set_layout = device->get_descriptor_set_layout(
       descriptor_set_layout_create_info
     );
+    std::cout << nlohmann::json( descriptor_set_layout_create_info ).dump( 2 ) << std::endl;
     auto pipeline_layout = device->get_pipeline_layout(
       gct::pipeline_layout_create_info_t()
         .add_descriptor_set_layout( descriptor_set_layout )
