@@ -296,7 +296,8 @@ namespace gct::gltf {
     const fx::gltf::Document &doc,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
-    const std::filesystem::path cd
+    const std::filesystem::path cd,
+    bool ray_trace
   ) {
     buffers_t buffers;
     unsigned int cur = 1u;
@@ -308,8 +309,15 @@ namespace gct::gltf {
         command_buffer.load_buffer_from_file(
           allocator,
           buffer_path.string(),
-          vk::BufferUsageFlagBits::eVertexBuffer|vk::BufferUsageFlagBits::eIndexBuffer|
-          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR
+	  ray_trace ?
+	  (
+            vk::BufferUsageFlagBits::eVertexBuffer|vk::BufferUsageFlagBits::eIndexBuffer|
+            vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR|
+            vk::BufferUsageFlagBits::eShaderDeviceAddress
+	  ) :
+	  (
+            vk::BufferUsageFlagBits::eVertexBuffer|vk::BufferUsageFlagBits::eIndexBuffer
+	  )
         )
       );
       std::cout << " OK" << std::endl;

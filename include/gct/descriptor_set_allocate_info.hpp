@@ -2,6 +2,7 @@
 #define GCT_DESCRIPTOR_SET_ALLOCATE_INFO_HPP
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 
 namespace gct {
@@ -26,6 +27,8 @@ namespace gct {
     descriptor_set_allocate_info_t &clear_layout();
     const std::vector< std::shared_ptr< descriptor_set_layout_t > > &get_layout() const { return layout; }
   };
+  void to_json( nlohmann::json &root, const descriptor_set_allocate_info_t &v );
+  void from_json( const nlohmann::json &root, descriptor_set_allocate_info_t &v );
 }
 
 #endif

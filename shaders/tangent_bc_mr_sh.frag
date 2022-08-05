@@ -25,10 +25,12 @@ void main()  {
   float roughness = mr.g * uniforms.roughness;
   float metallicness = mr.b * uniforms.metalness;
   vec4 diffuse_color = texture( base_color, input_texcoord ) * uniforms.base_color;
-  float ambient = 0.05;
+  float ambient = 1.0;
   vec3 emissive = uniforms.emissive.rgb;
   float sh = shadow( input_shadow0, input_shadow1, input_shadow2, input_shadow3 );
-  vec3 linear = light_with_mask( L, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy, sh );
+  vec3 WV = normalize(dynamic_uniforms.eye_pos.xyz-pos);
+  vec3 WN = normal;
+  vec3 linear = light_with_mask( L, V, N, WV, WN, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy, sh );
   output_color = vec4( gamma(linear), diffuse_color.a );
 }
 

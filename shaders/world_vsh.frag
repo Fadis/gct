@@ -18,12 +18,12 @@ void main()  {
   float roughness = uniforms.roughness;
   float metallicness = uniforms.metalness;
   vec4 diffuse_color = uniforms.base_color;
-  float ambient = 0.05;
+  float ambient = 1.0;
   vec3 emissive = uniforms.emissive.rgb;
 
   float sh = simple_shadow( input_shadow0 );
 
-  vec3 linear = light_with_mask( L, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy, sh );
+  vec3 linear = light_with_mask( L, V, N, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy, sh );
   output_color = vec4( gamma(linear), diffuse_color.a );
 }
 

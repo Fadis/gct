@@ -36,7 +36,8 @@ namespace gct::gltf {
     uint32_t swapchain_size,
     int shader_mask,
     const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    float aspect_ratio
+    float aspect_ratio,
+    bool ray_trace
   ) {
     fx::gltf::Document doc = fx::gltf::LoadFromText( path.string() );
     document_t document;
@@ -73,19 +74,13 @@ namespace gct::gltf {
       document.sampler,
       document.default_sampler
     ) );
-    auto [descriptor_set_layout,pipeline_layout] = create_pipeline_layout(
-      device,
-      shader
-    );
     document.set_mesh( create_mesh(
       doc, //
       device, //
       command_buffer, //
       allocator, //
-      pipeline_layout, //
       descriptor_pool, 
       render_pass,
-      descriptor_set_layout, //
       subpass,
       shader, //
       document.texture, //
@@ -104,7 +99,8 @@ namespace gct::gltf {
       doc,
       command_buffer,
       allocator,
-      path.parent_path()
+      path.parent_path(),
+      ray_trace
     ) );
     document.set_node( create_node(
       doc,

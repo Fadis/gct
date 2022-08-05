@@ -73,7 +73,8 @@ namespace gct::gltf {
     const fx::gltf::Document &doc,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
-    const std::filesystem::path cd
+    const std::filesystem::path cd,
+    bool ray_trace
   );
   struct camera_t {
     LIBGCT_SETTER( projection_matrix )
@@ -254,7 +255,8 @@ namespace gct::gltf {
     uint32_t swapchain_size,
     int shader_mask,
     const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    float aspect_ratio
+    float aspect_ratio,
+    bool ray_trace
   );
   struct push_constants_t {
     LIBGCT_SETTER( world_matrix )
@@ -351,10 +353,8 @@ namespace gct::gltf {
     const std::shared_ptr< device_t > &device,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
-    const std::shared_ptr< pipeline_layout_t > &pipeline_layout, 
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::shared_ptr< descriptor_set_layout_t > &descriptor_set_layout,
     std::uint32_t subpass,
     const shader_t &shader,
     const textures_t &textures,

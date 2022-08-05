@@ -21,9 +21,9 @@ void main()  {
   float roughness = mr.g * uniforms.roughness;
   float metallicness = mr.b * uniforms.metalness;
   vec4 diffuse_color = texture( base_color, input_texcoord ) * uniforms.base_color;
-  float ambient = 0.05;
+  float ambient = 1.0;
   vec3 emissive = uniforms.emissive.rgb;
-  vec3 linear = light( L, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy );
+  vec3 linear = light( L, V, N, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy );
   output_color = vec4( gamma(linear), diffuse_color.a );
 }
 

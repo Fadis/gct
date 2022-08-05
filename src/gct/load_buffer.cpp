@@ -15,8 +15,7 @@ namespace gct {
   ) {
     auto final_buffer = allocator->create_buffer(
       size,
-      usage | vk::BufferUsageFlagBits::eTransferDst |
-      vk::BufferUsageFlagBits::eShaderDeviceAddress,
+      usage | vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_ONLY
     );
     auto temporary_buffer = allocator->create_buffer(
@@ -52,8 +51,7 @@ namespace gct {
   ) {
     auto final_buffer = allocator->create_buffer(
       data.size(),
-      usage | vk::BufferUsageFlagBits::eTransferDst |
-      vk::BufferUsageFlagBits::eShaderDeviceAddress,
+      usage | vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_ONLY
     );
     auto temporary_buffer = allocator->create_buffer(

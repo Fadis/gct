@@ -32,6 +32,8 @@
 #include <gct/descriptor_pool.hpp>
 #include <gct/write_descriptor_set.hpp>
 #include <gct/command_buffer_recorder.hpp>
+#include <gct/pipeline_layout_create_info.hpp>
+#include <gct/shader_module.hpp>
 #include <gct/device.hpp>
 namespace gct::gltf {
   primitive_t create_primitive(
@@ -41,10 +43,8 @@ namespace gct::gltf {
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache, 
-    const std::shared_ptr< pipeline_layout_t > &pipeline_layout, 
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::shared_ptr< descriptor_set_layout_t > &descriptor_set_layout,
     std::uint32_t subpass,
     const shader_t &shader,
     const textures_t &textures,
@@ -142,6 +142,28 @@ namespace gct::gltf {
     if( fs == shader.end() ) {
       throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
     }
+
+    gct::descriptor_set_layout_create_info_t descriptor_set_layout_create_info;
+    descriptor_set_layout_create_info
+      .add_binding( vs->second->get_props().get_reflection() );
+    descriptor_set_layout_create_info
+      .add_binding( fs->second->get_props().get_reflection() );
+    descriptor_set_layout_create_info
+      .rebuild_chain();
+    auto descriptor_set_layout = device->get_descriptor_set_layout(
+      descriptor_set_layout_create_info
+    );
+    auto pipeline_layout = device->get_pipeline_layout(
+      gct::pipeline_layout_create_info_t()
+        .add_descriptor_set_layout( descriptor_set_layout )
+        .add_push_constant_range(
+          vk::PushConstantRange()
+            .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
+            .setOffset( 0 )
+            .setSize( sizeof( gct::gltf::push_constants_t ) )
+        )
+    );
+
     std::vector< std::shared_ptr< graphics_pipeline_t > > pipelines;
     for( const auto &r: render_pass ) {
       pipelines.emplace_back(
@@ -331,10 +353,8 @@ namespace gct::gltf {
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache, 
-    const std::shared_ptr< pipeline_layout_t > &pipeline_layout, 
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::shared_ptr< descriptor_set_layout_t > &descriptor_set_layout,
     std::uint32_t subpass,
     const shader_t &shader,
     const textures_t &textures,
@@ -363,10 +383,8 @@ namespace gct::gltf {
         command_buffer,
         allocator,
         pipeline_cache,
-        pipeline_layout,
         descriptor_pool,
         render_pass,
-        descriptor_set_layout,
         subpass,
         shader,
         textures,
@@ -390,10 +408,8 @@ namespace gct::gltf {
     const std::shared_ptr< device_t > &device,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
-    const std::shared_ptr< pipeline_layout_t > &pipeline_layout, 
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::shared_ptr< descriptor_set_layout_t > &descriptor_set_layout,
     std::uint32_t subpass,
     const shader_t &shader,
     const textures_t &textures,
@@ -412,10 +428,8 @@ namespace gct::gltf {
           command_buffer,
           allocator,
           pipeline_cache,
-          pipeline_layout,
           descriptor_pool,
           render_pass,
-          descriptor_set_layout,
           subpass,
           shader,
           textures,

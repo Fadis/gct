@@ -63,9 +63,6 @@ int main() {
 
   auto groups = instance->get_physical_devices( {} );
   auto selected = groups[ 0 ].with_extensions( {
-    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
@@ -93,16 +90,6 @@ int main() {
       vk::QueueGlobalPriorityEXT(),
 #endif
       { **surface },
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer
-    },
-    gct::queue_requirement_t{
-      vk::QueueFlagBits::eTransfer,
-      0u,
-      vk::Extent3D(),
-#ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-      vk::QueueGlobalPriorityEXT(),
-#endif
-      {},
       vk::CommandPoolCreateFlagBits::eResetCommandBuffer
     }
   };
@@ -138,7 +125,7 @@ int main() {
       gct::render_pass_create_info_t()
         .add_attachment(
           vk::AttachmentDescription()
-            .setFormat( surface->get_caps().get_formats()[ 0 ].basic.format )
+            .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
             .setSamples( vk::SampleCountFlagBits::e1 )
             .setLoadOp( vk::AttachmentLoadOp::eClear )
             .setStoreOp( vk::AttachmentStoreOp::eStore )
@@ -168,7 +155,7 @@ int main() {
     ) );
   }
   VmaAllocatorCreateInfo allocator_create_info{};
-  allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  //allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
   auto allocator = device->get_allocator(
     allocator_create_info
   );
@@ -242,7 +229,7 @@ int main() {
       .set_basic(
         vk::ImageCreateInfo()
           .setImageType( vk::ImageType::e2D )
-          .setFormat( surface->get_caps().get_formats()[ 0 ].basic.format )
+          .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
           .setExtent(
             vk::Extent3D()
               .setWidth( surface->get_caps().get_basic().currentExtent.width )
@@ -296,8 +283,9 @@ int main() {
     auto rec = gcb->begin();
     //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
     doc = gct::gltf::load_gltf(
-      //"/home/fadis/gltf/pi.gltf",
-      "/home/fadis/gltf/Sponza/glTF/Sponza.gltf",
+      //"/home/fadis/pi_simple.gltf",
+      //"/home/fadis/box.gltf",
+      "/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
       device,
       rec,
       allocator,
@@ -308,7 +296,8 @@ int main() {
       framebuffers.size(),
       0,
       dynamic_uniform,
-      float( width ) / float( height )
+      float( width ) / float( height ),
+      false
     );
   }
   gcb->execute(
