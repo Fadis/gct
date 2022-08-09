@@ -110,7 +110,7 @@ int main() {
       .set_basic(
         vk::DescriptorPoolCreateInfo()
           .setFlags( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet )
-          .setMaxSets( 400 )
+          .setMaxSets( 250 )
       )
       .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 2 )
       .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 9 )
@@ -283,9 +283,9 @@ int main() {
     auto rec = gcb->begin();
     //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
     doc = gct::gltf::load_gltf(
-      //"/home/fadis/pi_simple.gltf",
+      "/home/fadis/pi_simple.gltf",
       //"/home/fadis/box.gltf",
-      "/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
+      //"/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
       device,
       rec,
       allocator,

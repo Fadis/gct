@@ -28,8 +28,16 @@ namespace gct {
     unsigned int mip_width = image->get_props().get_basic().extent.width;
     unsigned int mip_height = image->get_props().get_basic().extent.height;
     unsigned int mipmap_count = get_pot( image->get_props().get_basic().extent.width );
-    convert_image( image, 0, 1, from, vk::ImageLayout::eTransferSrcOptimal );
-    convert_image( image, 1, mipmap_count - 1, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal );
+    convert_image(
+      image,
+      0, 1, 0, 1,
+      vk::ImageLayout::eTransferSrcOptimal
+    );
+    convert_image(
+      image,
+      1, mipmap_count - 1, 0, 1,
+      vk::ImageLayout::eTransferDstOptimal
+    );
     for( uint32_t i = 1u; i < mipmap_count; ++i ) {
       (*get_factory())->blitImage(
         **image, vk::ImageLayout::eTransferSrcOptimal,
@@ -61,11 +69,19 @@ namespace gct {
         },
         vk::Filter::eLinear
       );
-      convert_image( image, i, 1, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal );
+      convert_image(
+        image,
+        i, 1, 0, 1,
+        vk::ImageLayout::eTransferSrcOptimal
+      );
       mip_width /= 2;
       mip_height /= 2;
     }
-    convert_image( image, 0, mipmap_count, vk::ImageLayout::eTransferSrcOptimal, to );
+    convert_image(
+      image,
+      0, mipmap_count, 0, 1,
+      to
+    );
   }
   void command_buffer_recorder_t::buffer_to_image(
     bool mipmap,

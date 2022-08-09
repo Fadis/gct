@@ -526,7 +526,7 @@ int main() {
           .setPrimitiveCount( 1 )
       }
     );
-    rec.convert_image( dest_image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral );
+    rec.convert_image( dest_image, vk::ImageLayout::eGeneral );
   }
   std::cout << __FILE__ << " " << __LINE__ << std::endl;
   gcb2->execute(

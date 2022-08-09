@@ -15,14 +15,17 @@ namespace gct {
     vk::ImageLayout final_layout
   ) {
     auto dest_layout = dest->get_props().get_basic().initialLayout;
-    convert_image( dest, dest_layout, vk::ImageLayout::eTransferDstOptimal );
+    convert_image(
+      dest,
+      vk::ImageLayout::eTransferDstOptimal
+    );
     (*get_factory())->copyBufferToImage(
       **src,
       **dest,
       dest->get_props().get_basic().initialLayout,
       range
     );
-    convert_image( dest, vk::ImageLayout::eTransferDstOptimal, final_layout );
+    convert_image( dest, final_layout );
     get_factory()->unbound()->keep.push_back( src );
     get_factory()->unbound()->keep.push_back( dest );
   }

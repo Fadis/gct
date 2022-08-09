@@ -174,6 +174,7 @@ target_link_libraries(
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
@@ -200,6 +201,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
@@ -230,6 +232,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
@@ -246,6 +249,7 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
@@ -263,5 +267,6 @@ target_link_libraries(
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )

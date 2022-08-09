@@ -35,6 +35,7 @@ namespace gct {
     ) const;
     std::vector< vk::ImageMemoryBarrier >
     get_layout() const;
+    const map_t &get_layout_map() const;
     bool is_uniform(
       std::uint32_t mip_begin,
       std::uint32_t mip_count,
@@ -43,6 +44,13 @@ namespace gct {
     ) const;
     bool is_uniform() const;
     void to_json( nlohmann::json &root ) const;
+    std::uint32_t get_mip_level_count() const {
+      return mip_levels;
+    }
+    std::uint32_t get_array_layer_count() const {
+      return array_layers;
+    }
+    bool is_copyable_source_layout() const;
   private:
     std::uint32_t mip_levels;
     std::uint32_t array_layers;

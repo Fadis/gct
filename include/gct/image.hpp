@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/image_view.hpp>
+#include <gct/image_layout.hpp>
 
 namespace gct {
   vk::ImageViewType to_image_view_type( vk::ImageType v );
@@ -16,11 +17,6 @@ namespace gct {
     );
     virtual ~image_t() {}
     const image_create_info_t &get_props() const { return props; }
-    void set_layout( vk::ImageLayout l ) {
-      auto basic = props.get_basic();
-      basic.initialLayout = l;
-      props.set_basic( basic ).rebuild_chain();
-    }
     virtual std::shared_ptr< image_view_t > get_view(
       const image_view_create_info_t&
     ) = 0;
@@ -32,8 +28,15 @@ namespace gct {
     virtual vk::Image *operator->() = 0;
     virtual const vk::Image *operator->() const = 0;
     virtual std::shared_ptr< device_t >get_device() const = 0;
+    const image_layout_t &get_layout() const {
+      return layout;
+    };
+    image_layout_t &get_layout() {
+      return layout;
+    };
   protected:
     image_create_info_t props;
+    image_layout_t layout;
   };
 }
 

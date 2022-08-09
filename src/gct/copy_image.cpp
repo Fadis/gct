@@ -6,6 +6,8 @@
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/format.hpp>
+#include <hdmap/cross.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 namespace gct {
   void command_buffer_recorder_t::copy(
@@ -13,13 +15,51 @@ namespace gct {
     const std::shared_ptr< image_t > &dest,
     const std::vector< vk::ImageCopy > &range
   ) {
-    (*get_factory())->copyImage(
-      **src,
-      src->get_props().get_basic().initialLayout,
-      **dest,
-      dest->get_props().get_basic().initialLayout,
-      range
-    );
+    for( const auto &r: range ) {
+      const auto &ll = src->get_layout().get_layout_map();
+      const auto &rl = dest->get_layout().get_layout_map();
+      const auto llrect = ll.rect(
+        ll.enc( r.srcSubresource.mipLevel, r.srcSubresource.baseArrayLayer ),
+        ll.enc( r.srcSubresource.mipLevel + 1u, r.srcSubresource.baseArrayLayer + r.srcSubresource.layerCount )
+      );
+      const auto rlrect = rl.rect(
+        rl.enc( r.dstSubresource.mipLevel, r.dstSubresource.baseArrayLayer ),
+        rl.enc( r.dstSubresource.mipLevel + 1u, r.dstSubresource.baseArrayLayer + r.dstSubresource.layerCount )
+      );
+      auto intersection = hdmap::cross(
+        ll, rl, llrect, rlrect
+      );
+      for( const auto &[key,value]: intersection.leaves() ) {
+        const auto [mip_begin,array_begin] = intersection.dec( key.left_top );
+        const auto [mip_end,array_end] = intersection.dec( key.right_bottom );
+        (*get_factory())->copyImage(
+          **src,
+          value.first,
+          **dest,
+          value.second,
+          {
+            vk::ImageCopy()
+              .setSrcSubresource(
+                vk::ImageSubresourceLayers()
+                  .setAspectMask( r.srcSubresource.aspectMask )
+                  .setMipLevel( mip_begin + r.srcSubresource.mipLevel )
+                  .setBaseArrayLayer( array_begin + r.srcSubresource.baseArrayLayer )
+                  .setLayerCount( array_end - array_begin )
+              )
+              .setSrcOffset( r.srcOffset )
+              .setDstSubresource(
+                vk::ImageSubresourceLayers()
+                  .setAspectMask( r.dstSubresource.aspectMask )
+                  .setMipLevel( mip_begin + r.dstSubresource.mipLevel )
+                  .setBaseArrayLayer( array_begin + r.dstSubresource.baseArrayLayer )
+                  .setLayerCount( array_end - array_begin )
+              )
+              .setSrcOffset( r.dstOffset )
+              .setExtent( r.extent )
+          }
+        );
+      }
+    }
     get_factory()->unbound()->keep.push_back( src );
     get_factory()->unbound()->keep.push_back( dest );
   }

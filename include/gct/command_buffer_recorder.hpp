@@ -95,11 +95,13 @@ namespace gct {
         dest
       );
     }
+  private:
     void copy(
       const std::shared_ptr< buffer_t >&,
       const std::shared_ptr< buffer_t >&,
       const std::vector< vk::BufferCopy >&
     );
+  public:
     void copy(
       const std::shared_ptr< buffer_t >&,
       const std::shared_ptr< buffer_t >&,
@@ -183,7 +185,7 @@ namespace gct {
       const vk::ImageBlit &range,
       vk::Filter filter
     );
-    void barrier(
+    std::vector< vk::ImageMemoryBarrier > barrier(
       vk::AccessFlagBits,
       vk::AccessFlagBits,
       vk::PipelineStageFlagBits,
@@ -192,6 +194,7 @@ namespace gct {
       const std::vector< std::shared_ptr< buffer_t > >&,
       const std::vector< std::shared_ptr< image_t > >&
     );
+    /*
     void convert_image(
       const std::shared_ptr< image_t > &image,
       std::uint32_t mip_base,
@@ -204,7 +207,8 @@ namespace gct {
       vk::ImageLayout from,
       vk::ImageLayout to
     );
-    void convert_image(
+    */
+    std::vector< vk::ImageMemoryBarrier > convert_image(
       vk::AccessFlagBits src_access_mask,
       vk::AccessFlagBits dest_access_mask,
       vk::PipelineStageFlagBits src_stage,
@@ -212,17 +216,39 @@ namespace gct {
       const std::shared_ptr< image_t > &image,
       uint32_t mip_base,
       uint32_t mip_count,
-      vk::ImageLayout from,
+      uint32_t array_base,
+      uint32_t array_count,
       vk::ImageLayout to
     );
-    void convert_image(
+    std::vector< vk::ImageMemoryBarrier > convert_image(
       vk::AccessFlagBits src_access_mask,
       vk::AccessFlagBits dest_access_mask,
       vk::PipelineStageFlagBits src_stage,
       vk::PipelineStageFlagBits dest_stage,
       const std::shared_ptr< image_t > &image,
-      vk::ImageLayout from,
       vk::ImageLayout to
+    );
+    std::vector< vk::ImageMemoryBarrier > convert_image(
+      const std::shared_ptr< image_t > &image,
+      uint32_t mip_base,
+      uint32_t mip_count,
+      uint32_t array_base,
+      uint32_t array_count,
+      vk::ImageLayout to
+    );
+    std::vector< vk::ImageMemoryBarrier > convert_image(
+      const std::shared_ptr< image_t > &image,
+      vk::ImageLayout to
+    );
+    std::vector< vk::ImageMemoryBarrier > revert_convert_image(
+      vk::PipelineStageFlagBits src_stage,
+      vk::PipelineStageFlagBits dest_stage,
+      const std::shared_ptr< image_t > &image,
+      const std::vector< vk::ImageMemoryBarrier > &old
+    );
+    std::vector< vk::ImageMemoryBarrier > revert_convert_image(
+      const std::shared_ptr< image_t > &image,
+      const std::vector< vk::ImageMemoryBarrier > &old
     );
     void bind_descriptor_set(
       vk::PipelineBindPoint bind_point,

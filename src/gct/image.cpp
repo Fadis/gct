@@ -16,7 +16,12 @@ namespace gct {
   image_t::image_t(
     const image_create_info_t &create_info
   ) :
-    props( create_info ) {
+    props( create_info ),
+    layout(
+      create_info.get_basic().mipLevels,
+      create_info.get_basic().arrayLayers,
+      create_info.get_basic().initialLayout
+    ) {
     props.rebuild_chain();
   }
 }

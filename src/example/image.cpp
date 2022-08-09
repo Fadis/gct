@@ -199,7 +199,7 @@ int main() {
         vk::ImageLayout::eGeneral
       );
       //rec.convert_image( src_image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral );
-      rec.convert_image( dest_image, vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral );
+      rec.convert_image( dest_image, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute(
       gct::submit_info_t()

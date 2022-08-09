@@ -109,6 +109,9 @@ namespace gct {
     );
     return barriers;
   }
+  const image_layout_t::map_t &image_layout_t::get_layout_map() const {
+    return layouts;
+  }
   std::vector< vk::ImageMemoryBarrier >
   image_layout_t::get_layout() const {
     return get_layout( 0u, mip_levels, 0u, array_layers );
@@ -146,6 +149,22 @@ namespace gct {
   }
   void to_json( nlohmann::json &root, const image_layout_t &v ) {
     v.to_json( root );
+  }
+  bool image_layout_t::is_copyable_source_layout() const {
+    auto range = layouts.leaves();
+    return std::find_if(
+      range.begin(),
+      range.end(),
+      []( const auto &v ) {
+        if( v.second == vk::ImageLayout::eSharedPresentKHR )
+          return false;
+        if( v.second == vk::ImageLayout::eTransferSrcOptimal )
+          return false;
+        if( v.second == vk::ImageLayout::eGeneral )
+          return false;
+        return true;
+      }
+    ) == range.end();
   }
 }
 
