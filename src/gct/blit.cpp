@@ -14,14 +14,24 @@ namespace gct {
     const std::vector< vk::ImageBlit > &range,
     vk::Filter filter
   ) {
+    std::vector< vk::ImageMemoryBarrier > old_src;
+    std::vector< vk::ImageMemoryBarrier > old_dest;
+    if( !( src->get_layout().is_uniform() && src->get_layout().is_copyable_source_layout() ) )
+      old_src = convert_image( src, vk::ImageLayout::eTransferSrcOptimal );
+    if( !( dest->get_layout().is_uniform() && dest->get_layout().is_copyable_source_layout() ) )
+      old_dest = convert_image( dest, vk::ImageLayout::eTransferDstOptimal );
     (*get_factory())->blitImage(
       **src,
-      src->get_props().get_basic().initialLayout,
+      src->get_layout().get_uniform_layout(),
       **dest,
-      dest->get_props().get_basic().initialLayout,
+      dest->get_layout().get_uniform_layout(),
       range,
       filter
     );
+    if( !( dest->get_layout().is_uniform() && dest->get_layout().is_copyable_source_layout() ) )
+      revert_convert_image( dest, old_dest );
+    if( !( src->get_layout().is_uniform() && src->get_layout().is_copyable_source_layout() ) )
+      revert_convert_image( src, old_src );
     get_factory()->unbound()->keep.push_back( src );
     get_factory()->unbound()->keep.push_back( dest );
   }

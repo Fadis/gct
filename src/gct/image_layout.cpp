@@ -144,6 +144,11 @@ namespace gct {
   bool image_layout_t::is_uniform() const {
     return is_uniform( 0u, mip_levels, 0u, array_layers );
   }
+  vk::ImageLayout image_layout_t::get_uniform_layout() const {
+    if( layouts.empty() ) return vk::ImageLayout::eUndefined;
+    auto range = layouts.leaves();
+    return (*range.begin()).second;
+  }
   void image_layout_t::to_json( nlohmann::json &root ) const {
     root = get_layout();
   }
@@ -159,6 +164,20 @@ namespace gct {
         if( v.second == vk::ImageLayout::eSharedPresentKHR )
           return false;
         if( v.second == vk::ImageLayout::eTransferSrcOptimal )
+          return false;
+        if( v.second == vk::ImageLayout::eGeneral )
+          return false;
+        return true;
+      }
+    ) == range.end();
+  }
+  bool image_layout_t::is_copyable_destination_layout() const {
+    auto range = layouts.leaves();
+    return std::find_if(
+      range.begin(),
+      range.end(),
+      []( const auto &v ) {
+        if( v.second == vk::ImageLayout::eTransferDstOptimal )
           return false;
         if( v.second == vk::ImageLayout::eGeneral )
           return false;

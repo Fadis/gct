@@ -14,15 +14,15 @@ namespace gct {
     const std::vector< vk::BufferImageCopy > &range,
     vk::ImageLayout final_layout
   ) {
-    auto dest_layout = dest->get_props().get_basic().initialLayout;
-    convert_image(
-      dest,
-      vk::ImageLayout::eTransferDstOptimal
-    );
+    if( !( dest->get_layout().is_uniform() && dest->get_layout().is_copyable_destination_layout() ) )
+      convert_image(
+        dest,
+        vk::ImageLayout::eTransferDstOptimal
+      );
     (*get_factory())->copyBufferToImage(
       **src,
       **dest,
-      dest->get_props().get_basic().initialLayout,
+      dest->get_layout().get_uniform_layout(),
       range
     );
     convert_image( dest, final_layout );

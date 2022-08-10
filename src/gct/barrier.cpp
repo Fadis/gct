@@ -130,8 +130,8 @@ namespace gct {
     image->get_layout().set_layout(
       mip_base,
       mip_count,
-      0u,
-      image->get_props().get_basic().arrayLayers,
+      array_base,
+      array_count,
       to
     );
     (*get_factory())->pipelineBarrier(
@@ -208,19 +208,29 @@ namespace gct {
   ) {
     std::vector< vk::ImageMemoryBarrier > raw_image;
     raw_image.reserve( old.size() );
-    std::transform(
-      old.begin(), old.end(),
-      std::back_inserter( raw_image ),
-      []( const auto &v ) {
-        return vk::ImageMemoryBarrier( v )
-          .setOldLayout( v.newLayout )
-          .setNewLayout( v.oldLayout )
-          .setSrcAccessMask( v.dstAccessMask )
-          .setDstAccessMask( v.srcAccessMask )
-          .setSrcQueueFamilyIndex( v.dstQueueFamilyIndex )
-          .setDstQueueFamilyIndex( v.srcQueueFamilyIndex );
+    for( const auto &v: old ) {
+      if(
+        v.oldLayout != vk::ImageLayout::eUndefined &&
+        v.oldLayout != vk::ImageLayout::ePreinitialized
+      ) {
+        raw_image.push_back(
+          vk::ImageMemoryBarrier( v )
+            .setOldLayout( v.newLayout )
+            .setNewLayout( v.oldLayout )
+            .setSrcAccessMask( v.dstAccessMask )
+            .setDstAccessMask( v.srcAccessMask )
+            .setSrcQueueFamilyIndex( v.dstQueueFamilyIndex )
+            .setDstQueueFamilyIndex( v.srcQueueFamilyIndex )
+        );
+        image->get_layout().set_layout(
+          v.subresourceRange.baseMipLevel,
+          v.subresourceRange.baseMipLevel + v.subresourceRange.levelCount,
+          v.subresourceRange.baseArrayLayer,
+          v.subresourceRange.baseArrayLayer + v.subresourceRange.layerCount,
+          v.oldLayout
+        );
       }
-    );
+    }
     (*get_factory())->pipelineBarrier(
       src_stage,
       dest_stage,

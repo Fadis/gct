@@ -240,8 +240,7 @@ int main() {
                 .setBaseArrayLayer( 0 )
                 .setLayerCount( 1 )
             )
-            .setViewType( gct::to_image_view_type( dest_image->get_props().get_basic().imageType ) )
-        )
+            .setViewType( gct::to_image_view_type( dest_image->get_props().get_basic().imageType ) ))
         .rebuild_chain()
     );
 
@@ -256,7 +255,7 @@ int main() {
             .set_basic(
               vk::DescriptorImageInfo()
                 .setImageLayout(
-                  src_image->get_props().get_basic().initialLayout
+                  src_image->get_layout().get_uniform_layout()
                 )
             )
             .set_image_view( src_view )
@@ -270,7 +269,7 @@ int main() {
             .set_basic(
               vk::DescriptorImageInfo()
                 .setImageLayout(
-                  dest_image->get_props().get_basic().initialLayout
+                  dest_image->get_layout().get_uniform_layout()
                 )
             )
             .set_image_view( dest_view )
@@ -296,7 +295,7 @@ int main() {
     
     rec->dispatch( 32, 32, 1 );
 
-    rec.barrier(
+    /*rec.barrier(
       vk::AccessFlagBits::eShaderWrite,
       vk::AccessFlagBits::eTransferRead,
       vk::PipelineStageFlagBits::eComputeShader,
@@ -304,6 +303,14 @@ int main() {
       vk::DependencyFlagBits( 0 ),
       {},
       { dest_image }
+    );*/
+    rec.convert_image(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eTransfer,
+      dest_image,
+      vk::ImageLayout::eTransferSrcOptimal
     );
 
     rec.copy(

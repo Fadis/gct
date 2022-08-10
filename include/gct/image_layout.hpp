@@ -43,6 +43,7 @@ namespace gct {
       std::uint32_t array_count
     ) const;
     bool is_uniform() const;
+    vk::ImageLayout get_uniform_layout() const;
     void to_json( nlohmann::json &root ) const;
     std::uint32_t get_mip_level_count() const {
       return mip_levels;
@@ -51,6 +52,7 @@ namespace gct {
       return array_layers;
     }
     bool is_copyable_source_layout() const;
+    bool is_copyable_destination_layout() const;
   private:
     std::uint32_t mip_levels;
     std::uint32_t array_layers;

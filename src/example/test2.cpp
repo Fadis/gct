@@ -554,7 +554,7 @@ int main() {
             .set_basic(
               vk::DescriptorImageInfo()
                 .setImageLayout(
-                  dest_image->get_props().get_basic().initialLayout
+                  dest_image->get_layout().get_uniform_layout()
                 )
             )
             .set_image_view( dest_view )

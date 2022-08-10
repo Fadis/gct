@@ -14,16 +14,15 @@ namespace gct {
     const std::vector< vk::BufferImageCopy > &range
   ) {
     std::vector< vk::ImageMemoryBarrier > old;
-    const bool convert_format = !src->get_layout().is_copyable_source_layout();
-    if( convert_format )
+    if( !( src->get_layout().is_uniform() && src->get_layout().is_copyable_source_layout() ) )
       old = convert_image( src, vk::ImageLayout::eTransferSrcOptimal );
     (*get_factory())->copyImageToBuffer(
       **src,
-      src->get_props().get_basic().initialLayout,
+      src->get_layout().get_uniform_layout(),
       **dest,
       range
     );
-    if( convert_format )
+    if( !( src->get_layout().is_uniform() && src->get_layout().is_copyable_source_layout() ) )
       revert_convert_image( src, old );
     get_factory()->unbound()->keep.push_back( src );
     get_factory()->unbound()->keep.push_back( dest );
@@ -34,12 +33,11 @@ namespace gct {
     const std::vector< vk::BufferImageCopy > &range,
     vk::ImageLayout final_layout
   ) {
-    const bool convert_format = !src->get_layout().is_copyable_source_layout();
-    if( convert_format )
+    if( !( src->get_layout().is_uniform() && src->get_layout().is_copyable_source_layout() ) )
       convert_image( src, vk::ImageLayout::eTransferSrcOptimal );
     (*get_factory())->copyImageToBuffer(
       **src,
-      src->get_props().get_basic().initialLayout,
+      src->get_layout().get_uniform_layout(),
       **dest,
       range
     );
