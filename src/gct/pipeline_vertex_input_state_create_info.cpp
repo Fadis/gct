@@ -1,6 +1,8 @@
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
 #include <vulkan2json/PipelineVertexInputStateCreateInfo.hpp>
+#include <vulkan2json/VertexInputBindingDescription.hpp>
+#include <vulkan2json/VertexInputAttributeDescription.hpp>
 #ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
 #include <vulkan2json/PipelineVertexInputDivisorStateCreateInfoEXT.hpp>
 #endif
@@ -12,6 +14,14 @@ namespace gct {
 #ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( divisor ) 
 #endif
+     root[ "vertex_input_binding" ] = nlohmann::json::array();
+     for( const auto &v: v.get_vertex_input_binding_description() ) {
+       root[ "vertex_input_binding" ].push_back( v );
+     }
+     root[ "vertex_input_attribute" ] = nlohmann::json::array();
+     for( const auto &v: v.get_vertex_input_attribute_description() ) {
+       root[ "vertex_input_attribute" ].push_back( v );
+     }
   }
   void from_json( const nlohmann::json &root, pipeline_vertex_input_state_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to pipeline_vertex_input_state_create_info_t", __FILE__, __LINE__ );
@@ -19,6 +29,13 @@ namespace gct {
 #ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( divisor ) 
 #endif
+    for( const auto &e: root[ "vertex_input_binding" ] ) {
+      v.add_vertex_input_binding_description( e );
+    }
+    for( const auto &e: root[ "vertex_input_attribute" ] ) {
+      v.add_vertex_input_attribute_description( e );
+    }
+    v.rebuild_chain();
   }
   pipeline_vertex_input_state_create_info_t &pipeline_vertex_input_state_create_info_t::rebuild_chain() {
     basic

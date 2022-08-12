@@ -110,6 +110,7 @@ add_library( gct SHARED
   gct/format_to_size.cpp
   gct/format_to_type.cpp
   gct/format_to_channels.cpp
+  gct/get_all_formats.cpp
   gct/pixel_per_element_x.cpp
   gct/pixel_per_element_y.cpp
   gct/is_rgba.cpp
@@ -143,6 +144,18 @@ add_library( gct SHARED
   gct/spv2json.cpp
   gct/spv2vk.cpp
   gct/image_layout.cpp
+  gct/numeric_types.cpp
+  gct/get_normalized_vertex_attribute_name.cpp
+  gct/vertex_attribute_name_to_usage.cpp
+  gct/get_vertex_attributes.cpp
+  gct/is_srgb.cpp
+  gct/is_normalized.cpp
+  gct/is_scaled.cpp
+  gct/is_signed.cpp
+  gct/format_to_component_size.cpp
+  gct/format_to_component_type.cpp
+  gct/format2numeric_type.cpp
+  gct/vertex_attribute.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -270,3 +283,21 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
+
+add_executable( ball
+  example/ball.cpp
+)
+
+target_link_libraries(
+  ball
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
+  ${pkgcfg_lib_GLFW_glfw3}
+)
+

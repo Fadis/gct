@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_set>
 #include <boost/container/static_vector.hpp>
 #include <nlohmann/json.hpp>
 #include <vulkan/vulkan.hpp>
@@ -37,10 +38,15 @@ namespace gct {
     physical_device_t with_extensions(
       const std::vector< const char* > &exts
     );
+    const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
+      return vertex_buffer_formats;
+    }
   private:
+    void detect_vertex_buffer_formats();
     vk::PhysicalDevice handle;
     physical_device_properties_t props;
     physical_device_features_t features;
+    std::unordered_set< vk::Format > vertex_buffer_formats;
   };
   using physical_devices_t =
     boost::container::static_vector<

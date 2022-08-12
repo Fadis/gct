@@ -1,0 +1,93 @@
+#include <gct/format.hpp>
+
+namespace gct {
+  bool is_signed( vk::Format format ) {
+    if( format == vk::Format::eR8Snorm) return true;
+    else if( format == vk::Format::eR8Sscaled) return true;
+    else if( format == vk::Format::eR8Sint) return true;
+    else if( format == vk::Format::eR8G8Snorm) return true;
+    else if( format == vk::Format::eR8G8Sscaled) return true;
+    else if( format == vk::Format::eR8G8Sint) return true;
+    else if( format == vk::Format::eR8G8B8Snorm) return true;
+    else if( format == vk::Format::eR8G8B8Sscaled) return true;
+    else if( format == vk::Format::eR8G8B8Sint) return true;
+    else if( format == vk::Format::eB8G8R8Snorm) return true;
+    else if( format == vk::Format::eB8G8R8Sscaled) return true;
+    else if( format == vk::Format::eB8G8R8Sint) return true;
+    else if( format == vk::Format::eR8G8B8A8Snorm) return true;
+    else if( format == vk::Format::eR8G8B8A8Sscaled) return true;
+    else if( format == vk::Format::eR8G8B8A8Sint) return true;
+    else if( format == vk::Format::eB8G8R8A8Snorm) return true;
+    else if( format == vk::Format::eB8G8R8A8Sscaled) return true;
+    else if( format == vk::Format::eB8G8R8A8Sint) return true;
+    else if( format == vk::Format::eA8B8G8R8SnormPack32) return true;
+    else if( format == vk::Format::eA8B8G8R8SscaledPack32) return true;
+    else if( format == vk::Format::eA8B8G8R8SintPack32) return true;
+    else if( format == vk::Format::eA2R10G10B10SnormPack32) return true;
+    else if( format == vk::Format::eA2R10G10B10SscaledPack32) return true;
+    else if( format == vk::Format::eA2R10G10B10SintPack32) return true;
+    else if( format == vk::Format::eA2B10G10R10SnormPack32) return true;
+    else if( format == vk::Format::eA2B10G10R10SscaledPack32) return true;
+    else if( format == vk::Format::eA2B10G10R10SintPack32) return true;
+    else if( format == vk::Format::eR16Snorm) return true;
+    else if( format == vk::Format::eR16Sscaled) return true;
+    else if( format == vk::Format::eR16Sint) return true;
+    else if( format == vk::Format::eR16Sfloat) return true;
+    else if( format == vk::Format::eR16G16Snorm) return true;
+    else if( format == vk::Format::eR16G16Sscaled) return true;
+    else if( format == vk::Format::eR16G16Sint) return true;
+    else if( format == vk::Format::eR16G16Sfloat) return true;
+    else if( format == vk::Format::eR16G16B16Snorm) return true;
+    else if( format == vk::Format::eR16G16B16Sscaled) return true;
+    else if( format == vk::Format::eR16G16B16Sint) return true;
+    else if( format == vk::Format::eR16G16B16Sfloat) return true;
+    else if( format == vk::Format::eR16G16B16A16Snorm) return true;
+    else if( format == vk::Format::eR16G16B16A16Sscaled) return true;
+    else if( format == vk::Format::eR16G16B16A16Sint) return true;
+    else if( format == vk::Format::eR16G16B16A16Sfloat) return true;
+    else if( format == vk::Format::eR32Sint) return true;
+    else if( format == vk::Format::eR32Sfloat) return true;
+    else if( format == vk::Format::eR32G32Sint) return true;
+    else if( format == vk::Format::eR32G32Sfloat) return true;
+    else if( format == vk::Format::eR32G32B32Sint) return true;
+    else if( format == vk::Format::eR32G32B32Sfloat) return true;
+    else if( format == vk::Format::eR32G32B32A32Sint) return true;
+    else if( format == vk::Format::eR32G32B32A32Sfloat) return true;
+    else if( format == vk::Format::eR64Sint) return true;
+    else if( format == vk::Format::eR64Sfloat) return true;
+    else if( format == vk::Format::eR64G64Sint) return true;
+    else if( format == vk::Format::eR64G64Sfloat) return true;
+    else if( format == vk::Format::eR64G64B64Sint) return true;
+    else if( format == vk::Format::eR64G64B64Sfloat) return true;
+    else if( format == vk::Format::eR64G64B64A64Sint) return true;
+    else if( format == vk::Format::eR64G64B64A64Sfloat) return true;
+    else if( format == vk::Format::eD32Sfloat) return true;
+    else if( format == vk::Format::eS8Uint) return true;
+    else if( format == vk::Format::eD16UnormS8Uint) return true;
+    else if( format == vk::Format::eD24UnormS8Uint) return true;
+    else if( format == vk::Format::eD32SfloatS8Uint) return true;
+    else if( format == vk::Format::eBc1RgbUnormBlock) return true;
+    else if( format == vk::Format::eBc4SnormBlock) return true;
+    else if( format == vk::Format::eBc5SnormBlock) return true;
+    else if( format == vk::Format::eBc6HSfloatBlock) return true;
+    else if( format == vk::Format::eEacR11SnormBlock) return true;
+    else if( format == vk::Format::eEacR11G11SnormBlock) return true;
+#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+    else if( format == vk::Format::eAstc4x4SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc5x4SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc5x5SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc6x5SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc6x6SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc8x5SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc8x6SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc8x8SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc10x5SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc10x6SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc10x8SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc10x10SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc12x10SfloatBlockEXT) return true;
+    else if( format == vk::Format::eAstc12x12SfloatBlockEXT) return true;
+#endif
+    else return false;
+  }
+}

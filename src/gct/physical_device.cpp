@@ -1,6 +1,7 @@
 #include <gct/queue.hpp>
 #include <gct/device.hpp>
 #include <gct/physical_device.hpp>
+#include <gct/format.hpp>
 namespace gct {
   void to_json( nlohmann::json &root, const physical_device_t &v ) {
     root = nlohmann::json::object();
@@ -40,7 +41,9 @@ namespace gct {
       *instance_,
       handle_,
       props
-    ) {}
+    ) {
+      detect_vertex_buffer_formats();
+    }
   physical_device_t::physical_device_t(
     const std::shared_ptr< instance_t > &instance_,
     vk::PhysicalDevice handle_,
@@ -59,7 +62,17 @@ namespace gct {
       *instance_,
       handle_,
       props
-    ) {}
+    ) {
+      detect_vertex_buffer_formats();
+    }
+  void physical_device_t::detect_vertex_buffer_formats() {
+    for( const auto &format: get_all_formats() ) {
+      const auto props = handle.getFormatProperties( format );
+      if( props.bufferFeatures & vk::FormatFeatureFlagBits::eVertexBuffer ) {
+        vertex_buffer_formats.insert( format );
+      }
+    }
+  }
   physical_device_t physical_device_t::with_extensions(
     const std::vector< const char* > &exts
   ) {
