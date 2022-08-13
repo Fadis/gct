@@ -74,7 +74,9 @@ add_library( gct SHARED
   gct/write_descriptor_set.cpp
   gct/subpass_description.cpp
   gct/render_pass_create_info.cpp
+  gct/render_pass_begin_info.cpp
   gct/render_pass.cpp
+  gct/begin_render_pass.cpp
   gct/image_view_create_info.cpp
   gct/image_view.cpp
   gct/framebuffer_create_info.cpp
@@ -156,6 +158,7 @@ add_library( gct SHARED
   gct/format_to_component_type.cpp
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
+  gct/primitives/triangle.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

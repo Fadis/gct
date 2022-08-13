@@ -11,4 +11,15 @@ namespace gct {
     }
     return converted;
   }
+  unsigned int get_normalized_vertex_attribute_index( const std::string &name ) {
+    std::string converted;
+    converted.reserve( name.size() );
+    for( const auto c: name ) {
+      if( c >= '0' && c <= '9' ) {
+        converted += c;
+      }
+    }
+    return std::stoi( converted );
+  }
 }
+

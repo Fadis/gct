@@ -4,6 +4,7 @@
 #include <vector>
 #include <any>
 #include <tuple>
+#include <memory>
 #include <boost/range/iterator_range.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
@@ -23,6 +24,7 @@ namespace gct {
   class acceleration_structure_build_geometry_info_t;
   class acceleration_structure_build_region_info_t;
   class strided_device_address_region_t;
+  class render_pass_begin_info_t;
   std::uint32_t get_pot( std::uint32_t v );
   bool is_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
@@ -279,6 +281,10 @@ namespace gct {
       std::uint32_t,
       std::uint32_t,
       std::uint32_t
+    );
+    std::shared_ptr< void > begin_render_pass(
+      const render_pass_begin_info_t &begin_info,
+      vk::SubpassContents subpass_contents
     );
     std::tuple<
       std::shared_ptr< buffer_t >,

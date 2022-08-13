@@ -241,6 +241,43 @@ namespace gct {
       )
     );
   }
+  std::shared_ptr< render_pass_t > device_t::get_render_pass(
+    vk::Format color_format,
+    vk::Format depth_format
+  ) {
+    return get_render_pass(
+      render_pass_create_info_t()
+        .add_attachment(
+          vk::AttachmentDescription()
+            .setFormat( color_format )
+            .setSamples( vk::SampleCountFlagBits::e1 )
+            .setLoadOp( vk::AttachmentLoadOp::eClear )
+            .setStoreOp( vk::AttachmentStoreOp::eStore )
+            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
+            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
+            .setInitialLayout( vk::ImageLayout::eUndefined )
+            .setFinalLayout( vk::ImageLayout::ePresentSrcKHR )
+        )
+        .add_attachment(
+          vk::AttachmentDescription()
+            .setFormat( depth_format )
+            .setSamples( vk::SampleCountFlagBits::e1 )
+            .setLoadOp( vk::AttachmentLoadOp::eClear )
+            .setStoreOp( vk::AttachmentStoreOp::eStore )
+            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
+            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
+            .setInitialLayout( vk::ImageLayout::eUndefined )
+            .setFinalLayout( vk::ImageLayout::eDepthStencilAttachmentOptimal )
+        )
+        .add_subpass(
+          gct::subpass_description_t()
+            .add_color_attachment( 0, vk::ImageLayout::eColorAttachmentOptimal )
+            .set_depth_stencil_attachment( 1, vk::ImageLayout::eDepthStencilAttachmentOptimal )
+            .rebuild_chain()
+        )
+        .rebuild_chain()
+    );
+  }
   std::shared_ptr< shader_module_t > device_t::get_shader_module( const shader_module_create_info_t &create_info ) {
     return std::shared_ptr< shader_module_t >(
       new shader_module_t(

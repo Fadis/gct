@@ -113,7 +113,7 @@ vec3 simple_ambient_light_r0(
   float roughness
 ) {
   vec3 D = normalize( reflect( normalize( V ), normalize( N ) ) );
-  float pos = ( -D.y * 0.5 + 0.5 ) * 8.0;
+  float pos = ( D.y * 0.5 + 0.5 ) * 8.0;
   int index = int( floor( pos ) );
   float level = fract( pos );
   float mix_level = grad( vec2( fract( D.x ), fract( D.z ) ), pow( 2.0, floor( mix( -6.0, 6.0, 1 - roughness ) ) ) );

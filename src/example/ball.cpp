@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_set>
+#include <utility>
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -18,12 +19,13 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/buffer_view_create_info.hpp>
-#include <gct/render_pass_begin_info.hpp>
 #include <gct/submit_info.hpp>
 #include <gct/fence.hpp>
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
+#include <gct/vertex_attributes.hpp>
+#include <gct/primitive.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::image_t > color;
@@ -32,7 +34,6 @@ struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > draw_complete;
   std::shared_ptr< gct::semaphore_t > image_ownership;
   std::shared_ptr< gct::bound_command_buffer_t > command_buffer;
-  gct::render_pass_begin_info_t render_pass_begin_info;
   bool initial = true;
 };
 
@@ -124,8 +125,36 @@ int main() {
   std::vector< std::shared_ptr< gct::render_pass_t > > render_pass;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     render_pass.emplace_back( device->get_render_pass(
-      gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format,
-      vk::Format::eD16Unorm
+      gct::render_pass_create_info_t()
+        .add_attachment(
+          vk::AttachmentDescription()
+            .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
+            .setSamples( vk::SampleCountFlagBits::e1 )
+            .setLoadOp( vk::AttachmentLoadOp::eClear )
+            .setStoreOp( vk::AttachmentStoreOp::eStore )
+            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
+            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
+            .setInitialLayout( vk::ImageLayout::eUndefined )
+            .setFinalLayout( vk::ImageLayout::ePresentSrcKHR )
+        )
+        .add_attachment(
+          vk::AttachmentDescription()
+            .setFormat( vk::Format::eD16Unorm )
+            .setSamples( vk::SampleCountFlagBits::e1 )
+            .setLoadOp( vk::AttachmentLoadOp::eClear )
+            .setStoreOp( vk::AttachmentStoreOp::eDontCare )
+            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
+            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
+            .setInitialLayout( vk::ImageLayout::eUndefined )
+            .setFinalLayout( vk::ImageLayout::eDepthStencilAttachmentOptimal )
+        )
+        .add_subpass(
+          gct::subpass_description_t()
+            .add_color_attachment( 0, vk::ImageLayout::eColorAttachmentOptimal )
+            .set_depth_stencil_attachment( 1, vk::ImageLayout::eDepthStencilAttachmentOptimal )
+            .rebuild_chain()
+        )
+        .rebuild_chain()
     ) );
   }
   VmaAllocatorCreateInfo allocator_create_info{};
@@ -189,21 +218,11 @@ int main() {
     framebuffers.emplace_back(
       fb_resources_t{
         image,
-        framebuffer,
+        std::move( framebuffer ),
         device->get_semaphore(),
         device->get_semaphore(),
         device->get_semaphore(),
-        queue->get_command_pool()->allocate(),
-        gct::render_pass_begin_info_t()
-          .set_basic(
-            vk::RenderPassBeginInfo()
-              .setRenderPass( **render_pass[ i ] )
-              .setFramebuffer( **framebuffer )
-              .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
-          )
-          .add_clear_value( vk::ClearColorValue( std::array< float, 4u >{ 0.0f, 0.0f, 0.0f, 1.0f } ) )
-          .add_clear_value( vk::ClearDepthStencilValue( 1.f, 0 ) )
-          .rebuild_chain()
+        queue->get_command_pool()->allocate()
       }
     );
   }
@@ -262,6 +281,25 @@ int main() {
       )
   );
 
+  auto vs = device->get_shader_module( "/home/fadis/git/gct/shaders/world.vert.spv" );
+  
+  auto [vistat,vamap,stride] = get_vertex_attributes(
+    *device,
+    vs->get_props().get_reflection()
+  );
+
+  std::cout << nlohmann::json( vistat ).dump( 2 ) << std::endl;
+  std::cout << nlohmann::json( vamap ).dump( 2 ) << std::endl;
+
+  const auto [iastat,host_vertex_buffer] = gct::primitive::create_triangle( vamap, stride );
+
+  const auto host_vertex_buffer_begin = reinterpret_cast< const float* >( host_vertex_buffer.data() );
+  const auto host_vertex_buffer_end = reinterpret_cast< const float* >( host_vertex_buffer.data() + stride * 3u );
+  const auto converted_vertex_buffer = std::vector< float >( host_vertex_buffer_begin, host_vertex_buffer_end );
+  std::cout << nlohmann::json( converted_vertex_buffer ) << std::endl;
+
+  exit( 0 );
+
   gct::gltf::document_t doc;
   {
     auto rec = gcb->begin();
@@ -291,6 +329,10 @@ int main() {
 
   auto center = ( doc.node.min + doc.node.max ) / 2.f;
   auto scale = std::abs( glm::length( doc.node.max - doc.node.min ) );
+  const std::array< vk::ClearValue, 2 > clear_values{
+    vk::ClearColorValue( std::array< float, 4u >{ 1.0f, 0.0f, 1.0f, 1.0f } ),
+    vk::ClearDepthStencilValue( 1.f, 0 )
+  };
   auto const viewport =
     vk::Viewport()
       .setWidth( width )
@@ -300,11 +342,12 @@ int main() {
   vk::Rect2D const scissor( vk::Offset2D(0, 0), vk::Extent2D( width, height ) );
 
 
-  const glm::mat4 projection = glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
+  auto lhrh = glm::mat4(-1,0,0,0,0,-1,0,0,0,0,1,0,0,0,0,1);
+  const glm::mat4 projection = lhrh * glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
   auto camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
   float camera_angle = 0;//M_PI;
   auto speed = 0.01f*scale;
-  auto light_pos = glm::vec3{ 0.0f*scale, -1.2f*scale, 0.0f*scale };
+  auto light_pos = glm::vec3{ 0.0f*scale, 1.2f*scale, 0.0f*scale };
   float light_energy = 5.0f;
   const auto point_lights = gct::gltf::get_point_lights(
     doc.node,
@@ -322,24 +365,23 @@ int main() {
       pressed_keys.insert( key );
   } );
 
-
   uint32_t current_frame = 0u;
   uint32_t last_image_index = framebuffers.size();
   while( pressed_keys.find( GLFW_KEY_Q ) == pressed_keys.end() ) {
     const auto begin_time = std::chrono::high_resolution_clock::now();
     if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() )
-      camera_angle -= 0.01 * M_PI/2;
-    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
       camera_angle += 0.01 * M_PI/2;
+    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
+      camera_angle -= 0.01 * M_PI/2;
     glm::vec3 camera_direction( std::sin( camera_angle ), 0, -std::cos( camera_angle ) );
     if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() )
       camera_pos += camera_direction * glm::vec3( speed );
     if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() )
       camera_pos -= camera_direction * glm::vec3( speed );
     if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() )
-      camera_pos[ 1 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
       camera_pos[ 1 ] += speed;
+    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
+      camera_pos[ 1 ] -= speed;
     if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() )
       light_energy += 0.05f;
     if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() )
@@ -389,20 +431,25 @@ int main() {
         {}
       );
 
-      auto render_pass_token = rec.begin_render_pass(
-        fb.render_pass_begin_info,
-        vk::SubpassContents::eInline
-      );
-      rec->setViewport( 0, 1, &viewport );
-      rec->setScissor( 0, 1, &scissor );
-      gct::gltf::draw_node(
-        rec,
-        doc.node,
-        doc.mesh,
-        doc.buffer,
-        image_index,
-        0u
-      );
+      auto const pass_info = vk::RenderPassBeginInfo()
+        .setRenderPass( **render_pass[ image_index ] )
+        .setFramebuffer( **fb.framebuffer )
+        .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
+        .setClearValueCount( clear_values.size() )
+        .setPClearValues( clear_values.data() );
+       rec->beginRenderPass( &pass_info, vk::SubpassContents::eInline );
+       rec->setViewport( 0, 1, &viewport );
+       rec->setScissor( 0, 1, &scissor );
+       gct::gltf::draw_node(
+         rec,
+         doc.node,
+         doc.mesh,
+         doc.buffer,
+         image_index,
+         0u
+       );
+       rec->endRenderPass();
+//       rec.dump_image( allocator, fb.color,  "test.png", 0u );
     }
     sync.command_buffer->execute(
       gct::submit_info_t()
