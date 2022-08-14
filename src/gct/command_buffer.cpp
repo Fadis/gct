@@ -61,13 +61,16 @@ namespace gct {
       submit_info.get_basic(),
       **fence
     );
+    executing = true;
   }
   void bound_command_buffer_t::wait_for_executed() {
     wait_for_executed( UINT64_MAX );
   }
   bool bound_command_buffer_t::wait_for_executed( std::uint64_t timeout ) {
+    if( !executing ) return true;
     auto result = (*get_factory()->get_factory()->get_factory())->waitForFences( 1, &**fence, true, timeout );
     if( result == vk::Result::eSuccess ) {
+      executing = false;
       auto reset_result = (*get_factory()->get_factory()->get_factory())->resetFences( 1, &**fence );
       if( reset_result != vk::Result::eSuccess ) throw -1;
       unbound()->on_executed( result );
@@ -75,6 +78,7 @@ namespace gct {
     }
     if( result == vk::Result::eTimeout ) return false;
     else {
+      executing = false;
       unbound()->on_executed( result );
       vk::throwResultException( vk::Result( result ), "wait_for_executed failed." );
     }

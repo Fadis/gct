@@ -199,10 +199,7 @@ int main() {
       pipeline_layout,
       descriptor_set
     );
-    rec.bind_pipeline(
-      vk::PipelineBindPoint::eCompute,
-      pipeline
-    );
+    rec.bind_pipeline( pipeline );
     rec->dispatch( 4, 2, 1 );
     rec.barrier(
       vk::AccessFlagBits::eShaderWrite,

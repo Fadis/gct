@@ -27,7 +27,25 @@ namespace gct {
       { "inputtexcoord", vertex_attribute_usage_t::TEXCOORD },
       { "inputtex", vertex_attribute_usage_t::TEXCOORD },
       { "intexcoord", vertex_attribute_usage_t::TEXCOORD },
-      { "intex", vertex_attribute_usage_t::TEXCOORD }
+      { "intex", vertex_attribute_usage_t::TEXCOORD },
+      { "color", vertex_attribute_usage_t::COLOR },
+      { "colour", vertex_attribute_usage_t::COLOR },
+      { "inputcolor", vertex_attribute_usage_t::COLOR },
+      { "inputcolour", vertex_attribute_usage_t::COLOR },
+      { "incolor", vertex_attribute_usage_t::COLOR },
+      { "incolour", vertex_attribute_usage_t::COLOR },
+      { "weight", vertex_attribute_usage_t::WEIGHT },
+      { "weights", vertex_attribute_usage_t::WEIGHT },
+      { "inputweight", vertex_attribute_usage_t::WEIGHT },
+      { "inputweights", vertex_attribute_usage_t::WEIGHT },
+      { "inweight", vertex_attribute_usage_t::WEIGHT },
+      { "inweights", vertex_attribute_usage_t::WEIGHT },
+      { "joint", vertex_attribute_usage_t::JOINT },
+      { "joints", vertex_attribute_usage_t::JOINT },
+      { "inputjoint", vertex_attribute_usage_t::JOINT },
+      { "inputjoints", vertex_attribute_usage_t::JOINT },
+      { "injoint", vertex_attribute_usage_t::JOINT },
+      { "injoints", vertex_attribute_usage_t::JOINT }
     };
     const auto normalized = get_normalized_vertex_attribute_name( name );
     const auto found = name2vertex_attribute_usage.find( normalized );

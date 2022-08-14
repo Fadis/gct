@@ -18,6 +18,18 @@
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
+#include <gct/pipeline_viewport_state_create_info.hpp>
+#include <gct/pipeline_dynamic_state_create_info.hpp>
+#include <gct/pipeline_input_assembly_state_create_info.hpp>
+#include <gct/pipeline_vertex_input_state_create_info.hpp>
+#include <gct/pipeline_multisample_state_create_info.hpp>
+#include <gct/pipeline_tessellation_state_create_info.hpp>
+#include <gct/pipeline_rasterization_state_create_info.hpp>
+#include <gct/pipeline_depth_stencil_state_create_info.hpp>
+#include <gct/pipeline_color_blend_state_create_info.hpp>
+#include <gct/graphics_pipeline_create_info.hpp>
+#include <gct/graphics_pipeline.hpp>
+#include <gct/pipeline_layout.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <gct/submit_info.hpp>
 #include <gct/fence.hpp>
@@ -25,6 +37,7 @@
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
 #include <gct/vertex_attributes.hpp>
+#include <gct/render_pass_begin_info.hpp>
 #include <gct/primitive.hpp>
 
 struct fb_resources_t {
@@ -34,8 +47,9 @@ struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > draw_complete;
   std::shared_ptr< gct::semaphore_t > image_ownership;
   std::shared_ptr< gct::bound_command_buffer_t > command_buffer;
-  bool initial = true;
+  gct::render_pass_begin_info_t render_pass_begin_info;
 };
+
 
 int main() {
   gct::glfw::get();
@@ -75,11 +89,24 @@ int main() {
   } );
   std::cout << nlohmann::json( groups[ 0 ] ).dump( 2 ) << std::endl;
 
-  std::uint32_t width = 1920u;
-  std::uint32_t height = 1080u;
+  std::uint32_t width = 512u;
+  std::uint32_t height = 512u;
 
-  gct::glfw_window window( width, height, "window title", false );
-  window.set_on_closed( []( auto & ) { std::cout << "closed" << std::endl; } );
+  gct::glfw_window window( width, height, "ball", false );
+  bool close_app = false;
+  bool iconified = false;
+  window.set_on_closed( [&]( auto & ) { close_app = true; } );
+  window.set_on_key( [&]( auto &, int key, int, int action, int ) {
+    if( action == GLFW_PRESS ) {
+      if( key == GLFW_KEY_Q ) close_app = true;
+    }
+  } );
+  window.set_on_iconified(
+    [&]( auto&, int i ) {
+      iconified = i;
+    }
+  );
+
   gct::glfw::get().poll();
   auto surface = window.get_surface( *groups[ 0 ].devices[ 0 ] );
   std::cout << nlohmann::json( *surface ).dump( 2 ) << std::endl;
@@ -101,101 +128,37 @@ int main() {
     gct::device_create_info_t()
   );
   auto queue = device->get_queue( 0u );
-  auto gcb = queue->get_command_pool()->allocate();
 
   auto swapchain = device->get_swapchain( surface );
   auto swapchain_images = swapchain->get_images();
   std::cout << "swapchain images : " << swapchain_images.size() << std::endl;
 
-  // 11 * n
   auto descriptor_pool = device->get_descriptor_pool(
     gct::descriptor_pool_create_info_t()
       .set_basic(
         vk::DescriptorPoolCreateInfo()
           .setFlags( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet )
-          .setMaxSets( 250 )
+          .setMaxSets( 10 )
       )
-      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 2 )
-      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 9 )
+      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 1 )
       .rebuild_chain()
   );
 
   auto pipeline_cache = device->get_pipeline_cache();
 
-  std::vector< std::shared_ptr< gct::render_pass_t > > render_pass;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    render_pass.emplace_back( device->get_render_pass(
-      gct::render_pass_create_info_t()
-        .add_attachment(
-          vk::AttachmentDescription()
-            .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
-            .setSamples( vk::SampleCountFlagBits::e1 )
-            .setLoadOp( vk::AttachmentLoadOp::eClear )
-            .setStoreOp( vk::AttachmentStoreOp::eStore )
-            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
-            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
-            .setInitialLayout( vk::ImageLayout::eUndefined )
-            .setFinalLayout( vk::ImageLayout::ePresentSrcKHR )
-        )
-        .add_attachment(
-          vk::AttachmentDescription()
-            .setFormat( vk::Format::eD16Unorm )
-            .setSamples( vk::SampleCountFlagBits::e1 )
-            .setLoadOp( vk::AttachmentLoadOp::eClear )
-            .setStoreOp( vk::AttachmentStoreOp::eDontCare )
-            .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
-            .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
-            .setInitialLayout( vk::ImageLayout::eUndefined )
-            .setFinalLayout( vk::ImageLayout::eDepthStencilAttachmentOptimal )
-        )
-        .add_subpass(
-          gct::subpass_description_t()
-            .add_color_attachment( 0, vk::ImageLayout::eColorAttachmentOptimal )
-            .set_depth_stencil_attachment( 1, vk::ImageLayout::eDepthStencilAttachmentOptimal )
-            .rebuild_chain()
-        )
-        .rebuild_chain()
-    ) );
-  }
   VmaAllocatorCreateInfo allocator_create_info{};
-  //allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
   auto allocator = device->get_allocator(
     allocator_create_info
   );
   
-  
+  const auto render_pass = device->get_render_pass(
+    gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format,
+    vk::Format::eD16Unorm
+  );
+
   std::vector< fb_resources_t > framebuffers;
-
-  std::vector< std::shared_ptr< gct::buffer_t > > staging_dynamic_uniform;
-  std::vector< std::shared_ptr< gct::buffer_t > > dynamic_uniform;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    staging_dynamic_uniform.emplace_back(
-      allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferSrc )
-          ),
-          VMA_MEMORY_USAGE_CPU_TO_GPU
-       )
-    );
-    dynamic_uniform.emplace_back(
-      allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer )
-          ),
-          VMA_MEMORY_USAGE_GPU_ONLY
-       )
-    );
-  }
-
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     auto &image = swapchain_images[ i ];
-    auto &render_pass_ = render_pass[ i ];
     auto depth = allocator->create_image(
       gct::image_create_info_t()
         .set_basic(
@@ -210,7 +173,7 @@ int main() {
     );
     auto depth_view = depth->get_view( vk::ImageAspectFlagBits::eDepth );
     auto color_view = image->get_view( vk::ImageAspectFlagBits::eColor );
-    auto framebuffer = render_pass_->get_framebuffer(
+    auto framebuffer = render_pass->get_framebuffer(
       gct::framebuffer_create_info_t()
         .add_attachment( color_view )
         .add_attachment( depth_view )
@@ -218,71 +181,45 @@ int main() {
     framebuffers.emplace_back(
       fb_resources_t{
         image,
-        std::move( framebuffer ),
+        framebuffer,
         device->get_semaphore(),
         device->get_semaphore(),
         device->get_semaphore(),
-        queue->get_command_pool()->allocate()
+        queue->get_command_pool()->allocate(),
+        gct::render_pass_begin_info_t()
+          .set_basic(
+            vk::RenderPassBeginInfo()
+              .setRenderPass( **render_pass )
+              .setFramebuffer( **framebuffer )
+              .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
+          )
+          .add_clear_value( vk::ClearColorValue( std::array< float, 4u >{ 0.5f, 0.0f, 0.0f, 1.0f } ) )
+          .add_clear_value( vk::ClearDepthStencilValue( 1.f, 0 ) )
+          .rebuild_chain()
       }
     );
   }
 
-  auto image = allocator->create_image(
-    gct::image_create_info_t()
-      .set_basic(
-        vk::ImageCreateInfo()
-          .setImageType( vk::ImageType::e2D )
-          .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
-          .setExtent(
-            vk::Extent3D()
-              .setWidth( surface->get_caps().get_basic().currentExtent.width )
-              .setHeight( surface->get_caps().get_basic().currentExtent.height )
-              .setDepth( 1 )
-          )
-          .setMipLevels( 1 )
-          .setArrayLayers( 1 )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage( vk::ImageUsageFlagBits::eColorAttachment )
-          .setSharingMode( vk::SharingMode::eExclusive )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  auto image_view = image->get_view( vk::ImageAspectFlagBits::eColor );
-  
-  auto buffer = allocator->create_buffer(
-    gct::buffer_create_info_t()
-      .set_basic(
-        vk::BufferCreateInfo()
-          .setSize( 1024 )
-          .setUsage( vk::BufferUsageFlagBits::eTransferSrc )
-      ),
-    VMA_MEMORY_USAGE_CPU_TO_GPU
-  );
-  for( auto &v: buffer->map< std::uint8_t >() )
-    v = 1;
-  auto buffer2 = allocator->create_buffer(
-    gct::buffer_create_info_t()
-      .set_basic(
-        vk::BufferCreateInfo()
-          .setSize( 1024 )
-          .setUsage( vk::BufferUsageFlagBits::eUniformTexelBuffer )
-      ),
-    VMA_MEMORY_USAGE_CPU_TO_GPU
-  );
-  auto buffer_view = buffer2->get_view(
-    gct::buffer_view_create_info_t()
-      .set_basic(
-        vk::BufferViewCreateInfo()
-          .setOffset( 0 )
-          .setRange( 100 )
-          .setFormat( vk::Format::eR8G8B8A8Unorm )
+  const auto vs = device->get_shader_module( "../shaders/simple.vert.spv" );
+  const auto fs = device->get_shader_module( "../shaders/simple.frag.spv" );
+ 
+  const auto descriptor_set_layout = device->get_descriptor_set_layout(
+    gct::descriptor_set_layout_create_info_t()
+      .add_binding(
+        vs->get_props().get_reflection()
+      )
+      .add_binding(
+        fs->get_props().get_reflection()
       )
   );
-
-  auto vs = device->get_shader_module( "/home/fadis/git/gct/shaders/world.vert.spv" );
   
+  const auto descriptor_set = descriptor_pool->allocate( descriptor_set_layout );
+
+  const auto pipeline_layout = device->get_pipeline_layout(
+    gct::pipeline_layout_create_info_t()
+      .add_descriptor_set_layout( descriptor_set_layout )
+  );
+
   auto [vistat,vamap,stride] = get_vertex_attributes(
     *device,
     vs->get_props().get_reflection()
@@ -291,180 +228,162 @@ int main() {
   std::cout << nlohmann::json( vistat ).dump( 2 ) << std::endl;
   std::cout << nlohmann::json( vamap ).dump( 2 ) << std::endl;
 
-  const auto [iastat,host_vertex_buffer] = gct::primitive::create_triangle( vamap, stride );
+  const auto [input_assembly,host_vertex_buffer,vertex_count] = gct::primitive::create_sphere( vamap, stride, 12u, 6u );
+  //const auto [input_assembly,host_vertex_buffer,vertex_count] = gct::primitive::create_cube( vamap, stride );
 
-  const auto host_vertex_buffer_begin = reinterpret_cast< const float* >( host_vertex_buffer.data() );
-  const auto host_vertex_buffer_end = reinterpret_cast< const float* >( host_vertex_buffer.data() + stride * 3u );
-  const auto converted_vertex_buffer = std::vector< float >( host_vertex_buffer_begin, host_vertex_buffer_end );
-  std::cout << nlohmann::json( converted_vertex_buffer ) << std::endl;
-
-  exit( 0 );
-
-  gct::gltf::document_t doc;
+  std::shared_ptr< gct::buffer_t > vertex_buffer;
   {
-    auto rec = gcb->begin();
-    //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
-    doc = gct::gltf::load_gltf(
-      "/home/fadis/pi_simple.gltf",
-      //"/home/fadis/box.gltf",
-      //"/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
-      device,
-      rec,
-      allocator,
-      descriptor_pool,
-      render_pass,
-      "/home/fadis/git/gct/shaders",
-      0,
-      framebuffers.size(),
-      0,
-      dynamic_uniform,
-      float( width ) / float( height ),
-      false
-    );
-  }
-  gcb->execute(
-    gct::submit_info_t()
-  );
-  gcb->wait_for_executed();
-
-  auto center = ( doc.node.min + doc.node.max ) / 2.f;
-  auto scale = std::abs( glm::length( doc.node.max - doc.node.min ) );
-  const std::array< vk::ClearValue, 2 > clear_values{
-    vk::ClearColorValue( std::array< float, 4u >{ 1.0f, 0.0f, 1.0f, 1.0f } ),
-    vk::ClearDepthStencilValue( 1.f, 0 )
-  };
-  auto const viewport =
-    vk::Viewport()
-      .setWidth( width )
-      .setHeight( height )
-      .setMinDepth( 0.0f )
-      .setMaxDepth( 1.0f );
-  vk::Rect2D const scissor( vk::Offset2D(0, 0), vk::Extent2D( width, height ) );
-
-
-  auto lhrh = glm::mat4(-1,0,0,0,0,-1,0,0,0,0,1,0,0,0,0,1);
-  const glm::mat4 projection = lhrh * glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
-  auto camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
-  float camera_angle = 0;//M_PI;
-  auto speed = 0.01f*scale;
-  auto light_pos = glm::vec3{ 0.0f*scale, 1.2f*scale, 0.0f*scale };
-  float light_energy = 5.0f;
-  const auto point_lights = gct::gltf::get_point_lights(
-    doc.node,
-    doc.point_light
-  );
-  if( !point_lights.empty() ) {
-    light_energy = point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100;
-    light_pos = point_lights[ 0 ].location;
-  }
-  std::unordered_set< int > pressed_keys;
-  window.set_on_key( [&]( auto &, int key, int scancode, int action, int mods ) {
-    if( action == GLFW_RELEASE )
-      pressed_keys.erase( key );
-    else if( action == GLFW_PRESS )
-      pressed_keys.insert( key );
-  } );
-
-  uint32_t current_frame = 0u;
-  uint32_t last_image_index = framebuffers.size();
-  while( pressed_keys.find( GLFW_KEY_Q ) == pressed_keys.end() ) {
-    const auto begin_time = std::chrono::high_resolution_clock::now();
-    if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() )
-      camera_angle += 0.01 * M_PI/2;
-    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
-      camera_angle -= 0.01 * M_PI/2;
-    glm::vec3 camera_direction( std::sin( camera_angle ), 0, -std::cos( camera_angle ) );
-    if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() )
-      camera_pos += camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() )
-      camera_pos -= camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() )
-      camera_pos[ 1 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
-      camera_pos[ 1 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() )
-      light_energy += 0.05f;
-    if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() )
-      light_energy -= 0.05f;
-    if( pressed_keys.find( GLFW_KEY_UP ) != pressed_keys.end() )
-      light_pos[ 2 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_DOWN ) != pressed_keys.end() )
-      light_pos[ 2 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_LEFT ) != pressed_keys.end() )
-      light_pos[ 0 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_RIGHT ) != pressed_keys.end() )
-      light_pos[ 0 ] += speed;
-
-    glm::mat4 lookat = glm::lookAt(
-      camera_pos,
-      camera_pos + camera_direction,
-      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
-    );
-    auto &sync = framebuffers[ current_frame ];
-    if( !sync.initial ) {
-      sync.command_buffer->wait_for_executed();
-    }
-    else sync.initial = false;
-    auto image_index = swapchain->acquire_next_image( sync.image_acquired );
-    auto &fb = framebuffers[ image_index ];
+    auto command_buffer = queue->get_command_pool()->allocate();
     {
-      auto rec = sync.command_buffer->begin();
-      //rec.convert_image( fb.color, fb.color->get_props().get_basic().initialLayout, vk::ImageLayout::ePresentSrcKHR );
-      auto dynamic_data = gct::gltf::dynamic_uniforms_t()
-        .set_projection_matrix( projection )
-        .set_camera_matrix( lookat )
-        .set_eye_pos( glm::vec4( camera_pos, 1.0 ) )
-        .set_light_pos( glm::vec4( light_pos, 1.0 ) )
-        .set_light_energy( light_energy );
-      rec.copy(
-        dynamic_data,
-        staging_dynamic_uniform[ image_index ],
-        dynamic_uniform[ image_index ]
+      auto recorder = command_buffer->begin();
+      vertex_buffer = recorder.load_buffer(
+        allocator,
+        host_vertex_buffer.data(),
+        sizeof( float ) * host_vertex_buffer.size(),
+        vk::BufferUsageFlagBits::eVertexBuffer
       );
-      rec.barrier(
-        vk::AccessFlagBits::eTransferRead,
-        vk::AccessFlagBits::eShaderRead,
+      recorder.barrier(
+        vk::AccessFlagBits::eTransferWrite,
+        vk::AccessFlagBits::eVertexAttributeRead,
         vk::PipelineStageFlagBits::eTransfer,
-        vk::PipelineStageFlagBits::eVertexShader,
+        vk::PipelineStageFlagBits::eVertexInput,
         vk::DependencyFlagBits( 0 ),
-        { dynamic_uniform[ image_index ] },
+        { vertex_buffer },
         {}
       );
-
-      auto const pass_info = vk::RenderPassBeginInfo()
-        .setRenderPass( **render_pass[ image_index ] )
-        .setFramebuffer( **fb.framebuffer )
-        .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
-        .setClearValueCount( clear_values.size() )
-        .setPClearValues( clear_values.data() );
-       rec->beginRenderPass( &pass_info, vk::SubpassContents::eInline );
-       rec->setViewport( 0, 1, &viewport );
-       rec->setScissor( 0, 1, &scissor );
-       gct::gltf::draw_node(
-         rec,
-         doc.node,
-         doc.mesh,
-         doc.buffer,
-         image_index,
-         0u
-       );
-       rec->endRenderPass();
-//       rec.dump_image( allocator, fb.color,  "test.png", 0u );
     }
-    sync.command_buffer->execute(
+    command_buffer->execute(
       gct::submit_info_t()
-        .add_wait_for( sync.image_acquired, vk::PipelineStageFlagBits::eColorAttachmentOutput )
-        .add_signal_to( sync.draw_complete )
     );
-    queue->present(
-      gct::present_info_t()
-        .add_wait_for( sync.draw_complete )
-        .add_swapchain( swapchain, image_index )
-    );
-    last_image_index = image_index;
+    command_buffer->wait_for_executed();
+  }
+
+
+  const auto viewport =
+    gct::pipeline_viewport_state_create_info_t()
+      /*.set_basic(
+        vk::PipelineViewportStateCreateInfo()
+      )*/
+      .add_viewport(
+        vk::Viewport()
+          .setWidth( width )
+          .setHeight( height )
+          .setMinDepth( 0.0f )
+          .setMaxDepth( 1.0f )
+      )
+      .add_scissor(
+        vk::Rect2D()
+          .setOffset( { 0, 0 } )
+          .setExtent( { width, height } )
+      )
+      .rebuild_chain();
+
+  const auto rasterization =
+    gct::pipeline_rasterization_state_create_info_t()
+      .set_basic(
+        vk::PipelineRasterizationStateCreateInfo()
+          .setDepthClampEnable( false )
+          .setRasterizerDiscardEnable( false )
+          .setPolygonMode( vk::PolygonMode::eFill )
+          .setCullMode( vk::CullModeFlagBits::eNone )
+          .setFrontFace( vk::FrontFace::eClockwise )
+          .setDepthBiasEnable( false )
+          .setLineWidth( 1.0f )
+      );
+
+  const auto multisample =
+    gct::pipeline_multisample_state_create_info_t()
+      .set_basic(
+        vk::PipelineMultisampleStateCreateInfo()
+      );
+
+  const auto stencil_op = vk::StencilOpState()
+    .setCompareOp( vk::CompareOp::eAlways )
+    .setFailOp( vk::StencilOp::eKeep )
+    .setPassOp( vk::StencilOp::eKeep );
+
+  const auto depth_stencil =
+    gct::pipeline_depth_stencil_state_create_info_t()
+      .set_basic(
+        vk::PipelineDepthStencilStateCreateInfo()
+          .setDepthTestEnable( true )
+          .setDepthWriteEnable( true )
+          .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
+          .setDepthBoundsTestEnable( false )
+          .setStencilTestEnable( false )
+          .setFront( stencil_op )
+          .setBack( stencil_op )
+      );
+
+  const auto color_blend =
+    gct::pipeline_color_blend_state_create_info_t()
+      .add_attachment(
+        vk::PipelineColorBlendAttachmentState()
+          .setBlendEnable( false )
+          .setColorWriteMask(
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
+          )
+      );
+
+  auto pipeline = pipeline_cache->get_pipeline(
+    gct::graphics_pipeline_create_info_t()
+      .add_stage( vs )
+      .add_stage( fs )
+      .set_vertex_input( vistat )
+      .set_input_assembly( input_assembly )
+      .set_viewport( viewport )
+      .set_rasterization( rasterization )
+      .set_multisample( multisample )
+      .set_depth_stencil( depth_stencil )
+      .set_color_blend( color_blend )
+      .set_dynamic(
+        gct::pipeline_dynamic_state_create_info_t()
+      )
+      .set_layout( pipeline_layout )
+      .set_render_pass( render_pass, 0 )
+  );
+
+
+  uint32_t current_frame = 0u;
+  while( !close_app ) {
+    const auto begin_time = std::chrono::high_resolution_clock::now();
+    if( !iconified ) {
+      auto &sync = framebuffers[ current_frame ];
+      sync.command_buffer->wait_for_executed();
+      auto image_index = swapchain->acquire_next_image( sync.image_acquired );
+      auto &fb = framebuffers[ image_index ];
+      {
+        auto recorder = sync.command_buffer->begin();
+        auto render_pass_token = recorder.begin_render_pass(
+          fb.render_pass_begin_info,
+          vk::SubpassContents::eInline
+        );
+        recorder.bind_pipeline( pipeline );
+        recorder.bind_descriptor_set(
+          vk::PipelineBindPoint::eGraphics,
+          pipeline_layout,
+          descriptor_set
+        );
+        recorder.bind_vertex_buffer( vertex_buffer );
+        recorder->draw( vertex_count, 1, 0, 0 );
+      }
+      sync.command_buffer->execute(
+        gct::submit_info_t()
+          .add_wait_for( sync.image_acquired, vk::PipelineStageFlagBits::eColorAttachmentOutput )
+          .add_signal_to( sync.draw_complete )
+      );
+      queue->present(
+        gct::present_info_t()
+          .add_wait_for( sync.draw_complete )
+          .add_swapchain( swapchain, image_index )
+      );
+      ++current_frame;
+      current_frame %= framebuffers.size();
+    }
     glfwPollEvents();
-    ++current_frame;
-    current_frame %= framebuffers.size();
     gct::wait_for_sync( begin_time );
   }
   (*queue)->waitIdle();

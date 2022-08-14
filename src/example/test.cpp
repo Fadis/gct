@@ -499,7 +499,6 @@ int main() {
       descriptor_set
     );
     rec.bind_pipeline(
-      vk::PipelineBindPoint::eRayTracingKHR,
       ray_tracing_pipeline
     );
     rec.trace_rays(

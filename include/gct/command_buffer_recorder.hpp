@@ -20,6 +20,7 @@ namespace gct {
   class descriptor_set_t;
   class pipeline_layout_t;
   class compute_pipeline_t;
+  class graphics_pipeline_t;
   class ray_tracing_pipeline_t;
   class acceleration_structure_build_geometry_info_t;
   class acceleration_structure_build_region_info_t;
@@ -258,12 +259,18 @@ namespace gct {
       std::shared_ptr< descriptor_set_t > descriptor_set
     );
     void bind_pipeline(
-      vk::PipelineBindPoint bind_point,
       std::shared_ptr< compute_pipeline_t > pipeline
     );
     void bind_pipeline(
-      vk::PipelineBindPoint bind_point,
+      std::shared_ptr< graphics_pipeline_t > pipeline
+    );
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+    void bind_pipeline(
       std::shared_ptr< ray_tracing_pipeline_t > pipeline
+    );
+#endif
+    void bind_vertex_buffer(
+      std::shared_ptr< buffer_t > vertex_buffer
     );
     void build_acceleration_structure(
       const std::vector< gct::acceleration_structure_build_geometry_info_t >&,

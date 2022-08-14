@@ -14,6 +14,7 @@ namespace gct {
   ) : width( width_ ), height( height_ ) {
     gct::glfw::get();
     glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
+    glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
     auto raw_window = glfwCreateWindow( width, height, title.c_str(), fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr );
     if( !raw_window )
       throw -1;

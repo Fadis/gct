@@ -1,6 +1,16 @@
 GLSLC=glslc 
 GLSLI=../build/src/glsl_include
 
+echo simple.vert
+cat simple.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o simple.vert.spv --target-env=vulkan1.2 -
+echo simple.frag
+cat simple.frag|${GLSLI}|${GLSLC} -fshader-stage=frag -o simple.frag.spv --target-env=vulkan1.2 -
+
+echo simple_normal.vert
+cat simple_normal.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o simple_normal.vert.spv --target-env=vulkan1.2 -
+echo simple_normal.frag
+cat simple_normal.frag|${GLSLI}|${GLSLC} -fshader-stage=frag -o simple_normal.frag.spv --target-env=vulkan1.2 -
+
 echo simple.rgen
 cat simple.rgen|${GLSLI}|${GLSLC} -fshader-stage=rgen -o simple.rgen.spv --target-env=vulkan1.2 -
 echo simple.rchit

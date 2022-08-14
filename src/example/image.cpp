@@ -289,7 +289,6 @@ int main() {
     );
     
     rec.bind_pipeline(
-      vk::PipelineBindPoint::eCompute,
       pipeline
     );
     

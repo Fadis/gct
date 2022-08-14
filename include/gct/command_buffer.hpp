@@ -96,6 +96,7 @@ namespace gct {
   private:
     std::shared_ptr< command_buffer_t > buffer;
     std::shared_ptr< fence_t > fence;
+    bool executing = false;
   };
 }
 

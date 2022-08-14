@@ -108,6 +108,7 @@ add_library( gct SHARED
   gct/wait_for_sync.cpp
   gct/bind_descriptor_set.cpp
   gct/bind_pipeline.cpp
+  gct/bind_vertex_buffer.cpp
   gct/format_to_aspect.cpp
   gct/format_to_size.cpp
   gct/format_to_type.cpp
@@ -159,6 +160,8 @@ add_library( gct SHARED
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
   gct/primitives/triangle.cpp
+  gct/primitives/cube.cpp
+  gct/primitives/sphere.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
