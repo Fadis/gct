@@ -223,6 +223,28 @@ namespace gct {
     else if( format == vk::Format::eG16B16R162Plane422Unorm) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
     else if( format == vk::Format::eG16B16R163Plane444Unorm) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
 #endif
+#ifdef VK_VERSION_1_3
+    else if( format == vk::Format::eG8B8R82Plane444Unorm) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG16B16R162Plane444Unorm) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eA4R4G4B4UnormPack16) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eA4B4G4R4UnormPack16) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc4x4SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc5x4SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc5x5SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc6x5SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc6x6SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x5SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x6SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x8SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x5SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x6SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x8SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x10SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc12x10SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc12x12SfloatBlock) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+#endif
 #ifdef VK_IMG_FORMAT_PVRTC_EXTENSION_NAME
     else if( format == vk::Format::ePvrtc12BppUnormBlockIMG) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
     else if( format == vk::Format::ePvrtc14BppUnormBlockIMG) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
@@ -294,6 +316,28 @@ namespace gct {
     else if( format == vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16KHR) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
     else if( format == vk::Format::eR12X4G12X4Unorm2Pack16KHR) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
     else if( format == vk::Format::eR12X4UnormPack16KHR) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+#endif
+#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+    else if( format == vk::Format::eAstc10x10SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x5SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x6SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc10x8SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc12x10SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc12x12SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc4x4SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc5x4SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc5x5SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc6x5SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc6x6SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x5SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x6SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eAstc8x8SfloatBlockEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+#endif
+#ifdef VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME
+    else if( format == vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16EXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16EXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG8B8R82Plane444UnormEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
+    else if( format == vk::Format::eG16B16R162Plane444UnormEXT) return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
 #endif
     else return OIIO_NAMESPACE::TypeDesc::UNKNOWN;
   }

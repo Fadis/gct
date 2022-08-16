@@ -39,7 +39,11 @@ namespace gct {
     std::vector< vk::ImageMemoryBarrier > raw_image;
     const auto api_version = get_device( *this ).get_api_version();
     const auto &exts = get_device( *this ).get_activated_extensions();
+#ifdef VK_API_VERSION_1_3
     const bool synchronization2_is_activated = api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end();
+#else
+    const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
+#endif
     for( auto &v: image ) {
       if( synchronization2_is_activated ) {
         raw_image.push_back(
