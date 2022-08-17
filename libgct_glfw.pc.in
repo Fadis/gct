@@ -1,7 +1,7 @@
 prefix="@CMAKE_INSTALL_PREFIX@"
 exec_prefix="${prefix}/@CMAKE_INSTALL_BINDIR@"
 libdir="${prefix}/@CMAKE_INSTALL_LIBDIR@"
-imcludedir="${prefix}/@CMAKE_INSTALL_INCLUDEDIR@"
+includedir="${prefix}/@CMAKE_INSTALL_INCLUDEDIR@"
 
 Name: @PROJECT_NAME@_glfw
 Description: @CMAKE_PROJECT_DESCRIPTION@
@@ -9,5 +9,5 @@ URL: @CMAKE_PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: vulkan, vulkan2json, libgct, glfw3
 Cflags: -I"${includedir}"
-Libs: -L"${libdir}" -ldl -lgct -lgct_glfw -lvulkan2json -lvulkan -lglfw
+Libs: -L"${libdir}" -ldl -lgct -lgct_glfw -lvulkan2json -lvulkan -lglfw3
 
