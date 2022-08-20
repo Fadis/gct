@@ -16,7 +16,6 @@ namespace gct {
   std::shared_ptr< descriptor_set_t > descriptor_pool_t::allocate(
     const descriptor_set_allocate_info_t &create_info
   ) {
-    std::cout << "allocate " << nlohmann::json( create_info ).dump( 2 ) << std::endl;
     return std::shared_ptr< descriptor_set_t >(
       new descriptor_set_t(
         shared_from_this(),

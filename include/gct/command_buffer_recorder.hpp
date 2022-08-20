@@ -68,6 +68,12 @@ namespace gct {
       const std::string &filename,
       unsigned int mipmap
     );
+    std::shared_ptr< image_t > load_astc(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::vector< std::string > &filename,
+      vk::ImageUsageFlagBits usage,
+      bool srgb
+    );
     void buffer_to_image(
       bool mipmap,
       const std::shared_ptr< buffer_t > &temporary,
@@ -252,6 +258,12 @@ namespace gct {
     std::vector< vk::ImageMemoryBarrier > revert_convert_image(
       const std::shared_ptr< image_t > &image,
       const std::vector< vk::ImageMemoryBarrier > &old
+    );
+    void bind_descriptor_set(
+      vk::PipelineBindPoint bind_point,
+      std::uint32_t offset,
+      std::shared_ptr< pipeline_layout_t > pipeline_layout,
+      std::shared_ptr< descriptor_set_t > descriptor_set
     );
     void bind_descriptor_set(
       vk::PipelineBindPoint bind_point,

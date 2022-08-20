@@ -107,58 +107,35 @@ float grad(vec2 p, float scale ){
   );
 }
 
-vec3 simple_ambient_light_r0(
-  vec3 V,
-  vec3 N,
-  float roughness
-) {
-  vec3 D = normalize( reflect( normalize( V ), normalize( N ) ) );
-  float pos = ( D.y * 0.5 + 0.5 ) * 8.0;
-  int index = int( floor( pos ) );
-  float level = fract( pos );
-  float mix_level = grad( vec2( fract( D.x ), fract( D.z ) ), pow( 2.0, floor( mix( -6.0, 6.0, 1 - roughness ) ) ) );
-  float mix_tangent = ( 1 - roughness ) * 6.0;
-  float mix_shift = -mix_tangent * 0.5;
-  float clamped_mix_level = min( 1.0, max( 0.0, ( mix_level * mix_tangent + mix_shift ) ) );
-  const vec3[ 10 ] c1 = vec3[10](
-    vec3( 0.0, 0.1, 0.0 ), // darkgreen
-    vec3( 0.0, 0.2, 0.0 ), // darkgreen
-    vec3( 0.1, 0.2, 0.1 ), // darkgreen
-    vec3( 0.15, 0.2, 0.15 ), // forestgreen
-    vec3( 0.2, 0.2, 0.2 ), // dimgray
-    vec3( 0.5, 0.8, 0.6 ), // lightskyblue
-    vec3( 0.4, 0.82, 1.0 ), // deepskyblue
-    vec3( 0.3, 0.84, 1.0 ), // deepskyblue
-    vec3( 0.2, 0.86, 1.0 ), // deepskyblue
-    //vec3( 0.3, 0.8490196078431373, 1.0 ), // deepskyblue
-    vec3( 0.3, 0.8490196078431373, 1.0 ) // deepskyblue
-  );
-  const vec3[ 10 ] c2 = vec3[10](
-    vec3( 0.5, 0.35, 0.3 ), // saddlebrown
-    vec3( 0.5, 0.35, 0.3 ), // saddlebrown
-    vec3( 0.4, 0.3, 0.26 ), // saddlebrown
-    vec3( 0.3, 0.25, 0.23 ), // burlywood
-    vec3( 0.2, 0.2, 0.2 ), // dimgray
-    vec3( 0.8, 0.8, 0.8 ), // white
-    vec3( 0.95, 0.95, 0.95 ), // white
-    vec3( 1.0, 1.0, 1.0 ), // white
-    vec3( 1.0, 1.0, 1.0 ), // white
-    //vec3( 1.0, 1.0, 1.0 ), // white
-    vec3( 1.0, 1.0, 1.0 ) // white
-  );
-  vec3 c1i = mix( c1[ index ], c1[ index + 1 ], level );
-  vec3 c2i = mix( c2[ index ], c2[ index + 1 ], level );
-  return mix( c1i, c2i, clamped_mix_level );
-}
+layout(set = 1, binding = 0) uniform sampler2D environment_map;
 
 vec3 simple_ambient_light(
   vec3 V,
   vec3 N,
-  float roughness,
   vec3 diffuse_color,
+  float roughness,
   float metallicness
 ) {
-  return simple_ambient_light_r0( V, N, roughness ) * diffuse_color;
+  vec3 environment_dir = normalize( reflect( normalize( V ), normalize( N ) ) );
+  vec3 environment_specular = textureLod( environment_map, vec2( environment_dir.x, -environment_dir.y ) * 0.5 + 0.5, roughness * roughness * 8.0 ).rgb * mix( vec3( 0, 0, 0 ), diffuse_color, metallicness );
+  vec3 environment_diffuse = textureLod( environment_map, vec2( environment_dir.x, -environment_dir.y ) * 0.5 + 0.5, 7.0 ).rgb * mix( diffuse_color, vec3( 0, 0, 0 ), metallicness );
+  return environment_specular + environment_diffuse;
+}
+
+vec3 simple_light(
+  vec3 L,
+  vec3 V,
+  vec3 N,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  float light_energy
+) {
+  const float pi = 3.141592653589793;
+  vec3 specular = walter( L, V, N, roughness, mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) );
+  float diffuse = max( dot( L, N ), 0 ) /pi * burley( L, V, N, roughness );
+  vec3 linear = ( max( dot( L, N ), 0 ) * ( max( specular, vec3( 0, 0, 0 ) ) + ( 1 - metallicness ) * diffuse * diffuse_color ) ) * light_energy;
+  return linear;
 }
 
 vec3 light(
@@ -177,7 +154,8 @@ vec3 light(
   const float pi = 3.141592653589793;
   vec3 specular = walter( L, V, N, roughness, mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) );
   float diffuse = max( dot( L, N ), 0 ) /pi * burley( L, V, N, roughness );
-  vec3 linear = ( max( dot( L, N ), 0 ) * ( max( specular, vec3( 0, 0, 0 ) ) + ( 1 - metallicness ) * diffuse * diffuse_color ) + simple_ambient_light( WV, WN, roughness, diffuse_color, metallicness ) ) * ambient * light_energy + emissive;
+  vec3 linear = ( max( dot( L, N ), 0 ) * ( max( specular, vec3( 0, 0, 0 ) ) + ( 1 - metallicness ) * diffuse * diffuse_color ) ) * light_energy + emissive + simple_ambient_light( WV, WN, diffuse_color, roughness, metallicness ) * ambient;
+  linear = linear * 0.5;
   //return ;
   return linear;
 }
@@ -199,6 +177,6 @@ vec3 light_with_mask(
   const float pi = 3.141592653589793;
   vec3 specular = walter( L, V, N, roughness, mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) );
   float diffuse = max( dot( L, N ), 0 ) /pi * burley( L, V, N, roughness );
-  vec3 linear = mix( ( max( dot( L, N ), 0 ) * ( max( specular, vec3( 0, 0, 0 ) ) + ( 1 - metallicness ) * diffuse * diffuse_color ) + simple_ambient_light( WV, WN, roughness, diffuse_color, metallicness ) ) * ambient * light_energy + emissive, ( ambient * simple_ambient_light( WV, WN, roughness, diffuse_color, metallicness ) ) * light_energy + emissive, masked );
+  vec3 linear = mix( ( max( dot( L, N ), 0 ) * ( max( specular, vec3( 0, 0, 0 ) ) + ( 1 - metallicness ) * diffuse * diffuse_color ) + simple_ambient_light( WV, WN, diffuse_color, roughness, metallicness ) * ambient ) * light_energy + emissive, ( ambient * simple_ambient_light( WV, WN, diffuse_color, roughness, metallicness ) ) * light_energy + emissive, masked );
   return linear;
 }

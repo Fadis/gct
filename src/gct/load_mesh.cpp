@@ -50,7 +50,9 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer
+    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
+    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
+    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
   ) {
     if( primitive.material < 0 || doc.materials.size() <= size_t( primitive.material ) ) throw invalid_gltf( "参照されたmaterialが存在しない", __FILE__, __LINE__ );
     const auto &material = doc.materials[ primitive.material ];
@@ -156,6 +158,7 @@ namespace gct::gltf {
     auto pipeline_layout = device->get_pipeline_layout(
       gct::pipeline_layout_create_info_t()
         .add_descriptor_set_layout( descriptor_set_layout )
+        .add_descriptor_set_layout( env_descriptor_set_layout )
         .add_push_constant_range(
           vk::PushConstantRange()
             .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
@@ -339,6 +342,7 @@ namespace gct::gltf {
       descriptor_set.back()->update( updates );
     }
     primitive_.set_descriptor_set( descriptor_set ); 
+    primitive_.set_env_descriptor_set( env_descriptor_set ); 
     primitive_.set_min( min );
     primitive_.set_max( max );
     primitive_.set_uniform_buffer(
@@ -360,7 +364,9 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer
+    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
+    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
+    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
   ) {
     if( index < 0 || doc.meshes.size() <= size_t( index ) ) throw invalid_gltf( "参照されたmeshが存在しない", __FILE__, __LINE__ );
     const auto &mesh = doc.meshes[ index ];
@@ -390,7 +396,9 @@ namespace gct::gltf {
         textures,
         swapchain_size,
         shader_mask,
-        dynamic_uniform_buffer
+        dynamic_uniform_buffer,
+        env_descriptor_set_layout,
+        env_descriptor_set
       ) );
       min[ 0 ] = std::min( min[ 0 ], mesh_.primitive.back().min[ 0 ] );
       min[ 1 ] = std::min( min[ 1 ], mesh_.primitive.back().min[ 1 ] );
@@ -415,7 +423,9 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer
+    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
+    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
+    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
   ) {
     meshes_t mesh;
     auto pipeline_cache = device->get_pipeline_cache();
@@ -435,7 +445,9 @@ namespace gct::gltf {
           textures,
           swapchain_size,
           shader_mask,
-          dynamic_uniform_buffer
+          dynamic_uniform_buffer,
+          env_descriptor_set_layout,
+          env_descriptor_set
         )
       );
     return mesh;

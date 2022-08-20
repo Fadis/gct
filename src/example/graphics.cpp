@@ -15,6 +15,7 @@
 #include <gct/swapchain.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
+#include <gct/sampler_create_info.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/buffer_view_create_info.hpp>
@@ -74,8 +75,8 @@ int main() {
   } );
   std::cout << nlohmann::json( groups[ 0 ] ).dump( 2 ) << std::endl;
 
-  std::uint32_t width = 1920u;
-  std::uint32_t height = 1080u;
+  std::uint32_t width = 1920u*2;
+  std::uint32_t height = 1080u*2;
 
   gct::glfw_window window( width, height, "window title", false );
   window.set_on_closed( []( auto & ) { std::cout << "closed" << std::endl; } );
@@ -201,66 +202,114 @@ int main() {
               .setFramebuffer( **framebuffer )
               .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
           )
-          .add_clear_value( vk::ClearColorValue( std::array< float, 4u >{ 0.0f, 0.0f, 0.0f, 1.0f } ) )
+          .add_clear_value( vk::ClearColorValue( std::array< float, 4u >{ 1.0f, 0.0f, 1.0f, 1.0f } ) )
           .add_clear_value( vk::ClearDepthStencilValue( 1.f, 0 ) )
           .rebuild_chain()
       }
     );
   }
 
-  auto image = allocator->create_image(
-    gct::image_create_info_t()
+  auto environment_sampler = device->get_sampler(
+    gct::sampler_create_info_t()
       .set_basic(
-        vk::ImageCreateInfo()
-          .setImageType( vk::ImageType::e2D )
-          .setFormat( gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format )
-          .setExtent(
-            vk::Extent3D()
-              .setWidth( surface->get_caps().get_basic().currentExtent.width )
-              .setHeight( surface->get_caps().get_basic().currentExtent.height )
-              .setDepth( 1 )
-          )
-          .setMipLevels( 1 )
-          .setArrayLayers( 1 )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage( vk::ImageUsageFlagBits::eColorAttachment )
-          .setSharingMode( vk::SharingMode::eExclusive )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  auto image_view = image->get_view( vk::ImageAspectFlagBits::eColor );
-  
-  auto buffer = allocator->create_buffer(
-    gct::buffer_create_info_t()
-      .set_basic(
-        vk::BufferCreateInfo()
-          .setSize( 1024 )
-          .setUsage( vk::BufferUsageFlagBits::eTransferSrc )
-      ),
-    VMA_MEMORY_USAGE_CPU_TO_GPU
-  );
-  for( auto &v: buffer->map< std::uint8_t >() )
-    v = 1;
-  auto buffer2 = allocator->create_buffer(
-    gct::buffer_create_info_t()
-      .set_basic(
-        vk::BufferCreateInfo()
-          .setSize( 1024 )
-          .setUsage( vk::BufferUsageFlagBits::eUniformTexelBuffer )
-      ),
-    VMA_MEMORY_USAGE_CPU_TO_GPU
-  );
-  auto buffer_view = buffer2->get_view(
-    gct::buffer_view_create_info_t()
-      .set_basic(
-        vk::BufferViewCreateInfo()
-          .setOffset( 0 )
-          .setRange( 100 )
-          .setFormat( vk::Format::eR8G8B8A8Unorm )
+        vk::SamplerCreateInfo()
+          .setMagFilter( vk::Filter::eLinear )
+          .setMinFilter( vk::Filter::eLinear )
+          .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+          .setAddressModeU( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeV( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeW( vk::SamplerAddressMode::eRepeat )
+          .setAnisotropyEnable( false )
+          .setCompareEnable( false )
+          .setMipLodBias( 0.f )
+          .setMinLod( 0.f )
+          .setMaxLod( 9.f )
+          .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+          .setUnnormalizedCoordinates( false )
       )
   );
+
+  std::shared_ptr< gct::image_t > environment_image;
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      environment_image = recorder.load_image(
+        allocator,
+        "../images/environment.png",
+        vk::ImageUsageFlagBits::eSampled,
+        true, true
+      );
+      recorder.barrier(
+        vk::AccessFlagBits::eTransferWrite,
+        vk::AccessFlagBits::eVertexAttributeRead,
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eVertexInput,
+        vk::DependencyFlagBits( 0 ),
+        {},
+        { environment_image }
+      );
+    }
+    command_buffer->execute(
+      gct::submit_info_t()
+    );
+    command_buffer->wait_for_executed();
+  }
+  
+  auto environment_image_view = environment_image->get_view(
+    gct::image_view_create_info_t()
+      .set_basic(
+        vk::ImageViewCreateInfo()
+          .setSubresourceRange(
+            vk::ImageSubresourceRange()
+              .setAspectMask( vk::ImageAspectFlagBits::eColor )
+              .setBaseMipLevel( 0 )
+              .setLevelCount( environment_image->get_props().get_basic().mipLevels )
+              .setBaseArrayLayer( 0 )
+              .setLayerCount( environment_image->get_props().get_basic().arrayLayers )
+          )
+          .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType ) )
+          .setFormat( vk::Format::eR8G8B8A8Unorm )
+      )
+      .rebuild_chain()
+  );
+
+  const auto env_descriptor_set_layout = device->get_descriptor_set_layout(
+    gct::descriptor_set_layout_create_info_t()
+      .add_binding(
+        vk::DescriptorSetLayoutBinding()
+          .setBinding( 0 )
+          .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+          .setDescriptorCount( 1u )
+          .setStageFlags( vk::ShaderStageFlagBits::eFragment )
+      )
+  );
+
+  auto env_descriptor_set = descriptor_pool->allocate( env_descriptor_set_layout );
+  std::vector< gct::write_descriptor_set_t > updates;
+  updates.push_back(
+    gct::write_descriptor_set_t()
+      .set_basic(
+        vk::WriteDescriptorSet()
+          .setDstSet( **env_descriptor_set )
+          .setDstBinding( 0u )
+          .setDescriptorCount( 1u )
+          .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+      )
+      .add_image(
+        gct::descriptor_image_info_t()
+          .set_sampler( environment_sampler )
+          .set_image_view( environment_image_view )
+          .set_basic(
+            vk::DescriptorImageInfo()
+              .setImageLayout(
+                environment_image->get_layout().get_uniform_layout()
+              )
+          )
+      )
+  );
+  env_descriptor_set->update( updates );
+
 
   gct::gltf::document_t doc;
   {
@@ -281,7 +330,9 @@ int main() {
       0,
       dynamic_uniform,
       float( width ) / float( height ),
-      false
+      false,
+      env_descriptor_set_layout,
+      env_descriptor_set
     );
   }
   gcb->execute(

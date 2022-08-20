@@ -26,5 +26,21 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( pipeline_layout );
     get_factory()->unbound()->keep.push_back( descriptor_set );
   }
+  void command_buffer_recorder_t::bind_descriptor_set(
+    vk::PipelineBindPoint bind_point,
+    std::uint32_t offset,
+    std::shared_ptr< pipeline_layout_t > pipeline_layout,
+    std::shared_ptr< descriptor_set_t > descriptor_set
+  ) {
+    (*get_factory())->bindDescriptorSets(
+      bind_point,
+      **pipeline_layout,
+      offset,
+      **descriptor_set,
+      {}
+    );
+    get_factory()->unbound()->keep.push_back( pipeline_layout );
+    get_factory()->unbound()->keep.push_back( descriptor_set );
+  }
 }
 

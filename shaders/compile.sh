@@ -11,6 +11,12 @@ cat simple_normal.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o simple_normal.ve
 echo simple_normal.frag
 cat simple_normal.frag|${GLSLI}|${GLSLC} -fshader-stage=frag -o simple_normal.frag.spv --target-env=vulkan1.2 -
 
+echo textured.vert
+cat textured.vert|${GLSLI}|${GLSLC} -fshader-stage=vert -o textured.vert.spv --target-env=vulkan1.2 -
+echo color_textured.frag
+cat color_textured.frag|${GLSLI}|${GLSLC} -fshader-stage=frag -o color_textured.frag.spv --target-env=vulkan1.2 -
+
+
 echo simple.rgen
 cat simple.rgen|${GLSLI}|${GLSLC} -fshader-stage=rgen -o simple.rgen.spv --target-env=vulkan1.2 -
 echo simple.rchit

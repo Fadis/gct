@@ -216,7 +216,8 @@ namespace gct::gltf {
           &pc
         );
         std::vector< vk::DescriptorSet > descriptor_set{
-          **primitive.descriptor_set[ current_frame ]
+          **primitive.descriptor_set[ current_frame ],
+          **primitive.env_descriptor_set
         };
         rec->bindDescriptorSets(
           vk::PipelineBindPoint::eGraphics,

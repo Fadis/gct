@@ -72,6 +72,7 @@ find_package(JSON REQUIRED)
 find_package(FXGLTF REQUIRED)
 find_package(OpenImageIO REQUIRED)
 pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
+find_package(GLSLC REQUIRED)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include/vk_mem_alloc.h
@@ -157,6 +158,8 @@ set( EASYPACK_MAINTAINER "Naomasa Matsubayashi <foo@exmple.com>" )
 set( EASYPACK_COMPRESSION_TYPE "xz" )
 set( EASYPACK_LICENSE_NAME "MIT" )
 include(EasyPack)
+
+include(AddShader)
 
 subdirs( include src )
 

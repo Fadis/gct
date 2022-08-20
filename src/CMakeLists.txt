@@ -26,6 +26,9 @@ add_library( gct SHARED
   gct/allocator.cpp
   gct/image_create_info.cpp
   gct/image.cpp
+  gct/astc.cpp
+  gct/load_astc.cpp
+  gct/mmaped_file.cpp
   gct/round_up.cpp
   gct/acceleration_structure_create_info.cpp
   gct/acceleration_structure.cpp
@@ -307,3 +310,4 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
+subdirs( example )

@@ -181,30 +181,30 @@ namespace gct::primitive {
       const std::uint32_t vertex_offset = ( ( patch.current_ring * 2u - 1u ) * ring_vertex_count ) + patch.current_segment * 3u;
       set_vertex_buffer_values(
         head, vertex_offset, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
       set_vertex_buffer_values(
         head, vertex_offset + 1u, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
       set_vertex_buffer_values(
         head, vertex_offset + 2u, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
     }
     if( patch.current_ring != patch.ring_count - 1u ) {
       const std::uint32_t vertex_offset = ( ( patch.current_ring * 2u ) * ring_vertex_count ) + patch.current_segment * 3u;
       set_vertex_buffer_values(
         head, vertex_offset, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
       set_vertex_buffer_values(
         head, vertex_offset + 1u, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
       set_vertex_buffer_values(
         head, vertex_offset + 2u, detail, stride,
-        color, color, color, 1.f
+        1.f, color, color, 1.f
       );
     }
   }

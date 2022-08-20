@@ -1,0 +1,9 @@
+subdirs(
+  transformed
+  diffuse
+  specular
+  textured
+  bump
+  roughness_mask
+  environment
+)

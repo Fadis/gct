@@ -165,6 +165,7 @@ namespace gct::gltf {
     LIBGCT_SETTER( indexed )
     LIBGCT_SETTER( index_buffer )
     LIBGCT_SETTER( descriptor_set )
+    LIBGCT_SETTER( env_descriptor_set )
     LIBGCT_SETTER( count )
     LIBGCT_SETTER( index_buffer_type )
     LIBGCT_SETTER( min )
@@ -178,6 +179,7 @@ namespace gct::gltf {
     bool indexed;
     buffer_window_t index_buffer;
     std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
+    std::shared_ptr< descriptor_set_t > env_descriptor_set;
     uint32_t count;
     vk::IndexType index_buffer_type;
     glm::vec3 min;
@@ -256,7 +258,9 @@ namespace gct::gltf {
     int shader_mask,
     const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
     float aspect_ratio,
-    bool ray_trace
+    bool ray_trace,
+    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
+    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
   );
   struct push_constants_t {
     LIBGCT_SETTER( world_matrix )
@@ -360,7 +364,9 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer
+    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
+    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
+    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
   );
   node_t create_node(
     const fx::gltf::Document &doc,
