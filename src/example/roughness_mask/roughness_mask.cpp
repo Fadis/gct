@@ -159,6 +159,7 @@ int main() {
           .setMaxSets( 10 )
       )
       .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 1 )
+      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 4 )
       .rebuild_chain()
   );
 

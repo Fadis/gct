@@ -6,4 +6,5 @@ subdirs(
   bump
   roughness_mask
   environment
+  astc
 )

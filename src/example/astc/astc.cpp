@@ -1,13 +1,13 @@
 #include <iostream>
 #include <unordered_set>
 #include <utility>
-#include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
+#include <gct/setter.hpp>
 #include <gct/glfw.hpp>
 #include <gct/queue.hpp>
 #include <gct/device.hpp>
@@ -31,14 +31,12 @@
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/pipeline_layout.hpp>
-#include <gct/buffer_view_create_info.hpp>
 #include <gct/sampler_create_info.hpp>
 #include <gct/image_view_create_info.hpp>
 #include <gct/submit_info.hpp>
 #include <gct/fence.hpp>
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
-#include <gct/gltf.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/primitive.hpp>
@@ -175,8 +173,8 @@ int main() {
     vk::Format::eD16Unorm
   );
 
-  const auto vs = device->get_shader_module( "./src/example/environment/shader.vert.spv" );
-  const auto fs = device->get_shader_module( "./src/example/environment/shader.frag.spv" );
+  const auto vs = device->get_shader_module( "./src/example/roughness_mask/shader.vert.spv" );
+  const auto fs = device->get_shader_module( "./src/example/roughness_mask/shader.frag.spv" );
  
   const auto descriptor_set_layout = device->get_descriptor_set_layout(
     gct::descriptor_set_layout_create_info_t()
@@ -225,7 +223,6 @@ int main() {
   std::shared_ptr< gct::image_t > base_color_image;
   std::shared_ptr< gct::image_t > normal_image;
   std::shared_ptr< gct::image_t > roughness_image;
-  std::shared_ptr< gct::image_t > environment_image;
   {
     auto command_buffer = queue->get_command_pool()->allocate();
     {
@@ -236,29 +233,29 @@ int main() {
         sizeof( float ) * host_vertex_buffer.size(),
         vk::BufferUsageFlagBits::eVertexBuffer
       );
-      base_color_image = recorder.load_image(
+      base_color_image = recorder.load_astc(
         allocator,
-        "../images/globe_color.png",
+	{
+          "../images/globe_color.astc"
+        },
         vk::ImageUsageFlagBits::eSampled,
-        true, true
+        true
       );
-      normal_image = recorder.load_image(
+      normal_image = recorder.load_astc(
         allocator,
-        "../images/globe_normal.png",
+	{
+          "../images/globe_normal.astc"
+	},
         vk::ImageUsageFlagBits::eSampled,
-        true, false
+        false
       );
-      roughness_image = recorder.load_image(
+      roughness_image = recorder.load_astc(
         allocator,
-        "../images/globe_roughness.png",
+	{
+          "../images/globe_roughness.astc"
+	},
         vk::ImageUsageFlagBits::eSampled,
-        true, false
-      );
-      environment_image = recorder.load_image(
-        allocator,
-        "../images/environment.png",
-        vk::ImageUsageFlagBits::eSampled,
-        true, true
+        false
       );
       recorder.barrier(
         vk::AccessFlagBits::eTransferWrite,
@@ -267,7 +264,7 @@ int main() {
         vk::PipelineStageFlagBits::eVertexInput,
         vk::DependencyFlagBits( 0 ),
         { vertex_buffer },
-        { base_color_image, normal_image, roughness_image, environment_image }
+        { base_color_image, normal_image }
       );
     }
     command_buffer->execute(
@@ -322,23 +319,6 @@ int main() {
               .setLayerCount( roughness_image->get_props().get_basic().arrayLayers )
           )
           .setViewType( gct::to_image_view_type( roughness_image->get_props().get_basic().imageType ) )
-          .setFormat( vk::Format::eR8G8B8A8Unorm )
-      )
-      .rebuild_chain()
-  );
-  auto environment_image_view = environment_image->get_view(
-    gct::image_view_create_info_t()
-      .set_basic(
-        vk::ImageViewCreateInfo()
-          .setSubresourceRange(
-            vk::ImageSubresourceRange()
-              .setAspectMask( vk::ImageAspectFlagBits::eColor )
-              .setBaseMipLevel( 0 )
-              .setLevelCount( environment_image->get_props().get_basic().mipLevels )
-              .setBaseArrayLayer( 0 )
-              .setLayerCount( environment_image->get_props().get_basic().arrayLayers )
-          )
-          .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType ) )
           .setFormat( vk::Format::eR8G8B8A8Unorm )
       )
       .rebuild_chain()
@@ -445,23 +425,6 @@ int main() {
           gct::descriptor_image_info_t()
             .set_sampler( base_color_sampler )
             .set_image_view( roughness_image_view )
-            .set_basic(
-              vk::DescriptorImageInfo()
-                .setImageLayout(
-                  roughness_image->get_layout().get_uniform_layout()
-                )
-            )
-        )
-    );
-    updates.push_back(
-      gct::write_descriptor_set_t()
-        .set_basic(
-          (*descriptor_set)[ "environment_map" ]
-        )
-        .add_image(
-          gct::descriptor_image_info_t()
-            .set_sampler( base_color_sampler )
-            .set_image_view( environment_image_view )
             .set_basic(
               vk::DescriptorImageInfo()
                 .setImageLayout(
@@ -604,7 +567,7 @@ int main() {
     )
     .set_eye_pos( glm::vec4{ camera_pos[ 0 ], camera_pos[ 1 ], camera_pos[ 2 ], 1.0 } )
     .set_light_pos( glm::vec4( 2.0, -2.0, 2.0, 1.0 ) )
-    .set_light_energy( 8.0 );
+    .set_light_energy( 5.0 );
 
   uint32_t current_frame = 0u;
   float angle = 0.f;

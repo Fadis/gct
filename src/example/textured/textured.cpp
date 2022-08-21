@@ -159,6 +159,7 @@ int main() {
           .setMaxSets( 10 )
       )
       .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 1 )
+      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 4 )
       .rebuild_chain()
   );
 
@@ -186,6 +187,7 @@ int main() {
         fs->get_props().get_reflection()
       )
   );
+  std::cout << nlohmann::json( descriptor_set_layout->get_props() ) << std::endl;
 
   auto base_color_sampler = device->get_sampler(
     gct::sampler_create_info_t()
@@ -370,8 +372,6 @@ int main() {
       }
     );
   }
-
-
 
   const auto viewport =
     gct::pipeline_viewport_state_create_info_t()
