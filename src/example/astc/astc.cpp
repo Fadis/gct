@@ -69,7 +69,7 @@ struct uniform_t {
   float light_energy;
 };
 
-int main() {
+int main( int argc, char *argv[] ) {
   gct::glfw::get();
   uint32_t iext_count = 0u;
   auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
@@ -83,7 +83,7 @@ int main() {
       gct::instance_create_info_t()
         .set_application_info(
           vk::ApplicationInfo()
-            .setPApplicationName( "my_application" )
+            .setPApplicationName( argc ? argv[ 0 ] : "my_application" )
             .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
             .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
         )
@@ -109,7 +109,7 @@ int main() {
   std::uint32_t width = 1024u;
   std::uint32_t height = 1024u;
 
-  gct::glfw_window window( width, height, "ball", false );
+  gct::glfw_window window( width, height, argc ? argv[ 0 ] : "my_application", false );
   bool close_app = false;
   bool iconified = false;
   window.set_on_closed( [&]( auto & ) { close_app = true; } );
@@ -219,6 +219,8 @@ int main() {
   const auto [input_assembly,host_vertex_buffer,vertex_count] = gct::primitive::create_sphere( vamap, stride, 12u, 6u );
   //const auto [input_assembly,host_vertex_buffer,vertex_count] = gct::primitive::create_cube( vamap, stride );
 
+  const std::filesystem::path executable_path( argc ? argv[ 0 ] : "my_application" );
+  const std::filesystem::path tex_dir = executable_path.parent_path();
   std::shared_ptr< gct::buffer_t > vertex_buffer;
   std::shared_ptr< gct::image_t > base_color_image;
   std::shared_ptr< gct::image_t > normal_image;
@@ -236,7 +238,7 @@ int main() {
       base_color_image = recorder.load_astc(
         allocator,
 	{
-          "../images/globe_color.astc"
+        ( tex_dir / "globe_color.png.astc" ).string()
         },
         vk::ImageUsageFlagBits::eSampled,
         true
@@ -244,7 +246,7 @@ int main() {
       normal_image = recorder.load_astc(
         allocator,
 	{
-          "../images/globe_normal.astc"
+        ( tex_dir / "globe_normal.png.astc" ).string()
 	},
         vk::ImageUsageFlagBits::eSampled,
         false
@@ -252,7 +254,7 @@ int main() {
       roughness_image = recorder.load_astc(
         allocator,
 	{
-          "../images/globe_roughness.astc"
+        ( tex_dir / "globe_roughness.png.astc" ).string()
 	},
         vk::ImageUsageFlagBits::eSampled,
         false

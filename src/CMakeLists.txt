@@ -163,6 +163,7 @@ add_library( gct SHARED
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
   gct/primitives/triangle.cpp
+  gct/primitives/plane.cpp
   gct/primitives/cube.cpp
   gct/primitives/sphere.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
