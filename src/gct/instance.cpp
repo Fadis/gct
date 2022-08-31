@@ -65,7 +65,7 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroups() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
-          auto detailed = devices.find( group.physicalDevices[ i ] );
+          auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );
@@ -79,7 +79,7 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroups() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
-          auto detailed = devices.find( group.physicalDevices[ i ] );
+          auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );
@@ -94,7 +94,7 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroupsKHR() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
-          auto detailed = devices.find( group.physicalDevices[ i ] );
+          auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );

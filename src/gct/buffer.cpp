@@ -33,7 +33,7 @@ namespace gct {
       new vk::Buffer( buffer_ ),
       [allocator=allocator,allocation=allocation]( vk::Buffer *p ) {
         if( p ) {
-          vmaDestroyBuffer( **allocator, *p, *allocation );
+          vmaDestroyBuffer( **allocator, VkBuffer( *p ), *allocation );
           delete p;
         }
       }

@@ -176,13 +176,13 @@ namespace gct {
     const physical_device_t &pdev
   ) {
     VkSurfaceKHR raw_surface;
-    VkResult err = glfwCreateWindowSurface( **pdev.get_factory(), handle.get(), nullptr, &raw_surface );
+    VkResult err = glfwCreateWindowSurface( VkInstance( **pdev.get_factory() ), handle.get(), nullptr, &raw_surface );
     if( err )
       vk::throwResultException( vk::Result( err ), "glfwCreateWindowSurface failed" );
     return std::shared_ptr< surface_t >(
       new surface_t(
         pdev,
-        raw_surface
+        vk::SurfaceKHR( raw_surface )
       ),
       [handle=handle] ( surface_t *p ) {
         if( p ) delete p;

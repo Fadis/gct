@@ -22,7 +22,7 @@ namespace gct {
       new vk::Image( image_ ),
       [allocator=allocator,allocation=allocation]( vk::Image *p ) {
         if( p ) {
-          vmaDestroyImage( **allocator, *p, *allocation );
+          vmaDestroyImage( **allocator, VkImage( *p ), *allocation );
           delete p;
         }
       }

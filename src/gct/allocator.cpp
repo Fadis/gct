@@ -12,9 +12,9 @@ namespace gct {
     const VmaAllocatorCreateInfo &create_info
   ) :
     created_from< device_t >( device ), props( create_info ) {
-    props.instance = **device->get_factory();
-    props.physicalDevice = **device->get_physical_device_group().devices[ 0 ];
-    props.device = **device;
+    props.instance = VkInstance( **device->get_factory() );
+    props.physicalDevice = VkPhysicalDevice( **device->get_physical_device_group().devices[ 0 ] );
+    props.device = VkDevice( **device );
     VmaAllocator allocator;
     {
       const auto result = vmaCreateAllocator( &props, &allocator );
