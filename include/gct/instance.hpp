@@ -10,7 +10,7 @@
 namespace gct {
   class instance_t;
   bool is_valid_vulkan_version( std::uint32_t version );
-
+  class display_surface_create_info_t;
   class instance_t : public std::enable_shared_from_this< instance_t > {
   public:
     instance_t(

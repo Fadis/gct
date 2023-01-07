@@ -11,7 +11,11 @@
 #include <vulkan2json/QueueFamilyGlobalPriorityPropertiesEXT.hpp>
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
 #include <vulkan2json/VideoQueueFamilyProperties2KHR.hpp>
+#else
+#include <vulkan2json/QueueFamilyVideoPropertiesKHR.hpp>
+#endif
 #endif
 
 namespace gct {

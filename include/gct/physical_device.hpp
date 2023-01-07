@@ -14,7 +14,9 @@
 
 namespace gct {
   class instance_t;
-
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+  class display_surface_create_info_t;
+#endif
   class physical_device_t : public created_from< instance_t > {
   public:
     physical_device_t(
@@ -41,6 +43,11 @@ namespace gct {
     const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
       return vertex_buffer_formats;
     }
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+    std::shared_ptr< surface_t > get_surface(
+      const display_surface_create_info_t &
+    );
+#endif
   private:
     void detect_vertex_buffer_formats();
     vk::PhysicalDevice handle;

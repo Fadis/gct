@@ -21,7 +21,8 @@ namespace gct::primitive {
     std::uint32_t
   > create_plane(
     const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &detail,
-    std::uint32_t stride
+    std::uint32_t stride,
+    bool positive
   );
   std::tuple<
     pipeline_input_assembly_state_create_info_t,
@@ -40,6 +41,15 @@ namespace gct::primitive {
     std::uint32_t stride,
     std::uint32_t segment_count,
     std::uint32_t ring_count
+  );
+  std::tuple<
+    pipeline_input_assembly_state_create_info_t,
+    std::vector< std::uint8_t >,
+    std::uint32_t
+  > create_cursor(
+    const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &detail,
+    std::uint32_t stride,
+    bool positive
   );
 }
 #endif

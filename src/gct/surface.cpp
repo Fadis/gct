@@ -26,6 +26,19 @@ namespace gct {
       raw_handle
     )
   {}
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+  surface_t::surface_t(
+    const physical_device_t &pdev,
+    vk::UniqueHandle< vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > &&h
+  ) :
+    created_from< instance_t >( pdev.get_factory() ),
+    handle( std::move( h ) ),
+    caps(
+      pdev,
+      handle.get()
+    )
+  {}
+#endif
 #endif
 }
 

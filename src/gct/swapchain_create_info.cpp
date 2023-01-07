@@ -120,7 +120,10 @@ namespace gct {
       .setImageColorSpace( format.basic.colorSpace )
       .setImageExtent( surface->get_caps().get_basic().currentExtent )
       .setImageArrayLayers( 1 )
-      .setImageUsage( vk::ImageUsageFlagBits::eColorAttachment )
+      .setImageUsage(
+        vk::ImageUsageFlagBits::eColorAttachment|
+        vk::ImageUsageFlagBits::eTransferDst
+      )
       .setPreTransform(
         ( surface->get_caps().get_basic().supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity ) ?
         vk::SurfaceTransformFlagBitsKHR::eIdentity :

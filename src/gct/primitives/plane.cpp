@@ -12,7 +12,8 @@ namespace gct::primitive {
     std::uint32_t
   > create_plane(
     const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &detail,
-    std::uint32_t stride
+    std::uint32_t stride,
+    bool positive
   ) {
     std::vector< std::uint8_t > data( stride * 6u, 0u );
     const auto position = detail.find( vertex_attribute_usage_t::POSITION );
@@ -22,26 +23,27 @@ namespace gct::primitive {
     const auto color = detail.find( vertex_attribute_usage_t::COLOR );
     const auto weight = detail.find( vertex_attribute_usage_t::WEIGHT );
     const auto joint = detail.find( vertex_attribute_usage_t::JOINT );
+    float minus_one = positive ? 0.f : -1.f;
     if( position != detail.end() ) {
       set_vertex_buffer_values(
         data.data(), 0u, position->second, stride,
-        -1.f, -1.f, 0.f, 1.f
+        minus_one, minus_one, 0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 1u, position->second, stride,
-        1.f, -1.f, 0.f, 1.f
+        1.f, minus_one, 0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 2u, position->second, stride,
-        -1.f, 1.f, 0.f, 1.f
+        minus_one, 1.f, 0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 3u, position->second, stride,
-        -1.f, 1.f, 0.f, 1.f
+        minus_one, 1.f, 0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 4u, position->second, stride,
-        1.f, -1.f, 0.f, 1.f
+        1.f, minus_one, 0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 5u, position->second, stride,
@@ -67,27 +69,27 @@ namespace gct::primitive {
     if( texcoord != detail.end() ) {
       set_vertex_buffer_values(
         data.data(), 0u, texcoord->second, stride,
-        0.f, 0.f
+        0.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 1u, texcoord->second, stride,
-        1.f, 0.f
+        1.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 2u, texcoord->second, stride,
-        0.f, 1.f
+        0.f, 0.f
       );
       set_vertex_buffer_values(
         data.data(), 3u, texcoord->second, stride,
-        1.f, 0.f
+        0.f, 0.f
       );
       set_vertex_buffer_values(
         data.data(), 4u, texcoord->second, stride,
-        0.f, 1.f
+        1.f, 1.f
       );
       set_vertex_buffer_values(
         data.data(), 5u, texcoord->second, stride,
-        1.f, 1.f
+        1.f, 0.f
       );
     }
     if( color != detail.end() ) {

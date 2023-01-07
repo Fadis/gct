@@ -36,7 +36,11 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::QueueFamilyGlobalPriorityPropertiesEXT , global_priority )
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
     LIBGCT_EXTENSION_SETTER( vk::VideoQueueFamilyProperties2KHR , video )
+#else
+    LIBGCT_EXTENSION_SETTER( vk::QueueFamilyVideoPropertiesKHR , video )
+#endif
 #endif
   };
   void to_json( nlohmann::json&, const queue_family_properties_t& );

@@ -39,8 +39,13 @@
 #include <vulkan2json/ImageSwapchainCreateInfoKHR.hpp>
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
 #include <vulkan2json/VideoProfileKHR.hpp>
 #include <vulkan2json/VideoProfilesKHR.hpp>
+#else
+#include <vulkan2json/VideoProfileInfoKHR.hpp>
+#include <vulkan2json/VideoProfileListInfoKHR.hpp>
+#endif
 #endif
 
 namespace gct {

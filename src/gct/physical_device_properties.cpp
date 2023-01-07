@@ -204,7 +204,7 @@ namespace gct {
     root = nlohmann::json::object();
     root[ "basic" ] = v.basic;
   }
-  void to_json( nlohmann::json &root, const display_mode_t &v ) {
+  void to_json( nlohmann::json &root, const display_mode_properties_t &v ) {
     root = nlohmann::json::object();
     root[ "basic" ] = v.basic;
     root[ "capabilities" ] = v.capabilities;
@@ -669,7 +669,7 @@ namespace gct {
         display.back().basic = d;
         for( const auto &m: pdev.getDisplayModePropertiesKHR( d.display ) ) {
           display.back().modes.push_back(
-            display_mode_t()
+            display_mode_properties_t()
           );
           display.back().modes.back().basic = m;
         }

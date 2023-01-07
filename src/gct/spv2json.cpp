@@ -566,6 +566,8 @@ void to_json( nlohmann::json &root, const SpvSourceLanguage &v ) {
     root = "OpenCL_CPP";
   else if( v == SpvSourceLanguageHLSL )
     root = "HLSL";
+  else if( v == SpvSourceLanguageSYCL )
+    root = "SYCL";
   else
     root = "Unknown";
 }
@@ -616,89 +618,89 @@ void to_json( nlohmann::json &root, const SpvReflectResourceType &v ) {
 
 void to_json( nlohmann::json &root, const SpvImageFormat &v ) {
   if( v == SpvImageFormatUnknown )
-    root = "Unknown";
+ root = "SpvImageFormatUnknown";
   else if( v == SpvImageFormatRgba32f )
-    root = "Rgba32f";
+ root = "SpvImageFormatRgba32f";
   else if( v == SpvImageFormatRgba16f )
-    root = "Rgba16f";
+ root = "SpvImageFormatRgba16f";
   else if( v == SpvImageFormatR32f )
-    root = "R32f";
+ root = "SpvImageFormatR32f";
   else if( v == SpvImageFormatRgba8 )
-    root = "Rgba8";
+ root = "SpvImageFormatRgba8";
   else if( v == SpvImageFormatRgba8Snorm )
-    root = "Rgba8Snorm";
+ root = "SpvImageFormatRgba8Snorm";
   else if( v == SpvImageFormatRg32f )
-    root = "Rg32f";
+ root = "SpvImageFormatRg32f";
   else if( v == SpvImageFormatRg16f )
-    root = "Rg16f";
+ root = "SpvImageFormatRg16f";
   else if( v == SpvImageFormatR11fG11fB10f )
-    root = "R11fG11fB10f";
+ root = "SpvImageFormatR11fG11fB10f";
   else if( v == SpvImageFormatR16f )
-    root = "R16f";
+ root = "SpvImageFormatR16f";
   else if( v == SpvImageFormatRgba16 )
-    root = "Rgba16";
+ root = "SpvImageFormatRgba16";
   else if( v == SpvImageFormatRgb10A2 )
-    root = "Rgb10A2";
+ root = "SpvImageFormatRgb10A2";
   else if( v == SpvImageFormatRg16 )
-    root = "Rg16";
+ root = "SpvImageFormatRg16";
   else if( v == SpvImageFormatRg8 )
-    root = "Rg8";
+ root = "SpvImageFormatRg8";
   else if( v == SpvImageFormatR16 )
-    root = "R16";
+ root = "SpvImageFormatR16";
   else if( v == SpvImageFormatR8 )
-    root = "R8";
+ root = "SpvImageFormatR8";
   else if( v == SpvImageFormatRgba16Snorm )
-    root = "Rgba16Snorm";
+ root = "SpvImageFormatRgba16Snorm";
   else if( v == SpvImageFormatRg16Snorm )
-    root = "Rg16Snorm";
+ root = "SpvImageFormatRg16Snorm";
   else if( v == SpvImageFormatRg8Snorm )
-    root = "Rg8Snorm";
+ root = "SpvImageFormatRg8Snorm";
   else if( v == SpvImageFormatR16Snorm )
-    root = "R16Snorm";
+ root = "SpvImageFormatR16Snorm";
   else if( v == SpvImageFormatR8Snorm )
-    root = "R8Snorm";
+ root = "SpvImageFormatR8Snorm";
   else if( v == SpvImageFormatRgba32i )
-    root = "Rgba32i";
+ root = "SpvImageFormatRgba32i";
   else if( v == SpvImageFormatRgba16i )
-    root = "Rgba16i";
+ root = "SpvImageFormatRgba16i";
   else if( v == SpvImageFormatRgba8i )
-    root = "Rgba8i";
+ root = "SpvImageFormatRgba8i";
   else if( v == SpvImageFormatR32i )
-    root = "R32i";
+ root = "SpvImageFormatR32i";
   else if( v == SpvImageFormatRg32i )
-    root = "Rg32i";
+ root = "SpvImageFormatRg32i";
   else if( v == SpvImageFormatRg16i )
-    root = "Rg16i";
+ root = "SpvImageFormatRg16i";
   else if( v == SpvImageFormatRg8i )
-    root = "Rg8i";
+ root = "SpvImageFormatRg8i";
   else if( v == SpvImageFormatR16i )
-    root = "R16i";
+ root = "SpvImageFormatR16i";
   else if( v == SpvImageFormatR8i )
-    root = "R8i";
+ root = "SpvImageFormatR8i";
   else if( v == SpvImageFormatRgba32ui )
-    root = "Rgba32ui";
+ root = "SpvImageFormatRgba32ui";
   else if( v == SpvImageFormatRgba16ui )
-    root = "Rgba16ui";
+ root = "SpvImageFormatRgba16ui";
   else if( v == SpvImageFormatRgba8ui )
-    root = "Rgba8ui";
+ root = "SpvImageFormatRgba8ui";
   else if( v == SpvImageFormatR32ui )
-    root = "R32ui";
+ root = "SpvImageFormatR32ui";
   else if( v == SpvImageFormatRgb10a2ui )
-    root = "Rgb10a2ui";
+ root = "SpvImageFormatRgb10a2ui";
   else if( v == SpvImageFormatRg32ui )
-    root = "Rg32ui";
+ root = "SpvImageFormatRg32ui";
   else if( v == SpvImageFormatRg16ui )
-    root = "Rg16ui";
+ root = "SpvImageFormatRg16ui";
   else if( v == SpvImageFormatRg8ui )
-    root = "Rg8ui";
+ root = "SpvImageFormatRg8ui";
   else if( v == SpvImageFormatR16ui )
-    root = "R16ui";
+ root = "SpvImageFormatR16ui";
   else if( v == SpvImageFormatR8ui )
-    root = "R8ui";
+ root = "SpvImageFormatR8ui";
   else if( v == SpvImageFormatR64ui )
-    root = "R64ui";
+ root = "SpvImageFormatR64ui";
   else if( v == SpvImageFormatR64i )
-    root = "R64i";
+ root = "SpvImageFormatR64i";
   else
     root = "Unknown";
 }
@@ -715,1133 +717,1341 @@ void to_json( nlohmann::json &root, const SpvReflectImageTraits &v ) {
 
 void to_json( nlohmann::json &root, const SpvOp &v ) {
   if( v == SpvOpNop )
-    root = "Nop";
+    root = "SpvOpNop";
   else if( v == SpvOpUndef )
-    root = "Undef";
+    root = "SpvOpUndef";
   else if( v == SpvOpSourceContinued )
-    root = "SourceContinued";
+    root = "SpvOpSourceContinued";
   else if( v == SpvOpSource )
-    root = "Source";
+    root = "SpvOpSource";
   else if( v == SpvOpSourceExtension )
-    root = "SourceExtension";
+    root = "SpvOpSourceExtension";
   else if( v == SpvOpName )
-    root = "Name";
+    root = "SpvOpName";
   else if( v == SpvOpMemberName )
-    root = "MemberName";
+    root = "SpvOpMemberName";
   else if( v == SpvOpString )
-    root = "String";
+    root = "SpvOpString";
   else if( v == SpvOpLine )
-    root = "Line";
+    root = "SpvOpLine";
   else if( v == SpvOpExtension )
-    root = "Extension";
+    root = "SpvOpExtension";
   else if( v == SpvOpExtInstImport )
-    root = "ExtInstImport";
+    root = "SpvOpExtInstImport";
   else if( v == SpvOpExtInst )
-    root = "ExtInst";
+    root = "SpvOpExtInst";
   else if( v == SpvOpMemoryModel )
-    root = "MemoryModel";
+    root = "SpvOpMemoryModel";
   else if( v == SpvOpEntryPoint )
-    root = "EntryPoint";
+    root = "SpvOpEntryPoint";
   else if( v == SpvOpExecutionMode )
-    root = "ExecutionMode";
+    root = "SpvOpExecutionMode";
   else if( v == SpvOpCapability )
-    root = "Capability";
+    root = "SpvOpCapability";
   else if( v == SpvOpTypeVoid )
-    root = "TypeVoid";
+    root = "SpvOpTypeVoid";
   else if( v == SpvOpTypeBool )
-    root = "TypeBool";
+    root = "SpvOpTypeBool";
   else if( v == SpvOpTypeInt )
-    root = "TypeInt";
+    root = "SpvOpTypeInt";
   else if( v == SpvOpTypeFloat )
-    root = "TypeFloat";
+    root = "SpvOpTypeFloat";
   else if( v == SpvOpTypeVector )
-    root = "TypeVector";
+    root = "SpvOpTypeVector";
   else if( v == SpvOpTypeMatrix )
-    root = "TypeMatrix";
+    root = "SpvOpTypeMatrix";
   else if( v == SpvOpTypeImage )
-    root = "TypeImage";
+    root = "SpvOpTypeImage";
   else if( v == SpvOpTypeSampler )
-    root = "TypeSampler";
+    root = "SpvOpTypeSampler";
   else if( v == SpvOpTypeSampledImage )
-    root = "TypeSampledImage";
+    root = "SpvOpTypeSampledImage";
   else if( v == SpvOpTypeArray )
-    root = "TypeArray";
+    root = "SpvOpTypeArray";
   else if( v == SpvOpTypeRuntimeArray )
-    root = "TypeRuntimeArray";
+    root = "SpvOpTypeRuntimeArray";
   else if( v == SpvOpTypeStruct )
-    root = "TypeStruct";
+    root = "SpvOpTypeStruct";
   else if( v == SpvOpTypeOpaque )
-    root = "TypeOpaque";
+    root = "SpvOpTypeOpaque";
   else if( v == SpvOpTypePointer )
-    root = "TypePointer";
+    root = "SpvOpTypePointer";
   else if( v == SpvOpTypeFunction )
-    root = "TypeFunction";
+    root = "SpvOpTypeFunction";
   else if( v == SpvOpTypeEvent )
-    root = "TypeEvent";
+    root = "SpvOpTypeEvent";
   else if( v == SpvOpTypeDeviceEvent )
-    root = "TypeDeviceEvent";
+    root = "SpvOpTypeDeviceEvent";
   else if( v == SpvOpTypeReserveId )
-    root = "TypeReserveId";
+    root = "SpvOpTypeReserveId";
   else if( v == SpvOpTypeQueue )
-    root = "TypeQueue";
+    root = "SpvOpTypeQueue";
   else if( v == SpvOpTypePipe )
-    root = "TypePipe";
+    root = "SpvOpTypePipe";
   else if( v == SpvOpTypeForwardPointer )
-    root = "TypeForwardPointer";
+    root = "SpvOpTypeForwardPointer";
   else if( v == SpvOpConstantTrue )
-    root = "ConstantTrue";
+    root = "SpvOpConstantTrue";
   else if( v == SpvOpConstantFalse )
-    root = "ConstantFalse";
+    root = "SpvOpConstantFalse";
   else if( v == SpvOpConstant )
-    root = "Constant";
+    root = "SpvOpConstant";
   else if( v == SpvOpConstantComposite )
-    root = "ConstantComposite";
+    root = "SpvOpConstantComposite";
   else if( v == SpvOpConstantSampler )
-    root = "ConstantSampler";
+    root = "SpvOpConstantSampler";
   else if( v == SpvOpConstantNull )
-    root = "ConstantNull";
+    root = "SpvOpConstantNull";
   else if( v == SpvOpSpecConstantTrue )
-    root = "SpecConstantTrue";
+    root = "SpvOpSpecConstantTrue";
   else if( v == SpvOpSpecConstantFalse )
-    root = "SpecConstantFalse";
+    root = "SpvOpSpecConstantFalse";
   else if( v == SpvOpSpecConstant )
-    root = "SpecConstant";
+    root = "SpvOpSpecConstant";
   else if( v == SpvOpSpecConstantComposite )
-    root = "SpecConstantComposite";
+    root = "SpvOpSpecConstantComposite";
   else if( v == SpvOpSpecConstantOp )
-    root = "SpecConstantOp";
+    root = "SpvOpSpecConstantOp";
   else if( v == SpvOpFunction )
-    root = "Function";
+    root = "SpvOpFunction";
   else if( v == SpvOpFunctionParameter )
-    root = "FunctionParameter";
+    root = "SpvOpFunctionParameter";
   else if( v == SpvOpFunctionEnd )
-    root = "FunctionEnd";
+    root = "SpvOpFunctionEnd";
   else if( v == SpvOpFunctionCall )
-    root = "FunctionCall";
+    root = "SpvOpFunctionCall";
   else if( v == SpvOpVariable )
-    root = "Variable";
+    root = "SpvOpVariable";
   else if( v == SpvOpImageTexelPointer )
-    root = "ImageTexelPointer";
+    root = "SpvOpImageTexelPointer";
   else if( v == SpvOpLoad )
-    root = "Load";
+    root = "SpvOpLoad";
   else if( v == SpvOpStore )
-    root = "Store";
+    root = "SpvOpStore";
   else if( v == SpvOpCopyMemory )
-    root = "CopyMemory";
+    root = "SpvOpCopyMemory";
   else if( v == SpvOpCopyMemorySized )
-    root = "CopyMemorySized";
+    root = "SpvOpCopyMemorySized";
   else if( v == SpvOpAccessChain )
-    root = "AccessChain";
+    root = "SpvOpAccessChain";
   else if( v == SpvOpInBoundsAccessChain )
-    root = "InBoundsAccessChain";
+    root = "SpvOpInBoundsAccessChain";
   else if( v == SpvOpPtrAccessChain )
-    root = "PtrAccessChain";
+    root = "SpvOpPtrAccessChain";
   else if( v == SpvOpArrayLength )
-    root = "ArrayLength";
+    root = "SpvOpArrayLength";
   else if( v == SpvOpGenericPtrMemSemantics )
-    root = "GenericPtrMemSemantics";
+    root = "SpvOpGenericPtrMemSemantics";
   else if( v == SpvOpInBoundsPtrAccessChain )
-    root = "InBoundsPtrAccessChain";
+    root = "SpvOpInBoundsPtrAccessChain";
   else if( v == SpvOpDecorate )
-    root = "Decorate";
+    root = "SpvOpDecorate";
   else if( v == SpvOpMemberDecorate )
-    root = "MemberDecorate";
+    root = "SpvOpMemberDecorate";
   else if( v == SpvOpDecorationGroup )
-    root = "DecorationGroup";
+    root = "SpvOpDecorationGroup";
   else if( v == SpvOpGroupDecorate )
-    root = "GroupDecorate";
+    root = "SpvOpGroupDecorate";
   else if( v == SpvOpGroupMemberDecorate )
-    root = "GroupMemberDecorate";
+    root = "SpvOpGroupMemberDecorate";
   else if( v == SpvOpVectorExtractDynamic )
-    root = "VectorExtractDynamic";
+    root = "SpvOpVectorExtractDynamic";
   else if( v == SpvOpVectorInsertDynamic )
-    root = "VectorInsertDynamic";
+    root = "SpvOpVectorInsertDynamic";
   else if( v == SpvOpVectorShuffle )
-    root = "VectorShuffle";
+    root = "SpvOpVectorShuffle";
   else if( v == SpvOpCompositeConstruct )
-    root = "CompositeConstruct";
+    root = "SpvOpCompositeConstruct";
   else if( v == SpvOpCompositeExtract )
-    root = "CompositeExtract";
+    root = "SpvOpCompositeExtract";
   else if( v == SpvOpCompositeInsert )
-    root = "CompositeInsert";
+    root = "SpvOpCompositeInsert";
   else if( v == SpvOpCopyObject )
-    root = "CopyObject";
+    root = "SpvOpCopyObject";
   else if( v == SpvOpTranspose )
-    root = "Transpose";
+    root = "SpvOpTranspose";
   else if( v == SpvOpSampledImage )
-    root = "SampledImage";
+    root = "SpvOpSampledImage";
   else if( v == SpvOpImageSampleImplicitLod )
-    root = "ImageSampleImplicitLod";
+    root = "SpvOpImageSampleImplicitLod";
   else if( v == SpvOpImageSampleExplicitLod )
-    root = "ImageSampleExplicitLod";
+    root = "SpvOpImageSampleExplicitLod";
   else if( v == SpvOpImageSampleDrefImplicitLod )
-    root = "ImageSampleDrefImplicitLod";
+    root = "SpvOpImageSampleDrefImplicitLod";
   else if( v == SpvOpImageSampleDrefExplicitLod )
-    root = "ImageSampleDrefExplicitLod";
+    root = "SpvOpImageSampleDrefExplicitLod";
   else if( v == SpvOpImageSampleProjImplicitLod )
-    root = "ImageSampleProjImplicitLod";
+    root = "SpvOpImageSampleProjImplicitLod";
   else if( v == SpvOpImageSampleProjExplicitLod )
-    root = "ImageSampleProjExplicitLod";
+    root = "SpvOpImageSampleProjExplicitLod";
   else if( v == SpvOpImageSampleProjDrefImplicitLod )
-    root = "ImageSampleProjDrefImplicitLod";
+    root = "SpvOpImageSampleProjDrefImplicitLod";
   else if( v == SpvOpImageSampleProjDrefExplicitLod )
-    root = "ImageSampleProjDrefExplicitLod";
+    root = "SpvOpImageSampleProjDrefExplicitLod";
   else if( v == SpvOpImageFetch )
-    root = "ImageFetch";
+    root = "SpvOpImageFetch";
   else if( v == SpvOpImageGather )
-    root = "ImageGather";
+    root = "SpvOpImageGather";
   else if( v == SpvOpImageDrefGather )
-    root = "ImageDrefGather";
+    root = "SpvOpImageDrefGather";
   else if( v == SpvOpImageRead )
-    root = "ImageRead";
+    root = "SpvOpImageRead";
   else if( v == SpvOpImageWrite )
-    root = "ImageWrite";
+    root = "SpvOpImageWrite";
   else if( v == SpvOpImage )
-    root = "Image";
+    root = "SpvOpImage";
   else if( v == SpvOpImageQueryFormat )
-    root = "ImageQueryFormat";
+    root = "SpvOpImageQueryFormat";
   else if( v == SpvOpImageQueryOrder )
-    root = "ImageQueryOrder";
+    root = "SpvOpImageQueryOrder";
   else if( v == SpvOpImageQuerySizeLod )
-    root = "ImageQuerySizeLod";
+    root = "SpvOpImageQuerySizeLod";
   else if( v == SpvOpImageQuerySize )
-    root = "ImageQuerySize";
+    root = "SpvOpImageQuerySize";
   else if( v == SpvOpImageQueryLod )
-    root = "ImageQueryLod";
+    root = "SpvOpImageQueryLod";
   else if( v == SpvOpImageQueryLevels )
-    root = "ImageQueryLevels";
+    root = "SpvOpImageQueryLevels";
   else if( v == SpvOpImageQuerySamples )
-    root = "ImageQuerySamples";
+    root = "SpvOpImageQuerySamples";
   else if( v == SpvOpConvertFToU )
-    root = "ConvertFToU";
+    root = "SpvOpConvertFToU";
   else if( v == SpvOpConvertFToS )
-    root = "ConvertFToS";
+    root = "SpvOpConvertFToS";
   else if( v == SpvOpConvertSToF )
-    root = "ConvertSToF";
+    root = "SpvOpConvertSToF";
   else if( v == SpvOpConvertUToF )
-    root = "ConvertUToF";
+    root = "SpvOpConvertUToF";
   else if( v == SpvOpUConvert )
-    root = "UConvert";
+    root = "SpvOpUConvert";
   else if( v == SpvOpSConvert )
-    root = "SConvert";
+    root = "SpvOpSConvert";
   else if( v == SpvOpFConvert )
-    root = "FConvert";
+    root = "SpvOpFConvert";
   else if( v == SpvOpQuantizeToF16 )
-    root = "QuantizeToF16";
+    root = "SpvOpQuantizeToF16";
   else if( v == SpvOpConvertPtrToU )
-    root = "ConvertPtrToU";
+    root = "SpvOpConvertPtrToU";
   else if( v == SpvOpSatConvertSToU )
-    root = "SatConvertSToU";
+    root = "SpvOpSatConvertSToU";
   else if( v == SpvOpSatConvertUToS )
-    root = "SatConvertUToS";
+    root = "SpvOpSatConvertUToS";
   else if( v == SpvOpConvertUToPtr )
-    root = "ConvertUToPtr";
+    root = "SpvOpConvertUToPtr";
   else if( v == SpvOpPtrCastToGeneric )
-    root = "PtrCastToGeneric";
+    root = "SpvOpPtrCastToGeneric";
   else if( v == SpvOpGenericCastToPtr )
-    root = "GenericCastToPtr";
+    root = "SpvOpGenericCastToPtr";
   else if( v == SpvOpGenericCastToPtrExplicit )
-    root = "GenericCastToPtrExplicit";
+    root = "SpvOpGenericCastToPtrExplicit";
   else if( v == SpvOpBitcast )
-    root = "Bitcast";
+    root = "SpvOpBitcast";
   else if( v == SpvOpSNegate )
-    root = "SNegate";
+    root = "SpvOpSNegate";
   else if( v == SpvOpFNegate )
-    root = "FNegate";
+    root = "SpvOpFNegate";
   else if( v == SpvOpIAdd )
-    root = "IAdd";
+    root = "SpvOpIAdd";
   else if( v == SpvOpFAdd )
-    root = "FAdd";
+    root = "SpvOpFAdd";
   else if( v == SpvOpISub )
-    root = "ISub";
+    root = "SpvOpISub";
   else if( v == SpvOpFSub )
-    root = "FSub";
+    root = "SpvOpFSub";
   else if( v == SpvOpIMul )
-    root = "IMul";
+    root = "SpvOpIMul";
   else if( v == SpvOpFMul )
-    root = "FMul";
+    root = "SpvOpFMul";
   else if( v == SpvOpUDiv )
-    root = "UDiv";
+    root = "SpvOpUDiv";
   else if( v == SpvOpSDiv )
-    root = "SDiv";
+    root = "SpvOpSDiv";
   else if( v == SpvOpFDiv )
-    root = "FDiv";
+    root = "SpvOpFDiv";
   else if( v == SpvOpUMod )
-    root = "UMod";
+    root = "SpvOpUMod";
   else if( v == SpvOpSRem )
-    root = "SRem";
+    root = "SpvOpSRem";
   else if( v == SpvOpSMod )
-    root = "SMod";
+    root = "SpvOpSMod";
   else if( v == SpvOpFRem )
-    root = "FRem";
+    root = "SpvOpFRem";
   else if( v == SpvOpFMod )
-    root = "FMod";
+    root = "SpvOpFMod";
   else if( v == SpvOpVectorTimesScalar )
-    root = "VectorTimesScalar";
+    root = "SpvOpVectorTimesScalar";
   else if( v == SpvOpMatrixTimesScalar )
-    root = "MatrixTimesScalar";
+    root = "SpvOpMatrixTimesScalar";
   else if( v == SpvOpVectorTimesMatrix )
-    root = "VectorTimesMatrix";
+    root = "SpvOpVectorTimesMatrix";
   else if( v == SpvOpMatrixTimesVector )
-    root = "MatrixTimesVector";
+    root = "SpvOpMatrixTimesVector";
   else if( v == SpvOpMatrixTimesMatrix )
-    root = "MatrixTimesMatrix";
+    root = "SpvOpMatrixTimesMatrix";
   else if( v == SpvOpOuterProduct )
-    root = "OuterProduct";
+    root = "SpvOpOuterProduct";
   else if( v == SpvOpDot )
-    root = "Dot";
+    root = "SpvOpDot";
   else if( v == SpvOpIAddCarry )
-    root = "IAddCarry";
+    root = "SpvOpIAddCarry";
   else if( v == SpvOpISubBorrow )
-    root = "ISubBorrow";
+    root = "SpvOpISubBorrow";
   else if( v == SpvOpUMulExtended )
-    root = "UMulExtended";
+    root = "SpvOpUMulExtended";
   else if( v == SpvOpSMulExtended )
-    root = "SMulExtended";
+    root = "SpvOpSMulExtended";
   else if( v == SpvOpAny )
-    root = "Any";
+    root = "SpvOpAny";
   else if( v == SpvOpAll )
-    root = "All";
+    root = "SpvOpAll";
   else if( v == SpvOpIsNan )
-    root = "IsNan";
+    root = "SpvOpIsNan";
   else if( v == SpvOpIsInf )
-    root = "IsInf";
+    root = "SpvOpIsInf";
   else if( v == SpvOpIsFinite )
-    root = "IsFinite";
+    root = "SpvOpIsFinite";
   else if( v == SpvOpIsNormal )
-    root = "IsNormal";
+    root = "SpvOpIsNormal";
   else if( v == SpvOpSignBitSet )
-    root = "SignBitSet";
+    root = "SpvOpSignBitSet";
   else if( v == SpvOpLessOrGreater )
-    root = "LessOrGreater";
+    root = "SpvOpLessOrGreater";
   else if( v == SpvOpOrdered )
-    root = "Ordered";
+    root = "SpvOpOrdered";
   else if( v == SpvOpUnordered )
-    root = "Unordered";
+    root = "SpvOpUnordered";
   else if( v == SpvOpLogicalEqual )
-    root = "LogicalEqual";
+    root = "SpvOpLogicalEqual";
   else if( v == SpvOpLogicalNotEqual )
-    root = "LogicalNotEqual";
+    root = "SpvOpLogicalNotEqual";
   else if( v == SpvOpLogicalOr )
-    root = "LogicalOr";
+    root = "SpvOpLogicalOr";
   else if( v == SpvOpLogicalAnd )
-    root = "LogicalAnd";
+    root = "SpvOpLogicalAnd";
   else if( v == SpvOpLogicalNot )
-    root = "LogicalNot";
+    root = "SpvOpLogicalNot";
   else if( v == SpvOpSelect )
-    root = "Select";
+    root = "SpvOpSelect";
   else if( v == SpvOpIEqual )
-    root = "IEqual";
+    root = "SpvOpIEqual";
   else if( v == SpvOpINotEqual )
-    root = "INotEqual";
+    root = "SpvOpINotEqual";
   else if( v == SpvOpUGreaterThan )
-    root = "UGreaterThan";
+    root = "SpvOpUGreaterThan";
   else if( v == SpvOpSGreaterThan )
-    root = "SGreaterThan";
+    root = "SpvOpSGreaterThan";
   else if( v == SpvOpUGreaterThanEqual )
-    root = "UGreaterThanEqual";
+    root = "SpvOpUGreaterThanEqual";
   else if( v == SpvOpSGreaterThanEqual )
-    root = "SGreaterThanEqual";
+    root = "SpvOpSGreaterThanEqual";
   else if( v == SpvOpULessThan )
-    root = "ULessThan";
+    root = "SpvOpULessThan";
   else if( v == SpvOpSLessThan )
-    root = "SLessThan";
+    root = "SpvOpSLessThan";
   else if( v == SpvOpULessThanEqual )
-    root = "ULessThanEqual";
+    root = "SpvOpULessThanEqual";
   else if( v == SpvOpSLessThanEqual )
-    root = "SLessThanEqual";
+    root = "SpvOpSLessThanEqual";
   else if( v == SpvOpFOrdEqual )
-    root = "FOrdEqual";
+    root = "SpvOpFOrdEqual";
   else if( v == SpvOpFUnordEqual )
-    root = "FUnordEqual";
+    root = "SpvOpFUnordEqual";
   else if( v == SpvOpFOrdNotEqual )
-    root = "FOrdNotEqual";
+    root = "SpvOpFOrdNotEqual";
   else if( v == SpvOpFUnordNotEqual )
-    root = "FUnordNotEqual";
+    root = "SpvOpFUnordNotEqual";
   else if( v == SpvOpFOrdLessThan )
-    root = "FOrdLessThan";
+    root = "SpvOpFOrdLessThan";
   else if( v == SpvOpFUnordLessThan )
-    root = "FUnordLessThan";
+    root = "SpvOpFUnordLessThan";
   else if( v == SpvOpFOrdGreaterThan )
-    root = "FOrdGreaterThan";
+    root = "SpvOpFOrdGreaterThan";
   else if( v == SpvOpFUnordGreaterThan )
-    root = "FUnordGreaterThan";
+    root = "SpvOpFUnordGreaterThan";
   else if( v == SpvOpFOrdLessThanEqual )
-    root = "FOrdLessThanEqual";
+    root = "SpvOpFOrdLessThanEqual";
   else if( v == SpvOpFUnordLessThanEqual )
-    root = "FUnordLessThanEqual";
+    root = "SpvOpFUnordLessThanEqual";
   else if( v == SpvOpFOrdGreaterThanEqual )
-    root = "FOrdGreaterThanEqual";
+    root = "SpvOpFOrdGreaterThanEqual";
   else if( v == SpvOpFUnordGreaterThanEqual )
-    root = "FUnordGreaterThanEqual";
+    root = "SpvOpFUnordGreaterThanEqual";
   else if( v == SpvOpShiftRightLogical )
-    root = "ShiftRightLogical";
+    root = "SpvOpShiftRightLogical";
   else if( v == SpvOpShiftRightArithmetic )
-    root = "ShiftRightArithmetic";
+    root = "SpvOpShiftRightArithmetic";
   else if( v == SpvOpShiftLeftLogical )
-    root = "ShiftLeftLogical";
+    root = "SpvOpShiftLeftLogical";
   else if( v == SpvOpBitwiseOr )
-    root = "BitwiseOr";
+    root = "SpvOpBitwiseOr";
   else if( v == SpvOpBitwiseXor )
-    root = "BitwiseXor";
+    root = "SpvOpBitwiseXor";
   else if( v == SpvOpBitwiseAnd )
-    root = "BitwiseAnd";
+    root = "SpvOpBitwiseAnd";
   else if( v == SpvOpNot )
-    root = "Not";
+    root = "SpvOpNot";
   else if( v == SpvOpBitFieldInsert )
-    root = "BitFieldInsert";
+    root = "SpvOpBitFieldInsert";
   else if( v == SpvOpBitFieldSExtract )
-    root = "BitFieldSExtract";
+    root = "SpvOpBitFieldSExtract";
   else if( v == SpvOpBitFieldUExtract )
-    root = "BitFieldUExtract";
+    root = "SpvOpBitFieldUExtract";
   else if( v == SpvOpBitReverse )
-    root = "BitReverse";
+    root = "SpvOpBitReverse";
   else if( v == SpvOpBitCount )
-    root = "BitCount";
+    root = "SpvOpBitCount";
   else if( v == SpvOpDPdx )
-    root = "DPdx";
+    root = "SpvOpDPdx";
   else if( v == SpvOpDPdy )
-    root = "DPdy";
+    root = "SpvOpDPdy";
   else if( v == SpvOpFwidth )
-    root = "Fwidth";
+    root = "SpvOpFwidth";
   else if( v == SpvOpDPdxFine )
-    root = "DPdxFine";
+    root = "SpvOpDPdxFine";
   else if( v == SpvOpDPdyFine )
-    root = "DPdyFine";
+    root = "SpvOpDPdyFine";
   else if( v == SpvOpFwidthFine )
-    root = "FwidthFine";
+    root = "SpvOpFwidthFine";
   else if( v == SpvOpDPdxCoarse )
-    root = "DPdxCoarse";
+    root = "SpvOpDPdxCoarse";
   else if( v == SpvOpDPdyCoarse )
-    root = "DPdyCoarse";
+    root = "SpvOpDPdyCoarse";
   else if( v == SpvOpFwidthCoarse )
-    root = "FwidthCoarse";
+    root = "SpvOpFwidthCoarse";
   else if( v == SpvOpEmitVertex )
-    root = "EmitVertex";
+    root = "SpvOpEmitVertex";
   else if( v == SpvOpEndPrimitive )
-    root = "EndPrimitive";
+    root = "SpvOpEndPrimitive";
   else if( v == SpvOpEmitStreamVertex )
-    root = "EmitStreamVertex";
+    root = "SpvOpEmitStreamVertex";
   else if( v == SpvOpEndStreamPrimitive )
-    root = "EndStreamPrimitive";
+    root = "SpvOpEndStreamPrimitive";
   else if( v == SpvOpControlBarrier )
-    root = "ControlBarrier";
+    root = "SpvOpControlBarrier";
   else if( v == SpvOpMemoryBarrier )
-    root = "MemoryBarrier";
+    root = "SpvOpMemoryBarrier";
   else if( v == SpvOpAtomicLoad )
-    root = "AtomicLoad";
+    root = "SpvOpAtomicLoad";
   else if( v == SpvOpAtomicStore )
-    root = "AtomicStore";
+    root = "SpvOpAtomicStore";
   else if( v == SpvOpAtomicExchange )
-    root = "AtomicExchange";
+    root = "SpvOpAtomicExchange";
   else if( v == SpvOpAtomicCompareExchange )
-    root = "AtomicCompareExchange";
+    root = "SpvOpAtomicCompareExchange";
   else if( v == SpvOpAtomicCompareExchangeWeak )
-    root = "AtomicCompareExchangeWeak";
+    root = "SpvOpAtomicCompareExchangeWeak";
   else if( v == SpvOpAtomicIIncrement )
-    root = "AtomicIIncrement";
+    root = "SpvOpAtomicIIncrement";
   else if( v == SpvOpAtomicIDecrement )
-    root = "AtomicIDecrement";
+    root = "SpvOpAtomicIDecrement";
   else if( v == SpvOpAtomicIAdd )
-    root = "AtomicIAdd";
+    root = "SpvOpAtomicIAdd";
   else if( v == SpvOpAtomicISub )
-    root = "AtomicISub";
+    root = "SpvOpAtomicISub";
   else if( v == SpvOpAtomicSMin )
-    root = "AtomicSMin";
+    root = "SpvOpAtomicSMin";
   else if( v == SpvOpAtomicUMin )
-    root = "AtomicUMin";
+    root = "SpvOpAtomicUMin";
   else if( v == SpvOpAtomicSMax )
-    root = "AtomicSMax";
+    root = "SpvOpAtomicSMax";
   else if( v == SpvOpAtomicUMax )
-    root = "AtomicUMax";
+    root = "SpvOpAtomicUMax";
   else if( v == SpvOpAtomicAnd )
-    root = "AtomicAnd";
+    root = "SpvOpAtomicAnd";
   else if( v == SpvOpAtomicOr )
-    root = "AtomicOr";
+    root = "SpvOpAtomicOr";
   else if( v == SpvOpAtomicXor )
-    root = "AtomicXor";
+    root = "SpvOpAtomicXor";
   else if( v == SpvOpPhi )
-    root = "Phi";
+    root = "SpvOpPhi";
   else if( v == SpvOpLoopMerge )
-    root = "LoopMerge";
+    root = "SpvOpLoopMerge";
   else if( v == SpvOpSelectionMerge )
-    root = "SelectionMerge";
+    root = "SpvOpSelectionMerge";
   else if( v == SpvOpLabel )
-    root = "Label";
+    root = "SpvOpLabel";
   else if( v == SpvOpBranch )
-    root = "Branch";
+    root = "SpvOpBranch";
   else if( v == SpvOpBranchConditional )
-    root = "BranchConditional";
+    root = "SpvOpBranchConditional";
   else if( v == SpvOpSwitch )
-    root = "Switch";
+    root = "SpvOpSwitch";
   else if( v == SpvOpKill )
-    root = "Kill";
+    root = "SpvOpKill";
   else if( v == SpvOpReturn )
-    root = "Return";
+    root = "SpvOpReturn";
   else if( v == SpvOpReturnValue )
-    root = "ReturnValue";
+    root = "SpvOpReturnValue";
   else if( v == SpvOpUnreachable )
-    root = "Unreachable";
+    root = "SpvOpUnreachable";
   else if( v == SpvOpLifetimeStart )
-    root = "LifetimeStart";
+    root = "SpvOpLifetimeStart";
   else if( v == SpvOpLifetimeStop )
-    root = "LifetimeStop";
+    root = "SpvOpLifetimeStop";
   else if( v == SpvOpGroupAsyncCopy )
-    root = "GroupAsyncCopy";
+    root = "SpvOpGroupAsyncCopy";
   else if( v == SpvOpGroupWaitEvents )
-    root = "GroupWaitEvents";
+    root = "SpvOpGroupWaitEvents";
   else if( v == SpvOpGroupAll )
-    root = "GroupAll";
+    root = "SpvOpGroupAll";
   else if( v == SpvOpGroupAny )
-    root = "GroupAny";
+    root = "SpvOpGroupAny";
   else if( v == SpvOpGroupBroadcast )
-    root = "GroupBroadcast";
+    root = "SpvOpGroupBroadcast";
   else if( v == SpvOpGroupIAdd )
-    root = "GroupIAdd";
+    root = "SpvOpGroupIAdd";
   else if( v == SpvOpGroupFAdd )
-    root = "GroupFAdd";
+    root = "SpvOpGroupFAdd";
   else if( v == SpvOpGroupFMin )
-    root = "GroupFMin";
+    root = "SpvOpGroupFMin";
   else if( v == SpvOpGroupUMin )
-    root = "GroupUMin";
+    root = "SpvOpGroupUMin";
   else if( v == SpvOpGroupSMin )
-    root = "GroupSMin";
+    root = "SpvOpGroupSMin";
   else if( v == SpvOpGroupFMax )
-    root = "GroupFMax";
+    root = "SpvOpGroupFMax";
   else if( v == SpvOpGroupUMax )
-    root = "GroupUMax";
+    root = "SpvOpGroupUMax";
   else if( v == SpvOpGroupSMax )
-    root = "GroupSMax";
+    root = "SpvOpGroupSMax";
   else if( v == SpvOpReadPipe )
-    root = "ReadPipe";
+    root = "SpvOpReadPipe";
   else if( v == SpvOpWritePipe )
-    root = "WritePipe";
+    root = "SpvOpWritePipe";
   else if( v == SpvOpReservedReadPipe )
-    root = "ReservedReadPipe";
+    root = "SpvOpReservedReadPipe";
   else if( v == SpvOpReservedWritePipe )
-    root = "ReservedWritePipe";
+    root = "SpvOpReservedWritePipe";
   else if( v == SpvOpReserveReadPipePackets )
-    root = "ReserveReadPipePackets";
+    root = "SpvOpReserveReadPipePackets";
   else if( v == SpvOpReserveWritePipePackets )
-    root = "ReserveWritePipePackets";
+    root = "SpvOpReserveWritePipePackets";
   else if( v == SpvOpCommitReadPipe )
-    root = "CommitReadPipe";
+    root = "SpvOpCommitReadPipe";
   else if( v == SpvOpCommitWritePipe )
-    root = "CommitWritePipe";
+    root = "SpvOpCommitWritePipe";
   else if( v == SpvOpIsValidReserveId )
-    root = "IsValidReserveId";
+    root = "SpvOpIsValidReserveId";
   else if( v == SpvOpGetNumPipePackets )
-    root = "GetNumPipePackets";
+    root = "SpvOpGetNumPipePackets";
   else if( v == SpvOpGetMaxPipePackets )
-    root = "GetMaxPipePackets";
+    root = "SpvOpGetMaxPipePackets";
   else if( v == SpvOpGroupReserveReadPipePackets )
-    root = "GroupReserveReadPipePackets";
+    root = "SpvOpGroupReserveReadPipePackets";
   else if( v == SpvOpGroupReserveWritePipePackets )
-    root = "GroupReserveWritePipePackets";
+    root = "SpvOpGroupReserveWritePipePackets";
   else if( v == SpvOpGroupCommitReadPipe )
-    root = "GroupCommitReadPipe";
+    root = "SpvOpGroupCommitReadPipe";
   else if( v == SpvOpGroupCommitWritePipe )
-    root = "GroupCommitWritePipe";
+    root = "SpvOpGroupCommitWritePipe";
   else if( v == SpvOpEnqueueMarker )
-    root = "EnqueueMarker";
+    root = "SpvOpEnqueueMarker";
   else if( v == SpvOpEnqueueKernel )
-    root = "EnqueueKernel";
+    root = "SpvOpEnqueueKernel";
   else if( v == SpvOpGetKernelNDrangeSubGroupCount )
-    root = "GetKernelNDrangeSubGroupCount";
+    root = "SpvOpGetKernelNDrangeSubGroupCount";
   else if( v == SpvOpGetKernelNDrangeMaxSubGroupSize )
-    root = "GetKernelNDrangeMaxSubGroupSize";
+    root = "SpvOpGetKernelNDrangeMaxSubGroupSize";
   else if( v == SpvOpGetKernelWorkGroupSize )
-    root = "GetKernelWorkGroupSize";
+    root = "SpvOpGetKernelWorkGroupSize";
   else if( v == SpvOpGetKernelPreferredWorkGroupSizeMultiple )
-    root = "GetKernelPreferredWorkGroupSizeMultiple";
+    root = "SpvOpGetKernelPreferredWorkGroupSizeMultiple";
   else if( v == SpvOpRetainEvent )
-    root = "RetainEvent";
+    root = "SpvOpRetainEvent";
   else if( v == SpvOpReleaseEvent )
-    root = "ReleaseEvent";
+    root = "SpvOpReleaseEvent";
   else if( v == SpvOpCreateUserEvent )
-    root = "CreateUserEvent";
+    root = "SpvOpCreateUserEvent";
   else if( v == SpvOpIsValidEvent )
-    root = "IsValidEvent";
+    root = "SpvOpIsValidEvent";
   else if( v == SpvOpSetUserEventStatus )
-    root = "SetUserEventStatus";
+    root = "SpvOpSetUserEventStatus";
   else if( v == SpvOpCaptureEventProfilingInfo )
-    root = "CaptureEventProfilingInfo";
+    root = "SpvOpCaptureEventProfilingInfo";
   else if( v == SpvOpGetDefaultQueue )
-    root = "GetDefaultQueue";
+    root = "SpvOpGetDefaultQueue";
   else if( v == SpvOpBuildNDRange )
-    root = "BuildNDRange";
+    root = "SpvOpBuildNDRange";
   else if( v == SpvOpImageSparseSampleImplicitLod )
-    root = "ImageSparseSampleImplicitLod";
+    root = "SpvOpImageSparseSampleImplicitLod";
   else if( v == SpvOpImageSparseSampleExplicitLod )
-    root = "ImageSparseSampleExplicitLod";
+    root = "SpvOpImageSparseSampleExplicitLod";
   else if( v == SpvOpImageSparseSampleDrefImplicitLod )
-    root = "ImageSparseSampleDrefImplicitLod";
+    root = "SpvOpImageSparseSampleDrefImplicitLod";
   else if( v == SpvOpImageSparseSampleDrefExplicitLod )
-    root = "ImageSparseSampleDrefExplicitLod";
+    root = "SpvOpImageSparseSampleDrefExplicitLod";
   else if( v == SpvOpImageSparseSampleProjImplicitLod )
-    root = "ImageSparseSampleProjImplicitLod";
+    root = "SpvOpImageSparseSampleProjImplicitLod";
   else if( v == SpvOpImageSparseSampleProjExplicitLod )
-    root = "ImageSparseSampleProjExplicitLod";
+    root = "SpvOpImageSparseSampleProjExplicitLod";
   else if( v == SpvOpImageSparseSampleProjDrefImplicitLod )
-    root = "ImageSparseSampleProjDrefImplicitLod";
+    root = "SpvOpImageSparseSampleProjDrefImplicitLod";
   else if( v == SpvOpImageSparseSampleProjDrefExplicitLod )
-    root = "ImageSparseSampleProjDrefExplicitLod";
+    root = "SpvOpImageSparseSampleProjDrefExplicitLod";
   else if( v == SpvOpImageSparseFetch )
-    root = "ImageSparseFetch";
+    root = "SpvOpImageSparseFetch";
   else if( v == SpvOpImageSparseGather )
-    root = "ImageSparseGather";
+    root = "SpvOpImageSparseGather";
   else if( v == SpvOpImageSparseDrefGather )
-    root = "ImageSparseDrefGather";
+    root = "SpvOpImageSparseDrefGather";
   else if( v == SpvOpImageSparseTexelsResident )
-    root = "ImageSparseTexelsResident";
+    root = "SpvOpImageSparseTexelsResident";
   else if( v == SpvOpNoLine )
-    root = "NoLine";
+    root = "SpvOpNoLine";
   else if( v == SpvOpAtomicFlagTestAndSet )
-    root = "AtomicFlagTestAndSet";
+    root = "SpvOpAtomicFlagTestAndSet";
   else if( v == SpvOpAtomicFlagClear )
-    root = "AtomicFlagClear";
+    root = "SpvOpAtomicFlagClear";
   else if( v == SpvOpImageSparseRead )
-    root = "ImageSparseRead";
+    root = "SpvOpImageSparseRead";
   else if( v == SpvOpSizeOf )
-    root = "SizeOf";
+    root = "SpvOpSizeOf";
   else if( v == SpvOpTypePipeStorage )
-    root = "TypePipeStorage";
+    root = "SpvOpTypePipeStorage";
   else if( v == SpvOpConstantPipeStorage )
-    root = "ConstantPipeStorage";
+    root = "SpvOpConstantPipeStorage";
   else if( v == SpvOpCreatePipeFromPipeStorage )
-    root = "CreatePipeFromPipeStorage";
+    root = "SpvOpCreatePipeFromPipeStorage";
   else if( v == SpvOpGetKernelLocalSizeForSubgroupCount )
-    root = "GetKernelLocalSizeForSubgroupCount";
+    root = "SpvOpGetKernelLocalSizeForSubgroupCount";
   else if( v == SpvOpGetKernelMaxNumSubgroups )
-    root = "GetKernelMaxNumSubgroups";
+    root = "SpvOpGetKernelMaxNumSubgroups";
   else if( v == SpvOpTypeNamedBarrier )
-    root = "TypeNamedBarrier";
+    root = "SpvOpTypeNamedBarrier";
   else if( v == SpvOpNamedBarrierInitialize )
-    root = "NamedBarrierInitialize";
+    root = "SpvOpNamedBarrierInitialize";
   else if( v == SpvOpMemoryNamedBarrier )
-    root = "MemoryNamedBarrier";
+    root = "SpvOpMemoryNamedBarrier";
   else if( v == SpvOpModuleProcessed )
-    root = "ModuleProcessed";
+    root = "SpvOpModuleProcessed";
   else if( v == SpvOpExecutionModeId )
-    root = "ExecutionModeId";
+    root = "SpvOpExecutionModeId";
   else if( v == SpvOpDecorateId )
-    root = "DecorateId";
+    root = "SpvOpDecorateId";
   else if( v == SpvOpGroupNonUniformElect )
-    root = "GroupNonUniformElect";
+    root = "SpvOpGroupNonUniformElect";
   else if( v == SpvOpGroupNonUniformAll )
-    root = "GroupNonUniformAll";
+    root = "SpvOpGroupNonUniformAll";
   else if( v == SpvOpGroupNonUniformAny )
-    root = "GroupNonUniformAny";
+    root = "SpvOpGroupNonUniformAny";
   else if( v == SpvOpGroupNonUniformAllEqual )
-    root = "GroupNonUniformAllEqual";
+    root = "SpvOpGroupNonUniformAllEqual";
   else if( v == SpvOpGroupNonUniformBroadcast )
-    root = "GroupNonUniformBroadcast";
+    root = "SpvOpGroupNonUniformBroadcast";
   else if( v == SpvOpGroupNonUniformBroadcastFirst )
-    root = "GroupNonUniformBroadcastFirst";
+    root = "SpvOpGroupNonUniformBroadcastFirst";
   else if( v == SpvOpGroupNonUniformBallot )
-    root = "GroupNonUniformBallot";
+    root = "SpvOpGroupNonUniformBallot";
   else if( v == SpvOpGroupNonUniformInverseBallot )
-    root = "GroupNonUniformInverseBallot";
+    root = "SpvOpGroupNonUniformInverseBallot";
   else if( v == SpvOpGroupNonUniformBallotBitExtract )
-    root = "GroupNonUniformBallotBitExtract";
+    root = "SpvOpGroupNonUniformBallotBitExtract";
   else if( v == SpvOpGroupNonUniformBallotBitCount )
-    root = "GroupNonUniformBallotBitCount";
+    root = "SpvOpGroupNonUniformBallotBitCount";
   else if( v == SpvOpGroupNonUniformBallotFindLSB )
-    root = "GroupNonUniformBallotFindLSB";
+    root = "SpvOpGroupNonUniformBallotFindLSB";
   else if( v == SpvOpGroupNonUniformBallotFindMSB )
-    root = "GroupNonUniformBallotFindMSB";
+    root = "SpvOpGroupNonUniformBallotFindMSB";
   else if( v == SpvOpGroupNonUniformShuffle )
-    root = "GroupNonUniformShuffle";
+    root = "SpvOpGroupNonUniformShuffle";
   else if( v == SpvOpGroupNonUniformShuffleXor )
-    root = "GroupNonUniformShuffleXor";
+    root = "SpvOpGroupNonUniformShuffleXor";
   else if( v == SpvOpGroupNonUniformShuffleUp )
-    root = "GroupNonUniformShuffleUp";
+    root = "SpvOpGroupNonUniformShuffleUp";
   else if( v == SpvOpGroupNonUniformShuffleDown )
-    root = "GroupNonUniformShuffleDown";
+    root = "SpvOpGroupNonUniformShuffleDown";
   else if( v == SpvOpGroupNonUniformIAdd )
-    root = "GroupNonUniformIAdd";
+    root = "SpvOpGroupNonUniformIAdd";
   else if( v == SpvOpGroupNonUniformFAdd )
-    root = "GroupNonUniformFAdd";
+    root = "SpvOpGroupNonUniformFAdd";
   else if( v == SpvOpGroupNonUniformIMul )
-    root = "GroupNonUniformIMul";
+    root = "SpvOpGroupNonUniformIMul";
   else if( v == SpvOpGroupNonUniformFMul )
-    root = "GroupNonUniformFMul";
+    root = "SpvOpGroupNonUniformFMul";
   else if( v == SpvOpGroupNonUniformSMin )
-    root = "GroupNonUniformSMin";
+    root = "SpvOpGroupNonUniformSMin";
   else if( v == SpvOpGroupNonUniformUMin )
-    root = "GroupNonUniformUMin";
+    root = "SpvOpGroupNonUniformUMin";
   else if( v == SpvOpGroupNonUniformFMin )
-    root = "GroupNonUniformFMin";
+    root = "SpvOpGroupNonUniformFMin";
   else if( v == SpvOpGroupNonUniformSMax )
-    root = "GroupNonUniformSMax";
+    root = "SpvOpGroupNonUniformSMax";
   else if( v == SpvOpGroupNonUniformUMax )
-    root = "GroupNonUniformUMax";
+    root = "SpvOpGroupNonUniformUMax";
   else if( v == SpvOpGroupNonUniformFMax )
-    root = "GroupNonUniformFMax";
+    root = "SpvOpGroupNonUniformFMax";
   else if( v == SpvOpGroupNonUniformBitwiseAnd )
-    root = "GroupNonUniformBitwiseAnd";
+    root = "SpvOpGroupNonUniformBitwiseAnd";
   else if( v == SpvOpGroupNonUniformBitwiseOr )
-    root = "GroupNonUniformBitwiseOr";
+    root = "SpvOpGroupNonUniformBitwiseOr";
   else if( v == SpvOpGroupNonUniformBitwiseXor )
-    root = "GroupNonUniformBitwiseXor";
+    root = "SpvOpGroupNonUniformBitwiseXor";
   else if( v == SpvOpGroupNonUniformLogicalAnd )
-    root = "GroupNonUniformLogicalAnd";
+    root = "SpvOpGroupNonUniformLogicalAnd";
   else if( v == SpvOpGroupNonUniformLogicalOr )
-    root = "GroupNonUniformLogicalOr";
+    root = "SpvOpGroupNonUniformLogicalOr";
   else if( v == SpvOpGroupNonUniformLogicalXor )
-    root = "GroupNonUniformLogicalXor";
+    root = "SpvOpGroupNonUniformLogicalXor";
   else if( v == SpvOpGroupNonUniformQuadBroadcast )
-    root = "GroupNonUniformQuadBroadcast";
+    root = "SpvOpGroupNonUniformQuadBroadcast";
   else if( v == SpvOpGroupNonUniformQuadSwap )
-    root = "GroupNonUniformQuadSwap";
+    root = "SpvOpGroupNonUniformQuadSwap";
   else if( v == SpvOpCopyLogical )
-    root = "CopyLogical";
+    root = "SpvOpCopyLogical";
   else if( v == SpvOpPtrEqual )
-    root = "PtrEqual";
+    root = "SpvOpPtrEqual";
   else if( v == SpvOpPtrNotEqual )
-    root = "PtrNotEqual";
+    root = "SpvOpPtrNotEqual";
   else if( v == SpvOpPtrDiff )
-    root = "PtrDiff";
+    root = "SpvOpPtrDiff";
   else if( v == SpvOpTerminateInvocation )
-    root = "TerminateInvocation";
+    root = "SpvOpTerminateInvocation";
   else if( v == SpvOpSubgroupBallotKHR )
-    root = "SubgroupBallotKHR";
+    root = "SpvOpSubgroupBallotKHR";
   else if( v == SpvOpSubgroupFirstInvocationKHR )
-    root = "SubgroupFirstInvocationKHR";
+    root = "SpvOpSubgroupFirstInvocationKHR";
   else if( v == SpvOpSubgroupAllKHR )
-    root = "SubgroupAllKHR";
+    root = "SpvOpSubgroupAllKHR";
   else if( v == SpvOpSubgroupAnyKHR )
-    root = "SubgroupAnyKHR";
+    root = "SpvOpSubgroupAnyKHR";
   else if( v == SpvOpSubgroupAllEqualKHR )
-    root = "SubgroupAllEqualKHR";
+    root = "SpvOpSubgroupAllEqualKHR";
+  else if( v == SpvOpGroupNonUniformRotateKHR )
+    root = "SpvOpGroupNonUniformRotateKHR";
   else if( v == SpvOpSubgroupReadInvocationKHR )
-    root = "SubgroupReadInvocationKHR";
+    root = "SpvOpSubgroupReadInvocationKHR";
   else if( v == SpvOpTraceRayKHR )
-    root = "TraceRayKHR";
+    root = "SpvOpTraceRayKHR";
   else if( v == SpvOpExecuteCallableKHR )
-    root = "ExecuteCallableKHR";
+    root = "SpvOpExecuteCallableKHR";
   else if( v == SpvOpConvertUToAccelerationStructureKHR )
-    root = "ConvertUToAccelerationStructureKHR";
+    root = "SpvOpConvertUToAccelerationStructureKHR";
   else if( v == SpvOpIgnoreIntersectionKHR )
-    root = "IgnoreIntersectionKHR";
+    root = "SpvOpIgnoreIntersectionKHR";
   else if( v == SpvOpTerminateRayKHR )
-    root = "TerminateRayKHR";
+    root = "SpvOpTerminateRayKHR";
+  else if( v == SpvOpSDot )
+    root = "SpvOpSDot";
+  else if( v == SpvOpSDotKHR )
+    root = "SpvOpSDotKHR";
+  else if( v == SpvOpUDot )
+    root = "SpvOpUDot";
+  else if( v == SpvOpUDotKHR )
+    root = "SpvOpUDotKHR";
+  else if( v == SpvOpSUDot )
+    root = "SpvOpSUDot";
+  else if( v == SpvOpSUDotKHR )
+    root = "SpvOpSUDotKHR";
+  else if( v == SpvOpSDotAccSat )
+    root = "SpvOpSDotAccSat";
+  else if( v == SpvOpSDotAccSatKHR )
+    root = "SpvOpSDotAccSatKHR";
+  else if( v == SpvOpUDotAccSat )
+    root = "SpvOpUDotAccSat";
+  else if( v == SpvOpUDotAccSatKHR )
+    root = "SpvOpUDotAccSatKHR";
+  else if( v == SpvOpSUDotAccSat )
+    root = "SpvOpSUDotAccSat";
+  else if( v == SpvOpSUDotAccSatKHR )
+    root = "SpvOpSUDotAccSatKHR";
   else if( v == SpvOpTypeRayQueryKHR )
-    root = "TypeRayQueryKHR";
+    root = "SpvOpTypeRayQueryKHR";
   else if( v == SpvOpRayQueryInitializeKHR )
-    root = "RayQueryInitializeKHR";
+    root = "SpvOpRayQueryInitializeKHR";
   else if( v == SpvOpRayQueryTerminateKHR )
-    root = "RayQueryTerminateKHR";
+    root = "SpvOpRayQueryTerminateKHR";
   else if( v == SpvOpRayQueryGenerateIntersectionKHR )
-    root = "RayQueryGenerateIntersectionKHR";
+    root = "SpvOpRayQueryGenerateIntersectionKHR";
   else if( v == SpvOpRayQueryConfirmIntersectionKHR )
-    root = "RayQueryConfirmIntersectionKHR";
+    root = "SpvOpRayQueryConfirmIntersectionKHR";
   else if( v == SpvOpRayQueryProceedKHR )
-    root = "RayQueryProceedKHR";
+    root = "SpvOpRayQueryProceedKHR";
   else if( v == SpvOpRayQueryGetIntersectionTypeKHR )
-    root = "RayQueryGetIntersectionTypeKHR";
+    root = "SpvOpRayQueryGetIntersectionTypeKHR";
   else if( v == SpvOpGroupIAddNonUniformAMD )
-    root = "GroupIAddNonUniformAMD";
+    root = "SpvOpGroupIAddNonUniformAMD";
   else if( v == SpvOpGroupFAddNonUniformAMD )
-    root = "GroupFAddNonUniformAMD";
+    root = "SpvOpGroupFAddNonUniformAMD";
   else if( v == SpvOpGroupFMinNonUniformAMD )
-    root = "GroupFMinNonUniformAMD";
+    root = "SpvOpGroupFMinNonUniformAMD";
   else if( v == SpvOpGroupUMinNonUniformAMD )
-    root = "GroupUMinNonUniformAMD";
+    root = "SpvOpGroupUMinNonUniformAMD";
   else if( v == SpvOpGroupSMinNonUniformAMD )
-    root = "GroupSMinNonUniformAMD";
+    root = "SpvOpGroupSMinNonUniformAMD";
   else if( v == SpvOpGroupFMaxNonUniformAMD )
-    root = "GroupFMaxNonUniformAMD";
+    root = "SpvOpGroupFMaxNonUniformAMD";
   else if( v == SpvOpGroupUMaxNonUniformAMD )
-    root = "GroupUMaxNonUniformAMD";
+    root = "SpvOpGroupUMaxNonUniformAMD";
   else if( v == SpvOpGroupSMaxNonUniformAMD )
-    root = "GroupSMaxNonUniformAMD";
+    root = "SpvOpGroupSMaxNonUniformAMD";
   else if( v == SpvOpFragmentMaskFetchAMD )
-    root = "FragmentMaskFetchAMD";
+    root = "SpvOpFragmentMaskFetchAMD";
   else if( v == SpvOpFragmentFetchAMD )
-    root = "FragmentFetchAMD";
+    root = "SpvOpFragmentFetchAMD";
   else if( v == SpvOpReadClockKHR )
-    root = "ReadClockKHR";
+    root = "SpvOpReadClockKHR";
   else if( v == SpvOpImageSampleFootprintNV )
-    root = "ImageSampleFootprintNV";
+    root = "SpvOpImageSampleFootprintNV";
   else if( v == SpvOpGroupNonUniformPartitionNV )
-    root = "GroupNonUniformPartitionNV";
+    root = "SpvOpGroupNonUniformPartitionNV";
   else if( v == SpvOpWritePackedPrimitiveIndices4x8NV )
-    root = "WritePackedPrimitiveIndices4x8NV";
+    root = "SpvOpWritePackedPrimitiveIndices4x8NV";
   else if( v == SpvOpReportIntersectionKHR )
-    root = "ReportIntersectionKHR";
+    root = "SpvOpReportIntersectionKHR";
   else if( v == SpvOpReportIntersectionNV )
-    root = "ReportIntersectionNV";
+    root = "SpvOpReportIntersectionNV";
   else if( v == SpvOpIgnoreIntersectionNV )
-    root = "IgnoreIntersectionNV";
+    root = "SpvOpIgnoreIntersectionNV";
   else if( v == SpvOpTerminateRayNV )
-    root = "TerminateRayNV";
+    root = "SpvOpTerminateRayNV";
   else if( v == SpvOpTraceNV )
-    root = "TraceNV";
+    root = "SpvOpTraceNV";
+  else if( v == SpvOpTraceMotionNV )
+    root = "SpvOpTraceMotionNV";
+  else if( v == SpvOpTraceRayMotionNV )
+    root = "SpvOpTraceRayMotionNV";
   else if( v == SpvOpTypeAccelerationStructureKHR )
-    root = "TypeAccelerationStructureKHR";
+    root = "SpvOpTypeAccelerationStructureKHR";
   else if( v == SpvOpTypeAccelerationStructureNV )
-    root = "TypeAccelerationStructureNV";
+    root = "SpvOpTypeAccelerationStructureNV";
   else if( v == SpvOpExecuteCallableNV )
-    root = "ExecuteCallableNV";
+    root = "SpvOpExecuteCallableNV";
   else if( v == SpvOpTypeCooperativeMatrixNV )
-    root = "TypeCooperativeMatrixNV";
+    root = "SpvOpTypeCooperativeMatrixNV";
   else if( v == SpvOpCooperativeMatrixLoadNV )
-    root = "CooperativeMatrixLoadNV";
+    root = "SpvOpCooperativeMatrixLoadNV";
   else if( v == SpvOpCooperativeMatrixStoreNV )
-    root = "CooperativeMatrixStoreNV";
+    root = "SpvOpCooperativeMatrixStoreNV";
   else if( v == SpvOpCooperativeMatrixMulAddNV )
-    root = "CooperativeMatrixMulAddNV";
+    root = "SpvOpCooperativeMatrixMulAddNV";
   else if( v == SpvOpCooperativeMatrixLengthNV )
-    root = "CooperativeMatrixLengthNV";
+    root = "SpvOpCooperativeMatrixLengthNV";
   else if( v == SpvOpBeginInvocationInterlockEXT )
-    root = "BeginInvocationInterlockEXT";
+    root = "SpvOpBeginInvocationInterlockEXT";
   else if( v == SpvOpEndInvocationInterlockEXT )
-    root = "EndInvocationInterlockEXT";
+    root = "SpvOpEndInvocationInterlockEXT";
+  else if( v == SpvOpDemoteToHelperInvocation )
+    root = "SpvOpDemoteToHelperInvocation";
   else if( v == SpvOpDemoteToHelperInvocationEXT )
-    root = "DemoteToHelperInvocationEXT";
+    root = "SpvOpDemoteToHelperInvocationEXT";
   else if( v == SpvOpIsHelperInvocationEXT )
-    root = "IsHelperInvocationEXT";
+    root = "SpvOpIsHelperInvocationEXT";
+  else if( v == SpvOpConvertUToImageNV )
+    root = "SpvOpConvertUToImageNV";
+  else if( v == SpvOpConvertUToSamplerNV )
+    root = "SpvOpConvertUToSamplerNV";
+  else if( v == SpvOpConvertImageToUNV )
+    root = "SpvOpConvertImageToUNV";
+  else if( v == SpvOpConvertSamplerToUNV )
+    root = "SpvOpConvertSamplerToUNV";
+  else if( v == SpvOpConvertUToSampledImageNV )
+    root = "SpvOpConvertUToSampledImageNV";
+  else if( v == SpvOpConvertSampledImageToUNV )
+    root = "SpvOpConvertSampledImageToUNV";
+  else if( v == SpvOpSamplerImageAddressingModeNV )
+    root = "SpvOpSamplerImageAddressingModeNV";
   else if( v == SpvOpSubgroupShuffleINTEL )
-    root = "SubgroupShuffleINTEL";
+    root = "SpvOpSubgroupShuffleINTEL";
   else if( v == SpvOpSubgroupShuffleDownINTEL )
-    root = "SubgroupShuffleDownINTEL";
+    root = "SpvOpSubgroupShuffleDownINTEL";
   else if( v == SpvOpSubgroupShuffleUpINTEL )
-    root = "SubgroupShuffleUpINTEL";
+    root = "SpvOpSubgroupShuffleUpINTEL";
   else if( v == SpvOpSubgroupShuffleXorINTEL )
-    root = "SubgroupShuffleXorINTEL";
+    root = "SpvOpSubgroupShuffleXorINTEL";
   else if( v == SpvOpSubgroupBlockReadINTEL )
-    root = "SubgroupBlockReadINTEL";
+    root = "SpvOpSubgroupBlockReadINTEL";
   else if( v == SpvOpSubgroupBlockWriteINTEL )
-    root = "SubgroupBlockWriteINTEL";
+    root = "SpvOpSubgroupBlockWriteINTEL";
   else if( v == SpvOpSubgroupImageBlockReadINTEL )
-    root = "SubgroupImageBlockReadINTEL";
+    root = "SpvOpSubgroupImageBlockReadINTEL";
   else if( v == SpvOpSubgroupImageBlockWriteINTEL )
-    root = "SubgroupImageBlockWriteINTEL";
+    root = "SpvOpSubgroupImageBlockWriteINTEL";
   else if( v == SpvOpSubgroupImageMediaBlockReadINTEL )
-    root = "SubgroupImageMediaBlockReadINTEL";
+    root = "SpvOpSubgroupImageMediaBlockReadINTEL";
   else if( v == SpvOpSubgroupImageMediaBlockWriteINTEL )
-    root = "SubgroupImageMediaBlockWriteINTEL";
+    root = "SpvOpSubgroupImageMediaBlockWriteINTEL";
   else if( v == SpvOpUCountLeadingZerosINTEL )
-    root = "UCountLeadingZerosINTEL";
+    root = "SpvOpUCountLeadingZerosINTEL";
   else if( v == SpvOpUCountTrailingZerosINTEL )
-    root = "UCountTrailingZerosINTEL";
+    root = "SpvOpUCountTrailingZerosINTEL";
   else if( v == SpvOpAbsISubINTEL )
-    root = "AbsISubINTEL";
+    root = "SpvOpAbsISubINTEL";
   else if( v == SpvOpAbsUSubINTEL )
-    root = "AbsUSubINTEL";
+    root = "SpvOpAbsUSubINTEL";
   else if( v == SpvOpIAddSatINTEL )
-    root = "IAddSatINTEL";
+    root = "SpvOpIAddSatINTEL";
   else if( v == SpvOpUAddSatINTEL )
-    root = "UAddSatINTEL";
+    root = "SpvOpUAddSatINTEL";
   else if( v == SpvOpIAverageINTEL )
-    root = "IAverageINTEL";
+    root = "SpvOpIAverageINTEL";
   else if( v == SpvOpUAverageINTEL )
-    root = "UAverageINTEL";
+    root = "SpvOpUAverageINTEL";
   else if( v == SpvOpIAverageRoundedINTEL )
-    root = "IAverageRoundedINTEL";
+    root = "SpvOpIAverageRoundedINTEL";
   else if( v == SpvOpUAverageRoundedINTEL )
-    root = "UAverageRoundedINTEL";
+    root = "SpvOpUAverageRoundedINTEL";
   else if( v == SpvOpISubSatINTEL )
-    root = "ISubSatINTEL";
+    root = "SpvOpISubSatINTEL";
   else if( v == SpvOpUSubSatINTEL )
-    root = "USubSatINTEL";
+    root = "SpvOpUSubSatINTEL";
   else if( v == SpvOpIMul32x16INTEL )
-    root = "IMul32x16INTEL";
+    root = "SpvOpIMul32x16INTEL";
   else if( v == SpvOpUMul32x16INTEL )
-    root = "UMul32x16INTEL";
-  else if( v == SpvOpFunctionPointerINTEL )
-    root = "FunctionPointerINTEL";
+    root = "SpvOpUMul32x16INTEL";
+  else if( v == SpvOpConstantFunctionPointerINTEL )
+    root = "SpvOpConstantFunctionPointerINTEL";
   else if( v == SpvOpFunctionPointerCallINTEL )
-    root = "FunctionPointerCallINTEL";
+    root = "SpvOpFunctionPointerCallINTEL";
+  else if( v == SpvOpAsmTargetINTEL )
+    root = "SpvOpAsmTargetINTEL";
+  else if( v == SpvOpAsmINTEL )
+    root = "SpvOpAsmINTEL";
+  else if( v == SpvOpAsmCallINTEL )
+    root = "SpvOpAsmCallINTEL";
+  else if( v == SpvOpAtomicFMinEXT )
+    root = "SpvOpAtomicFMinEXT";
+  else if( v == SpvOpAtomicFMaxEXT )
+    root = "SpvOpAtomicFMaxEXT";
+  else if( v == SpvOpAssumeTrueKHR )
+    root = "SpvOpAssumeTrueKHR";
+  else if( v == SpvOpExpectKHR )
+    root = "SpvOpExpectKHR";
   else if( v == SpvOpDecorateString )
-    root = "DecorateString";
+    root = "SpvOpDecorateString";
   else if( v == SpvOpDecorateStringGOOGLE )
-    root = "DecorateStringGOOGLE";
+    root = "SpvOpDecorateStringGOOGLE";
   else if( v == SpvOpMemberDecorateString )
-    root = "MemberDecorateString";
+    root = "SpvOpMemberDecorateString";
   else if( v == SpvOpMemberDecorateStringGOOGLE )
-    root = "MemberDecorateStringGOOGLE";
+    root = "SpvOpMemberDecorateStringGOOGLE";
   else if( v == SpvOpVmeImageINTEL )
-    root = "VmeImageINTEL";
+    root = "SpvOpVmeImageINTEL";
   else if( v == SpvOpTypeVmeImageINTEL )
-    root = "TypeVmeImageINTEL";
+    root = "SpvOpTypeVmeImageINTEL";
   else if( v == SpvOpTypeAvcImePayloadINTEL )
-    root = "TypeAvcImePayloadINTEL";
+    root = "SpvOpTypeAvcImePayloadINTEL";
   else if( v == SpvOpTypeAvcRefPayloadINTEL )
-    root = "TypeAvcRefPayloadINTEL";
+    root = "SpvOpTypeAvcRefPayloadINTEL";
   else if( v == SpvOpTypeAvcSicPayloadINTEL )
-    root = "TypeAvcSicPayloadINTEL";
+    root = "SpvOpTypeAvcSicPayloadINTEL";
   else if( v == SpvOpTypeAvcMcePayloadINTEL )
-    root = "TypeAvcMcePayloadINTEL";
+    root = "SpvOpTypeAvcMcePayloadINTEL";
   else if( v == SpvOpTypeAvcMceResultINTEL )
-    root = "TypeAvcMceResultINTEL";
+    root = "SpvOpTypeAvcMceResultINTEL";
   else if( v == SpvOpTypeAvcImeResultINTEL )
-    root = "TypeAvcImeResultINTEL";
+    root = "SpvOpTypeAvcImeResultINTEL";
   else if( v == SpvOpTypeAvcImeResultSingleReferenceStreamoutINTEL )
-    root = "TypeAvcImeResultSingleReferenceStreamoutINTEL";
+    root = "SpvOpTypeAvcImeResultSingleReferenceStreamoutINTEL";
   else if( v == SpvOpTypeAvcImeResultDualReferenceStreamoutINTEL )
-    root = "TypeAvcImeResultDualReferenceStreamoutINTEL";
+    root = "SpvOpTypeAvcImeResultDualReferenceStreamoutINTEL";
   else if( v == SpvOpTypeAvcImeSingleReferenceStreaminINTEL )
-    root = "TypeAvcImeSingleReferenceStreaminINTEL";
+    root = "SpvOpTypeAvcImeSingleReferenceStreaminINTEL";
   else if( v == SpvOpTypeAvcImeDualReferenceStreaminINTEL )
-    root = "TypeAvcImeDualReferenceStreaminINTEL";
+    root = "SpvOpTypeAvcImeDualReferenceStreaminINTEL";
   else if( v == SpvOpTypeAvcRefResultINTEL )
-    root = "TypeAvcRefResultINTEL";
+    root = "SpvOpTypeAvcRefResultINTEL";
   else if( v == SpvOpTypeAvcSicResultINTEL )
-    root = "TypeAvcSicResultINTEL";
+    root = "SpvOpTypeAvcSicResultINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL )
-    root = "SubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultInterShapePenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultInterShapePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultInterShapePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceSetInterShapePenaltyINTEL )
-    root = "SubgroupAvcMceSetInterShapePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceSetInterShapePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceSetInterDirectionPenaltyINTEL )
-    root = "SubgroupAvcMceSetInterDirectionPenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceSetInterDirectionPenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL )
-    root = "SubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL )
-    root = "SubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL )
-    root = "SubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL )
-    root = "SubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL";
   else if( v == SpvOpSubgroupAvcMceSetMotionVectorCostFunctionINTEL )
-    root = "SubgroupAvcMceSetMotionVectorCostFunctionINTEL";
+    root = "SpvOpSubgroupAvcMceSetMotionVectorCostFunctionINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL )
-    root = "SubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL";
+    root = "SpvOpSubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcMceSetAcOnlyHaarINTEL )
-    root = "SubgroupAvcMceSetAcOnlyHaarINTEL";
+    root = "SpvOpSubgroupAvcMceSetAcOnlyHaarINTEL";
   else if( v == SpvOpSubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL )
-    root = "SubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL";
+    root = "SpvOpSubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL";
   else if( v == SpvOpSubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL )
-    root = "SubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL";
+    root = "SpvOpSubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL";
   else if( v == SpvOpSubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL )
-    root = "SubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL";
+    root = "SpvOpSubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToImePayloadINTEL )
-    root = "SubgroupAvcMceConvertToImePayloadINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToImePayloadINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToImeResultINTEL )
-    root = "SubgroupAvcMceConvertToImeResultINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToImeResultINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToRefPayloadINTEL )
-    root = "SubgroupAvcMceConvertToRefPayloadINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToRefPayloadINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToRefResultINTEL )
-    root = "SubgroupAvcMceConvertToRefResultINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToRefResultINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToSicPayloadINTEL )
-    root = "SubgroupAvcMceConvertToSicPayloadINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToSicPayloadINTEL";
   else if( v == SpvOpSubgroupAvcMceConvertToSicResultINTEL )
-    root = "SubgroupAvcMceConvertToSicResultINTEL";
+    root = "SpvOpSubgroupAvcMceConvertToSicResultINTEL";
   else if( v == SpvOpSubgroupAvcMceGetMotionVectorsINTEL )
-    root = "SubgroupAvcMceGetMotionVectorsINTEL";
+    root = "SpvOpSubgroupAvcMceGetMotionVectorsINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterDistortionsINTEL )
-    root = "SubgroupAvcMceGetInterDistortionsINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterDistortionsINTEL";
   else if( v == SpvOpSubgroupAvcMceGetBestInterDistortionsINTEL )
-    root = "SubgroupAvcMceGetBestInterDistortionsINTEL";
+    root = "SpvOpSubgroupAvcMceGetBestInterDistortionsINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterMajorShapeINTEL )
-    root = "SubgroupAvcMceGetInterMajorShapeINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterMajorShapeINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterMinorShapeINTEL )
-    root = "SubgroupAvcMceGetInterMinorShapeINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterMinorShapeINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterDirectionsINTEL )
-    root = "SubgroupAvcMceGetInterDirectionsINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterDirectionsINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterMotionVectorCountINTEL )
-    root = "SubgroupAvcMceGetInterMotionVectorCountINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterMotionVectorCountINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterReferenceIdsINTEL )
-    root = "SubgroupAvcMceGetInterReferenceIdsINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterReferenceIdsINTEL";
   else if( v == SpvOpSubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL )
-    root = "SubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL";
+    root = "SpvOpSubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL";
   else if( v == SpvOpSubgroupAvcImeInitializeINTEL )
-    root = "SubgroupAvcImeInitializeINTEL";
+    root = "SpvOpSubgroupAvcImeInitializeINTEL";
   else if( v == SpvOpSubgroupAvcImeSetSingleReferenceINTEL )
-    root = "SubgroupAvcImeSetSingleReferenceINTEL";
+    root = "SpvOpSubgroupAvcImeSetSingleReferenceINTEL";
   else if( v == SpvOpSubgroupAvcImeSetDualReferenceINTEL )
-    root = "SubgroupAvcImeSetDualReferenceINTEL";
+    root = "SpvOpSubgroupAvcImeSetDualReferenceINTEL";
   else if( v == SpvOpSubgroupAvcImeRefWindowSizeINTEL )
-    root = "SubgroupAvcImeRefWindowSizeINTEL";
+    root = "SpvOpSubgroupAvcImeRefWindowSizeINTEL";
   else if( v == SpvOpSubgroupAvcImeAdjustRefOffsetINTEL )
-    root = "SubgroupAvcImeAdjustRefOffsetINTEL";
+    root = "SpvOpSubgroupAvcImeAdjustRefOffsetINTEL";
   else if( v == SpvOpSubgroupAvcImeConvertToMcePayloadINTEL )
-    root = "SubgroupAvcImeConvertToMcePayloadINTEL";
+    root = "SpvOpSubgroupAvcImeConvertToMcePayloadINTEL";
   else if( v == SpvOpSubgroupAvcImeSetMaxMotionVectorCountINTEL )
-    root = "SubgroupAvcImeSetMaxMotionVectorCountINTEL";
+    root = "SpvOpSubgroupAvcImeSetMaxMotionVectorCountINTEL";
   else if( v == SpvOpSubgroupAvcImeSetUnidirectionalMixDisableINTEL )
-    root = "SubgroupAvcImeSetUnidirectionalMixDisableINTEL";
+    root = "SpvOpSubgroupAvcImeSetUnidirectionalMixDisableINTEL";
   else if( v == SpvOpSubgroupAvcImeSetEarlySearchTerminationThresholdINTEL )
-    root = "SubgroupAvcImeSetEarlySearchTerminationThresholdINTEL";
+    root = "SpvOpSubgroupAvcImeSetEarlySearchTerminationThresholdINTEL";
   else if( v == SpvOpSubgroupAvcImeSetWeightedSadINTEL )
-    root = "SubgroupAvcImeSetWeightedSadINTEL";
+    root = "SpvOpSubgroupAvcImeSetWeightedSadINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithSingleReferenceINTEL )
-    root = "SubgroupAvcImeEvaluateWithSingleReferenceINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithSingleReferenceINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithDualReferenceINTEL )
-    root = "SubgroupAvcImeEvaluateWithDualReferenceINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithDualReferenceINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL )
-    root = "SubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL )
-    root = "SubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL )
-    root = "SubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL )
-    root = "SubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL )
-    root = "SubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL";
   else if( v == SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL )
-    root = "SubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL";
+    root = "SpvOpSubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL";
   else if( v == SpvOpSubgroupAvcImeConvertToMceResultINTEL )
-    root = "SubgroupAvcImeConvertToMceResultINTEL";
+    root = "SpvOpSubgroupAvcImeConvertToMceResultINTEL";
   else if( v == SpvOpSubgroupAvcImeGetSingleReferenceStreaminINTEL )
-    root = "SubgroupAvcImeGetSingleReferenceStreaminINTEL";
+    root = "SpvOpSubgroupAvcImeGetSingleReferenceStreaminINTEL";
   else if( v == SpvOpSubgroupAvcImeGetDualReferenceStreaminINTEL )
-    root = "SubgroupAvcImeGetDualReferenceStreaminINTEL";
+    root = "SpvOpSubgroupAvcImeGetDualReferenceStreaminINTEL";
   else if( v == SpvOpSubgroupAvcImeStripSingleReferenceStreamoutINTEL )
-    root = "SubgroupAvcImeStripSingleReferenceStreamoutINTEL";
+    root = "SpvOpSubgroupAvcImeStripSingleReferenceStreamoutINTEL";
   else if( v == SpvOpSubgroupAvcImeStripDualReferenceStreamoutINTEL )
-    root = "SubgroupAvcImeStripDualReferenceStreamoutINTEL";
+    root = "SpvOpSubgroupAvcImeStripDualReferenceStreamoutINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL )
-    root = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL )
-    root = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL )
-    root = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL )
-    root = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL )
-    root = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL )
-    root = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL";
+    root = "SpvOpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL";
   else if( v == SpvOpSubgroupAvcImeGetBorderReachedINTEL )
-    root = "SubgroupAvcImeGetBorderReachedINTEL";
+    root = "SpvOpSubgroupAvcImeGetBorderReachedINTEL";
   else if( v == SpvOpSubgroupAvcImeGetTruncatedSearchIndicationINTEL )
-    root = "SubgroupAvcImeGetTruncatedSearchIndicationINTEL";
+    root = "SpvOpSubgroupAvcImeGetTruncatedSearchIndicationINTEL";
   else if( v == SpvOpSubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL )
-    root = "SubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL";
+    root = "SpvOpSubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL";
   else if( v == SpvOpSubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL )
-    root = "SubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL";
+    root = "SpvOpSubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL";
   else if( v == SpvOpSubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL )
-    root = "SubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL";
+    root = "SpvOpSubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL";
   else if( v == SpvOpSubgroupAvcFmeInitializeINTEL )
-    root = "SubgroupAvcFmeInitializeINTEL";
+    root = "SpvOpSubgroupAvcFmeInitializeINTEL";
   else if( v == SpvOpSubgroupAvcBmeInitializeINTEL )
-    root = "SubgroupAvcBmeInitializeINTEL";
+    root = "SpvOpSubgroupAvcBmeInitializeINTEL";
   else if( v == SpvOpSubgroupAvcRefConvertToMcePayloadINTEL )
-    root = "SubgroupAvcRefConvertToMcePayloadINTEL";
+    root = "SpvOpSubgroupAvcRefConvertToMcePayloadINTEL";
   else if( v == SpvOpSubgroupAvcRefSetBidirectionalMixDisableINTEL )
-    root = "SubgroupAvcRefSetBidirectionalMixDisableINTEL";
+    root = "SpvOpSubgroupAvcRefSetBidirectionalMixDisableINTEL";
   else if( v == SpvOpSubgroupAvcRefSetBilinearFilterEnableINTEL )
-    root = "SubgroupAvcRefSetBilinearFilterEnableINTEL";
+    root = "SpvOpSubgroupAvcRefSetBilinearFilterEnableINTEL";
   else if( v == SpvOpSubgroupAvcRefEvaluateWithSingleReferenceINTEL )
-    root = "SubgroupAvcRefEvaluateWithSingleReferenceINTEL";
+    root = "SpvOpSubgroupAvcRefEvaluateWithSingleReferenceINTEL";
   else if( v == SpvOpSubgroupAvcRefEvaluateWithDualReferenceINTEL )
-    root = "SubgroupAvcRefEvaluateWithDualReferenceINTEL";
+    root = "SpvOpSubgroupAvcRefEvaluateWithDualReferenceINTEL";
   else if( v == SpvOpSubgroupAvcRefEvaluateWithMultiReferenceINTEL )
-    root = "SubgroupAvcRefEvaluateWithMultiReferenceINTEL";
+    root = "SpvOpSubgroupAvcRefEvaluateWithMultiReferenceINTEL";
   else if( v == SpvOpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL )
-    root = "SubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL";
+    root = "SpvOpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL";
   else if( v == SpvOpSubgroupAvcRefConvertToMceResultINTEL )
-    root = "SubgroupAvcRefConvertToMceResultINTEL";
+    root = "SpvOpSubgroupAvcRefConvertToMceResultINTEL";
   else if( v == SpvOpSubgroupAvcSicInitializeINTEL )
-    root = "SubgroupAvcSicInitializeINTEL";
+    root = "SpvOpSubgroupAvcSicInitializeINTEL";
   else if( v == SpvOpSubgroupAvcSicConfigureSkcINTEL )
-    root = "SubgroupAvcSicConfigureSkcINTEL";
+    root = "SpvOpSubgroupAvcSicConfigureSkcINTEL";
   else if( v == SpvOpSubgroupAvcSicConfigureIpeLumaINTEL )
-    root = "SubgroupAvcSicConfigureIpeLumaINTEL";
+    root = "SpvOpSubgroupAvcSicConfigureIpeLumaINTEL";
   else if( v == SpvOpSubgroupAvcSicConfigureIpeLumaChromaINTEL )
-    root = "SubgroupAvcSicConfigureIpeLumaChromaINTEL";
+    root = "SpvOpSubgroupAvcSicConfigureIpeLumaChromaINTEL";
   else if( v == SpvOpSubgroupAvcSicGetMotionVectorMaskINTEL )
-    root = "SubgroupAvcSicGetMotionVectorMaskINTEL";
+    root = "SpvOpSubgroupAvcSicGetMotionVectorMaskINTEL";
   else if( v == SpvOpSubgroupAvcSicConvertToMcePayloadINTEL )
-    root = "SubgroupAvcSicConvertToMcePayloadINTEL";
+    root = "SpvOpSubgroupAvcSicConvertToMcePayloadINTEL";
   else if( v == SpvOpSubgroupAvcSicSetIntraLumaShapePenaltyINTEL )
-    root = "SubgroupAvcSicSetIntraLumaShapePenaltyINTEL";
+    root = "SpvOpSubgroupAvcSicSetIntraLumaShapePenaltyINTEL";
   else if( v == SpvOpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL )
-    root = "SubgroupAvcSicSetIntraLumaModeCostFunctionINTEL";
+    root = "SpvOpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL";
   else if( v == SpvOpSubgroupAvcSicSetIntraChromaModeCostFunctionINTEL )
-    root = "SubgroupAvcSicSetIntraChromaModeCostFunctionINTEL";
+    root = "SpvOpSubgroupAvcSicSetIntraChromaModeCostFunctionINTEL";
   else if( v == SpvOpSubgroupAvcSicSetBilinearFilterEnableINTEL )
-    root = "SubgroupAvcSicSetBilinearFilterEnableINTEL";
+    root = "SpvOpSubgroupAvcSicSetBilinearFilterEnableINTEL";
   else if( v == SpvOpSubgroupAvcSicSetSkcForwardTransformEnableINTEL )
-    root = "SubgroupAvcSicSetSkcForwardTransformEnableINTEL";
+    root = "SpvOpSubgroupAvcSicSetSkcForwardTransformEnableINTEL";
   else if( v == SpvOpSubgroupAvcSicSetBlockBasedRawSkipSadINTEL )
-    root = "SubgroupAvcSicSetBlockBasedRawSkipSadINTEL";
+    root = "SpvOpSubgroupAvcSicSetBlockBasedRawSkipSadINTEL";
   else if( v == SpvOpSubgroupAvcSicEvaluateIpeINTEL )
-    root = "SubgroupAvcSicEvaluateIpeINTEL";
+    root = "SpvOpSubgroupAvcSicEvaluateIpeINTEL";
   else if( v == SpvOpSubgroupAvcSicEvaluateWithSingleReferenceINTEL )
-    root = "SubgroupAvcSicEvaluateWithSingleReferenceINTEL";
+    root = "SpvOpSubgroupAvcSicEvaluateWithSingleReferenceINTEL";
   else if( v == SpvOpSubgroupAvcSicEvaluateWithDualReferenceINTEL )
-    root = "SubgroupAvcSicEvaluateWithDualReferenceINTEL";
+    root = "SpvOpSubgroupAvcSicEvaluateWithDualReferenceINTEL";
   else if( v == SpvOpSubgroupAvcSicEvaluateWithMultiReferenceINTEL )
-    root = "SubgroupAvcSicEvaluateWithMultiReferenceINTEL";
+    root = "SpvOpSubgroupAvcSicEvaluateWithMultiReferenceINTEL";
   else if( v == SpvOpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL )
-    root = "SubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL";
+    root = "SpvOpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL";
   else if( v == SpvOpSubgroupAvcSicConvertToMceResultINTEL )
-    root = "SubgroupAvcSicConvertToMceResultINTEL";
+    root = "SpvOpSubgroupAvcSicConvertToMceResultINTEL";
   else if( v == SpvOpSubgroupAvcSicGetIpeLumaShapeINTEL )
-    root = "SubgroupAvcSicGetIpeLumaShapeINTEL";
+    root = "SpvOpSubgroupAvcSicGetIpeLumaShapeINTEL";
   else if( v == SpvOpSubgroupAvcSicGetBestIpeLumaDistortionINTEL )
-    root = "SubgroupAvcSicGetBestIpeLumaDistortionINTEL";
+    root = "SpvOpSubgroupAvcSicGetBestIpeLumaDistortionINTEL";
   else if( v == SpvOpSubgroupAvcSicGetBestIpeChromaDistortionINTEL )
-    root = "SubgroupAvcSicGetBestIpeChromaDistortionINTEL";
+    root = "SpvOpSubgroupAvcSicGetBestIpeChromaDistortionINTEL";
   else if( v == SpvOpSubgroupAvcSicGetPackedIpeLumaModesINTEL )
-    root = "SubgroupAvcSicGetPackedIpeLumaModesINTEL";
+    root = "SpvOpSubgroupAvcSicGetPackedIpeLumaModesINTEL";
   else if( v == SpvOpSubgroupAvcSicGetIpeChromaModeINTEL )
-    root = "SubgroupAvcSicGetIpeChromaModeINTEL";
+    root = "SpvOpSubgroupAvcSicGetIpeChromaModeINTEL";
   else if( v == SpvOpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL )
-    root = "SubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL";
+    root = "SpvOpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL";
   else if( v == SpvOpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL )
-    root = "SubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL";
+    root = "SpvOpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL";
   else if( v == SpvOpSubgroupAvcSicGetInterRawSadsINTEL )
-    root = "SubgroupAvcSicGetInterRawSadsINTEL";
+    root = "SpvOpSubgroupAvcSicGetInterRawSadsINTEL";
+  else if( v == SpvOpVariableLengthArrayINTEL )
+    root = "SpvOpVariableLengthArrayINTEL";
+  else if( v == SpvOpSaveMemoryINTEL )
+    root = "SpvOpSaveMemoryINTEL";
+  else if( v == SpvOpRestoreMemoryINTEL )
+    root = "SpvOpRestoreMemoryINTEL";
+  else if( v == SpvOpArbitraryFloatSinCosPiINTEL )
+    root = "SpvOpArbitraryFloatSinCosPiINTEL";
+  else if( v == SpvOpArbitraryFloatCastINTEL )
+    root = "SpvOpArbitraryFloatCastINTEL";
+  else if( v == SpvOpArbitraryFloatCastFromIntINTEL )
+    root = "SpvOpArbitraryFloatCastFromIntINTEL";
+  else if( v == SpvOpArbitraryFloatCastToIntINTEL )
+    root = "SpvOpArbitraryFloatCastToIntINTEL";
+  else if( v == SpvOpArbitraryFloatAddINTEL )
+    root = "SpvOpArbitraryFloatAddINTEL";
+  else if( v == SpvOpArbitraryFloatSubINTEL )
+    root = "SpvOpArbitraryFloatSubINTEL";
+  else if( v == SpvOpArbitraryFloatMulINTEL )
+    root = "SpvOpArbitraryFloatMulINTEL";
+  else if( v == SpvOpArbitraryFloatDivINTEL )
+    root = "SpvOpArbitraryFloatDivINTEL";
+  else if( v == SpvOpArbitraryFloatGTINTEL )
+    root = "SpvOpArbitraryFloatGTINTEL";
+  else if( v == SpvOpArbitraryFloatGEINTEL )
+    root = "SpvOpArbitraryFloatGEINTEL";
+  else if( v == SpvOpArbitraryFloatLTINTEL )
+    root = "SpvOpArbitraryFloatLTINTEL";
+  else if( v == SpvOpArbitraryFloatLEINTEL )
+    root = "SpvOpArbitraryFloatLEINTEL";
+  else if( v == SpvOpArbitraryFloatEQINTEL )
+    root = "SpvOpArbitraryFloatEQINTEL";
+  else if( v == SpvOpArbitraryFloatRecipINTEL )
+    root = "SpvOpArbitraryFloatRecipINTEL";
+  else if( v == SpvOpArbitraryFloatRSqrtINTEL )
+    root = "SpvOpArbitraryFloatRSqrtINTEL";
+  else if( v == SpvOpArbitraryFloatCbrtINTEL )
+    root = "SpvOpArbitraryFloatCbrtINTEL";
+  else if( v == SpvOpArbitraryFloatHypotINTEL )
+    root = "SpvOpArbitraryFloatHypotINTEL";
+  else if( v == SpvOpArbitraryFloatSqrtINTEL )
+    root = "SpvOpArbitraryFloatSqrtINTEL";
+  else if( v == SpvOpArbitraryFloatLogINTEL )
+    root = "SpvOpArbitraryFloatLogINTEL";
+  else if( v == SpvOpArbitraryFloatLog2INTEL )
+    root = "SpvOpArbitraryFloatLog2INTEL";
+  else if( v == SpvOpArbitraryFloatLog10INTEL )
+    root = "SpvOpArbitraryFloatLog10INTEL";
+  else if( v == SpvOpArbitraryFloatLog1pINTEL )
+    root = "SpvOpArbitraryFloatLog1pINTEL";
+  else if( v == SpvOpArbitraryFloatExpINTEL )
+    root = "SpvOpArbitraryFloatExpINTEL";
+  else if( v == SpvOpArbitraryFloatExp2INTEL )
+    root = "SpvOpArbitraryFloatExp2INTEL";
+  else if( v == SpvOpArbitraryFloatExp10INTEL )
+    root = "SpvOpArbitraryFloatExp10INTEL";
+  else if( v == SpvOpArbitraryFloatExpm1INTEL )
+    root = "SpvOpArbitraryFloatExpm1INTEL";
+  else if( v == SpvOpArbitraryFloatSinINTEL )
+    root = "SpvOpArbitraryFloatSinINTEL";
+  else if( v == SpvOpArbitraryFloatCosINTEL )
+    root = "SpvOpArbitraryFloatCosINTEL";
+  else if( v == SpvOpArbitraryFloatSinCosINTEL )
+    root = "SpvOpArbitraryFloatSinCosINTEL";
+  else if( v == SpvOpArbitraryFloatSinPiINTEL )
+    root = "SpvOpArbitraryFloatSinPiINTEL";
+  else if( v == SpvOpArbitraryFloatCosPiINTEL )
+    root = "SpvOpArbitraryFloatCosPiINTEL";
+  else if( v == SpvOpArbitraryFloatASinINTEL )
+    root = "SpvOpArbitraryFloatASinINTEL";
+  else if( v == SpvOpArbitraryFloatASinPiINTEL )
+    root = "SpvOpArbitraryFloatASinPiINTEL";
+  else if( v == SpvOpArbitraryFloatACosINTEL )
+    root = "SpvOpArbitraryFloatACosINTEL";
+  else if( v == SpvOpArbitraryFloatACosPiINTEL )
+    root = "SpvOpArbitraryFloatACosPiINTEL";
+  else if( v == SpvOpArbitraryFloatATanINTEL )
+    root = "SpvOpArbitraryFloatATanINTEL";
+  else if( v == SpvOpArbitraryFloatATanPiINTEL )
+    root = "SpvOpArbitraryFloatATanPiINTEL";
+  else if( v == SpvOpArbitraryFloatATan2INTEL )
+    root = "SpvOpArbitraryFloatATan2INTEL";
+  else if( v == SpvOpArbitraryFloatPowINTEL )
+    root = "SpvOpArbitraryFloatPowINTEL";
+  else if( v == SpvOpArbitraryFloatPowRINTEL )
+    root = "SpvOpArbitraryFloatPowRINTEL";
+  else if( v == SpvOpArbitraryFloatPowNINTEL )
+    root = "SpvOpArbitraryFloatPowNINTEL";
   else if( v == SpvOpLoopControlINTEL )
-    root = "LoopControlINTEL";
+    root = "SpvOpLoopControlINTEL";
+  else if( v == SpvOpAliasDomainDeclINTEL )
+    root = "SpvOpAliasDomainDeclINTEL";
+  else if( v == SpvOpAliasScopeDeclINTEL )
+    root = "SpvOpAliasScopeDeclINTEL";
+  else if( v == SpvOpAliasScopeListDeclINTEL )
+    root = "SpvOpAliasScopeListDeclINTEL";
+  else if( v == SpvOpFixedSqrtINTEL )
+    root = "SpvOpFixedSqrtINTEL";
+  else if( v == SpvOpFixedRecipINTEL )
+    root = "SpvOpFixedRecipINTEL";
+  else if( v == SpvOpFixedRsqrtINTEL )
+    root = "SpvOpFixedRsqrtINTEL";
+  else if( v == SpvOpFixedSinINTEL )
+    root = "SpvOpFixedSinINTEL";
+  else if( v == SpvOpFixedCosINTEL )
+    root = "SpvOpFixedCosINTEL";
+  else if( v == SpvOpFixedSinCosINTEL )
+    root = "SpvOpFixedSinCosINTEL";
+  else if( v == SpvOpFixedSinPiINTEL )
+    root = "SpvOpFixedSinPiINTEL";
+  else if( v == SpvOpFixedCosPiINTEL )
+    root = "SpvOpFixedCosPiINTEL";
+  else if( v == SpvOpFixedSinCosPiINTEL )
+    root = "SpvOpFixedSinCosPiINTEL";
+  else if( v == SpvOpFixedLogINTEL )
+    root = "SpvOpFixedLogINTEL";
+  else if( v == SpvOpFixedExpINTEL )
+    root = "SpvOpFixedExpINTEL";
+  else if( v == SpvOpPtrCastToCrossWorkgroupINTEL )
+    root = "SpvOpPtrCastToCrossWorkgroupINTEL";
+  else if( v == SpvOpCrossWorkgroupCastToPtrINTEL )
+    root = "SpvOpCrossWorkgroupCastToPtrINTEL";
   else if( v == SpvOpReadPipeBlockingINTEL )
-    root = "ReadPipeBlockingINTEL";
+    root = "SpvOpReadPipeBlockingINTEL";
   else if( v == SpvOpWritePipeBlockingINTEL )
-    root = "WritePipeBlockingINTEL";
+    root = "SpvOpWritePipeBlockingINTEL";
   else if( v == SpvOpFPGARegINTEL )
-    root = "FPGARegINTEL";
+    root = "SpvOpFPGARegINTEL";
   else if( v == SpvOpRayQueryGetRayTMinKHR )
-    root = "RayQueryGetRayTMinKHR";
+    root = "SpvOpRayQueryGetRayTMinKHR";
   else if( v == SpvOpRayQueryGetRayFlagsKHR )
-    root = "RayQueryGetRayFlagsKHR";
+    root = "SpvOpRayQueryGetRayFlagsKHR";
   else if( v == SpvOpRayQueryGetIntersectionTKHR )
-    root = "RayQueryGetIntersectionTKHR";
+    root = "SpvOpRayQueryGetIntersectionTKHR";
   else if( v == SpvOpRayQueryGetIntersectionInstanceCustomIndexKHR )
-    root = "RayQueryGetIntersectionInstanceCustomIndexKHR";
+    root = "SpvOpRayQueryGetIntersectionInstanceCustomIndexKHR";
   else if( v == SpvOpRayQueryGetIntersectionInstanceIdKHR )
-    root = "RayQueryGetIntersectionInstanceIdKHR";
+    root = "SpvOpRayQueryGetIntersectionInstanceIdKHR";
   else if( v == SpvOpRayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR )
-    root = "RayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR";
+    root = "SpvOpRayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR";
   else if( v == SpvOpRayQueryGetIntersectionGeometryIndexKHR )
-    root = "RayQueryGetIntersectionGeometryIndexKHR";
+    root = "SpvOpRayQueryGetIntersectionGeometryIndexKHR";
   else if( v == SpvOpRayQueryGetIntersectionPrimitiveIndexKHR )
-    root = "RayQueryGetIntersectionPrimitiveIndexKHR";
+    root = "SpvOpRayQueryGetIntersectionPrimitiveIndexKHR";
   else if( v == SpvOpRayQueryGetIntersectionBarycentricsKHR )
-    root = "RayQueryGetIntersectionBarycentricsKHR";
+    root = "SpvOpRayQueryGetIntersectionBarycentricsKHR";
   else if( v == SpvOpRayQueryGetIntersectionFrontFaceKHR )
-    root = "RayQueryGetIntersectionFrontFaceKHR";
+    root = "SpvOpRayQueryGetIntersectionFrontFaceKHR";
   else if( v == SpvOpRayQueryGetIntersectionCandidateAABBOpaqueKHR )
-    root = "RayQueryGetIntersectionCandidateAABBOpaqueKHR";
+    root = "SpvOpRayQueryGetIntersectionCandidateAABBOpaqueKHR";
   else if( v == SpvOpRayQueryGetIntersectionObjectRayDirectionKHR )
-    root = "RayQueryGetIntersectionObjectRayDirectionKHR";
+    root = "SpvOpRayQueryGetIntersectionObjectRayDirectionKHR";
   else if( v == SpvOpRayQueryGetIntersectionObjectRayOriginKHR )
-    root = "RayQueryGetIntersectionObjectRayOriginKHR";
+    root = "SpvOpRayQueryGetIntersectionObjectRayOriginKHR";
   else if( v == SpvOpRayQueryGetWorldRayDirectionKHR )
-    root = "RayQueryGetWorldRayDirectionKHR";
+    root = "SpvOpRayQueryGetWorldRayDirectionKHR";
   else if( v == SpvOpRayQueryGetWorldRayOriginKHR )
-    root = "RayQueryGetWorldRayOriginKHR";
+    root = "SpvOpRayQueryGetWorldRayOriginKHR";
   else if( v == SpvOpRayQueryGetIntersectionObjectToWorldKHR )
-    root = "RayQueryGetIntersectionObjectToWorldKHR";
+    root = "SpvOpRayQueryGetIntersectionObjectToWorldKHR";
   else if( v == SpvOpRayQueryGetIntersectionWorldToObjectKHR )
-    root = "RayQueryGetIntersectionWorldToObjectKHR";
+    root = "SpvOpRayQueryGetIntersectionWorldToObjectKHR";
   else if( v == SpvOpAtomicFAddEXT )
-    root = "AtomicFAddEXT";
+    root = "SpvOpAtomicFAddEXT";
+  else if( v == SpvOpTypeBufferSurfaceINTEL )
+    root = "SpvOpTypeBufferSurfaceINTEL";
+  else if( v == SpvOpTypeStructContinuedINTEL )
+    root = "SpvOpTypeStructContinuedINTEL";
+  else if( v == SpvOpConstantCompositeContinuedINTEL )
+    root = "SpvOpConstantCompositeContinuedINTEL";
+  else if( v == SpvOpSpecConstantCompositeContinuedINTEL )
+    root = "SpvOpSpecConstantCompositeContinuedINTEL";
+  else if( v == SpvOpControlBarrierArriveINTEL )
+    root = "SpvOpControlBarrierArriveINTEL";
+  else if( v == SpvOpControlBarrierWaitINTEL )
+    root = "SpvOpControlBarrierWaitINTEL";
+  else if( v == SpvOpGroupIMulKHR )
+    root = "SpvOpGroupIMulKHR";
+  else if( v == SpvOpGroupFMulKHR )
+    root = "SpvOpGroupFMulKHR";
+  else if( v == SpvOpGroupBitwiseAndKHR )
+    root = "SpvOpGroupBitwiseAndKHR";
+  else if( v == SpvOpGroupBitwiseOrKHR )
+    root = "SpvOpGroupBitwiseOrKHR";
+  else if( v == SpvOpGroupBitwiseXorKHR )
+    root = "SpvOpGroupBitwiseXorKHR";
+  else if( v == SpvOpGroupLogicalAndKHR )
+    root = "SpvOpGroupLogicalAndKHR";
+  else if( v == SpvOpGroupLogicalOrKHR )
+    root = "SpvOpGroupLogicalOrKHR";
+  else if( v == SpvOpGroupLogicalXorKHR )
+    root = "SpvOpGroupLogicalXorKHR";
   else
     root = "Unknown";
 }

@@ -2,6 +2,9 @@
 #include <gct/device.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/format.hpp>
+#include <gct/surface.hpp>
+#include <gct/instance.hpp>
+#include <gct/display_surface_create_info.hpp>
 namespace gct {
   void to_json( nlohmann::json &root, const physical_device_t &v ) {
     root = nlohmann::json::object();
@@ -121,5 +124,20 @@ namespace gct {
       )
     );
   }
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+  std::shared_ptr< surface_t > physical_device_t::get_surface(
+    const display_surface_create_info_t &create_info
+  ) {
+    auto ci = create_info;
+    ci.rebuild_chain();
+    auto raw = (*get_factory())->createDisplayPlaneSurfaceKHRUnique(
+      ci.get_basic()
+    );
+    return std::make_shared< surface_t >(
+      *this,
+      std::move( raw )
+    );
+  }
+#endif
 }
 

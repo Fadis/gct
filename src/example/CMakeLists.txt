@@ -7,4 +7,15 @@ subdirs(
   roughness_mask
   environment
   astc
+  font
+  dialog
+  text
+  list_displays
+  bidi_text
+  bidi
+  rects
+  images
+  libinput_keycode
+  cursor
+  text_input
 )

@@ -181,8 +181,8 @@ namespace gct {
     return convert_image(
       vk::AccessFlagBits::eTransferRead,
       vk::AccessFlagBits::eShaderRead,
-      vk::PipelineStageFlagBits::eTransfer,
-      vk::PipelineStageFlagBits::eFragmentShader,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::PipelineStageFlagBits::eAllCommands,
       image,
       mip_base,
       mip_count,
@@ -198,8 +198,8 @@ namespace gct {
     return convert_image(
       vk::AccessFlagBits::eTransferRead,
       vk::AccessFlagBits::eShaderRead,
-      vk::PipelineStageFlagBits::eTransfer,
-      vk::PipelineStageFlagBits::eFragmentShader,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::PipelineStageFlagBits::eAllCommands,
       image,
       to
     );
@@ -251,8 +251,8 @@ namespace gct {
     const std::vector< vk::ImageMemoryBarrier > &old
   ) {
     return revert_convert_image(
-      vk::PipelineStageFlagBits::eTransfer,
-      vk::PipelineStageFlagBits::eFragmentShader,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::PipelineStageFlagBits::eAllCommands,
       image,
       old
     );

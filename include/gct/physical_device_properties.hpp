@@ -14,13 +14,13 @@ namespace gct {
   struct display_plane_t : public chained_t {
     vk::DisplayPlaneCapabilitiesKHR basic;
   };
-  struct display_mode_t {
+  struct display_mode_properties_t {
     vk::DisplayModePropertiesKHR basic;
     std::unordered_map< std::uint32_t, display_plane_t > capabilities;
   };
   struct display_properties_t {
     vk::DisplayPropertiesKHR basic;
-    std::vector< display_mode_t > modes;
+    std::vector< display_mode_properties_t > modes;
     std::vector< std::uint32_t > planes;
   };
 #endif

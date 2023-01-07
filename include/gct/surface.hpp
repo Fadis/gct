@@ -7,6 +7,9 @@
 
 namespace gct {
 
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+  class display_surface_create_info_t;
+#endif
 #ifdef VK_KHR_SURFACE_EXTENSION_NAME
   class instance_t;
   struct surface_t;
@@ -18,6 +21,12 @@ namespace gct {
       const physical_device_t&,
       vk::SurfaceKHR
     );
+#if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
+    surface_t(
+      const physical_device_t&,
+      vk::UniqueHandle< vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > &&
+    );
+#endif
     vk::SurfaceKHR &operator*() {
       return *handle;
     }

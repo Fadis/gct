@@ -10,3 +10,12 @@
 [submodule "external/minimp4"]
 	path = external/minimp4
 	url = https://github.com/lieff/minimp4.git
+[submodule "external/ttf2mesh"]
+	path = external/ttf2mesh
+	url = https://github.com/Fadis/ttf2mesh
+[submodule "external/tqdm-cpp"]
+	path = external/tqdm-cpp
+	url = https://github.com/mraggi/tqdm-cpp.git
+[submodule "external/hdmap"]
+	path = external/hdmap
+	url = https://github.com/Fadis/hdmap.git

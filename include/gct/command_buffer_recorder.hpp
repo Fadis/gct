@@ -10,6 +10,7 @@
 #include <gct/created_from.hpp>
 #include <gct/command_buffer_begin_info.hpp>
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
+#include <gct/font.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -194,6 +195,10 @@ namespace gct {
       const vk::ImageBlit &range,
       vk::Filter filter
     );
+    void blit(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< image_t > &dest
+    );
     std::vector< vk::ImageMemoryBarrier > barrier(
       vk::AccessFlagBits,
       vk::AccessFlagBits,
@@ -284,6 +289,19 @@ namespace gct {
     void bind_vertex_buffer(
       std::shared_ptr< buffer_t > vertex_buffer
     );
+    void bind_vertex_buffer(
+      std::shared_ptr< buffer_t >,
+      vk::DeviceSize
+    );
+    void bind_index_buffer(
+      std::shared_ptr< buffer_t > index_buffer,
+      vk::IndexType type
+    );
+    void bind_index_buffer(
+      std::shared_ptr< buffer_t > index_buffer,
+      vk::DeviceSize offset,
+      vk::IndexType type
+    );
     void build_acceleration_structure(
       const std::vector< gct::acceleration_structure_build_geometry_info_t >&,
       const std::vector< std::vector< vk::AccelerationStructureBuildRangeInfoKHR > >&
@@ -314,6 +332,10 @@ namespace gct {
       const std::shared_ptr< allocator_t >&
     );
 
+    font load_font(
+      std::filesystem::path path,
+      const std::shared_ptr< allocator_t > &allocator
+    );
 
     const command_buffer_begin_info_t &get_props() const { return props; }
     vk::CommandBuffer &operator*();

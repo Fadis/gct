@@ -51,8 +51,13 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::ImageSwapchainCreateInfoKHR , swapchain )
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileKHR , video_profile )
     LIBGCT_EXTENSION_SETTER( vk::VideoProfilesKHR , video_profiles )
+#else
+    LIBGCT_EXTENSION_SETTER( vk::VideoProfileInfoKHR , video_profile ) 
+    LIBGCT_EXTENSION_SETTER( vk::VideoProfileListInfoKHR , video_profiles )
+#endif
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
   private:

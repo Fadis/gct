@@ -74,6 +74,11 @@ find_package(OpenImageIO REQUIRED)
 pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
 find_package(GLSLC REQUIRED)
 find_package(ASTCEnc REQUIRED)
+pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
+pkg_check_modules(ICUUC REQUIRED icu-uc)
+pkg_check_modules(LIBINPUT REQUIRED libinput)
+pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
+pkg_check_modules(SDBUSCPP REQUIRED sdbus-c++)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include/vk_mem_alloc.h
@@ -113,6 +118,9 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_BINARY_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/external/minimp4
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/ttf2mesh
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/tqdm-cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/hdmap/include
   ${Boost_INCLUDE_DIRS}
   ${GLFW_INCLUDE_DIR}
   ${JSON_INCLUDE_DIRS}
@@ -120,12 +128,17 @@ INCLUDE_DIRECTORIES(
   ${Vulkan_INCLUDE_DIRS}
   ${OIIO_INCLUDE_DIR}
   ${VULKAN2JSON_INCLUDE_DIR}
+  ${HARFBUZZ_INCLUDE_DIRS}
+  ${ICUUC_INCLUDE_DIRS}
+  ${X11_xkbcommon_INCLUDE_PATH}
 )
 link_directories(
   ${Boost_LIBRARY_DIRS}
   ${Vulkan_LIBRARY_DIRS}
   ${OIIO_LIBRARY_DIR}
   ${VULKAN2JSON_LIBRARY_DIR}
+  ${HARFBUZZ_LIBRARY_DIR}
+  ${ICUUC_LIBRARY_DIR}
 )
 
 add_definitions( -DVK_ENABLE_BETA_EXTENSIONS -DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 )

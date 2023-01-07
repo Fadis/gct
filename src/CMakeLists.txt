@@ -3,6 +3,18 @@ target_link_libraries( glsl_include
   ${Boost_PROGRAM_OPTIONS_LIBRARIES}
 )
 
+add_executable(
+  ttf_to_gltf
+  ttf_to_gltf.cpp
+  ../external/ttf2mesh/ttf2mesh.c
+)
+target_link_libraries( ttf_to_gltf
+  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+)
+target_link_libraries( ttf_to_gltf
+  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+)
+
 add_library( gct SHARED
   gct/get_instance_version.cpp
   gct/get_instance_layers.cpp
@@ -162,20 +174,50 @@ add_library( gct SHARED
   gct/format_to_component_type.cpp
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
+  gct/font.cpp
+  gct/display_mode_create_info.cpp
+  gct/display_mode.cpp
+  gct/display_surface_create_info.cpp
+  gct/dpi.cpp
+  gct/html_color.cpp
+  gct/eotf.cpp
+  gct/canvas/rect_renderer.cpp
+  gct/canvas/text_renderer.cpp
+  gct/canvas/canvas.cpp
+  gct/text/layout_engine.cpp
+  gct/sched/coroutine.cpp 
+  gct/sched/thread_pool.cpp 
+  gct/sched/wait.cpp
+  gct/sched/epoll_notifier.cpp
+  gct/input/device_monitor.cpp
+  gct/input/get_system_keymap.cpp 
+  gct/input/libinput.cpp 
+  gct/input/xkbcommon.cpp 
+  gct/input/fcitx5.cpp 
   gct/primitives/triangle.cpp
   gct/primitives/plane.cpp
   gct/primitives/cube.cpp
   gct/primitives/sphere.cpp
+  gct/primitives/cursor.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
 target_link_libraries(
   gct
   Threads::Threads
+  Boost::context
+  Boost::system
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_VULKAN2JSON_vulkan2json}
+  ${pkgcfg_lib_HARFBUZZ_harfbuzz}
+  ${pkgcfg_lib_ICUUC_icuuc}
+  ${pkgcfg_lib_ICUUC_icudata}
+  ${pkgcfg_lib_LIBINPUT_input}
+  ${pkgcfg_lib_XKBCOMMON_xkbcommon}
+  ${pkgcfg_lib_SDBUSCPP_sdbus-c++}
+  ${pkgcfg_lib_SDBUSCPP_systemd}
 )
 
 add_library( gct_glfw SHARED

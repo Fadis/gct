@@ -19,15 +19,32 @@
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
 #include <vulkan2json/ExternalMemoryBufferCreateInfoKHR.hpp>
 #endif
-#ifdef VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME
+#ifdef VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME
+#include <vulkan2json/VideoDecodeH264ProfileInfoKHR.hpp>
+#elif defined(VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME)
+#if VK_EXT_VIDEO_DECODE_H264_SPEC_VERSION < 6
 #include <vulkan2json/VideoDecodeH264ProfileEXT.hpp>
+#else
+#include <vulkan2json/VideoDecodeH264ProfileInfoEXT.hpp>
 #endif
-#ifdef VK_EXT_VIDEO_DECODE_H265_EXTENSION_NAME
+#endif
+#ifdef VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME
+#include <vulkan2json/VideoDecodeH265ProfileInfoKHR.hpp>
+#elif defined(VK_EXT_VIDEO_DECODE_H265_EXTENSION_NAME)
+#if VK_EXT_VIDEO_DECODE_H265_SPEC_VERSION < 4
 #include <vulkan2json/VideoDecodeH265ProfileEXT.hpp>
+#else
+#include <vulkan2json/VideoDecodeH265ProfileInfoEXT.hpp>
+#endif
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
+#if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
 #include <vulkan2json/VideoProfileKHR.hpp>
 #include <vulkan2json/VideoProfilesKHR.hpp>
+#else
+#include <vulkan2json/VideoProfileInfoKHR.hpp>
+#include <vulkan2json/VideoProfileListInfoKHR.hpp>
+#endif
 #endif
 
 namespace gct {
