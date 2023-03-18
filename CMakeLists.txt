@@ -51,6 +51,7 @@ if( ENABLE_WERROR )
   list( APPEND ADDITIONAL_COMPILE_FLAGS "-Werror" )
 endif()
 set( CMAKE_CXX_STANDARD "20" )
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 # compile option (Debug) 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${ADDITIONAL_COMPILER_FLAGS}")
@@ -165,6 +166,15 @@ install(
   GROUP_READ
   WORLD_READ
 )
+
+if( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json
+    ${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json
+  )
+endif()
 
 set( EASYPACK_VENDOR "fadis" )
 set( EASYPACK_RELEASE "1" )
