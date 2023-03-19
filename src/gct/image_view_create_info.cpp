@@ -14,7 +14,7 @@
 #include <vulkan2json/SamplerYcbcrConversionInfoKHR.hpp>
 #endif
 #ifdef VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME
-#include <vulkan2json/VkVideoDecodeH264ProfileInfoKHR.hpp>
+#include <vulkan2json/VideoDecodeH264ProfileInfoKHR.hpp>
 #elif defined(VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME)
 #if VK_EXT_VIDEO_DECODE_H264_SPEC_VERSION < 6
 #include <vulkan2json/VideoDecodeH264ProfileEXT.hpp>
@@ -23,7 +23,7 @@
 #endif
 #endif
 #ifdef VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME
-#include <vulkan2json/VkVideoDecodeH265ProfileInfoKHR.hpp>
+#include <vulkan2json/VideoDecodeH265ProfileInfoKHR.hpp>
 #elif defined(VK_EXT_VIDEO_DECODE_H265_EXTENSION_NAME)
 #if VK_EXT_VIDEO_DECODE_H265_SPEC_VERSION < 4
 #include <vulkan2json/VideoDecodeH265ProfileEXT.hpp>
