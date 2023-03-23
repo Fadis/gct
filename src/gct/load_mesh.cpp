@@ -271,73 +271,83 @@ namespace gct::gltf {
 
       const auto bct = material.pbrMetallicRoughness.baseColorTexture.index;
       if( bct >= 0 ) {
-        if( textures.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-        const auto &bct_texture = textures[ bct ];
-        updates.push_back(
-          gct::write_descriptor_set_t()
-            .set_basic(
-              (*descriptor_set.back())[ "base_color" ]
-            )
-            .add_image(
-              bct_texture.srgb
-            )
-        );
+        if( descriptor_set.back()->has( "base_color" ) ) {
+          if( textures.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+          const auto &bct_texture = textures[ bct ];
+          updates.push_back(
+            gct::write_descriptor_set_t()
+              .set_basic(
+                (*descriptor_set.back())[ "base_color" ]
+              )
+              .add_image(
+                bct_texture.srgb
+              )
+          );
+        }
       }
       const auto mrt = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
       if( mrt >= 0 ) {
-        if( textures.size() <= size_t( mrt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-        const auto &mrt_texture = textures[ mrt ];
-        updates.push_back(
-          gct::write_descriptor_set_t()
-            .set_basic(
-              (*descriptor_set.back())[ "metallic_roughness" ]
-            )
-            .add_image(
-              mrt_texture.unorm
-            )
-        );
+        if( descriptor_set.back()->has( "metallic_roughness" ) ) {
+          if( textures.size() <= size_t( mrt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+          const auto &mrt_texture = textures[ mrt ];
+          updates.push_back(
+            gct::write_descriptor_set_t()
+              .set_basic(
+                (*descriptor_set.back())[ "metallic_roughness" ]
+              )
+              .add_image(
+                mrt_texture.unorm
+              )
+          );
+        }
       }
       const auto nt = material.normalTexture.index;
       if( nt >= 0 ) {
-        if( textures.size() <= size_t( nt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-        const auto &nt_texture = textures[ nt ];
-        updates.push_back(
-          gct::write_descriptor_set_t()
-            .set_basic(
-              (*descriptor_set.back())[ "normal_map" ]
-            )
-            .add_image(
-              nt_texture.unorm
-            )
-        );
+        if( descriptor_set.back()->has( "normal_map" ) ) {
+          if( textures.size() <= size_t( nt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+          const auto &nt_texture = textures[ nt ];
+          updates.push_back(
+            gct::write_descriptor_set_t()
+              .set_basic(
+                (*descriptor_set.back())[ "normal_map" ]
+              )
+              .add_image(
+                nt_texture.unorm
+              )
+          );
+        }
       }
       const auto oct = material.occlusionTexture.index;
       if( oct >= 0 ) {
-        if( textures.size() <= size_t( oct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-        const auto &oct_texture = textures[ oct ];
-        updates.push_back(
-          gct::write_descriptor_set_t()
-            .set_basic(
-              (*descriptor_set.back())[ "occlusion" ]
-            )
-            .add_image(
-              oct_texture.unorm
-            )
-        );
+        if( descriptor_set.back()->has( "occlusion" ) ) {
+          if( textures.size() <= size_t( oct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+          const auto &oct_texture = textures[ oct ];
+          updates.push_back(
+            gct::write_descriptor_set_t()
+              .set_basic(
+                (*descriptor_set.back())[ "occlusion" ]
+              )
+              .add_image(
+                oct_texture.unorm
+              )
+          );
+        }
       }
       const auto emt = material.emissiveTexture.index;
       if( emt >= 0 ) {
-        if( textures.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-        const auto &emt_texture = textures[ emt ];
-        updates.push_back(
-          gct::write_descriptor_set_t()
-            .set_basic(
-              (*descriptor_set.back())[ "emissive" ]
-            )
-            .add_image(
-              emt_texture.srgb
-            )
-        );
+        if( descriptor_set.back()->has( "emissive" ) ) {
+          if( textures.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+          const auto &emt_texture = textures[ emt ];
+          updates.push_back(
+            gct::write_descriptor_set_t()
+              .set_basic(
+                (*descriptor_set.back())[ "emissive" ]
+              )
+              .add_image(
+                emt_texture.srgb
+              )
+          );
+        }
       }
       descriptor_set.back()->update( updates );
     }

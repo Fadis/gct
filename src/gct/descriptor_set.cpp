@@ -60,6 +60,11 @@ namespace gct {
       throw exception::logic_error( "Descriptor set layout is empty", __FILE__, __LINE__ );
     return layouts[ 0 ]->get_props().get_binding();
   }
+  bool descriptor_set_t::has( const std::string &name ) const {
+    const auto &name_to_binding = get_name_to_binding();
+    const auto found = name_to_binding.find( name );
+    return found != name_to_binding.end();
+  }
   vk::WriteDescriptorSet descriptor_set_t::operator[]( const std::string &name ) const {
     const auto &name_to_binding = get_name_to_binding();
     const auto found = name_to_binding.find( name );

@@ -53,7 +53,7 @@ int main() {
           vk::ApplicationInfo()
             .setPApplicationName( "my_application" )
             .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
-            .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
+            .setApiVersion( VK_MAKE_VERSION( 1, 3, 0 ) )
         )
         .add_layer(
           "VK_LAYER_KHRONOS_validation"

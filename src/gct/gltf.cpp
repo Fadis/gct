@@ -553,36 +553,6 @@ namespace gct::gltf {
     }
     return textures;
   }
-  std::tuple<
-    std::shared_ptr< descriptor_set_layout_t >,
-    std::shared_ptr< pipeline_layout_t >
-  >
-  create_pipeline_layout(
-    const std::shared_ptr< device_t > &device,
-    const shader_t &shader
-  ) {
-    gct::descriptor_set_layout_create_info_t descriptor_set_layout_create_info;
-    for( const auto &s: shader )
-      descriptor_set_layout_create_info
-        .add_binding( s.second->get_props().get_reflection() );
-    descriptor_set_layout_create_info
-      .rebuild_chain();
-    auto descriptor_set_layout = device->get_descriptor_set_layout(
-      descriptor_set_layout_create_info
-    );
-    std::cout << nlohmann::json( descriptor_set_layout_create_info ).dump( 2 ) << std::endl;
-    auto pipeline_layout = device->get_pipeline_layout(
-      gct::pipeline_layout_create_info_t()
-        .add_descriptor_set_layout( descriptor_set_layout )
-        .add_push_constant_range(
-          vk::PushConstantRange()
-            .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
-            .setOffset( 0 )
-            .setSize( sizeof( gct::gltf::push_constants_t ) )
-        )
-    );
-    return std::make_tuple( descriptor_set_layout, pipeline_layout );
-  }
   std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,
     const std::shared_ptr< shader_module_t > &vs,

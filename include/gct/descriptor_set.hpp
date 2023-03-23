@@ -35,6 +35,7 @@ namespace gct {
     void update(
       const std::vector< write_descriptor_set_t >&
     );
+    bool has( const std::string &name ) const;
     const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const;
     const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const;
     vk::WriteDescriptorSet operator[]( const std::string & ) const;
