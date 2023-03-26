@@ -12,7 +12,7 @@ layout(binding = 0) uniform Uniforms {
   float occlusion_strength;
 } uniforms;
 
-layout(binding = 7) uniform DynamicUniforms {
+layout(set=1,binding = 0) uniform DynamicUniforms {
   mat4 projection_matrix;
   mat4 camera_matrix;
   mat4 light_vp_matrix0;

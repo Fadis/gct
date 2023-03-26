@@ -24,7 +24,9 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <vector>
+#include <unordered_set>
 #include <filesystem>
+#include <glm/ext/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <gct/instance.hpp>
@@ -94,7 +96,44 @@ namespace gct {
     ~glfw();
     std::function< void( int, const char* ) > on_error;
   };
-
+  class glfw_walk {
+  public:
+    glfw_walk(
+      const glm::vec3 &center_,
+      float scale_
+    );
+    void operator()( glfw_window&, int key, int scancode, int action, int mods );
+    void operator++();
+    const glm::vec3 &get_camera_pos() const { return camera_pos; }
+    const glm::vec3 &get_light_pos() const { return light_pos; }
+    float get_light_energy() const { return light_energy; }
+    const glm::mat4 &get_lookat() const { return lookat; }
+    void set_camera_pos( const glm::vec3 &v );
+    void set_light_pos( const glm::vec3 &v ) {
+      light_pos = v;
+    }
+    void set_end() {
+      end_ = true;
+    }
+    void set_light_energy( float v ) {
+      light_energy = v;
+    }
+    bool end() const {
+      return end_;
+    }
+  private:
+    glm::vec3 center;
+    float scale;
+    glm::vec3 camera_pos;
+    float camera_angle;
+    float speed;
+    glm::vec3 light_pos;
+    float light_energy;
+    bool end_;
+    glm::vec3 camera_direction;
+    glm::mat4 lookat;
+    std::unordered_set< int > pressed_keys;
+  };
 }
 
 #endif

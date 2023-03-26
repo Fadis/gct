@@ -50,9 +50,7 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   ) {
     if( primitive.material < 0 || doc.materials.size() <= size_t( primitive.material ) ) throw invalid_gltf( "参照されたmaterialが存在しない", __FILE__, __LINE__ );
     const auto &material = doc.materials[ primitive.material ];
@@ -155,16 +153,20 @@ namespace gct::gltf {
     auto descriptor_set_layout = device->get_descriptor_set_layout(
       descriptor_set_layout_create_info
     );
+    auto pipeline_layout_create_info = gct::pipeline_layout_create_info_t()
+      .add_descriptor_set_layout( descriptor_set_layout )
+      .add_push_constant_range(
+        vk::PushConstantRange()
+          .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
+          .setOffset( 0 )
+          .setSize( sizeof( gct::gltf::push_constants_t ) )
+      );
+    for( auto &e: env_descriptor_set_layout ) {
+      pipeline_layout_create_info
+        .add_descriptor_set_layout( e );
+    }
     auto pipeline_layout = device->get_pipeline_layout(
-      gct::pipeline_layout_create_info_t()
-        .add_descriptor_set_layout( descriptor_set_layout )
-        .add_descriptor_set_layout( env_descriptor_set_layout )
-        .add_push_constant_range(
-          vk::PushConstantRange()
-            .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
-            .setOffset( 0 )
-            .setSize( sizeof( gct::gltf::push_constants_t ) )
-        )
+      pipeline_layout_create_info
     );
 
     std::vector< std::shared_ptr< graphics_pipeline_t > > pipelines;
@@ -230,129 +232,109 @@ namespace gct::gltf {
       std::vector< uint8_t >{ uniform_bytes_begin, uniform_bytes_end },
       vk::BufferUsageFlagBits::eUniformBuffer
     );
-    std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
-    for( unsigned int i = 0; i != swapchain_size; ++i ) {
-      descriptor_set.push_back(
-        descriptor_pool->allocate(
-          descriptor_set_layout
+    std::shared_ptr< descriptor_set_t > descriptor_set =
+      descriptor_pool->allocate(
+        descriptor_set_layout
+      );
+    std::vector< write_descriptor_set_t > updates;
+    updates.push_back(
+      gct::write_descriptor_set_t()
+        .set_basic(
+          (*descriptor_set)[ "uniforms" ]
         )
-      );
-      std::vector< write_descriptor_set_t > updates;
-      updates.push_back(
-        gct::write_descriptor_set_t()
-          .set_basic(
-            (*descriptor_set.back())[ "uniforms" ]
-          )
-          .add_buffer(
-            gct::descriptor_buffer_info_t()
-              .set_buffer( uniform_buffer )
-              .set_basic(
-                vk::DescriptorBufferInfo()
-                  .setOffset( 0 )
-                  .setRange( sizeof( uniforms_t ) )
-              )
-          )
-      );
-      updates.push_back(
-        gct::write_descriptor_set_t()
-          .set_basic(
-            (*descriptor_set.back())[ "dynamic_uniforms" ]
-          )
-          .add_buffer(
-            gct::descriptor_buffer_info_t()
-              .set_buffer( dynamic_uniform_buffer[ i ] )
-              .set_basic(
-                vk::DescriptorBufferInfo()
-                  .setOffset( 0 )
-                  .setRange( sizeof( dynamic_uniforms_t ) )
-              )
-          )
-      );
+        .add_buffer(
+          gct::descriptor_buffer_info_t()
+            .set_buffer( uniform_buffer )
+            .set_basic(
+              vk::DescriptorBufferInfo()
+                .setOffset( 0 )
+                .setRange( sizeof( uniforms_t ) )
+            )
+        )
+    );
 
-      const auto bct = material.pbrMetallicRoughness.baseColorTexture.index;
-      if( bct >= 0 ) {
-        if( descriptor_set.back()->has( "base_color" ) ) {
-          if( textures.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-          const auto &bct_texture = textures[ bct ];
-          updates.push_back(
-            gct::write_descriptor_set_t()
-              .set_basic(
-                (*descriptor_set.back())[ "base_color" ]
-              )
-              .add_image(
-                bct_texture.srgb
-              )
-          );
-        }
+    const auto bct = material.pbrMetallicRoughness.baseColorTexture.index;
+    if( bct >= 0 ) {
+      if( descriptor_set->has( "base_color" ) ) {
+        if( textures.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+        const auto &bct_texture = textures[ bct ];
+        updates.push_back(
+          gct::write_descriptor_set_t()
+            .set_basic(
+              (*descriptor_set)[ "base_color" ]
+            )
+            .add_image(
+              bct_texture.srgb
+            )
+        );
       }
-      const auto mrt = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-      if( mrt >= 0 ) {
-        if( descriptor_set.back()->has( "metallic_roughness" ) ) {
-          if( textures.size() <= size_t( mrt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-          const auto &mrt_texture = textures[ mrt ];
-          updates.push_back(
-            gct::write_descriptor_set_t()
-              .set_basic(
-                (*descriptor_set.back())[ "metallic_roughness" ]
-              )
-              .add_image(
-                mrt_texture.unorm
-              )
-          );
-        }
-      }
-      const auto nt = material.normalTexture.index;
-      if( nt >= 0 ) {
-        if( descriptor_set.back()->has( "normal_map" ) ) {
-          if( textures.size() <= size_t( nt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-          const auto &nt_texture = textures[ nt ];
-          updates.push_back(
-            gct::write_descriptor_set_t()
-              .set_basic(
-                (*descriptor_set.back())[ "normal_map" ]
-              )
-              .add_image(
-                nt_texture.unorm
-              )
-          );
-        }
-      }
-      const auto oct = material.occlusionTexture.index;
-      if( oct >= 0 ) {
-        if( descriptor_set.back()->has( "occlusion" ) ) {
-          if( textures.size() <= size_t( oct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-          const auto &oct_texture = textures[ oct ];
-          updates.push_back(
-            gct::write_descriptor_set_t()
-              .set_basic(
-                (*descriptor_set.back())[ "occlusion" ]
-              )
-              .add_image(
-                oct_texture.unorm
-              )
-          );
-        }
-      }
-      const auto emt = material.emissiveTexture.index;
-      if( emt >= 0 ) {
-        if( descriptor_set.back()->has( "emissive" ) ) {
-          if( textures.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-          const auto &emt_texture = textures[ emt ];
-          updates.push_back(
-            gct::write_descriptor_set_t()
-              .set_basic(
-                (*descriptor_set.back())[ "emissive" ]
-              )
-              .add_image(
-                emt_texture.srgb
-              )
-          );
-        }
-      }
-      descriptor_set.back()->update( updates );
     }
+    const auto mrt = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+    if( mrt >= 0 ) {
+      if( descriptor_set->has( "metallic_roughness" ) ) {
+        if( textures.size() <= size_t( mrt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+        const auto &mrt_texture = textures[ mrt ];
+        updates.push_back(
+          gct::write_descriptor_set_t()
+            .set_basic(
+              (*descriptor_set)[ "metallic_roughness" ]
+            )
+            .add_image(
+              mrt_texture.unorm
+            )
+        );
+      }
+    }
+    const auto nt = material.normalTexture.index;
+    if( nt >= 0 ) {
+      if( descriptor_set->has( "normal_map" ) ) {
+        if( textures.size() <= size_t( nt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+        const auto &nt_texture = textures[ nt ];
+        updates.push_back(
+          gct::write_descriptor_set_t()
+            .set_basic(
+              (*descriptor_set)[ "normal_map" ]
+            )
+            .add_image(
+              nt_texture.unorm
+            )
+        );
+      }
+    }
+    const auto oct = material.occlusionTexture.index;
+    if( oct >= 0 ) {
+      if( descriptor_set->has( "occlusion" ) ) {
+        if( textures.size() <= size_t( oct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+        const auto &oct_texture = textures[ oct ];
+        updates.push_back(
+          gct::write_descriptor_set_t()
+            .set_basic(
+              (*descriptor_set)[ "occlusion" ]
+            )
+            .add_image(
+              oct_texture.unorm
+            )
+        );
+      }
+    }
+    const auto emt = material.emissiveTexture.index;
+    if( emt >= 0 ) {
+      if( descriptor_set->has( "emissive" ) ) {
+        if( textures.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
+        const auto &emt_texture = textures[ emt ];
+        updates.push_back(
+          gct::write_descriptor_set_t()
+            .set_basic(
+              (*descriptor_set)[ "emissive" ]
+            )
+            .add_image(
+              emt_texture.srgb
+            )
+        );
+      }
+    }
+    descriptor_set->update( updates );
     primitive_.set_descriptor_set( descriptor_set ); 
-    primitive_.set_env_descriptor_set( env_descriptor_set ); 
     primitive_.set_min( min );
     primitive_.set_max( max );
     primitive_.set_uniform_buffer(
@@ -374,9 +356,7 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   ) {
     if( index < 0 || doc.meshes.size() <= size_t( index ) ) throw invalid_gltf( "参照されたmeshが存在しない", __FILE__, __LINE__ );
     const auto &mesh = doc.meshes[ index ];
@@ -406,9 +386,7 @@ namespace gct::gltf {
         textures,
         swapchain_size,
         shader_mask,
-        dynamic_uniform_buffer,
-        env_descriptor_set_layout,
-        env_descriptor_set
+        env_descriptor_set_layout
       ) );
       min[ 0 ] = std::min( min[ 0 ], mesh_.primitive.back().min[ 0 ] );
       min[ 1 ] = std::min( min[ 1 ], mesh_.primitive.back().min[ 1 ] );
@@ -433,9 +411,7 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   ) {
     meshes_t mesh;
     auto pipeline_cache = device->get_pipeline_cache();
@@ -455,9 +431,7 @@ namespace gct::gltf {
           textures,
           swapchain_size,
           shader_mask,
-          dynamic_uniform_buffer,
-          env_descriptor_set_layout,
-          env_descriptor_set
+          env_descriptor_set_layout
         )
       );
     return mesh;

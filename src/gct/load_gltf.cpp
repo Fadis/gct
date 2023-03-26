@@ -35,11 +35,9 @@ namespace gct::gltf {
     std::uint32_t subpass,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
     float aspect_ratio,
     bool ray_trace,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   ) {
     fx::gltf::Document doc = fx::gltf::LoadFromText( path.string() );
     document_t document;
@@ -88,9 +86,7 @@ namespace gct::gltf {
       document.texture, //
       swapchain_size,
       shader_mask,
-      dynamic_uniform_buffer,
-      env_descriptor_set_layout,
-      env_descriptor_set
+      env_descriptor_set_layout
     ) );
     document.set_point_light( create_point_light(
       doc

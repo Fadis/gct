@@ -165,7 +165,6 @@ namespace gct::gltf {
     LIBGCT_SETTER( indexed )
     LIBGCT_SETTER( index_buffer )
     LIBGCT_SETTER( descriptor_set )
-    LIBGCT_SETTER( env_descriptor_set )
     LIBGCT_SETTER( count )
     LIBGCT_SETTER( index_buffer_type )
     LIBGCT_SETTER( min )
@@ -178,8 +177,7 @@ namespace gct::gltf {
     std::unordered_map< std::uint32_t, buffer_window_t > vertex_buffer;
     bool indexed;
     buffer_window_t index_buffer;
-    std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
-    std::shared_ptr< descriptor_set_t > env_descriptor_set;
+    std::shared_ptr< descriptor_set_t > descriptor_set;
     uint32_t count;
     vk::IndexType index_buffer_type;
     glm::vec3 min;
@@ -256,11 +254,9 @@ namespace gct::gltf {
     std::uint32_t subpass,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
     float aspect_ratio,
     bool ray_trace,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   );
   struct push_constants_t {
     LIBGCT_SETTER( world_matrix )
@@ -349,8 +345,7 @@ namespace gct::gltf {
     const shader_t &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
-    int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer
+    int shader_mask
   );
   meshes_t create_mesh(
     const fx::gltf::Document &doc,
@@ -364,9 +359,7 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< buffer_t > > &dynamic_uniform_buffer,
-    const std::shared_ptr< descriptor_set_layout_t > &env_descriptor_set_layout,
-    const std::shared_ptr< descriptor_set_t > &env_descriptor_set
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
   );
   node_t create_node(
     const fx::gltf::Document &doc,
@@ -392,7 +385,8 @@ namespace gct::gltf {
     const meshes_t &meshes,
     const buffers_t &buffers,
     uint32_t current_frame,
-    uint32_t pipeline_index
+    uint32_t pipeline_index,
+    const std::vector< std::shared_ptr< descriptor_set_t > > &env_descriptor_set
   );
   /*mesh_t create_mesh(
     const fx::gltf::Document &doc,

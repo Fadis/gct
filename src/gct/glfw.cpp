@@ -215,4 +215,66 @@ namespace gct {
   glfw::~glfw() {
     glfwTerminate();
   }
+  glfw_walk::glfw_walk(
+    const glm::vec3 &center_,
+    float scale_
+  ) : 
+    center( center_ ),
+    scale( scale_ ),
+    end_( false ) {
+    camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
+    camera_angle = 0;
+    speed = 0.01f*scale;
+    light_pos = glm::vec3{ 0.0f*scale, -1.2f*scale, 0.0f*scale };
+    light_energy = 5.0f;
+    camera_direction = glm::vec3{ std::sin( camera_angle ), 0, -std::cos( camera_angle ) };
+  }
+  void glfw_walk::operator()( glfw_window&, int key, int scancode, int action, int mods ) {
+    if( action == GLFW_RELEASE )
+      pressed_keys.erase( key );
+    else if( action == GLFW_PRESS )
+      pressed_keys.insert( key );
+  }
+  void glfw_walk::operator++() {
+    if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() )
+      camera_angle -= 0.01 * M_PI/2;
+    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
+      camera_angle += 0.01 * M_PI/2;
+    camera_direction = glm::vec3{ std::sin( camera_angle ), 0, -std::cos( camera_angle ) };
+    if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() )
+      camera_pos += camera_direction * glm::vec3( speed );
+    if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() )
+      camera_pos -= camera_direction * glm::vec3( speed );
+    if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() )
+      camera_pos[ 1 ] -= speed;
+    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
+      camera_pos[ 1 ] += speed;
+    if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() )
+      light_energy += 0.05f;
+    if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() )
+      light_energy -= 0.05f;
+    if( pressed_keys.find( GLFW_KEY_UP ) != pressed_keys.end() )
+      light_pos[ 2 ] += speed;
+    if( pressed_keys.find( GLFW_KEY_DOWN ) != pressed_keys.end() )
+      light_pos[ 2 ] -= speed;
+    if( pressed_keys.find( GLFW_KEY_LEFT ) != pressed_keys.end() )
+      light_pos[ 0 ] -= speed;
+    if( pressed_keys.find( GLFW_KEY_RIGHT ) != pressed_keys.end() )
+      light_pos[ 0 ] += speed;
+    if( pressed_keys.find( GLFW_KEY_Q ) != pressed_keys.end() )
+      end_ = true;
+    lookat = glm::lookAt(
+      camera_pos,
+      camera_pos + camera_direction,
+      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
+    );
+  }
+  void glfw_walk::set_camera_pos( const glm::vec3 &v ) {
+    camera_pos = v;
+    lookat = glm::lookAt(
+      camera_pos,
+      camera_pos + camera_direction,
+      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
+    );
+  }
 }

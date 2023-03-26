@@ -107,7 +107,7 @@ float grad(vec2 p, float scale ){
   );
 }
 
-layout(set = 1, binding = 0) uniform sampler2D environment_map;
+layout(set = 2, binding = 0) uniform sampler2D environment_map;
 
 vec3 simple_ambient_light(
   vec3 V,

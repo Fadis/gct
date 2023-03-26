@@ -25,6 +25,8 @@
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
+#include <gct/color.hpp>
+#include <gct/timer.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::image_t > color;
@@ -79,7 +81,6 @@ int main() {
   std::uint32_t height = 1080u*2;
 
   gct::glfw_window window( width, height, "window title", false );
-  window.set_on_closed( []( auto & ) { std::cout << "closed" << std::endl; } );
   gct::glfw::get().poll();
   auto surface = window.get_surface( *groups[ 0 ].devices[ 0 ] );
   std::cout << nlohmann::json( *surface ).dump( 2 ) << std::endl;
@@ -138,31 +139,60 @@ int main() {
   
   std::vector< fb_resources_t > framebuffers;
 
+  const auto dynamic_descriptor_set_layout = device->get_descriptor_set_layout(
+    gct::descriptor_set_layout_create_info_t()
+      .add_binding(
+        vk::DescriptorSetLayoutBinding()
+          .setBinding( 0 )
+          .setDescriptorType( vk::DescriptorType::eUniformBuffer )
+          .setDescriptorCount( 1u )
+          .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
+      )
+  );
   std::vector< std::shared_ptr< gct::buffer_t > > staging_dynamic_uniform;
   std::vector< std::shared_ptr< gct::buffer_t > > dynamic_uniform;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > dynamic_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     staging_dynamic_uniform.emplace_back(
       allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferSrc )
-          ),
-          VMA_MEMORY_USAGE_CPU_TO_GPU
-       )
+        sizeof( gct::gltf::dynamic_uniforms_t ),
+        vk::BufferUsageFlagBits::eTransferSrc,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+      )
     );
     dynamic_uniform.emplace_back(
       allocator->create_buffer(
-        gct::buffer_create_info_t()
-          .set_basic(
-            vk::BufferCreateInfo()
-              .setSize( sizeof( gct::gltf::dynamic_uniforms_t ) )
-              .setUsage( vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer )
-          ),
-          VMA_MEMORY_USAGE_GPU_ONLY
-       )
+        sizeof( gct::gltf::dynamic_uniforms_t ),
+        vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )
     );
+    dynamic_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        dynamic_descriptor_set_layout
+      )
+    );
+    std::vector< gct::write_descriptor_set_t > updates;
+    updates.push_back(
+      gct::write_descriptor_set_t()
+        .set_basic(
+          vk::WriteDescriptorSet()
+            .setDstSet( **dynamic_descriptor_set.back() )
+            .setDstBinding( 0u )
+            .setDescriptorCount( 1u )
+            .setDescriptorType( vk::DescriptorType::eUniformBuffer )
+        )
+        .add_buffer(
+          gct::descriptor_buffer_info_t()
+            .set_buffer( dynamic_uniform.back() )
+            .set_basic(
+              vk::DescriptorBufferInfo()
+                .setOffset( 0 )
+                .setRange( sizeof( gct::gltf::dynamic_uniforms_t ) )
+            )
+        )
+    );
+    dynamic_descriptor_set.back()->update( updates );
   }
 
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
@@ -202,7 +232,7 @@ int main() {
               .setFramebuffer( **framebuffer )
               .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
           )
-          .add_clear_value( vk::ClearColorValue( std::array< float, 4u >{ 1.0f, 0.0f, 1.0f, 1.0f } ) )
+          .add_clear_value( vk::ClearColorValue( gct::color::web::wheat ) )
           .add_clear_value( vk::ClearDepthStencilValue( 1.f, 0 ) )
           .rebuild_chain()
       }
@@ -263,10 +293,6 @@ int main() {
           .setSubresourceRange(
             vk::ImageSubresourceRange()
               .setAspectMask( vk::ImageAspectFlagBits::eColor )
-              .setBaseMipLevel( 0 )
-              .setLevelCount( environment_image->get_props().get_basic().mipLevels )
-              .setBaseArrayLayer( 0 )
-              .setLayerCount( environment_image->get_props().get_basic().arrayLayers )
           )
           .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType ) )
           .setFormat( vk::Format::eR8G8B8A8Unorm )
@@ -328,11 +354,12 @@ int main() {
       0,
       framebuffers.size(),
       0,
-      dynamic_uniform,
       float( width ) / float( height ),
       false,
-      env_descriptor_set_layout,
-      env_descriptor_set
+      {
+        dynamic_descriptor_set_layout,
+        env_descriptor_set_layout
+      }
     );
   }
   gcb->execute(
@@ -352,63 +379,31 @@ int main() {
 
 
   const glm::mat4 projection = glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
-  auto camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
-  float camera_angle = 0;//M_PI;
-  auto speed = 0.01f*scale;
-  auto light_pos = glm::vec3{ 0.0f*scale, -1.2f*scale, 0.0f*scale };
-  float light_energy = 5.0f;
+  gct::glfw_walk walk( center, scale );
   const auto point_lights = gct::gltf::get_point_lights(
     doc.node,
     doc.point_light
   );
   if( !point_lights.empty() ) {
-    light_energy = point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100;
-    light_pos = point_lights[ 0 ].location;
+    walk.set_light_energy( point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100 );
+    walk.set_light_pos( point_lights[ 0 ].location );
   }
-  std::unordered_set< int > pressed_keys;
-  window.set_on_key( [&]( auto &, int key, int scancode, int action, int mods ) {
-    if( action == GLFW_RELEASE )
-      pressed_keys.erase( key );
-    else if( action == GLFW_PRESS )
-      pressed_keys.insert( key );
-  } );
-
+  window.set_on_key(
+    [&walk]( gct::glfw_window &p, int key, int scancode, int action, int mods ) {
+      walk( p, key, scancode, action, mods );
+    }
+  );
+  window.set_on_closed(
+    [&walk]( auto & ) {
+      walk.set_end();
+    }
+  );
 
   uint32_t current_frame = 0u;
   uint32_t last_image_index = framebuffers.size();
-  while( pressed_keys.find( GLFW_KEY_Q ) == pressed_keys.end() ) {
-    const auto begin_time = std::chrono::high_resolution_clock::now();
-    if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() )
-      camera_angle -= 0.01 * M_PI/2;
-    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
-      camera_angle += 0.01 * M_PI/2;
-    glm::vec3 camera_direction( std::sin( camera_angle ), 0, -std::cos( camera_angle ) );
-    if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() )
-      camera_pos += camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() )
-      camera_pos -= camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() )
-      camera_pos[ 1 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
-      camera_pos[ 1 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() )
-      light_energy += 0.05f;
-    if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() )
-      light_energy -= 0.05f;
-    if( pressed_keys.find( GLFW_KEY_UP ) != pressed_keys.end() )
-      light_pos[ 2 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_DOWN ) != pressed_keys.end() )
-      light_pos[ 2 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_LEFT ) != pressed_keys.end() )
-      light_pos[ 0 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_RIGHT ) != pressed_keys.end() )
-      light_pos[ 0 ] += speed;
-
-    glm::mat4 lookat = glm::lookAt(
-      camera_pos,
-      camera_pos + camera_direction,
-      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
-    );
+  while( !walk.end() ) {
+    gct::blocking_timer frame_rate;
+    ++walk;
     auto &sync = framebuffers[ current_frame ];
     if( !sync.initial ) {
       sync.command_buffer->wait_for_executed();
@@ -421,10 +416,10 @@ int main() {
       //rec.convert_image( fb.color, fb.color->get_props().get_basic().initialLayout, vk::ImageLayout::ePresentSrcKHR );
       auto dynamic_data = gct::gltf::dynamic_uniforms_t()
         .set_projection_matrix( projection )
-        .set_camera_matrix( lookat )
-        .set_eye_pos( glm::vec4( camera_pos, 1.0 ) )
-        .set_light_pos( glm::vec4( light_pos, 1.0 ) )
-        .set_light_energy( light_energy );
+        .set_camera_matrix( walk.get_lookat() )
+        .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+        .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+        .set_light_energy( walk.get_light_energy() );
       rec.copy(
         dynamic_data,
         staging_dynamic_uniform[ image_index ],
@@ -452,7 +447,11 @@ int main() {
         doc.mesh,
         doc.buffer,
         image_index,
-        0u
+        0u,
+        {
+          dynamic_descriptor_set[ image_index ],
+          env_descriptor_set
+        }
       );
     }
     sync.command_buffer->execute(
@@ -469,7 +468,6 @@ int main() {
     glfwPollEvents();
     ++current_frame;
     current_frame %= framebuffers.size();
-    gct::wait_for_sync( begin_time );
   }
   (*queue)->waitIdle();
 }

@@ -197,10 +197,11 @@ namespace gct::gltf {
     const meshes_t &meshes,
     const buffers_t &buffers,
     uint32_t current_frame,
-    uint32_t pipeline_index
+    uint32_t pipeline_index,
+    const std::vector< std::shared_ptr< descriptor_set_t > > &env_descriptor_set
   ) {
     for( const auto &n: node.children )
-      draw_node( rec, n, meshes, buffers, current_frame, pipeline_index );
+      draw_node( rec, n, meshes, buffers, current_frame, pipeline_index, env_descriptor_set );
     if( node.has_mesh ) {
       const auto &mesh = meshes[ node.mesh ];
       for( const auto &primitive: mesh.primitive ) {
@@ -216,8 +217,10 @@ namespace gct::gltf {
           &pc
         );
         std::vector< vk::DescriptorSet > descriptor_set{
-          **primitive.descriptor_set[ current_frame ],
-          **primitive.env_descriptor_set
+          **primitive.descriptor_set
+        };
+        for( auto &e: env_descriptor_set ) {
+          descriptor_set.push_back( **e );
         };
         rec->bindDescriptorSets(
           vk::PipelineBindPoint::eGraphics,
