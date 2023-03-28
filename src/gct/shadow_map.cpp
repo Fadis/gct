@@ -85,21 +85,19 @@ namespace gct {
   std::tuple< glm::mat4, glm::mat4, float, float, float > get_projection_light_matrix(
     const glm::mat4 &camera_projection_matrix,
     const glm::mat4 &camera_view_matrix,
-    const glm::vec3 &min,
-    const glm::vec3 &max,
     const glm::vec3 &light_pos,
     float distance_offset
   ) {
     auto projection_box = get_projection_box( camera_projection_matrix, camera_view_matrix, distance_offset );
-    glm::vec3 proj_min = max;
-    glm::vec3 proj_max = min;
+    glm::vec3 proj_min = projection_box[ 0 ];
+    glm::vec3 proj_max = projection_box[ 0 ];
     for( auto v: projection_box ) {
-      if( v.x < proj_min.x ) proj_min.x = std::max( v.x, min.x );
-      if( v.x > proj_max.x ) proj_max.x = std::min( v.x, max.x );
-      if( v.y < proj_min.y ) proj_min.y = std::max( v.y, min.y );
-      if( v.y > proj_max.y ) proj_max.y = std::min( v.y, max.y );
-      if( v.z < proj_min.z ) proj_min.z = std::max( v.z, min.z );
-      if( v.z > proj_max.z ) proj_max.z = std::min( v.z, max.z );
+      if( v.x < proj_min.x ) proj_min.x = v.x;
+      if( v.x > proj_max.x ) proj_max.x = v.x;
+      if( v.y < proj_min.y ) proj_min.y = v.y;
+      if( v.y > proj_max.y ) proj_max.y = v.y;
+      if( v.z < proj_min.z ) proj_min.z = v.z;
+      if( v.z > proj_max.z ) proj_max.z = v.z;
     }
     return get_aabb_light_matrix( proj_min, proj_max, light_pos ); 
   }

@@ -123,13 +123,10 @@ int main() {
 
   auto pipeline_cache = device->get_pipeline_cache();
 
-  std::vector< std::shared_ptr< gct::render_pass_t > > render_pass;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    render_pass.emplace_back( device->get_render_pass(
-      gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format,
-      vk::Format::eD16Unorm
-    ) );
-  }
+  auto render_pass = device->get_render_pass(
+    gct::select_simple_surface_format( surface->get_caps().get_formats() ).basic.format,
+    vk::Format::eD16Unorm
+  );
   VmaAllocatorCreateInfo allocator_create_info{};
   //allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
   auto allocator = device->get_allocator(
@@ -197,7 +194,7 @@ int main() {
 
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     auto &image = swapchain_images[ i ];
-    auto &render_pass_ = render_pass[ i ];
+    auto &render_pass_ = render_pass;
     auto depth = allocator->create_image(
       gct::image_create_info_t()
         .set_basic(
@@ -228,7 +225,7 @@ int main() {
         gct::render_pass_begin_info_t()
           .set_basic(
             vk::RenderPassBeginInfo()
-              .setRenderPass( **render_pass[ i ] )
+              .setRenderPass( **render_pass )
               .setFramebuffer( **framebuffer )
               .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
           )
@@ -342,15 +339,17 @@ int main() {
     auto rec = gcb->begin();
     //rec.load_image( allocator, "/home/fadis/gltf/BoomBox/glTF/BoomBox_baseColor.png", vk::ImageUsageFlagBits::eSampled, true, false );
     doc = gct::gltf::load_gltf(
-      "/home/fadis/pi_simple.gltf",
+      //"/home/fadis/pi_simple.gltf",
       //"/home/fadis/box.gltf",
-      //"/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
+      "/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
       device,
       rec,
       allocator,
       descriptor_pool,
-      render_pass,
-      "/home/fadis/git/gct/shaders",
+      { render_pass },
+      {
+        "/home/fadis/git/gct/shaders"
+      },
       0,
       framebuffers.size(),
       0,
@@ -446,7 +445,6 @@ int main() {
         doc.node,
         doc.mesh,
         doc.buffer,
-        image_index,
         0u,
         {
           dynamic_descriptor_set[ image_index ],

@@ -31,7 +31,7 @@ namespace gct::gltf {
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool,
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::filesystem::path &shader_dir,
+    const std::vector< std::filesystem::path > &shader_dir,
     std::uint32_t subpass,
     uint32_t swapchain_size,
     int shader_mask,
@@ -41,18 +41,27 @@ namespace gct::gltf {
   ) {
     fx::gltf::Document doc = fx::gltf::LoadFromText( path.string() );
     document_t document;
-    shader_t shader;
-    for( auto &path: std::filesystem::directory_iterator( shader_dir ) ) {
-      auto flag = get_shader_flag( path.path() );
-      if( flag ) {
-        std::cout << path.path().string() << " をロード中..." << std::flush;
-        shader.emplace(
-          *flag,
-          device->get_shader_module(
-            path.path().string()
-          )
-        );
-        std::cout << " OK" << std::endl;
+    std::vector< shader_t > shader;
+    for( auto iter = shader_dir.begin(); iter != shader_dir.end(); ++iter ) {
+      auto existing = std::find( shader_dir.begin(), iter, *iter );
+      if( existing != iter ) {
+        shader.push_back( shader[ std::distance( shader_dir.begin(), existing ) ] );
+      }
+      else {
+        shader.push_back( shader_t{} );
+        for( auto &path: std::filesystem::directory_iterator( *iter ) ) {
+          auto flag = get_shader_flag( path.path() );
+          if( flag ) {
+            std::cout << path.path().string() << " をロード中..." << std::flush;
+            shader.back().emplace(
+              *flag,
+              device->get_shader_module(
+                path.path().string()
+              )
+            );
+            std::cout << " OK" << std::endl;
+          }
+        }
       }
     }
     document.set_sampler( create_sampler(

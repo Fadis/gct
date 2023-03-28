@@ -196,12 +196,11 @@ namespace gct::gltf {
     const node_t &node,
     const meshes_t &meshes,
     const buffers_t &buffers,
-    uint32_t current_frame,
     uint32_t pipeline_index,
     const std::vector< std::shared_ptr< descriptor_set_t > > &env_descriptor_set
   ) {
     for( const auto &n: node.children )
-      draw_node( rec, n, meshes, buffers, current_frame, pipeline_index, env_descriptor_set );
+      draw_node( rec, n, meshes, buffers, pipeline_index, env_descriptor_set );
     if( node.has_mesh ) {
       const auto &mesh = meshes[ node.mesh ];
       for( const auto &primitive: mesh.primitive ) {

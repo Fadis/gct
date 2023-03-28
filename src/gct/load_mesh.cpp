@@ -36,6 +36,71 @@
 #include <gct/shader_module.hpp>
 #include <gct/device.hpp>
 namespace gct::gltf {
+  std::shared_ptr< shader_module_t > get_suboptimal_shader(
+    const shader_t &shader,
+    shader_flag_t flag,
+    int depth
+  ) {
+    constexpr std::array< shader_flag_t, 6u > flags{
+      shader_flag_t::emissive,
+      shader_flag_t::occlusion,
+      shader_flag_t::normal,
+      shader_flag_t::metallic_roughness,
+      shader_flag_t::base_color,
+      shader_flag_t::tangent
+    };
+    for( auto &f: flags ) {
+      if( int( flag ) & int( f ) ) {
+        if( depth ) {
+          auto s = get_suboptimal_shader(
+            shader,
+            shader_flag_t( int( flag ) ^ int( f ) ),
+            depth - 1
+          );
+          if( s ) return s;
+        }
+        else {
+          auto s = shader.find( shader_flag_t( int( flag ) ^ int( f ) ) );
+          if( s != shader.end() ) return s->second;
+        }
+      }
+    }
+    return std::shared_ptr< shader_module_t >();
+  }
+  std::shared_ptr< shader_module_t > get_shader(
+    const shader_t &shader,
+    shader_flag_t flag
+  ) { 
+    auto s = shader.find( flag );
+    if( s != shader.end() ) return s->second;
+    for( int i = 0; i != 5; ++i ){
+      auto sub = get_suboptimal_shader( shader, flag, i );
+      if( sub ) return sub;
+    }
+    return std::shared_ptr< shader_module_t >();
+  }
+  std::vector< std::shared_ptr< shader_module_t > > get_shader(
+    const std::vector< shader_t > &shader,
+    shader_flag_t flag
+  ) {
+    std::vector< std::shared_ptr< shader_module_t > > temp;
+    temp.reserve( shader.size() );
+    std::transform(
+      shader.begin(),
+      shader.end(),
+      std::back_inserter( temp ),
+      [flag]( const shader_t &s ) {
+        return get_shader( s, flag );
+      }
+    );
+    if( std::find(
+      temp.begin(),
+      temp.end(),
+      std::shared_ptr< shader_module_t >()
+    ) != temp.end() ) temp.clear();
+    return temp;
+  }
+
   primitive_t create_primitive(
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive,
@@ -46,7 +111,7 @@ namespace gct::gltf {
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
     std::uint32_t subpass,
-    const shader_t &shader,
+    const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
@@ -123,8 +188,8 @@ namespace gct::gltf {
     auto vs_flag = shader_flag_t::vertex;
     if( rigged ) vs_flag = shader_flag_t( int( vs_flag )|int( shader_flag_t::skin ) );
     if( has_tangent ) vs_flag = shader_flag_t( int( vs_flag )|int( shader_flag_t::tangent ) );
-    auto vs = shader.find( vs_flag );
-    if( vs == shader.end() ) throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
+    auto vs = get_shader( shader, vs_flag );
+    if( vs.empty() ) throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
     auto fs_flag = shader_flag_t::fragment;
     if( has_tangent ) fs_flag = shader_flag_t( int( fs_flag )|int( shader_flag_t::tangent ) );
     if( material.pbrMetallicRoughness.baseColorTexture.index != -1 )
@@ -138,16 +203,18 @@ namespace gct::gltf {
     if( material.emissiveTexture.index != -1 )
       fs_flag = shader_flag_t( int( fs_flag )|int( shader_flag_t::emissive ) );
     if( shader_mask ) fs_flag = shader_flag_t( shader_mask );
-    auto fs = shader.find( fs_flag );
-    if( fs == shader.end() ) {
-      throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
-    }
+    auto fs = get_shader( shader, fs_flag );
+    if( fs.empty() ) throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
 
     gct::descriptor_set_layout_create_info_t descriptor_set_layout_create_info;
-    descriptor_set_layout_create_info
-      .add_binding( vs->second->get_props().get_reflection() );
-    descriptor_set_layout_create_info
-      .add_binding( fs->second->get_props().get_reflection() );
+    for( const auto &s: vs ) {
+      descriptor_set_layout_create_info
+        .add_binding( s->get_props().get_reflection() );
+    }
+    for( const auto &s: fs ) {
+      descriptor_set_layout_create_info
+        .add_binding( s->get_props().get_reflection() );
+    }
     descriptor_set_layout_create_info
       .rebuild_chain();
     auto descriptor_set_layout = device->get_descriptor_set_layout(
@@ -170,12 +237,13 @@ namespace gct::gltf {
     );
 
     std::vector< std::shared_ptr< graphics_pipeline_t > > pipelines;
+    unsigned int i = 0u;
     for( const auto &r: render_pass ) {
       pipelines.emplace_back(
         create_pipeline(
           pipeline_cache,
-          vs->second,
-          fs->second,
+          vs[ i ],
+          fs[ i ],
           pipeline_layout,
           r,
           subpass,
@@ -186,6 +254,7 @@ namespace gct::gltf {
           false
         )
       );
+      ++i;
     }
     primitive_.set_vertex_input_binding( vertex_input_binding );
     primitive_.set_vertex_input_attribute( vertex_input_attribute );
@@ -352,7 +421,7 @@ namespace gct::gltf {
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
     std::uint32_t subpass,
-    const shader_t &shader,
+    const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
@@ -407,7 +476,7 @@ namespace gct::gltf {
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
     std::uint32_t subpass,
-    const shader_t &shader,
+    const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,

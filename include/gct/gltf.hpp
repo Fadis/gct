@@ -232,7 +232,7 @@ namespace gct::gltf {
     LIBGCT_SETTER( image )
     LIBGCT_SETTER( texture )
     LIBGCT_SETTER( node )
-    shader_t shader;
+    std::vector< shader_t > shader;
     meshes_t mesh;
     point_lights_t point_light;
     cameras_t camera;
@@ -250,7 +250,7 @@ namespace gct::gltf {
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool,
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
-    const std::filesystem::path &shader_dir,
+    const std::vector< std::filesystem::path > &shader_dir,
     std::uint32_t subpass,
     uint32_t swapchain_size,
     int shader_mask,
@@ -271,12 +271,12 @@ namespace gct::gltf {
     LIBGCT_SETTER( emissive )
     LIBGCT_SETTER( normal_scale )
     LIBGCT_SETTER( occlusion_strength )
-    glm::vec4 base_color;
-    glm::vec4 emissive;
-    float roughness;
-    float metalness;
-    float normal_scale;
-    float occlusion_strength;
+    glm::vec4 base_color = glm::vec4( 0.5f, 0.5f, 0.5f, 1.f );
+    glm::vec4 emissive = glm::vec4( 0.f, 0.f, 0.f, 1.f );
+    float roughness = 0.3f;
+    float metalness = 0.f;
+    float normal_scale = 1.f;
+    float occlusion_strength = 1.f;
   };
   struct dynamic_uniforms_t {
     LIBGCT_SETTER( projection_matrix )
@@ -314,7 +314,7 @@ namespace gct::gltf {
   >
   create_pipeline_layout(
     const std::shared_ptr< device_t > &device,
-    const shader_t &
+    const std::vector< shader_t > &
   );
   std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,
@@ -342,7 +342,7 @@ namespace gct::gltf {
     const std::shared_ptr< descriptor_set_layout_t > &descriptor_set_layout,
     std::uint32_t subpass,
     uint32_t push_constant_size,
-    const shader_t &shader,
+    const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask
@@ -355,7 +355,7 @@ namespace gct::gltf {
     const std::shared_ptr< descriptor_pool_t > &descriptor_pool, 
     const std::vector< std::shared_ptr< render_pass_t > > &render_pass,
     std::uint32_t subpass,
-    const shader_t &shader,
+    const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
@@ -384,7 +384,6 @@ namespace gct::gltf {
     const node_t &node,
     const meshes_t &meshes,
     const buffers_t &buffers,
-    uint32_t current_frame,
     uint32_t pipeline_index,
     const std::vector< std::shared_ptr< descriptor_set_t > > &env_descriptor_set
   );
