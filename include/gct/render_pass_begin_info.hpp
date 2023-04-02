@@ -9,6 +9,8 @@
 #include <gct/subpass_description.hpp>
 
 namespace gct {
+  class render_pass_t;
+  class framebuffer_t;
   class render_pass_begin_info_t : public chained_t {
   public:
     using self_type = render_pass_begin_info_t;
@@ -33,6 +35,20 @@ namespace gct {
   public:
     render_pass_begin_info_t &add_clear_value( const vk::ClearValue& );
     render_pass_begin_info_t &clear_clear_value();
+  private:
+    std::shared_ptr< render_pass_t > render_pass;
+    std::shared_ptr< framebuffer_t > framebuffer;
+  public:
+    render_pass_begin_info_t &set_render_pass( const std::shared_ptr< render_pass_t >& );
+    render_pass_begin_info_t &clear_render_pass();
+    render_pass_begin_info_t &set_framebuffer( const std::shared_ptr< framebuffer_t >& );
+    render_pass_begin_info_t &clear_framebuffer();
+    const std::shared_ptr< render_pass_t > &get_render_pass() const {
+      return render_pass;
+    }
+    const std::shared_ptr< framebuffer_t > &get_framebuffer() const {
+      return framebuffer;
+    }
   };
   void to_json( nlohmann::json &root, const render_pass_begin_info_t &v );
   void from_json( const nlohmann::json &root, render_pass_begin_info_t &v );

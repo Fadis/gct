@@ -26,6 +26,9 @@ namespace gct {
   public:
     framebuffer_create_info_t &add_attachment( const std::shared_ptr< image_view_t >& );
     framebuffer_create_info_t &clear_attachment();
+    const std::vector< std::shared_ptr< image_view_t > > &get_attachment() const {
+      return attachment;
+    }
     std::uint32_t get_width() const;
     std::uint32_t get_height() const;
   };

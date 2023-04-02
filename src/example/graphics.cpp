@@ -30,7 +30,6 @@
 
 struct fb_resources_t {
   std::shared_ptr< gct::image_t > color;
-  std::shared_ptr< gct::framebuffer_t > framebuffer;
   std::shared_ptr< gct::semaphore_t > image_acquired;
   std::shared_ptr< gct::semaphore_t > draw_complete;
   std::shared_ptr< gct::semaphore_t > image_ownership;
@@ -217,20 +216,15 @@ int main() {
     framebuffers.emplace_back(
       fb_resources_t{
         image,
-        framebuffer,
         device->get_semaphore(),
         device->get_semaphore(),
         device->get_semaphore(),
         queue->get_command_pool()->allocate(),
         gct::render_pass_begin_info_t()
-          .set_basic(
-            vk::RenderPassBeginInfo()
-              .setRenderPass( **render_pass )
-              .setFramebuffer( **framebuffer )
-              .setRenderArea( vk::Rect2D( vk::Offset2D(0, 0), vk::Extent2D((uint32_t)width, (uint32_t)height) ) )
-          )
           .add_clear_value( vk::ClearColorValue( gct::color::web::wheat ) )
           .add_clear_value( vk::ClearDepthStencilValue( 1.f, 0 ) )
+          .set_render_pass( render_pass )
+          .set_framebuffer( framebuffer )
           .rebuild_chain()
       }
     );

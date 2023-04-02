@@ -37,6 +37,9 @@ namespace gct {
     render_pass_create_info_t &add_subpass( const subpass_description_t& );
     render_pass_create_info_t &add_dependency( const vk::SubpassDependency& );
     render_pass_create_info_t &clear_subpass();
+    const std::vector< vk::AttachmentDescription > &get_attachment() const {
+      return attachment;
+    }
   };
   void to_json( nlohmann::json &root, const render_pass_create_info_t &v );
   void from_json( const nlohmann::json &root, render_pass_create_info_t &v );

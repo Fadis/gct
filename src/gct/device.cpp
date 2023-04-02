@@ -170,7 +170,11 @@ namespace gct {
           vk::SwapchainCreateInfoKHR()
             .setImageSharingMode( vk::SharingMode::eExclusive )
             .setCompositeAlpha( vk::CompositeAlphaFlagBitsKHR::eOpaque )
-            .setImageUsage( vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment )
+            .setImageUsage(
+              vk::ImageUsageFlagBits::eTransferDst |
+              vk::ImageUsageFlagBits::eColorAttachment |
+              vk::ImageUsageFlagBits::eStorage
+            )
             .setPresentMode( vk::PresentModeKHR::eFifo )
             .setClipped( true )
         )

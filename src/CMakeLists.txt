@@ -182,6 +182,7 @@ add_library( gct SHARED
   gct/html_color.cpp
   gct/eotf.cpp
   gct/shadow_map.cpp
+  gct/cubemap.cpp
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
   gct/canvas/canvas.cpp

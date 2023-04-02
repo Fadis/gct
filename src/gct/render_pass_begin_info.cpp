@@ -1,4 +1,6 @@
 #include <gct/surface.hpp>
+#include <gct/render_pass.hpp>
+#include <gct/framebuffer.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <vulkan2json/RenderPassBeginInfo.hpp>
 #ifdef VK_VERSION_1_1
@@ -20,6 +22,12 @@ namespace gct {
   void to_json( nlohmann::json &root, const render_pass_begin_info_t &v ) {
      root = nlohmann::json::object();
      root[ "basic" ] = v.get_basic();
+     if( v.get_render_pass() ) {
+       root[ "basic" ][ "renderPass" ] = v.get_render_pass()->get_props();
+     }
+     if( v.get_framebuffer() ) {
+       root[ "basic" ][ "framebuffer" ] = v.get_framebuffer()->get_props();
+     }
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_TO_JSON( group )
 #endif
@@ -57,6 +65,23 @@ namespace gct {
     basic
       .setClearValueCount( clear_value.size() )
       .setPClearValues( clear_value.data() );
+    if( render_pass ) {
+      basic
+        .setRenderPass( **render_pass );
+    }
+    if( framebuffer ) {
+      basic
+        .setFramebuffer( **framebuffer );
+      if(
+        basic.renderArea.offset.x == 0 &&
+        basic.renderArea.offset.y == 0 &&
+        basic.renderArea.extent.width == 0 &&
+        basic.renderArea.extent.height == 0
+      ) {
+        basic.renderArea.extent.width = framebuffer->get_props().get_width();
+        basic.renderArea.extent.height = framebuffer->get_props().get_height();
+      }
+    }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_REBUILD_CHAIN( group )
@@ -81,6 +106,28 @@ namespace gct {
   }
   render_pass_begin_info_t &render_pass_begin_info_t::clear_clear_value() {
     clear_value.clear();
+    chained = false;
+    return *this;
+  }
+  render_pass_begin_info_t &render_pass_begin_info_t::set_render_pass( const std::shared_ptr< render_pass_t > &v ) {
+    render_pass = v;
+    chained = false;
+    return *this;
+  }
+  render_pass_begin_info_t &render_pass_begin_info_t::clear_render_pass() {
+    render_pass.reset();
+    basic.renderPass = VK_NULL_HANDLE;
+    chained = false;
+    return *this;
+  }
+  render_pass_begin_info_t &render_pass_begin_info_t::set_framebuffer( const std::shared_ptr< framebuffer_t > &v ) {
+    framebuffer = v;
+    chained = false;
+    return *this;
+  }
+  render_pass_begin_info_t &render_pass_begin_info_t::clear_framebuffer() {
+    framebuffer.reset();
+    basic.framebuffer = VK_NULL_HANDLE;
     chained = false;
     return *this;
   }

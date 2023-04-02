@@ -2,6 +2,7 @@
 #define GCT_SHADOW_MAP_HPP
 #include <tuple>
 #include <array>
+#include <optional>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
@@ -20,11 +21,17 @@ namespace gct {
     const glm::vec3 &light_pos
   );
 
-  std::tuple< glm::mat4, glm::mat4, float, float, float > get_projection_light_matrix(
+  std::optional< std::tuple< glm::mat4, glm::mat4, float, float > > get_projection_light_matrix(
     const glm::mat4 &camera_projection_matrix,
     const glm::mat4 &camera_view_matrix,
     const glm::vec3 &light_pos,
     float distance_offset
+  );
+  void test_light_matrix(
+    const glm::mat4 &camera_projection_matrix,
+    const glm::mat4 &camera_view_matrix,
+    const glm::mat4 &light_projection_matrix,
+    const glm::mat4 &light_view_matrix
   );
 }
 

@@ -92,6 +92,36 @@ namespace gct {
   void command_buffer_recorder_t::copy(
     const std::shared_ptr< image_t > &src,
     const std::shared_ptr< buffer_t > &dest,
+    unsigned int i
+  ) {
+    copy(
+      src,
+      dest,
+      vk::BufferImageCopy()
+        .setBufferOffset( 0 )
+        .setBufferRowLength( src->get_props().get_basic().extent.width )
+        .setBufferImageHeight( src->get_props().get_basic().extent.height )
+        .setImageSubresource(
+          vk::ImageSubresourceLayers()
+            .setAspectMask( format_to_aspect( src->get_props().get_basic().format ) )
+            .setMipLevel( 0 )
+            .setBaseArrayLayer( i )
+            .setLayerCount( 1 )
+        )
+        .setImageOffset(
+          vk::Offset3D()
+            .setX( 0 )
+            .setY( 0 )
+            .setZ( 0 )
+        )
+        .setImageExtent(
+          src->get_props().get_basic().extent
+        )
+    );
+  }
+  void command_buffer_recorder_t::copy(
+    const std::shared_ptr< image_t > &src,
+    const std::shared_ptr< buffer_t > &dest,
     vk::ImageLayout final_layout
   ) {
     copy(
@@ -106,6 +136,38 @@ namespace gct {
             .setAspectMask( format_to_aspect( src->get_props().get_basic().format ) )
             .setMipLevel( 0 )
             .setBaseArrayLayer( 0 )
+            .setLayerCount( 1 )
+        )
+        .setImageOffset(
+          vk::Offset3D()
+            .setX( 0 )
+            .setY( 0 )
+            .setZ( 0 )
+        )
+        .setImageExtent(
+          src->get_props().get_basic().extent
+        ),
+      final_layout
+    );
+  }
+  void command_buffer_recorder_t::copy(
+    const std::shared_ptr< image_t > &src,
+    const std::shared_ptr< buffer_t > &dest,
+    vk::ImageLayout final_layout,
+    unsigned int i
+  ) {
+    copy(
+      src,
+      dest,
+      vk::BufferImageCopy()
+        .setBufferOffset( 0 )
+        .setBufferRowLength( src->get_props().get_basic().extent.width )
+        .setBufferImageHeight( src->get_props().get_basic().extent.height )
+        .setImageSubresource(
+          vk::ImageSubresourceLayers()
+            .setAspectMask( format_to_aspect( src->get_props().get_basic().format ) )
+            .setMipLevel( 0 )
+            .setBaseArrayLayer( i )
             .setLayerCount( 1 )
         )
         .setImageOffset(

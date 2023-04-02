@@ -73,7 +73,7 @@ namespace gct::gltf {
   ) { 
     auto s = shader.find( flag );
     if( s != shader.end() ) return s->second;
-    for( int i = 0; i != 5; ++i ){
+    for( int i = 0; i != 6; ++i ){
       auto sub = get_suboptimal_shader( shader, flag, i );
       if( sub ) return sub;
     }

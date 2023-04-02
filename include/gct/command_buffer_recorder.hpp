@@ -172,6 +172,12 @@ namespace gct {
     void copy(
       const std::shared_ptr< image_t > &src,
       const std::shared_ptr< buffer_t > &dest,
+      vk::ImageLayout final_layout,
+      unsigned int i
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
       const std::vector< vk::BufferImageCopy > &range
     );
     void copy(
@@ -182,6 +188,11 @@ namespace gct {
     void copy(
       const std::shared_ptr< image_t > &src,
       const std::shared_ptr< buffer_t > &dest
+    );
+    void copy(
+      const std::shared_ptr< image_t > &src,
+      const std::shared_ptr< buffer_t > &dest,
+      unsigned int i
     );
     void blit(
       const std::shared_ptr< image_t > &src,

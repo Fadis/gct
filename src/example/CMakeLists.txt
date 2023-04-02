@@ -18,4 +18,5 @@ subdirs(
   libinput_keycode
   cursor
   text_input
+  shadow
 )
