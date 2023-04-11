@@ -10,6 +10,8 @@
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/get_device.hpp>
+#include <gct/image_view.hpp>
+#include <gct/image.hpp>
 
 namespace gct {
   std::uint32_t get_pot( std::uint32_t v ) {
@@ -301,5 +303,27 @@ namespace gct {
         
       }
     );
+  }
+  void command_buffer_recorder_t::set_image_layout(
+    const std::vector< std::shared_ptr< image_view_t > > &views,
+    vk::ImageLayout layout
+  ) {
+    for( const auto &image: views ) {
+      convert_image(
+        image->get_factory(),
+        layout
+      );
+    }
+  }
+  void command_buffer_recorder_t::set_image_layout(
+    const std::vector< std::shared_ptr< image_t > > &images,
+    vk::ImageLayout layout
+  ) {
+    for( const auto &image: images ) {
+      convert_image(
+        image,
+        layout
+      );
+    }
   }
 }

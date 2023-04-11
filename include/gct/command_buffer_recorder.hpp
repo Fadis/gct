@@ -17,15 +17,20 @@ namespace gct {
   class buffer_t;
   class allocator_t;
   class image_t;
+  class image_view_t;
   class bound_command_buffer_t;
   class descriptor_set_t;
   class pipeline_layout_t;
   class compute_pipeline_t;
   class graphics_pipeline_t;
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
   class ray_tracing_pipeline_t;
+  class strided_device_address_region_t;
+#endif
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
   class acceleration_structure_build_geometry_info_t;
   class acceleration_structure_build_region_info_t;
-  class strided_device_address_region_t;
+#endif
   class render_pass_begin_info_t;
   std::uint32_t get_pot( std::uint32_t v );
   bool is_pot( std::uint32_t v );
@@ -219,6 +224,18 @@ namespace gct {
       const std::vector< std::shared_ptr< buffer_t > >&,
       const std::vector< std::shared_ptr< image_t > >&
     );
+    std::vector< vk::ImageMemoryBarrier > compute_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > transfer_to_compute_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > compute_to_transfer_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
     /*
     void convert_image(
       const std::shared_ptr< image_t > &image,
@@ -286,6 +303,12 @@ namespace gct {
       std::shared_ptr< pipeline_layout_t > pipeline_layout,
       std::shared_ptr< descriptor_set_t > descriptor_set
     );
+    void bind_descriptor_set(
+      vk::PipelineBindPoint bind_point,
+      std::uint32_t offset,
+      std::shared_ptr< pipeline_layout_t > pipeline_layout,
+      const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
+    );
     void bind_pipeline(
       std::shared_ptr< compute_pipeline_t > pipeline
     );
@@ -295,6 +318,20 @@ namespace gct {
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
     void bind_pipeline(
       std::shared_ptr< ray_tracing_pipeline_t > pipeline
+    );
+#endif
+    void bind(
+      std::shared_ptr< compute_pipeline_t > pipeline,
+      const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
+    );
+    void bind(
+      std::shared_ptr< graphics_pipeline_t > pipeline,
+      const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
+    );
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
+    void bind(
+      std::shared_ptr< ray_tracing_pipeline_t > pipeline,
+      const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
     );
 #endif
     void bind_vertex_buffer(
@@ -313,6 +350,7 @@ namespace gct {
       vk::DeviceSize offset,
       vk::IndexType type
     );
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
     void build_acceleration_structure(
       const std::vector< gct::acceleration_structure_build_geometry_info_t >&,
       const std::vector< std::vector< vk::AccelerationStructureBuildRangeInfoKHR > >&
@@ -321,6 +359,8 @@ namespace gct {
       const gct::acceleration_structure_build_geometry_info_t&,
       const std::vector< vk::AccelerationStructureBuildRangeInfoKHR >&
     );
+#endif
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
     void trace_rays(
       const strided_device_address_region_t&,
       const strided_device_address_region_t&,
@@ -330,6 +370,7 @@ namespace gct {
       std::uint32_t,
       std::uint32_t
     );
+#endif
     std::shared_ptr< void > begin_render_pass(
       const render_pass_begin_info_t &begin_info,
       vk::SubpassContents subpass_contents
@@ -346,6 +387,15 @@ namespace gct {
     font load_font(
       std::filesystem::path path,
       const std::shared_ptr< allocator_t > &allocator
+    );
+    
+    void set_image_layout(
+      const std::vector< std::shared_ptr< image_view_t > > &views,
+      vk::ImageLayout layout
+    );
+    void set_image_layout(
+      const std::vector< std::shared_ptr< image_t > > &images,
+      vk::ImageLayout layout
     );
 
     const command_buffer_begin_info_t &get_props() const { return props; }

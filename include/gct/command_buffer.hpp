@@ -93,6 +93,7 @@ namespace gct {
     );
     void wait_for_executed();
     bool wait_for_executed( std::uint64_t );
+    void execute_and_wait();
   private:
     std::shared_ptr< command_buffer_t > buffer;
     std::shared_ptr< fence_t > fence;

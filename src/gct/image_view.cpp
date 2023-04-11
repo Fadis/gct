@@ -13,6 +13,12 @@ namespace gct {
     props( create_info ) {
     auto basic = props.get_basic();
     basic.setImage( **image );
+    if( basic.subresourceRange.levelCount == 0u ) {
+      basic.subresourceRange.levelCount = image->get_props().get_basic().mipLevels;
+    }
+    if( basic.subresourceRange.layerCount == 0u ) {
+      basic.subresourceRange.layerCount = image->get_props().get_basic().arrayLayers;
+    }
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
     if( !image->get_props().has_format_list() )
       basic.setFormat( image->get_props().get_basic().format );

@@ -247,7 +247,7 @@ int main() {
                   .setBaseArrayLayer( 0 )
                   .setLayerCount( icon->get_props().get_basic().arrayLayers )
               )
-              .setViewType( gct::to_image_view_type( icon->get_props().get_basic().imageType ) )
+              .setViewType( gct::to_image_view_type( icon->get_props().get_basic().imageType, icon->get_props().get_basic().arrayLayers ) )
               .setFormat( vk::Format::eR8G8B8A8Srgb )
           )
           .rebuild_chain()

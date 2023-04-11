@@ -1,5 +1,6 @@
 #ifndef GCT_IMAGE_HPP
 #define GCT_IMAGE_HPP
+#include <cstdint>
 #include <memory>
 #include <vulkan/vulkan.hpp>
 #include <gct/image_create_info.hpp>
@@ -7,7 +8,7 @@
 #include <gct/image_layout.hpp>
 
 namespace gct {
-  vk::ImageViewType to_image_view_type( vk::ImageType v );
+  vk::ImageViewType to_image_view_type( vk::ImageType v, std::uint32_t );
   class image_view_create_info_t;
   class device_t;
   class image_t {

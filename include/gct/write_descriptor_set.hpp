@@ -8,6 +8,9 @@
 #include <gct/descriptor_buffer_info.hpp>
 
 namespace gct {
+  class buffer_t;
+  class image_view_t;
+  class sampler_t;
   class acceleration_structure_t;
   class write_descriptor_set_t : public chained_t {
   public:
@@ -34,8 +37,14 @@ namespace gct {
 #endif
   public:
     write_descriptor_set_t &add_image( const descriptor_image_info_t& );
+    write_descriptor_set_t &add_image( const std::shared_ptr< image_view_t > &v );
+    write_descriptor_set_t &add_image(
+      const std::shared_ptr< sampler_t > &sampler,
+      const std::shared_ptr< image_view_t > &image_view
+    );
     write_descriptor_set_t &clear_image();
     write_descriptor_set_t &add_buffer( const descriptor_buffer_info_t& );
+    write_descriptor_set_t &add_buffer( const std::shared_ptr< buffer_t > &v );
     write_descriptor_set_t &clear_buffer();
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
     write_descriptor_set_t &add_acceleration_structure_handle( const std::shared_ptr< gct::acceleration_structure_t >& );

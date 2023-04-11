@@ -17,6 +17,7 @@
 #include <gct/pipeline_depth_stencil_state_create_info.hpp>
 #include <gct/pipeline_color_blend_state_create_info.hpp>
 #include <gct/pipeline_dynamic_state_create_info.hpp>
+#include <gct/format.hpp>
 #include <gct//pipeline_vertex_input_state_create_info.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
@@ -260,7 +261,7 @@ namespace gct::gltf {
                       .setBaseArrayLayer( 0 )
                       .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
                   )
-                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType ) )
+                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType, images.back().unorm->get_props().get_basic().arrayLayers ) )
                   .setFormat( images.back().unorm->get_props().get_format_list_formats().front() )
               )
               .rebuild_chain()
@@ -279,7 +280,7 @@ namespace gct::gltf {
                       .setBaseArrayLayer( 0 )
                       .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
                   )
-                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType ) )
+                  .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType, images.back().unorm->get_props().get_basic().arrayLayers ) )
                   .setFormat( images.back().unorm->get_props().get_format_list_formats().back() )
               )
               .rebuild_chain()
@@ -583,6 +584,22 @@ namespace gct::gltf {
         .add_vertex_input_binding_description(
           binding
         );
+    auto cbsci = pipeline_color_blend_state_create_info_t();
+    for( const auto &attachment: render_pass->get_props().get_attachment() ) {
+      if( format_to_aspect( attachment.format ) == vk::ImageAspectFlagBits::eColor ) {
+        cbsci
+          .add_attachment(
+            vk::PipelineColorBlendAttachmentState()
+              .setBlendEnable( blend )
+              .setColorWriteMask(
+                vk::ColorComponentFlagBits::eR |
+                vk::ColorComponentFlagBits::eG |
+                vk::ColorComponentFlagBits::eB |
+                vk::ColorComponentFlagBits::eA
+              )
+          );
+      }
+    }
 
     return pipeline_cache->get_pipeline(
       graphics_pipeline_create_info_t()
@@ -640,19 +657,7 @@ namespace gct::gltf {
                 .setBack( stencil_op )
             )
         )
-        .set_color_blend(
-          pipeline_color_blend_state_create_info_t()
-            .add_attachment(
-              vk::PipelineColorBlendAttachmentState()
-                .setBlendEnable( blend )
-                .setColorWriteMask(
-                  vk::ColorComponentFlagBits::eR |
-                  vk::ColorComponentFlagBits::eG |
-                  vk::ColorComponentFlagBits::eB |
-                  vk::ColorComponentFlagBits::eA
-                )
-            )
-        )
+        .set_color_blend( std::move( cbsci ) )
         .set_dynamic(
           pipeline_dynamic_state_create_info_t()
             .add_dynamic_state( vk::DynamicState::eViewport )

@@ -2,6 +2,7 @@
 #define LIBGCT_INCLUDE_GCT_INSTANCE_HPP
 
 #include <memory>
+#include <functional>
 #include <nlohmann/json.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/physical_device.hpp>
@@ -11,6 +12,15 @@ namespace gct {
   class instance_t;
   bool is_valid_vulkan_version( std::uint32_t version );
   class display_surface_create_info_t;
+#if defined(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+  using debug_callback_t = std::function<
+    void(
+      vk::DebugUtilsMessageSeverityFlagBitsEXT,
+      vk::DebugUtilsMessageTypeFlagsEXT,
+      const vk::DebugUtilsMessengerCallbackDataEXT&
+    )
+  >;
+#endif
   class instance_t : public std::enable_shared_from_this< instance_t > {
   public:
     instance_t(
@@ -35,11 +45,28 @@ namespace gct {
       return &handle.get();
     }
     const instance_create_info_t &get_props() const { return props; }
+#if defined(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+    void set_debug_callback(
+      vk::DebugUtilsMessageSeverityFlagsEXT severity,
+      vk::DebugUtilsMessageTypeFlagsEXT type,
+      debug_callback_t &&cb
+    );
+#endif
   private:
     instance_create_info_t props;
     layer_map_t activated_layers;
     extension_map_t activated_extensions;
     vk::UniqueHandle< vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
+#if defined(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+    vk::UniqueHandle< vk::DebugUtilsMessengerEXT, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > debug_message;
+    debug_callback_t debug_callback;
+    static VkBool32 call_debug_callback(
+      VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+      VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+      const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+      void *pUserData
+    );
+#endif
   };
 }
 

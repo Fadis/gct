@@ -1,6 +1,9 @@
 #include <gct/device.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/compute_pipeline.hpp>
+#include <gct/descriptor_set_layout.hpp>
+#include <gct/get_device.hpp>
+#include <gct/shader_module.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <gct/ray_tracing_pipeline.hpp>
 #endif
@@ -50,4 +53,25 @@ namespace gct {
     );
   }
 #endif
+  std::pair<
+    std::shared_ptr< descriptor_set_layout_t >,
+    std::shared_ptr< compute_pipeline_t >
+  >
+  pipeline_cache_t::get_pipeline(
+    const std::string &path
+  ) {
+    auto &device = get_device( *this );
+    auto shader = device.get_shader_module( path );
+    auto descriptor_set_layout = device.get_descriptor_set_layout(
+      gct::descriptor_set_layout_create_info_t()
+        .add_binding( shader->get_props().get_reflection() )
+        .rebuild_chain()
+    );
+    auto pipeline = get_pipeline(
+      gct::compute_pipeline_create_info_t()
+        .set_stage( shader )
+        .set_layout( descriptor_set_layout )
+    );
+    return std::make_pair( descriptor_set_layout, pipeline );
+  }
 }

@@ -2,6 +2,8 @@
 #define LIBGCT_INCLUDE_GCT_PIPELINE_CACHE_HPP
 
 #include <memory>
+#include <string>
+#include <utility>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
@@ -11,6 +13,7 @@ namespace gct {
   class compute_pipeline_create_info_t;
   class graphics_pipeline_t;
   class graphics_pipeline_create_info_t;
+  class descriptor_set_layout_t;
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
   class ray_tracing_pipeline_t;
   class deferred_operation_t;
@@ -48,6 +51,13 @@ namespace gct {
       const ray_tracing_pipeline_create_info_t&
     );
 #endif
+    std::pair<
+      std::shared_ptr< descriptor_set_layout_t >,
+      std::shared_ptr< compute_pipeline_t >
+    >
+    get_pipeline(
+      const std::string &path
+    );
   private:
     pipeline_cache_create_info_t props;
     vk::UniqueHandle< vk::PipelineCache, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

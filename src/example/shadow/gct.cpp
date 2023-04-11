@@ -413,7 +413,7 @@ int main() {
             vk::ImageSubresourceRange()
               .setAspectMask( vk::ImageAspectFlagBits::eColor )
           )
-          .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType ) )
+          .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType, environment_image->get_props().get_basic().arrayLayers ) )
           .setFormat( vk::Format::eR8G8B8A8Unorm )
       )
       .rebuild_chain()

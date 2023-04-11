@@ -18,6 +18,7 @@
 namespace gct {
   class pipeline_layout_t;
   class render_pass_t;
+  class descriptor_set_layout_t;
   class graphics_pipeline_create_info_t : public chained_t {
     friend void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
   public:
@@ -92,7 +93,11 @@ namespace gct {
     graphics_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
     graphics_pipeline_create_info_t &clear_dynamic();
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
+    graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     graphics_pipeline_create_info_t &clear_layout();
+    const std::shared_ptr< pipeline_layout_t > &get_layout() const {
+      return layout;
+    }
     graphics_pipeline_create_info_t &set_render_pass( const std::shared_ptr< render_pass_t >&, std::uint32_t );
     graphics_pipeline_create_info_t &clear_render_pass();
     void to_json( nlohmann::json &root );

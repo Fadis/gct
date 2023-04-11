@@ -3,6 +3,7 @@
 #include <gct/instance.hpp>
 #include <gct/vulkanhpp.hpp>
 #include <gct/io_context.hpp>
+#include <gct/exception.hpp>
 namespace gct {
   bool is_valid_vulkan_version( std::uint32_t version ) {
     return
@@ -37,6 +38,51 @@ namespace gct {
     );
     VULKAN_HPP_DEFAULT_DISPATCHER.init( *handle );
   }
+#if defined(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+  void instance_t::set_debug_callback(
+    vk::DebugUtilsMessageSeverityFlagsEXT severity,
+    vk::DebugUtilsMessageTypeFlagsEXT type,
+    debug_callback_t &&cb
+  ) {
+    if( activated_extensions.find( VK_EXT_DEBUG_UTILS_EXTENSION_NAME ) != activated_extensions.end() ) {
+      debug_callback = cb;
+      debug_message = handle->createDebugUtilsMessengerEXTUnique(
+        vk::DebugUtilsMessengerCreateInfoEXT()
+          .setMessageSeverity( severity )
+          .setMessageType( type )
+          .setPfnUserCallback( instance_t::call_debug_callback )
+          .setPUserData( reinterpret_cast< void* >( this ) )
+      );
+    }
+    else {
+      throw exception::runtime_error( "instance_t::set_debug_callback : Required instance extension VK_EXT_debug_utils is not enabled.", __FILE__, __LINE__ );
+    }
+  }
+  VkBool32 instance_t::call_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+    void *pUserData
+  ) {
+    const auto instance = reinterpret_cast< instance_t* >( pUserData );
+    if( !instance ) {
+      std::cerr << "instance_t::call_debug_callback : invalid user data." << std::endl;
+      std::abort();
+    }
+    if( !pCallbackData ) {
+      std::cerr << "instance_t::call_debug_callback : invalid callback data." << std::endl;
+      std::abort();
+    }
+    if( instance->debug_callback ) {
+      instance->debug_callback(
+        vk::DebugUtilsMessageSeverityFlagBitsEXT( messageSeverity ),
+        vk::DebugUtilsMessageTypeFlagsEXT( messageTypes ),
+        *reinterpret_cast< const vk::DebugUtilsMessengerCallbackDataEXT* >( pCallbackData )
+      );
+    }
+    return VK_FALSE;
+  }
+#endif
   device_groups_t
   instance_t::get_physical_devices(
     const std::vector< const char* > &device_layers

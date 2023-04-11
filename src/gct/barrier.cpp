@@ -45,7 +45,8 @@ namespace gct {
     const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
 #endif
     for( auto &v: image ) {
-      if( synchronization2_is_activated ) {
+      // This causes validation layer fails to track image layout randomly.
+      /*if( synchronization2_is_activated ) {
         raw_image.push_back(
           vk::ImageMemoryBarrier()
             .setSrcAccessMask( src_access_mask )
@@ -65,7 +66,7 @@ namespace gct {
             )
         );
       }
-      else {
+      else {*/
         for( auto &f: v->get_layout().get_layout() ) {
           raw_image.push_back(
             vk::ImageMemoryBarrier( f )
@@ -80,7 +81,7 @@ namespace gct {
               )
           );
         }
-      }
+      /*}*/
     }
     (*get_factory())->pipelineBarrier(
       src_stage,
@@ -93,6 +94,48 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( buffer );
     get_factory()->unbound()->keep.push_back( image );
     return raw_image;
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_to_transfer_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_to_compute_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::convert_image(
     vk::AccessFlagBits src_access_mask,
@@ -117,9 +160,20 @@ namespace gct {
         array_count
       )
     ) {
+    }
+    for(
+      auto &f:
+      image->get_layout().set_layout(
+        mip_base,
+        mip_count,
+        array_base,
+        array_count,
+        to
+      )
+    ) {
       raw_image.push_back(
         vk::ImageMemoryBarrier( f )
-          .setNewLayout( to )
+          //.setNewLayout( to )
           .setSrcAccessMask( src_access_mask )
           .setDstAccessMask( dest_access_mask )
           .setSrcQueueFamilyIndex( available_queue_family_index )
@@ -131,13 +185,6 @@ namespace gct {
           )
       );
     }
-    image->get_layout().set_layout(
-      mip_base,
-      mip_count,
-      array_base,
-      array_count,
-      to
-    );
     (*get_factory())->pipelineBarrier(
       src_stage,
       dest_stage,
@@ -179,8 +226,8 @@ namespace gct {
     vk::ImageLayout to
   ) {
     return convert_image(
-      vk::AccessFlagBits::eTransferRead,
-      vk::AccessFlagBits::eShaderRead,
+      vk::AccessFlagBits( 0x1FFFF ),
+      vk::AccessFlagBits( 0x1FFFF ),
       vk::PipelineStageFlagBits::eAllCommands,
       vk::PipelineStageFlagBits::eAllCommands,
       image,
@@ -196,8 +243,8 @@ namespace gct {
     vk::ImageLayout to
   ) {
     return convert_image(
-      vk::AccessFlagBits::eTransferRead,
-      vk::AccessFlagBits::eShaderRead,
+      vk::AccessFlagBits( 0x1FFFF ),
+      vk::AccessFlagBits( 0x1FFFF ),
       vk::PipelineStageFlagBits::eAllCommands,
       vk::PipelineStageFlagBits::eAllCommands,
       image,

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <gct/ray_tracing_pipeline_create_info.hpp>
+#include <gct/device.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
@@ -7,6 +8,7 @@
 #include <gct/pipeline_library_create_info.hpp>
 #include <gct/ray_tracing_pipeline_interface_create_info.hpp>
 #include <gct/pipeline_dynamic_state_create_info.hpp>
+#include <gct/get_device.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <vulkan2json/RayTracingPipelineCreateInfoKHR.hpp>
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
@@ -283,6 +285,16 @@ namespace gct {
     layout = v;
     chained = false;
     return *this;
+  }
+  ray_tracing_pipeline_create_info_t &ray_tracing_pipeline_create_info_t::set_layout( const std::shared_ptr< descriptor_set_layout_t > &v ) {
+    return set_layout(
+      get_device( *v ).get_pipeline_layout(
+        gct::pipeline_layout_create_info_t()
+          .add_descriptor_set_layout(
+            v
+          )
+      )
+    );
   }
   ray_tracing_pipeline_create_info_t &ray_tracing_pipeline_create_info_t::clear_layout() {
     layout.reset();

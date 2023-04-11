@@ -83,6 +83,12 @@ namespace gct {
       vk::throwResultException( vk::Result( result ), "wait_for_executed failed." );
     }
   }
+  void bound_command_buffer_t::execute_and_wait() {
+    execute(
+      gct::submit_info_t()
+    );
+    wait_for_executed();
+  }
   command_buffer_recorder_t bound_command_buffer_t::begin(
     const command_buffer_begin_info_t &begin_info
   ) {

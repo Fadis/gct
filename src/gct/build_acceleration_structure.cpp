@@ -3,6 +3,7 @@
 #include <gct/command_buffer.hpp>
 #include <gct/acceleration_structure_build_geometry_info.hpp>
 #include <gct/acceleration_structure_geometry.hpp>
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 namespace gct {
   void command_buffer_recorder_t::build_acceleration_structure(
     const std::vector< gct::acceleration_structure_build_geometry_info_t > &geometry,
@@ -50,3 +51,5 @@ namespace gct {
     );
   }
 }
+#endif
+

@@ -122,7 +122,8 @@ namespace gct {
       .setImageArrayLayers( 1 )
       .setImageUsage(
         vk::ImageUsageFlagBits::eColorAttachment|
-        vk::ImageUsageFlagBits::eTransferDst
+        vk::ImageUsageFlagBits::eTransferDst|
+        vk::ImageUsageFlagBits::eStorage
       )
       .setPreTransform(
         ( surface->get_caps().get_basic().supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity ) ?

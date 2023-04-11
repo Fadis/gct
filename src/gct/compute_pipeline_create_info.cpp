@@ -1,8 +1,10 @@
 #include <fstream>
 #include <iterator>
+#include <gct/device.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/compute_pipeline_create_info.hpp>
 #include <gct/shader_module.hpp>
+#include <gct/get_device.hpp>
 #include <vulkan2json/ComputePipelineCreateInfo.hpp>
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
 #include <vulkan2json/PipelineCompilerControlCreateInfoAMD.hpp>
@@ -80,6 +82,16 @@ namespace gct {
     layout = v;
     chained = false;
     return *this;
+  }
+  compute_pipeline_create_info_t &compute_pipeline_create_info_t::set_layout( const std::shared_ptr< descriptor_set_layout_t > &v ) {
+    return set_layout(
+      get_device( *v ).get_pipeline_layout(
+        gct::pipeline_layout_create_info_t()
+          .add_descriptor_set_layout(
+            v
+          )
+      )
+    );
   }
   compute_pipeline_create_info_t &compute_pipeline_create_info_t::clear_layout() {
     layout.reset();

@@ -14,6 +14,7 @@
 #include <gct/pipeline_dynamic_state_create_info.hpp>
 namespace gct {
   class pipeline_layout_t;
+  class descriptor_set_layout_t;
   class ray_tracing_pipeline_create_info_t : public chained_t {
   public:
     using self_type = ray_tracing_pipeline_create_info_t;
@@ -44,7 +45,11 @@ namespace gct {
     ray_tracing_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
     ray_tracing_pipeline_create_info_t &clear_dynamic();
     ray_tracing_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
+    ray_tracing_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     ray_tracing_pipeline_create_info_t &clear_layout();
+    const std::shared_ptr< pipeline_layout_t > &get_layout() const {
+      return layout;
+    }
   };
   void to_json( nlohmann::json &root, const ray_tracing_pipeline_create_info_t &v );
   void from_json( const nlohmann::json &root, ray_tracing_pipeline_create_info_t &v );

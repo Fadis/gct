@@ -68,5 +68,26 @@ namespace gct {
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
+  const sampler_create_info_t &get_basic_linear_sampler_create_info() {
+    static const sampler_create_info_t instance =
+      sampler_create_info_t()
+        .set_basic(
+          vk::SamplerCreateInfo()
+            .setMagFilter( vk::Filter::eLinear )
+            .setMinFilter( vk::Filter::eLinear )
+            .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+            .setAddressModeU( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeV( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeW( vk::SamplerAddressMode::eClampToEdge )
+            .setAnisotropyEnable( false )
+            .setCompareEnable( false )
+            .setMipLodBias( 0.f )
+            .setMinLod( 0.f )
+            .setMaxLod( 0.f )
+            .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+            .setUnnormalizedCoordinates( false )
+        );
+    return instance;
+  }
 }
 

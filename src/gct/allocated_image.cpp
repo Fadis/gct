@@ -53,7 +53,7 @@ namespace gct {
                 .setBaseArrayLayer( 0 )
                 .setLayerCount( get_props().get_basic().arrayLayers )
             )
-            .setViewType( to_image_view_type( get_props().get_basic().imageType ) )
+            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers ) )
         )
         .rebuild_chain()
     );

@@ -19,4 +19,5 @@ subdirs(
   cursor
   text_input
   shadow
+  ssao
 )

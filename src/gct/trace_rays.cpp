@@ -7,6 +7,7 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/strided_device_address_region.hpp>
 #include <nlohmann/json.hpp>
+#ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 namespace gct {
   void command_buffer_recorder_t::trace_rays(
     const strided_device_address_region_t &raygen,
@@ -37,4 +38,4 @@ namespace gct {
       get_factory()->unbound()->keep.push_back( callable );
   }
 }
-
+#endif

@@ -87,7 +87,7 @@ cubemap_images::cubemap_images(
                   .setBaseArrayLayer( i )
                   .setLayerCount( 1 )
               )
-              .setViewType( to_image_view_type( images.back()->get_props().get_basic().imageType ) )
+              .setViewType( to_image_view_type( images.back()->get_props().get_basic().imageType, images.back()->get_props().get_basic().arrayLayers ) )
           )
           .rebuild_chain()
       );

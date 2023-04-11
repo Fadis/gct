@@ -2,6 +2,10 @@
 #include <iterator>
 #include <gct/write_descriptor_set.hpp>
 #include <gct/acceleration_structure.hpp>
+#include <gct/buffer.hpp>
+#include <gct/image_view.hpp>
+#include <gct/image.hpp>
+#include <gct/sampler.hpp>
 
 namespace gct {
   write_descriptor_set_t &write_descriptor_set_t::rebuild_chain() {
@@ -86,6 +90,34 @@ namespace gct {
     chained = false;
     return *this;
   }
+  write_descriptor_set_t &write_descriptor_set_t::add_image( const std::shared_ptr< image_view_t > &v ) {
+    return add_image(
+      gct::descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+            .setImageLayout(
+              v->get_factory()->get_layout().get_uniform_layout()
+            )
+        )
+        .set_image_view( v )
+    );
+  }
+  write_descriptor_set_t &write_descriptor_set_t::add_image(
+    const std::shared_ptr< sampler_t > &sampler,
+    const std::shared_ptr< image_view_t > &image_view
+  ) {
+    return add_image(
+      gct::descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+            .setImageLayout(
+              image_view->get_factory()->get_layout().get_uniform_layout()
+            )
+        )
+        .set_sampler( sampler )
+        .set_image_view( image_view )
+    );
+  }
   write_descriptor_set_t &write_descriptor_set_t::clear_image() {
     image.clear();
     chained = false;
@@ -96,6 +128,17 @@ namespace gct {
     image.clear();
     chained = false;
     return *this;
+  }
+  write_descriptor_set_t &write_descriptor_set_t::add_buffer( const std::shared_ptr< buffer_t > &v ) {
+    return add_buffer(
+      gct::descriptor_buffer_info_t()
+        .set_buffer( v )
+        .set_basic(
+          vk::DescriptorBufferInfo()
+            .setOffset( 0 )
+            .setRange( v->get_props().get_basic().size )
+        )
+    );
   }
   write_descriptor_set_t &write_descriptor_set_t::clear_buffer() {
     buffer.clear();

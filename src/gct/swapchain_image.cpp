@@ -22,7 +22,7 @@ namespace gct {
           .setSharingMode( v.imageSharingMode )
           .setQueueFamilyIndexCount( v.queueFamilyIndexCount )
           .setPQueueFamilyIndices( v.pQueueFamilyIndices )
-          .setInitialLayout( vk::ImageLayout::ePresentSrcKHR )
+          .setInitialLayout( /*vk::ImageLayout::ePresentSrcKHR*/vk::ImageLayout::eUndefined )
       )
       .rebuild_chain();
   }
@@ -51,7 +51,7 @@ namespace gct {
         .set_basic(
           vk::ImageViewCreateInfo()
             .setSubresourceRange( vk::ImageSubresourceRange( aspect, 0, 1, 0, 1 ) )
-            .setViewType( to_image_view_type( get_props().get_basic().imageType ) )
+            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers ) )
         )
         .rebuild_chain()
     );

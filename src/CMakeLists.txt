@@ -124,6 +124,7 @@ add_library( gct SHARED
   gct/bind_descriptor_set.cpp
   gct/bind_pipeline.cpp
   gct/bind_vertex_buffer.cpp
+  gct/bind.cpp
   gct/format_to_aspect.cpp
   gct/format_to_size.cpp
   gct/format_to_type.cpp
@@ -183,6 +184,7 @@ add_library( gct SHARED
   gct/eotf.cpp
   gct/shadow_map.cpp
   gct/cubemap.cpp
+  gct/gbuffer.cpp
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
   gct/canvas/canvas.cpp
