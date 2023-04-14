@@ -20,4 +20,5 @@ subdirs(
   text_input
   shadow
   ssao
+  ssdo
 )

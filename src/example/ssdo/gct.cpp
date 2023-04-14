@@ -328,8 +328,64 @@ int main() {
     );
     dynamic_descriptor_set.back()->update( updates );
   }
+
+  auto environment_sampler = device->get_sampler(
+    gct::sampler_create_info_t()
+      .set_basic(
+        vk::SamplerCreateInfo()
+          .setMagFilter( vk::Filter::eLinear )
+          .setMinFilter( vk::Filter::eLinear )
+          .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+          .setAddressModeU( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeV( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeW( vk::SamplerAddressMode::eRepeat )
+          .setAnisotropyEnable( false )
+          .setCompareEnable( false )
+          .setMipLodBias( 0.f )
+          .setMinLod( 0.f )
+          .setMaxLod( 0.f )
+          .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+          .setUnnormalizedCoordinates( false )
+      )
+  );
+  std::shared_ptr< gct::image_t > environment_image;
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      environment_image = recorder.load_image(
+        allocator,
+        "../images/environment.png",
+        vk::ImageUsageFlagBits::eSampled,
+        true, true
+      );
+      recorder.transfer_to_compute_barrier(
+        {},
+        { environment_image }
+      );
+    }
+    command_buffer->execute_and_wait();
+  }
+  
+  auto environment_image_view = environment_image->get_view(
+    gct::image_view_create_info_t()
+      .set_basic(
+        vk::ImageViewCreateInfo()
+          .setSubresourceRange(
+            vk::ImageSubresourceRange()
+              .setAspectMask( vk::ImageAspectFlagBits::eColor )
+          )
+          .setViewType( gct::to_image_view_type( environment_image->get_props().get_basic().imageType, environment_image->get_props().get_basic().arrayLayers ) )
+          .setFormat( vk::Format::eR8G8B8A8Unorm )
+      )
+      .rebuild_chain()
+  );
+
+
+
+
   const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/ssao.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/ao/ssdo.comp.spv"
   );
 
   const auto r32ici =
@@ -369,7 +425,7 @@ int main() {
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ao_out.push_back(
       allocator->create_image(
-        r32ici,
+        rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
@@ -401,7 +457,29 @@ int main() {
           .add_image( ao_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ao_descriptor_set.back())[ "dynamic_uniforms" ] )
-          .add_buffer( dynamic_uniform[ i ] )
+          .add_buffer( dynamic_uniform[ i ] ),
+        /*gct::write_descriptor_set_t()
+          .set_basic( (*ao_descriptor_set.back())[ "environment_map" ] )
+          .add_image( environment_sampler, environment_image_view ),*/
+        gct::write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet()
+              .setDstSet( **ao_descriptor_set.back() )
+              .setDstBinding( 2u )
+              .setDescriptorCount( 1u )
+              .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+          )
+          .add_image(
+            gct::descriptor_image_info_t()
+              .set_sampler( environment_sampler )
+              .set_image_view( environment_image_view )
+              .set_basic(
+                vk::DescriptorImageInfo()
+                  .setImageLayout(
+                    environment_image->get_layout().get_uniform_layout()
+                  )
+              )
+          )
       }
     );
   }
@@ -417,7 +495,7 @@ int main() {
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ao_gauss_temp.push_back(
       allocator->create_image(
-        r32ici,
+        rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
