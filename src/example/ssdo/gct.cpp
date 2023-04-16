@@ -241,7 +241,7 @@ int main() {
     gct::get_basic_linear_sampler_create_info()
   );
 
-  constexpr std::size_t gbuf_count = 7u;
+  constexpr std::size_t gbuf_count = 8u;
   gct::gbuffer gbuffer(
     allocator,
     width,
@@ -249,6 +249,14 @@ int main() {
     swapchain_images.size(),
     gbuf_count
   );
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( gbuffer.get_image_views(), vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
 
 
   std::vector< fb_resources_t > framebuffers;
@@ -381,13 +389,6 @@ int main() {
       .rebuild_chain()
   );
 
-
-
-
-  const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/ssdo.comp.spv"
-  );
-
   const auto r32ici =
     gct::image_create_info_t()
       .set_basic(
@@ -421,6 +422,64 @@ int main() {
           .setInitialLayout( vk::ImageLayout::eUndefined )
       );
 
+  const auto [light_descriptor_set_layout,light_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv"
+  );
+
+  std::vector< std::shared_ptr< gct::image_view_t > > diffuse;
+  std::vector< std::shared_ptr< gct::image_view_t > > specular;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    diffuse.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    specular.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( diffuse, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( specular, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > light_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    light_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        light_descriptor_set_layout
+      )
+    );
+    light_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*light_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*light_descriptor_set.back())[ "diffuse_image" ] )
+          .add_image( diffuse[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*light_descriptor_set.back())[ "specular_image" ] )
+          .add_image( specular[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*light_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
+      }
+    );
+  }
+
+  const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/ao/ssdo.comp.spv"
+  );
+
   std::vector< std::shared_ptr< gct::image_view_t > > ao_out;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ao_out.push_back(
@@ -434,11 +493,11 @@ int main() {
     auto command_buffer = queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      recorder.set_image_layout( gbuffer.get_image_views(), vk::ImageLayout::eGeneral );
       recorder.set_image_layout( ao_out, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
+
 
   std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
@@ -565,59 +624,9 @@ int main() {
   }
 
 
-  const auto [light_descriptor_set_layout,light_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv"
-  );
 
-  std::vector< std::shared_ptr< gct::image_view_t > > diffuse;
-  std::vector< std::shared_ptr< gct::image_view_t > > specular;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    diffuse.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-    specular.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( diffuse, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( specular, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > light_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    light_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        light_descriptor_set_layout
-      )
-    );
-    light_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "diffuse_image" ] )
-          .add_image( diffuse[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "specular_image" ] )
-          .add_image( specular[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "dynamic_uniforms" ] )
-          .add_buffer( dynamic_uniform[ i ] )
-      }
-    );
-  }
+
+
 
 
   std::vector< std::shared_ptr< gct::buffer_t > > tone;
@@ -1077,14 +1086,14 @@ int main() {
       );
       
       rec.bind(
-        ao_pipeline,
-        { ao_descriptor_set[ image_index ] }
+        light_pipeline,
+        { light_descriptor_set[ image_index ] }
       );
       rec->dispatch( width/16, height/16, 1 );
 
       rec.bind(
-        light_pipeline,
-        { light_descriptor_set[ image_index ] }
+        ao_pipeline,
+        { ao_descriptor_set[ image_index ] }
       );
       rec->dispatch( width/16, height/16, 1 );
 

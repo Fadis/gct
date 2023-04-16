@@ -241,7 +241,7 @@ int main() {
     gct::get_basic_linear_sampler_create_info()
   );
 
-  constexpr std::size_t gbuf_count = 7u;
+  constexpr std::size_t gbuf_count = 8u;
   gct::gbuffer gbuffer(
     allocator,
     width,

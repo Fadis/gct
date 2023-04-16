@@ -21,4 +21,6 @@ subdirs(
   shadow
   ssao
   ssdo
+  ssdo_with_bounce
+  hbao
 )

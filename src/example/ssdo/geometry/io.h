@@ -11,6 +11,7 @@ layout (location = 3) out vec4 output_emissive; // [emissive.r] [emissive.g] [em
 layout (location = 4) out vec4 output_material; // [metallicness] [roughness] [inst_id] [prim_id]
 layout (location = 5) out vec4 output_optflow; // [optflow.x] [optflow.y] [optflow.z]
 layout (location = 6) out vec4 output_shadow; // [shadow0] [shadow1] [shadow2] [shadow3]
+layout (location = 7) out vec4 output_face_normal;
 
 #endif
 

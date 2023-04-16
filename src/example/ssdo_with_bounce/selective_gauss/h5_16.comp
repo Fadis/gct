@@ -1,0 +1,48 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rgba32f) readonly uniform image2D src_image;
+layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
+
+layout(local_size_x = 128, local_size_y = 1 ) in;
+
+#include "gauss.h"
+
+const int kernel_size = 16;
+shared vec4[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] depth;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint lcpos = gl_LocalInvocationID.x;
+  const uint hcpos = lcpos + gl_WorkGroupSize.x;
+  const ivec2 image_size = imageSize( src_image );
+  ivec2 lsample_pos = screen_pos;
+  lsample_pos.x = max( min( lsample_pos.x - kernel_size, image_size.x - 1 ), 0 );
+  lsample_pos.y = max( min( lsample_pos.y, image_size.y - 1 ), 0 );
+  ivec2 hsample_pos = lsample_pos;
+  hsample_pos.x += int( gl_WorkGroupSize.x );
+  cache[ lcpos ] = imageLoad( src_image, lsample_pos );
+  depth[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).xyz;
+  if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
+    cache[ hcpos ] = imageLoad( src_image, hsample_pos );
+    depth[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).xyz;
+  }
+  barrier();
+  float scale = 0.0;
+  vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec3 center_depth = depth[ lcpos + kernel_size ];
+  for( uint i = 0; i != gauss5_16_size; i++ ) {
+    const vec3 sample_depth = depth[ lcpos + i ];
+    const float distance = length( sample_depth - center_depth );
+    const float weight = 1.0 / ( 1.0 + distance );
+    sum += cache[ lcpos + i ] * gauss5_16[ i ] * weight;
+    scale += gauss5_16[ i ] * weight;
+  }
+  sum /= scale;
+  imageStore( dest_image, screen_pos, sum );
+}
+
