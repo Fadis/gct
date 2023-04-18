@@ -547,10 +547,10 @@ int main() {
   }
 
   const auto [ao_hgauss_descriptor_set_layout,ao_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/h5_16.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/h12_32.comp.spv"
   );
   const auto [ao_vgauss_descriptor_set_layout,ao_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/v5_16.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/v12_32.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ao_gauss_temp;
@@ -721,10 +721,10 @@ int main() {
   }
 
   const auto [bloom_hgauss_descriptor_set_layout,bloom_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/gauss/h5_16.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv"
   );
   const auto [bloom_vgauss_descriptor_set_layout,bloom_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/gauss/v5_16.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > bloom_gauss_temp;
@@ -1092,7 +1092,7 @@ int main() {
         light_pipeline,
         { light_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/16, height/16, 1 );
+      rec.dispatch_threads( width, height, 1 );
       
       rec.compute_barrier(
         {},
@@ -1103,7 +1103,7 @@ int main() {
         ao_pipeline,
         { ao_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/16, height/16, 1 );
+      rec.dispatch_threads( width, height, 1 );
 
       rec.compute_barrier(
         {},
@@ -1114,7 +1114,7 @@ int main() {
         ao_hgauss_pipeline,
         { ao_hgauss_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/128 + ( width % 128 ? 1 : 0 ), height, 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         { ao_gauss_temp[ image_index ]->get_factory() }
@@ -1123,7 +1123,7 @@ int main() {
         ao_vgauss_pipeline,
         { ao_vgauss_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width, height/128 + ( height % 128 ? 1 : 0 ), 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         {
@@ -1136,7 +1136,7 @@ int main() {
         mix_ao_pipeline,
         { mix_ao_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/16, height/16, 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         {
@@ -1148,7 +1148,7 @@ int main() {
         bloom_hgauss_pipeline,
         { bloom_hgauss_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/128 + ( width % 128 ? 1 : 0 ), height, 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         { bloom_gauss_temp[ image_index ]->get_factory() }
@@ -1157,7 +1157,7 @@ int main() {
         bloom_vgauss_pipeline,
         { bloom_vgauss_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width, height/128 + ( height % 128 ? 1 : 0 ), 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         { bloom_out[ image_index ]->get_factory() }
@@ -1170,7 +1170,7 @@ int main() {
         tone_pipeline,
         { tone_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/16, height/16, 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.compute_to_transfer_barrier(
         { tone[ image_index ] },
         {}
@@ -1187,7 +1187,7 @@ int main() {
         gamma_pipeline,
         { gamma_descriptor_set[ image_index ] }
       );
-      rec->dispatch( width/16, height/16, 1 );
+      rec.dispatch_threads( width, height, 1 );
       rec.convert_image(
         swapchain_images[ image_index ],
         vk::ImageLayout::ePresentSrcKHR

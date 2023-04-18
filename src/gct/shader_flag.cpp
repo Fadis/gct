@@ -41,7 +41,11 @@ namespace gct {
         ( "world", shader_flag_t( 0 ) );
       targets.add
         ( "vert", shader_flag_t::vertex )
-        ( "frag", shader_flag_t::fragment );
+        ( "tesc", shader_flag_t::tesselation_control )
+        ( "tese", shader_flag_t::tesselation_evaluation )
+        ( "geom", shader_flag_t::geometry )
+        ( "frag", shader_flag_t::fragment )
+        ( "comp", shader_flag_t::compute );
       normal = ( ( keywords % '_' ) >> '.' >> targets >> ".spv" )[
         qi::_pass = phx::bind( &shader_flag::combine, qi::_val, qi::_1, qi::_2 )
       ];

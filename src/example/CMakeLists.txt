@@ -23,4 +23,5 @@ subdirs(
   ssdo
   ssdo_with_bounce
   hbao
+  voxelize
 )

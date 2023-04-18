@@ -23,6 +23,9 @@ namespace gct {
   public:
     pipeline_shader_stage_create_info_t &set_shader_module( const std::shared_ptr< shader_module_t >& );
     pipeline_shader_stage_create_info_t &clear_shader_module();
+    const std::shared_ptr< shader_module_t > get_shader_module() const {
+      return shader_module;
+    }
     pipeline_shader_stage_create_info_t &add_specialization_info( const vk::SpecializationInfo& );
     pipeline_shader_stage_create_info_t &clear_specialization_info();
     template< typename T >

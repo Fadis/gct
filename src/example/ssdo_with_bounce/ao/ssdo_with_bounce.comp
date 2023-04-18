@@ -34,7 +34,7 @@ vec3 diffuse_ambient_light(
 }
 
 void main() {
-  const float kernel_size = 1.0;
+  const float kernel_size = 0.5;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 center = center_.xyz;
@@ -66,11 +66,10 @@ void main() {
     const float sample_depth = sample_world_pos.w;
     const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
     const vec3 sample_diffuse =
-      imageLoad( gbuffer, ivec3( sample_pos, 1 ) ).rgb +
       imageLoad( diffuse_image, sample_pos ).rgb;
     float visibility = 1.0 - step( sample_depth, screen_pos.z );
     vec3 dir = normalize( offset );
-    float scale = max( dot( sample_normal, normalize( dynamic_uniforms.eye_pos.xyz - sample_world_pos.xyz ) ), 0.001 );
+    float scale = max( dot( sample_normal, normalize( - dynamic_uniforms.eye_pos.xyz + sample_world_pos.xyz ) ), 0.001 );
     const vec3 actual_dir = normalize( center - sample_world_pos.xyz ); 
     env_color += 
     mix(

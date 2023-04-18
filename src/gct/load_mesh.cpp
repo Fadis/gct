@@ -100,6 +100,22 @@ namespace gct::gltf {
     ) != temp.end() ) temp.clear();
     return temp;
   }
+  std::vector< std::shared_ptr< shader_module_t > > get_shader_optional(
+    const std::vector< shader_t > &shader,
+    shader_flag_t flag
+  ) {
+    std::vector< std::shared_ptr< shader_module_t > > temp;
+    temp.reserve( shader.size() );
+    std::transform(
+      shader.begin(),
+      shader.end(),
+      std::back_inserter( temp ),
+      [flag]( const shader_t &s ) {
+        return get_shader( s, flag );
+      }
+    );
+    return temp;
+  }
 
   primitive_t create_primitive(
     const fx::gltf::Document &doc,
@@ -190,6 +206,13 @@ namespace gct::gltf {
     if( has_tangent ) vs_flag = shader_flag_t( int( vs_flag )|int( shader_flag_t::tangent ) );
     auto vs = get_shader( shader, vs_flag );
     if( vs.empty() ) throw invalid_gltf( "必要なシェーダがない", __FILE__, __LINE__ );
+
+
+    auto gs_flag = shader_flag_t::geometry;
+    if( rigged ) gs_flag = shader_flag_t( int( gs_flag )|int( shader_flag_t::skin ) );
+    if( has_tangent ) gs_flag = shader_flag_t( int( gs_flag )|int( shader_flag_t::tangent ) );
+    auto gs = get_shader_optional( shader, gs_flag );
+
     auto fs_flag = shader_flag_t::fragment;
     if( has_tangent ) fs_flag = shader_flag_t( int( fs_flag )|int( shader_flag_t::tangent ) );
     if( material.pbrMetallicRoughness.baseColorTexture.index != -1 )
@@ -210,6 +233,12 @@ namespace gct::gltf {
     for( const auto &s: vs ) {
       descriptor_set_layout_create_info
         .add_binding( s->get_props().get_reflection() );
+    }
+    for( const auto &s: gs ) {
+      if( s ) {
+        descriptor_set_layout_create_info
+          .add_binding( s->get_props().get_reflection() );
+      }
     }
     for( const auto &s: fs ) {
       descriptor_set_layout_create_info
@@ -243,6 +272,7 @@ namespace gct::gltf {
         create_pipeline(
           pipeline_cache,
           vs[ i ],
+          gs[ i ],
           fs[ i ],
           pipeline_layout,
           r,

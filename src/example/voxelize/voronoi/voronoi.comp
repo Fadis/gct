@@ -1,0 +1,102 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, r32ui) uniform uimage3D dest_image;
+
+layout(push_constant) uniform PushConstants {
+  uint distance;
+} push_constants;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
+
+const ivec3 directions[26] = ivec3[](
+  ivec3(   0,   0, + 1 ),
+  ivec3(   0,   0, - 1 ),
+  ivec3(   0, + 1,   0 ),
+  ivec3(   0, + 1, + 1 ),
+  ivec3(   0, + 1, - 1 ),
+  ivec3(   0, - 1,   0 ),
+  ivec3(   0, - 1, + 1 ),
+  ivec3(   0, - 1, - 1 ),
+  ivec3( + 1,   0,   0 ),
+  ivec3( + 1,   0, + 1 ),
+  ivec3( + 1,   0, - 1 ),
+  ivec3( + 1, + 1,   0 ),
+  ivec3( + 1, + 1, + 1 ),
+  ivec3( + 1, + 1, - 1 ),
+  ivec3( + 1, - 1,   0 ),
+  ivec3( + 1, - 1, + 1 ),
+  ivec3( + 1, - 1, - 1 ),
+  ivec3( - 1,   0,   0 ),
+  ivec3( - 1,   0, + 1 ),
+  ivec3( - 1,   0, - 1 ),
+  ivec3( - 1, + 1,   0 ),
+  ivec3( - 1, + 1, + 1 ),
+  ivec3( - 1, + 1, - 1 ),
+  ivec3( - 1, - 1,   0 ),
+  ivec3( - 1, - 1, + 1 ),
+  ivec3( - 1, - 1, - 1 )
+);
+
+ivec3 get_target( ivec3 pos, uint d, uint index ) {
+  return pos + directions[ index ] * int( d );
+}
+
+ivec3 decode_pos( uint v ) {
+  return ivec3(
+    ( v >> 20 ) & 0x3FF,
+    ( v >> 10 ) & 0x3FF,
+    ( v ) & 0x3FF
+  );
+}
+
+uint encode_pos( ivec3 v ) {
+  return
+    ( v.x << 20 ) |
+    ( v.y << 10 ) |
+    v.z;
+}
+
+bool empty( uint v ) {
+  return ( v >> 30 ) != 0;
+}
+
+
+void main()  {
+  const ivec3 image_size = imageSize( dest_image );
+  ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
+  const uint index = pos.z / image_size.z;
+  pos.z %= image_size.z;
+  if( pos.x >= image_size.x ) return;
+  if( pos.y >= image_size.y ) return;
+  if( pos.z >= image_size.z ) return;
+  const ivec3 target = get_target( pos, push_constants.distance, index );
+  if( target.x >= image_size.x ) return;
+  if( target.y >= image_size.y ) return;
+  if( target.z >= image_size.z ) return;
+  
+  const uint center_encoded = imageLoad( dest_image, pos ).r;
+  if( empty( center_encoded ) ) return;
+  ivec3 center = decode_pos( center_encoded );
+
+  uint existing_encoded = imageLoad( dest_image, target ).r;
+  for( uint retry = 0; retry != 16; retry++ ) {
+    if( empty( existing_encoded ) ) {
+      uint result = imageAtomicCompSwap( dest_image, target, existing_encoded, center_encoded );
+      if( result == existing_encoded ) return;
+      existing_encoded = result;
+    }
+    else {
+      ivec3 existing = decode_pos( existing_encoded );
+      float d_old = distance( vec3( existing ), vec3( target ) );
+      float d_new = distance( vec3( center ), vec3( target ) );
+      if( d_old <= d_new ) return;
+      uint result = imageAtomicCompSwap( dest_image, target, existing_encoded, center_encoded );
+      if( result == existing_encoded ) return;
+      existing_encoded = result;
+    }
+  }
+}
+

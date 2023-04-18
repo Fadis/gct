@@ -75,9 +75,13 @@ add_shader( ssdo ao/ssdo.comp )
 
 add_shader( ssdo gauss/h5_16.comp )
 add_shader( ssdo gauss/v5_16.comp )
+add_shader( ssdo gauss/h12_32.comp )
+add_shader( ssdo gauss/v12_32.comp )
 
 add_shader( ssdo selective_gauss/h5_16.comp )
 add_shader( ssdo selective_gauss/v5_16.comp )
+add_shader( ssdo selective_gauss/h12_32.comp )
+add_shader( ssdo selective_gauss/v12_32.comp )
 
 add_shader( ssdo lighting/lighting.comp )
 add_shader( ssdo gamma/gamma.comp )

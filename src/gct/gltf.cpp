@@ -557,6 +557,7 @@ namespace gct::gltf {
   std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,
     const std::shared_ptr< shader_module_t > &vs,
+    const std::shared_ptr< shader_module_t > &gs,
     const std::shared_ptr< shader_module_t > &fs,
     const std::shared_ptr< pipeline_layout_t > &pipeline_layout,
     const std::shared_ptr< render_pass_t > &render_pass,
@@ -585,7 +586,8 @@ namespace gct::gltf {
           binding
         );
     auto cbsci = pipeline_color_blend_state_create_info_t();
-    for( const auto &attachment: render_pass->get_props().get_attachment() ) {
+    const auto &attachments = render_pass->get_props().get_attachment();
+    for( const auto &attachment: attachments ) {
       if( format_to_aspect( attachment.format ) == vk::ImageAspectFlagBits::eColor ) {
         cbsci
           .add_attachment(
@@ -600,10 +602,44 @@ namespace gct::gltf {
           );
       }
     }
+    pipeline_depth_stencil_state_create_info_t dssci;
+    if( std::find_if(
+      attachments.begin(),
+      attachments.end(),
+      []( const auto &attachment ) {
+        return format_to_aspect( attachment.format ) & vk::ImageAspectFlagBits::eDepth;
+      }
+    ) != attachments.end() ) {
+      dssci
+        .set_basic(
+          vk::PipelineDepthStencilStateCreateInfo()
+            .setDepthTestEnable( VK_TRUE )
+            .setDepthWriteEnable( VK_TRUE )
+            .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
+            .setDepthBoundsTestEnable( VK_FALSE )
+            .setStencilTestEnable( VK_FALSE )
+            .setFront( stencil_op )
+            .setBack( stencil_op )
+        );
+    }
+    else {
+      dssci
+        .set_basic(
+          vk::PipelineDepthStencilStateCreateInfo()
+            .setDepthTestEnable( VK_FALSE )
+            .setDepthWriteEnable( VK_FALSE )
+            .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
+            .setDepthBoundsTestEnable( VK_FALSE )
+            .setStencilTestEnable( VK_FALSE )
+            .setFront( stencil_op )
+            .setBack( stencil_op )
+        );
+    }
 
     return pipeline_cache->get_pipeline(
       graphics_pipeline_create_info_t()
         .add_stage( vs )
+        .add_stage( gs )
         .add_stage( fs )
         .set_vertex_input( vertex_input )
         .set_input_assembly(
@@ -644,19 +680,7 @@ namespace gct::gltf {
               vk::PipelineMultisampleStateCreateInfo()
             )
         )
-        .set_depth_stencil(
-          pipeline_depth_stencil_state_create_info_t()
-            .set_basic(
-              vk::PipelineDepthStencilStateCreateInfo()
-                .setDepthTestEnable( VK_TRUE )
-                .setDepthWriteEnable( VK_TRUE )
-                .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
-                .setDepthBoundsTestEnable( VK_FALSE )
-                .setStencilTestEnable( VK_FALSE )
-                .setFront( stencil_op )
-                .setBack( stencil_op )
-            )
-        )
+        .set_depth_stencil( std::move( dssci ) )
         .set_color_blend( std::move( cbsci ) )
         .set_dynamic(
           pipeline_dynamic_state_create_info_t()

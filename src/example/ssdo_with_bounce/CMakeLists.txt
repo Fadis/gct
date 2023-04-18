@@ -75,9 +75,13 @@ add_shader( ssdo_with_bounce ao/ssdo_with_bounce.comp )
 
 add_shader( ssdo_with_bounce gauss/h5_16.comp )
 add_shader( ssdo_with_bounce gauss/v5_16.comp )
+add_shader( ssdo_with_bounce gauss/h12_32.comp )
+add_shader( ssdo_with_bounce gauss/v12_32.comp )
 
 add_shader( ssdo_with_bounce selective_gauss/h5_16.comp )
 add_shader( ssdo_with_bounce selective_gauss/v5_16.comp )
+add_shader( ssdo_with_bounce selective_gauss/h12_32.comp )
+add_shader( ssdo_with_bounce selective_gauss/v12_32.comp )
 
 add_shader( ssdo_with_bounce lighting/lighting.comp )
 add_shader( ssdo_with_bounce gamma/gamma.comp )

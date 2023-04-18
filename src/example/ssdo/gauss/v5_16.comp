@@ -19,10 +19,13 @@ void main() {
   const uint hcpos = lcpos + gl_WorkGroupSize.y;
   const ivec2 image_size = imageSize( src_image );
   ivec2 lsample_pos = screen_pos;
-  lsample_pos.x = max( min( lsample_pos.x, image_size.x - 1 ), 0 );
-  lsample_pos.y = max( min( lsample_pos.y - kernel_size, image_size.y - 1 ), 0 );
+  lsample_pos.y = lsample_pos.y - kernel_size;
   ivec2 hsample_pos = lsample_pos;
   hsample_pos.y += int( gl_WorkGroupSize.y );
+  lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
+  lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
+  hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
+  hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
   cache[ lcpos ] = imageLoad( src_image, lsample_pos ).rgb;
   if( hcpos < gl_WorkGroupSize.y+kernel_size*2+1 ) {
     cache[ hcpos ] = imageLoad( src_image, hsample_pos ).rgb;

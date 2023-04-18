@@ -34,7 +34,7 @@ vec3 diffuse_ambient_light(
 }
 
 void main() {
-  const float kernel_size = 0.3;
+  const float kernel_size = 0.5;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 center = center_.xyz;

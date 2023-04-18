@@ -175,6 +175,7 @@ add_library( gct SHARED
   gct/format_to_component_type.cpp
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
+  gct/dispatch.cpp
   gct/font.cpp
   gct/display_mode_create_info.cpp
   gct/display_mode.cpp
@@ -185,6 +186,8 @@ add_library( gct SHARED
   gct/shadow_map.cpp
   gct/cubemap.cpp
   gct/gbuffer.cpp
+  gct/voxel_image.cpp
+  gct/spectrum.cpp
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
   gct/canvas/canvas.cpp

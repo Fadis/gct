@@ -54,11 +54,11 @@ namespace gct {
     return *this;
   }
   std::uint32_t framebuffer_create_info_t::get_width() const {
-    if( attachment.empty() ) return 0u;
+    if( attachment.empty() ) return get_basic().width;
     return attachment[ 0 ]->get_factory()->get_props().get_basic().extent.width;
   }
   std::uint32_t framebuffer_create_info_t::get_height() const {
-    if( attachment.empty() ) return 0u; 
+    if( attachment.empty() ) return get_basic().height;
     return attachment[ 0 ]->get_factory()->get_props().get_basic().extent.height;
   }
 }

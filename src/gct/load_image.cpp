@@ -12,6 +12,8 @@
 #include <gct/get_device.hpp>
 #include <gct/image_view.hpp>
 #include <gct/image.hpp>
+#include <gct/format.hpp>
+#include <gct/spectrum.hpp>
 
 namespace gct {
   std::uint32_t get_pot( std::uint32_t v ) {
@@ -220,28 +222,44 @@ namespace gct {
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< image_t > &image,
     const std::string &filename,
-    unsigned int mipmap
+    unsigned int mipmap,
+    unsigned int depth
   ) {
     const auto width = image->get_props().get_basic().extent.width >> mipmap;
     const auto height = image->get_props().get_basic().extent.height >> mipmap;
-    unsigned int element_size = 1u;
-    if( image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat )
-      element_size = 4u;
-    else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm )
-      element_size = 1u;
-    else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Unorm )
-      element_size = 1u;
-    else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Srgb )
-      element_size = 1u;
-    else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Srgb )
-      element_size = 1u;
-    else
-      throw -1;
+    const auto component_type = format_to_component_type( image->get_props().get_basic().format );
+    const auto channels = format_to_channels( image->get_props().get_basic().format );
+    const auto component_size = format_to_component_size( image->get_props().get_basic().format )/8u;
     const auto temporary = allocator->create_buffer(
-      width * height * element_size * 4, /////
+      width * height * component_size * channels,
       vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_TO_CPU
     );
+    using namespace OIIO_NAMESPACE;
+    auto oiio_type = TypeDesc::UINT8;
+    if( component_type == numeric_component_type_t::int_ && component_size == 1u ) {
+      oiio_type = TypeDesc::UINT8;
+    }
+    else if( component_type == numeric_component_type_t::int_ && component_size == 2u ) {
+      oiio_type = TypeDesc::UINT16;
+    }
+    else if( component_type == numeric_component_type_t::int_ && component_size == 4u ) {
+      oiio_type = TypeDesc::UINT32;
+    }
+    else if( component_type == numeric_component_type_t::int_ && component_size == 8u ) {
+      oiio_type = TypeDesc::UINT64;
+    }
+    else if( component_type == numeric_component_type_t::float_ && component_size == 2u ) {
+      oiio_type = TypeDesc::HALF;
+    }
+    else if( component_type == numeric_component_type_t::float_ && component_size == 4u ) {
+      oiio_type = TypeDesc::FLOAT;
+    }
+    else if( component_type == numeric_component_type_t::float_ && component_size == 8u ) {
+      oiio_type = TypeDesc::DOUBLE;
+    }
+    else throw -1;
+    const bool bgra = is_bgra( image->get_props().get_basic().format );
 
     copy(
       image,
@@ -260,47 +278,228 @@ namespace gct {
             .setHeight( height )
             .setDepth( 1 )
         )
+        .setImageOffset(
+          vk::Offset3D()
+            .setX( 0 )
+            .setY( 0 )
+            .setZ( depth )
+        )
     );
     get_factory()->unbound()->keep.push_back( image );
     get_factory()->unbound()->keep.push_back( temporary );
     get_factory()->unbound()->cbs.push_back(
-      [image,temporary,width,height,filename,allocator]( vk::Result result ) {
-        using namespace OIIO_NAMESPACE;
+      [image,temporary,width,height,filename,allocator,channels,component_size,oiio_type,bgra]( vk::Result result ) {
         auto out = ImageOutput::create( filename );
         if( !out ) throw -1;
-        auto oiio_type = TypeDesc::UINT8;
-        bool is_bgra = false;
-        if( image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat )
-          oiio_type = TypeDesc::FLOAT;
-        else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm )
-          oiio_type = TypeDesc::UINT8;
-        else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Unorm ) {
-          oiio_type = TypeDesc::UINT8;
-          is_bgra = true;
+        ImageSpec spec( width, height, channels, oiio_type );
+        if( bgra ) {
+          spec.channelnames.assign({ "B", "G", "R", "A" });
         }
-        else if( image->get_props().get_basic().format == vk::Format::eR8G8B8A8Srgb )
-          oiio_type = TypeDesc::UINT8;
-        else if( image->get_props().get_basic().format == vk::Format::eB8G8R8A8Srgb ) {
-          oiio_type = TypeDesc::UINT8;
-          is_bgra = true;
-        }
-        else
-          throw -1;
-        ImageSpec spec( width, height, 4, oiio_type );
         out->open( filename, spec );
-        {
-          auto mapped = temporary->map< std::uint8_t >();
-          if( is_bgra ) {
-            const auto size = std::distance( mapped.begin(), mapped.end() );
-            auto iter = mapped.begin();
-            for( unsigned int i = 0u; i < size; i += 4u, iter = std::next( iter, 4u ) ) {
-              std::swap( *iter, *std::next( iter, 2u ) );
+        auto mapped = temporary->map< std::uint8_t >();
+        out->write_image( oiio_type, mapped.begin() );
+        out->close();
+      }
+    );
+  }
+  void command_buffer_recorder_t::dump_field(
+    const std::shared_ptr< allocator_t > &allocator,
+    const std::shared_ptr< image_t > &image,
+    const std::string &filename,
+    unsigned int mipmap,
+    unsigned int depth,
+    unsigned int channel
+  ) {
+    const auto width = image->get_props().get_basic().extent.width >> mipmap;
+    const auto height = image->get_props().get_basic().extent.height >> mipmap;
+    const auto component_type = format_to_component_type( image->get_props().get_basic().format );
+    const auto channels = format_to_channels( image->get_props().get_basic().format );
+    if( channels <= channel ) throw -1;
+    const auto component_size = format_to_component_size( image->get_props().get_basic().format )/8u;
+    const auto temporary = allocator->create_buffer(
+      width * height * component_size * channels,
+      vk::BufferUsageFlagBits::eTransferDst,
+      VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+    using namespace OIIO_NAMESPACE;
+
+    copy(
+      image,
+      temporary,
+      vk::BufferImageCopy()
+        .setBufferOffset( vk::DeviceSize( 0 ) )
+        .setImageSubresource(
+          vk::ImageSubresourceLayers()
+            .setAspectMask( vk::ImageAspectFlagBits::eColor )
+            .setMipLevel( mipmap )
+            .setLayerCount( 1 )
+        )
+        .setImageExtent(
+          vk::Extent3D()
+            .setWidth( width )
+            .setHeight( height )
+            .setDepth( 1 )
+        )
+        .setImageOffset(
+          vk::Offset3D()
+            .setX( 0 )
+            .setY( 0 )
+            .setZ( depth )
+        )
+    );
+    get_factory()->unbound()->keep.push_back( image );
+    get_factory()->unbound()->keep.push_back( temporary );
+    get_factory()->unbound()->cbs.push_back(
+      [image,temporary,width,height,filename,allocator,channels,component_size,channel,component_type]( vk::Result result ) {
+        auto out = ImageOutput::create( filename );
+        if( !out ) throw -1;
+        ImageSpec spec( width, height, 4, TypeDesc::UINT8 );
+        out->open( filename, spec );
+        if( component_type == numeric_component_type_t::int_ && component_size == 1u ) {
+          std::vector< std::uint8_t > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< std::uint8_t >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
             }
           }
-          out->write_image( oiio_type, mapped.begin() );
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
+        }
+        else if( component_type == numeric_component_type_t::int_ && component_size == 2u ) {
+          std::vector< std::uint16_t > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< std::uint16_t >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
+            }
+          }
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
+        }
+        else if( component_type == numeric_component_type_t::int_ && component_size == 4u ) {
+          std::vector< std::uint32_t > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< std::uint32_t >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
+            }
+          }
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
+        }
+        else if( component_type == numeric_component_type_t::int_ && component_size == 8u ) {
+          std::vector< std::uint64_t > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< std::uint64_t >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
+            }
+          }
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
+        }
+        else if( component_type == numeric_component_type_t::float_ && component_size == 4u ) {
+          std::vector< float > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< float >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
+            }
+          }
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
+        }
+        else if( component_type == numeric_component_type_t::float_ && component_size == 8u ) {
+          std::vector< double > temp;
+          temp.reserve( width * height );
+          {
+            auto mapped = temporary->map< double >();
+            auto iter = std::next( mapped.begin(), channel );
+            for( unsigned int i = 0u; i != width * height; ++i ) {
+              temp.push_back( *iter );
+              iter = std::next( iter, channels );
+            }
+          }
+          const auto min = *std::min_element( temp.begin(), temp.end() );
+          const auto max = *std::max_element( temp.begin(), temp.end() );
+          std::vector< std::uint8_t > color;
+          color.reserve( width * height * 4u );
+          for( unsigned int i = 0u; i != width * height; ++i ) {
+            const auto c = level_to_color( temp[ i ], min, max );
+            color.push_back( c[ 0 ] * 255 );
+            color.push_back( c[ 1 ] * 255 );
+            color.push_back( c[ 2 ] * 255 );
+            color.push_back( 255 );
+          }
+          out->write_image( TypeDesc::UINT8, color.data() );
         }
         out->close();
-        
       }
     );
   }

@@ -1,8 +1,10 @@
 #ifndef GCT_COMMAND_BUFFER_RECORDER_HPP
 #define GCT_COMMAND_BUFFER_RECORDER_HPP
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include <any>
+#include <array>
 #include <tuple>
 #include <memory>
 #include <boost/range/iterator_range.hpp>
@@ -72,7 +74,16 @@ namespace gct {
       const std::shared_ptr< allocator_t > &allocator,
       const std::shared_ptr< image_t > &image,
       const std::string &filename,
-      unsigned int mipmap
+      unsigned int mipmap,
+      unsigned int depth = 0u
+    );
+    void dump_field(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::shared_ptr< image_t > &image,
+      const std::string &filename,
+      unsigned int mipmap,
+      unsigned int depth,
+      unsigned int channel
     );
     std::shared_ptr< image_t > load_astc(
       const std::shared_ptr< allocator_t > &allocator,
@@ -403,8 +414,15 @@ namespace gct {
     const vk::CommandBuffer &operator*() const;
     vk::CommandBuffer *operator->();
     const vk::CommandBuffer *operator->() const;
+    void dispatch_threads(
+      std::uint32_t x,
+      std::uint32_t y,
+      std::uint32_t z
+    );
   private:
     command_buffer_begin_info_t props;
+    bool local_size_is_available;
+    std::array< std::uint32_t, 3u > local_size;
   };
 }
 

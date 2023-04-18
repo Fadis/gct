@@ -319,6 +319,7 @@ namespace gct::gltf {
   std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,
     const std::shared_ptr< shader_module_t > &vs,
+    const std::shared_ptr< shader_module_t > &gs,
     const std::shared_ptr< shader_module_t > &fs,
     const std::shared_ptr< pipeline_layout_t > &pipeline_layout,
     const std::shared_ptr< render_pass_t > &render_pass,

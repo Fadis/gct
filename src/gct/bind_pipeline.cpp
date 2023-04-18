@@ -4,6 +4,7 @@
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
+#include <gct/shader_module.hpp>
 #include <gct/format.hpp>
 #include <gct/compute_pipeline.hpp>
 #include <gct/graphics_pipeline.hpp>
@@ -17,6 +18,23 @@ namespace gct {
       vk::PipelineBindPoint::eCompute,
       **pipeline
     );
+    local_size_is_available = false;
+    const auto shader_module = pipeline->get_props().get_stage().get_shader_module();
+    if( shader_module ) {
+      const SpvReflectEntryPoint *entry_point = shader_module->get_props().get_reflection()->entry_points;
+      if( entry_point ) {
+        if(
+          entry_point->local_size.x != 0 &&
+          entry_point->local_size.y != 0 &&
+          entry_point->local_size.z != 0
+        ) {
+          local_size_is_available = true;
+          local_size[ 0 ] = entry_point->local_size.x;
+          local_size[ 1 ] = entry_point->local_size.y;
+          local_size[ 2 ] = entry_point->local_size.z;
+        }
+      }
+    }
     get_factory()->unbound()->keep.push_back( pipeline );
   }
   void command_buffer_recorder_t::bind_pipeline(
@@ -26,6 +44,7 @@ namespace gct {
       vk::PipelineBindPoint::eGraphics,
       **pipeline
     );
+    local_size_is_available = false;
     get_factory()->unbound()->keep.push_back( pipeline );
   }
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
@@ -36,6 +55,7 @@ namespace gct {
       vk::PipelineBindPoint::eRayTracingKHR,
       **pipeline
     );
+    local_size_is_available = false;
     get_factory()->unbound()->keep.push_back( pipeline );
   }
 #endif

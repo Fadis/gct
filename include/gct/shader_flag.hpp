@@ -17,8 +17,12 @@ namespace gct {
     skin = ( 1 << 6 ),
     shadow = ( 1 << 7 ),
     vertex = ( 1 << 8 ),
-    fragment = ( 1 << 9 ),
-    special = ( 1 << 10 )
+    tesselation_control = ( 1 << 9 ),
+    tesselation_evaluation = ( 1 << 10 ),
+    geometry = ( 1 << 11 ),
+    fragment = ( 1 << 12 ),
+    compute = ( 1 << 13 ),
+    special = ( 1 << 14 )
   };
   using shaders_t = std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > >;
   std::optional< shader_flag_t > get_shader_flag( const std::filesystem::path &path );
