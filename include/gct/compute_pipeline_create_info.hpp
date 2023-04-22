@@ -35,6 +35,10 @@ namespace gct {
     }
     compute_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     compute_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
+    compute_pipeline_create_info_t &set_layout(
+      const std::shared_ptr< descriptor_set_layout_t >&,
+      const std::shared_ptr< shader_module_t >&
+    );
     compute_pipeline_create_info_t &clear_layout();
     const std::shared_ptr< pipeline_layout_t > &get_layout() const {
       return layout;

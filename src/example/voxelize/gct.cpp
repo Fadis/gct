@@ -18,6 +18,8 @@
 #include <gct/sampler_create_info.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
+#include <gct/compute_pipeline.hpp>
+#include <gct/pipeline_layout.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <gct/compute_pipeline_create_info.hpp>
 #include <gct/render_pass_begin_info.hpp>
@@ -348,11 +350,28 @@ int main() {
   const auto [voxel_clear_descriptor_set_layout,voxel_clear_pipeline] = pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/voxel/clear.comp.spv"
   );
+  const auto [voxel_voronoi_descriptor_set_layout,voxel_voronoi_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/voronoi/voronoi.comp.spv"
+  );
+  const auto [distance_field_descriptor_set_layout,distance_field_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/distance_field/distance_field.comp.spv"
+  );
+
 
   gct::voxel_image voxel_image(
     allocator,
     8u,
     vk::Format::eR32Uint
+  );
+  
+  gct::voxel_image distance_field(
+    allocator,
+    8u,
+    vk::Format::eR32Sfloat
+  );
+  
+  auto voxel_sampler = device->get_sampler(
+    gct::get_basic_linear_sampler_create_info()
   );
 
   {
@@ -360,6 +379,7 @@ int main() {
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( { voxel_image.get_image() }, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( { distance_field.get_image() }, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -377,6 +397,23 @@ int main() {
         .add_image( voxel_image.get_image() )
     );
     voxel_clear_descriptor_set->update( updates );
+  }
+  
+  std::shared_ptr< gct::descriptor_set_t > distance_field_descriptor_set;
+  {
+    distance_field_descriptor_set =
+      descriptor_pool->allocate(
+        distance_field_descriptor_set_layout
+      );
+    std::vector< gct::write_descriptor_set_t > updates{
+      gct::write_descriptor_set_t()
+        .set_basic( (*distance_field_descriptor_set)[ "src_image" ] )
+        .add_image( voxel_image.get_image() ),
+      gct::write_descriptor_set_t()
+        .set_basic( (*distance_field_descriptor_set)[ "dest_image" ] )
+        .add_image( distance_field.get_image() )
+    };
+    distance_field_descriptor_set->update( updates );
   }
 
   std::vector< std::shared_ptr< gct::buffer_t > > staging_voxel_uniform;
@@ -428,7 +465,7 @@ int main() {
     voxel_descriptor_set.back()->update( updates );
   }
 
-
+  std::cout << "debug" << std::endl;
 
 
   auto environment_sampler = device->get_sampler(
@@ -603,40 +640,8 @@ int main() {
     command_buffer->execute_and_wait();
   }
   
-  const auto [ao0_descriptor_set_layout,ao0_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/hbao_0.comp.spv"
-  );
-  const auto [ao45_descriptor_set_layout,ao45_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/hbao_45.comp.spv"
-  );
-  const auto [ao90_descriptor_set_layout,ao90_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/hbao_90.comp.spv"
-  );
-  const auto [ao135_descriptor_set_layout,ao135_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/hbao_135.comp.spv"
-  );
-
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao0_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao0_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        ao0_descriptor_set_layout
-      )
-    );
-    ao0_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao0_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao0_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_temp[ i ] )
-      }
-    );
-  }
-
   const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/hbao.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/ao/vxao.comp.spv"
   );
 
   //////////////
@@ -668,11 +673,21 @@ int main() {
     ao_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "hbao_image" ] )
-          .add_image( ao_temp[ i ] ),
+          .set_basic( (*light_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
           .set_basic( (*ao_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_out[ i ] )
+          .add_image( ao_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ao_descriptor_set.back())[ "distance_field" ] )
+          .add_image(
+            voxel_sampler,
+            distance_field.get_image(),
+            vk::ImageLayout::eShaderReadOnlyOptimal
+          ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ao_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
       }
     );
   }
@@ -1104,6 +1119,17 @@ int main() {
   );
 
   const gct::voxel_matrix voxel_matrix( doc.node.min, doc.node.max );
+
+  const auto nmin = voxel_matrix.get_output_projection() * glm::vec4( doc.node.min.x, doc.node.min.y, doc.node.min.z, 1.f);
+  const auto nmax = voxel_matrix.get_output_projection() * glm::vec4( doc.node.max.x, doc.node.max.y, doc.node.max.z, 1.f);
+  std::cout << "nmin " << nmin.x << " " << nmin.y << " " <<nmin.z << std::endl;
+  std::cout << "nmax " << nmax.x << " " << nmax.y << " " <<nmax.z << std::endl;
+
+  const auto imin = voxel_matrix.get_inversed_output_projection() * nmin;
+  const auto imax = voxel_matrix.get_inversed_output_projection() * nmax;
+  std::cout << "imim " << imin.x << " " << imin.y << " " <<imin.z << std::endl;
+  std::cout << "imax " << imax.x << " " << imax.y << " " <<imax.z << std::endl;
+
   {
     auto command_buffer = queue->get_command_pool()->allocate();
     {
@@ -1128,7 +1154,7 @@ int main() {
         auto dynamic_data = gct::gltf::dynamic_uniforms_t()
           .set_projection_matrix( voxel_matrix.get_input_projection( i ) )
           .set_camera_matrix( voxel_camera )
-          .set_light_vp_matrix0( voxel_matrix.get_output_projection() )
+          .set_voxel( voxel_matrix.get_output_projection() )
           .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
           .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
           .set_light_energy( walk.get_light_energy() )
@@ -1167,29 +1193,63 @@ int main() {
             }
           );
         }
+        rec.barrier(
+          vk::AccessFlagBits::eShaderWrite,
+          vk::AccessFlagBits::eShaderRead,
+          vk::PipelineStageFlagBits::eFragmentShader,
+          vk::PipelineStageFlagBits::eComputeShader,
+          vk::DependencyFlagBits( 0 ),
+          {},
+          { voxel_image.get_image()->get_factory() }
+        );
+      }
+      for( unsigned int step = 256u / 2u; step != 0u; step >>= 1 ) {
+        rec.bind(
+          voxel_voronoi_pipeline,
+          { voxel_clear_descriptor_set }
+        );
+        rec->pushConstants(
+          **voxel_voronoi_pipeline->get_props().get_layout(),
+          vk::ShaderStageFlagBits::eCompute,
+          0,
+          sizeof( unsigned int ),
+          &step
+        );
+        rec.dispatch_threads( 256, 256, 256 * 26 );
+        rec.compute_barrier(
+          {},
+          { voxel_image.get_image()->get_factory() }
+        );
+      }
+      {
+        rec.bind(
+          distance_field_pipeline,
+          { distance_field_descriptor_set }
+        );
+        rec.dispatch_threads( 256, 256, 256 );
       }
       {
         rec.barrier(
           vk::AccessFlagBits::eShaderWrite,
           vk::AccessFlagBits::eTransferRead,
-          vk::PipelineStageFlagBits::eFragmentShader,
+          vk::PipelineStageFlagBits::eComputeShader,
           vk::PipelineStageFlagBits::eTransfer,
           vk::DependencyFlagBits( 0 ),
           {},
-          { voxel_image.get_image()->get_factory() }
+          { distance_field.get_image()->get_factory() }
         );
-        rec.set_image_layout( { voxel_image.get_image() }, vk::ImageLayout::eTransferSrcOptimal );
+        rec.set_image_layout( { distance_field.get_image() }, vk::ImageLayout::eTransferSrcOptimal );
         for( unsigned int d = 0u; d != 256u; ++d ) {
           rec.dump_field(
             allocator,
-            voxel_image.get_image()->get_factory(),
+            distance_field.get_image()->get_factory(),
             "test_" + std::to_string( d ) + ".png",
             0,
             d,
             0
           );
         }
-        rec.set_image_layout( { voxel_image.get_image() }, vk::ImageLayout::eGeneral );
+        rec.set_image_layout( { distance_field.get_image() }, vk::ImageLayout::eShaderReadOnlyOptimal );
       }
     }
     command_buffer->execute_and_wait();
@@ -1276,6 +1336,8 @@ int main() {
       auto dynamic_data = gct::gltf::dynamic_uniforms_t()
         .set_projection_matrix( projection )
         .set_camera_matrix( walk.get_lookat() )
+        .set_voxel( voxel_matrix.get_output_projection() )
+        .set_inversed_voxel( voxel_matrix.get_inversed_output_projection() )
         .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
         .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
         .set_light_energy( walk.get_light_energy() )
@@ -1328,35 +1390,6 @@ int main() {
         { diffuse[ image_index ]->get_factory() }
       );
 
-      rec.bind(
-        ao0_pipeline,
-        { ao0_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      
-      rec.bind(
-        ao45_pipeline,
-        { ao0_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      
-      rec.bind(
-        ao90_pipeline,
-        { ao0_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      
-      rec.bind(
-        ao135_pipeline,
-        { ao0_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-
-      rec.compute_barrier(
-        {},
-        { ao_temp[ image_index ]->get_factory() }
-      );
-      
       rec.bind(
         ao_pipeline,
         { ao_descriptor_set[ image_index ] }

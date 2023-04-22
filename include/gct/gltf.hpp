@@ -285,6 +285,8 @@ namespace gct::gltf {
     LIBGCT_SETTER( light_vp_matrix1 )
     LIBGCT_SETTER( light_vp_matrix2 )
     LIBGCT_SETTER( light_vp_matrix3 )
+    LIBGCT_SETTER( voxel )
+    LIBGCT_SETTER( inversed_voxel )
     LIBGCT_SETTER( eye_pos )
     LIBGCT_SETTER( light_pos )
     LIBGCT_SETTER( light_energy )
@@ -299,6 +301,8 @@ namespace gct::gltf {
     glm::mat4 light_vp_matrix1;
     glm::mat4 light_vp_matrix2;
     glm::mat4 light_vp_matrix3;
+    glm::mat4 voxel;
+    glm::mat4 inversed_voxel;
     glm::vec4 eye_pos;
     glm::vec4 light_pos;
     float light_energy;

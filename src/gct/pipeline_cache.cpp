@@ -70,7 +70,7 @@ namespace gct {
     auto pipeline = get_pipeline(
       gct::compute_pipeline_create_info_t()
         .set_stage( shader )
-        .set_layout( descriptor_set_layout )
+        .set_layout( descriptor_set_layout, shader )
     );
     return std::make_pair( descriptor_set_layout, pipeline );
   }

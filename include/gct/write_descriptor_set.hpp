@@ -42,6 +42,11 @@ namespace gct {
       const std::shared_ptr< sampler_t > &sampler,
       const std::shared_ptr< image_view_t > &image_view
     );
+    write_descriptor_set_t &add_image(
+      const std::shared_ptr< sampler_t > &sampler,
+      const std::shared_ptr< image_view_t > &image_view,
+      vk::ImageLayout layout
+    );
     write_descriptor_set_t &clear_image();
     write_descriptor_set_t &add_buffer( const descriptor_buffer_info_t& );
     write_descriptor_set_t &add_buffer( const std::shared_ptr< buffer_t > &v );

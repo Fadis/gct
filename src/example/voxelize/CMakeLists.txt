@@ -26,6 +26,8 @@ add_shader( voxelize voxel/world.frag )
 
 add_shader( voxelize voronoi/voronoi.comp )
 
+add_shader( voxelize distance_field/distance_field.comp )
+
 add_shader( voxelize geometry/tangent.frag )
 add_shader( voxelize geometry/tangent.geom )
 add_shader( voxelize geometry/tangent.vert )
@@ -79,11 +81,7 @@ add_shader( voxelize geometry/world_mr_oc_em.frag )
 add_shader( voxelize geometry/world_oc.frag )
 add_shader( voxelize geometry/world_oc_em.frag )
 
-add_shader( voxelize ao/hbao_0.comp )
-add_shader( voxelize ao/hbao_45.comp )
-add_shader( voxelize ao/hbao_90.comp )
-add_shader( voxelize ao/hbao_135.comp )
-add_shader( voxelize ao/hbao.comp )
+add_shader( voxelize ao/vxao.comp )
 
 add_shader( voxelize gauss/h5_16.comp )
 add_shader( voxelize gauss/v5_16.comp )

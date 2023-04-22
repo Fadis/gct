@@ -93,6 +93,22 @@ namespace gct {
       )
     );
   }
+  compute_pipeline_create_info_t &compute_pipeline_create_info_t::set_layout(
+    const std::shared_ptr< descriptor_set_layout_t > &l,
+    const std::shared_ptr< shader_module_t > &m
+  ) {
+    return set_layout(
+      get_device( *l ).get_pipeline_layout(
+        gct::pipeline_layout_create_info_t()
+          .add_descriptor_set_layout(
+            l
+          )
+          .add_push_constant_range(
+            m
+          )
+      )
+    );
+  }
   compute_pipeline_create_info_t &compute_pipeline_create_info_t::clear_layout() {
     layout.reset();
     chained = false;

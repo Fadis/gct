@@ -28,6 +28,7 @@ voxel_image::voxel_image(
           .setTiling( vk::ImageTiling::eOptimal )
           .setUsage(
             vk::ImageUsageFlagBits::eStorage|
+            vk::ImageUsageFlagBits::eSampled|
             vk::ImageUsageFlagBits::eTransferSrc
           )
           .setInitialLayout( vk::ImageLayout::eUndefined )
@@ -143,7 +144,13 @@ voxel_matrix::voxel_matrix(
   output_projection =
   glm::translate(
     glm::scale(
-      glm::mat4( 1.0 ),
+      glm::translate(
+        glm::scale(
+          glm::mat4( 1.0 ),
+          glm::vec3( 0.5, 0.5, 0.5 )
+        ),
+        glm::vec3( 1.0, 1.0, 1.0 )
+      ),
       glm::vec3(
         2.f/( max.x - min.x ),
         2.f/( max.y - min.y ),
@@ -156,6 +163,8 @@ voxel_matrix::voxel_matrix(
       -( max.z + min.z )/2
     ) 
   );
+  inversed_output_projection =
+    glm::inverse( output_projection );
 }
 
 }

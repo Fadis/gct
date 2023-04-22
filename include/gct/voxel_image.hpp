@@ -57,8 +57,12 @@ public:
   const glm::mat4 &get_output_projection() const {
     return output_projection;
   }
+  const glm::mat4 &get_inversed_output_projection() const {
+    return inversed_output_projection;
+  }
 private:
   glm::mat4 output_projection;
+  glm::mat4 inversed_output_projection;
   std::array< glm::mat4, 3u > input_projection;
 };
 

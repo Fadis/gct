@@ -19,6 +19,8 @@ layout(set=1,binding = 0) uniform DynamicUniforms {
   mat4 light_vp_matrix1;
   mat4 light_vp_matrix2;
   mat4 light_vp_matrix3;
+  mat4 voxel;
+  mat4 inversed_voxel;
   vec4 eye_pos;
   vec4 light_pos;
   float light_energy;
