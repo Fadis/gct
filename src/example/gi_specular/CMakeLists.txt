@@ -1,0 +1,106 @@
+add_executable( gi_specular
+  gct.cpp
+)
+target_compile_definitions( gi_specular PRIVATE -DCMAKE_CURRENT_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" )
+target_compile_definitions( gi_specular PRIVATE -DCMAKE_CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
+
+target_link_libraries(
+  gi_specular
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
+  ${pkgcfg_lib_GLFW_glfw3}
+)
+
+add_shader( gi_specular shadow/world.vert )
+add_shader( gi_specular shadow/world.frag )
+
+add_shader( gi_specular voxel/clear.comp )
+add_shader( gi_specular voxel/world.vert )
+add_shader( gi_specular voxel/world.frag )
+
+add_shader( gi_specular voronoi/voronoi.comp )
+
+add_shader( gi_specular distance_field/distance_field.comp )
+
+add_shader( gi_specular geometry/tangent.frag )
+add_shader( gi_specular geometry/tangent.geom )
+add_shader( gi_specular geometry/tangent.vert )
+add_shader( gi_specular geometry/tangent_bc.frag )
+add_shader( gi_specular geometry/tangent_bc_em.frag )
+add_shader( gi_specular geometry/tangent_bc_em_no.frag )
+add_shader( gi_specular geometry/tangent_bc_mr.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_em.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_em_no.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_no.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_oc.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_oc_em.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_oc_em_no.frag )
+add_shader( gi_specular geometry/tangent_bc_mr_oc_no.frag )
+add_shader( gi_specular geometry/tangent_bc_no.frag )
+add_shader( gi_specular geometry/tangent_bc_oc.frag )
+add_shader( gi_specular geometry/tangent_bc_oc_em.frag )
+add_shader( gi_specular geometry/tangent_bc_oc_em_no.frag )
+add_shader( gi_specular geometry/tangent_bc_oc_no.frag )
+add_shader( gi_specular geometry/tangent_em.frag )
+add_shader( gi_specular geometry/tangent_em_no.frag )
+add_shader( gi_specular geometry/tangent_mr.frag )
+add_shader( gi_specular geometry/tangent_mr_em.frag )
+add_shader( gi_specular geometry/tangent_mr_em_no.frag )
+add_shader( gi_specular geometry/tangent_mr_no.frag )
+add_shader( gi_specular geometry/tangent_mr_oc.frag )
+add_shader( gi_specular geometry/tangent_mr_oc_em.frag )
+add_shader( gi_specular geometry/tangent_mr_oc_em_no.frag )
+add_shader( gi_specular geometry/tangent_mr_oc_no.frag )
+add_shader( gi_specular geometry/tangent_no.frag )
+add_shader( gi_specular geometry/tangent_oc.frag )
+add_shader( gi_specular geometry/tangent_oc_em.frag )
+add_shader( gi_specular geometry/tangent_oc_em_no.frag )
+add_shader( gi_specular geometry/tangent_oc_no.frag )
+add_shader( gi_specular geometry/world.frag )
+add_shader( gi_specular geometry/world.geom )
+add_shader( gi_specular geometry/world.vert )
+add_shader( gi_specular geometry/world_bc.frag )
+add_shader( gi_specular geometry/world_bc_em.frag )
+add_shader( gi_specular geometry/world_bc_mr.frag )
+add_shader( gi_specular geometry/world_bc_mr_em.frag )
+add_shader( gi_specular geometry/world_bc_mr_oc.frag )
+add_shader( gi_specular geometry/world_bc_mr_oc_em.frag )
+add_shader( gi_specular geometry/world_bc_oc.frag )
+add_shader( gi_specular geometry/world_bc_oc_em.frag )
+add_shader( gi_specular geometry/world_em.frag )
+add_shader( gi_specular geometry/world_mr.frag )
+add_shader( gi_specular geometry/world_mr_em.frag )
+add_shader( gi_specular geometry/world_mr_oc.frag )
+add_shader( gi_specular geometry/world_mr_oc_em.frag )
+add_shader( gi_specular geometry/world_oc.frag )
+add_shader( gi_specular geometry/world_oc_em.frag )
+
+add_shader( gi_specular ao/vxao.comp )
+
+add_shader( gi_specular ssr/ssr.comp )
+
+add_shader( gi_specular gauss/h5_16.comp )
+add_shader( gi_specular gauss/v5_16.comp )
+add_shader( gi_specular gauss/h12_32.comp )
+add_shader( gi_specular gauss/v12_32.comp )
+
+add_shader( gi_specular selective_gauss/h5_16.comp )
+add_shader( gi_specular selective_gauss/v5_16.comp )
+add_shader( gi_specular selective_gauss/h12_32.comp )
+add_shader( gi_specular selective_gauss/v12_32.comp )
+add_shader( gi_specular selective_gauss/h24_64.comp )
+add_shader( gi_specular selective_gauss/v24_64.comp )
+
+add_shader( gi_specular lighting/lighting.comp )
+add_shader( gi_specular gamma/gamma.comp )
+
+add_shader( gi_specular mix_ao/mix_ao.comp )
+
+add_shader( gi_specular tone/tone.comp )
+

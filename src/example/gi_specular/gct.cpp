@@ -783,6 +783,80 @@ int main() {
     );
   }
 
+  const auto [ssr_descriptor_set_layout,ssr_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/ssr/ssr.comp.spv"
+  );
+
+  //////////////
+  std::vector< std::shared_ptr< gct::image_view_t > > ssr_out;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_out.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( ssr_out, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
+  
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssr_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        ssr_descriptor_set_layout
+      )
+    );
+    ssr_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssr_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "distance_field" ] )
+          .add_image(
+            voxel_sampler,
+            distance_field.get_image(),
+            vk::ImageLayout::eShaderReadOnlyOptimal
+          ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet()
+              .setDstSet( **ssr_descriptor_set.back() )
+              .setDstBinding( 4u )
+              .setDescriptorCount( 1u )
+              .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
+          )
+          .add_image(
+            gct::descriptor_image_info_t()
+              .set_sampler( environment_sampler )
+              .set_image_view( environment_image_view )
+              .set_basic(
+                vk::DescriptorImageInfo()
+                  .setImageLayout(
+                    environment_image->get_layout().get_uniform_layout()
+                  )
+              )
+          )
+
+
+      }
+    );
+  }
+
+
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
 
     framebuffers.emplace_back(
@@ -877,6 +951,9 @@ int main() {
         gct::write_descriptor_set_t()
           .set_basic( (*mix_ao_descriptor_set.back())[ "occlusion" ] )
           .add_image( ao_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*mix_ao_descriptor_set.back())[ "ssr_image" ] )
+          .add_image( ssr_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*mix_ao_descriptor_set.back())[ "dest_image" ] )
           .add_image( mixed_out[ i ] ),
@@ -1419,7 +1496,13 @@ int main() {
         { ao_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
-      
+
+      rec.bind(
+        ssr_pipeline,
+        { ssr_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+
       rec.compute_barrier(
         {},
         { ao_out[ image_index ]->get_factory() }
@@ -1443,6 +1526,7 @@ int main() {
         {},
         {
           ao_out[ image_index ]->get_factory(),
+          ssr_out[ image_index ]->get_factory(),
           diffuse[ image_index ]->get_factory(),
           specular[ image_index ]->get_factory()
         }

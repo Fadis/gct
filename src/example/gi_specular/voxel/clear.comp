@@ -1,0 +1,14 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
+
+layout (binding = 2, r32ui) writeonly uniform uimage3D dest_image;
+
+void main() {
+  const ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
+  imageStore( dest_image, pos, uvec4( 0x40000000, 0, 0, 0 ) );
+}
+

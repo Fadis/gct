@@ -25,4 +25,5 @@ subdirs(
   hbao
   voxelize
   gi_diffuse
+  gi_specular
 )
