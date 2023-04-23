@@ -24,4 +24,5 @@ subdirs(
   ssdo_with_bounce
   hbao
   voxelize
+  gi_diffuse
 )

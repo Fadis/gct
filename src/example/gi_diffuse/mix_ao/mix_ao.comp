@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, r32f) readonly uniform image2D occlusion;
+layout (binding = 1, rgba32f) readonly uniform image2D occlusion;
 layout (binding = 2, rgba32f) readonly uniform image2D diffuse_image;
 layout (binding = 3, rgba32f) readonly uniform image2D specular_image;
 layout (binding = 4, rgba32f) writeonly uniform image2D dest_image;
@@ -21,7 +21,7 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
   
-  const vec3 ambient = imageLoad( occlusion, screen_pos ).r * vec3( 1, 1, 1 ) * albedo.rgb;
+  const vec3 ambient = imageLoad( occlusion, screen_pos ).rgb * albedo.rgb;
   const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
   const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;
   const vec3 total = ( ambient + diffuse.rgb + specular ) / tone.scale;

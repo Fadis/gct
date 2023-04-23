@@ -34,18 +34,19 @@ vec3 diffuse_ambient_light(
 }
 
 void main() {
-  const float kernel_size = 0.5;
+  const float kernel_size = 20.0;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 center = center_.xyz;
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
-  const vec3 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) ).rgb;
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;
-  const float center_depth = center_.w;
+  
   const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) ) * 2 * pi ) );
+
   const ivec3 image_size = imageSize( gbuffer );
+
   vec3 env_color = vec3( 0.0, 0.0, 0.0 );
   float env_total = 0.0;
   for( int i = 0; i < poisson_sphere_sample_count; i++ ) {
@@ -65,8 +66,7 @@ void main() {
     const vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
     const float sample_depth = sample_world_pos.w;
     const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
-    const vec3 sample_diffuse =
-      imageLoad( diffuse_image, sample_pos ).rgb;
+    const vec3 sample_diffuse = imageLoad( diffuse_image, sample_pos ).rgb;
     float visibility = 1.0 - step( sample_depth, screen_pos.z );
     vec3 dir = normalize( offset );
     float scale = max( dot( sample_normal, normalize( - dynamic_uniforms.eye_pos.xyz + sample_world_pos.xyz ) ), 0.001 );
