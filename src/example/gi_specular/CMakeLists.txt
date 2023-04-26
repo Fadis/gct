@@ -97,6 +97,9 @@ add_shader( gi_specular selective_gauss/v12_32.comp )
 add_shader( gi_specular selective_gauss/h24_64.comp )
 add_shader( gi_specular selective_gauss/v24_64.comp )
 
+add_shader( gi_specular selective_gauss2/h1_8.comp )
+add_shader( gi_specular selective_gauss2/v1_8.comp )
+
 add_shader( gi_specular lighting/lighting.comp )
 add_shader( gi_specular gamma/gamma.comp )
 

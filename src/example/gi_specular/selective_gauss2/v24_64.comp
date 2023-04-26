@@ -1,0 +1,59 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rgba32f) readonly uniform image2D src_image;
+layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
+
+layout(local_size_x = 1, local_size_y = 512 ) in;
+
+#include "gauss.h"
+
+const int kernel_size = 64;
+shared vec4[gl_WorkGroupSize.y+kernel_size*2+1] cache;
+shared vec3[gl_WorkGroupSize.y+kernel_size*2+1] depth;
+shared vec3[gl_WorkGroupSize.y+kernel_size*2+1] normal;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint lcpos = gl_LocalInvocationID.y;
+  const uint hcpos = lcpos + gl_WorkGroupSize.y;
+  const ivec2 image_size = imageSize( src_image );
+  ivec2 lsample_pos = screen_pos;
+  lsample_pos.y = lsample_pos.y - kernel_size;
+  ivec2 hsample_pos = lsample_pos;
+  hsample_pos.y += int( gl_WorkGroupSize.y );
+  lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
+  lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
+  hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
+  hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
+  cache[ lcpos ] = imageLoad( src_image, lsample_pos );
+  depth[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).xyz;
+  normal[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 2 ) ).xyz;
+  if( hcpos < gl_WorkGroupSize.y+kernel_size*2+1 ) {
+    cache[ hcpos ] = imageLoad( src_image, hsample_pos );
+    depth[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).xyz;
+    normal[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 2 ) ).xyz;
+  }
+  barrier();
+  const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).xy;
+  const float roughness = mr.g;
+  float scale = 0.0;
+  vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec3 center_depth = depth[ lcpos + kernel_size ];
+  const vec3 center_normal = normal[ lcpos + kernel_size ];
+  for( uint i = 0; i != gauss24_64_size; i++ ) {
+    const vec3 sample_depth = depth[ lcpos + i ];
+    const vec3 sample_normal = normal[ lcpos + i ];
+    const float distance = length( sample_depth - center_depth );
+    float weight = ( 1.0 / ( 1.0 + distance ) ) * max( dot( center_normal, sample_normal ), 0 );
+    weight = mix( roughness, ( i == kernel_size ) ? 1 : 0, weight );
+    sum += cache[ lcpos + i ] * gauss24_64[ i ] * weight;
+    scale += gauss24_64[ i ] * weight;
+  }
+  sum /= scale;
+  imageStore( dest_image, screen_pos, sum );
+}
+

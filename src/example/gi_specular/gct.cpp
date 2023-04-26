@@ -856,6 +856,74 @@ int main() {
     );
   }
 
+  const auto [ssr_hgauss_descriptor_set_layout,ssr_hgauss_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/h1_8.comp.spv"
+  );
+  const auto [ssr_vgauss_descriptor_set_layout,ssr_vgauss_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/v1_8.comp.spv"
+  );
+
+  std::vector< std::shared_ptr< gct::image_view_t > > ssr_gauss_temp;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_gauss_temp.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( ssr_gauss_temp, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssr_hgauss_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_hgauss_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        ssr_hgauss_descriptor_set_layout
+      )
+    );
+    ssr_hgauss_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_hgauss_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_hgauss_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssr_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_hgauss_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssr_gauss_temp[ i ] )
+      }
+    );
+  }
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssr_vgauss_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_vgauss_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        ssr_vgauss_descriptor_set_layout
+      )
+    );
+    ssr_vgauss_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_vgauss_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_vgauss_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssr_gauss_temp[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_vgauss_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssr_out[ i ] )
+      }
+    );
+  }
+
+
 
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
 
@@ -1356,8 +1424,9 @@ int main() {
     command_buffer->execute_and_wait();
   }
 
-  uint32_t current_frame = 0u;
-  uint32_t last_image_index = framebuffers.size();
+  std::uint32_t current_frame = 0u;
+  std::uint32_t frame_counter = 0u;
+  std::uint32_t last_image_index = framebuffers.size();
   while( !walk.end() ) {
     gct::blocking_timer frame_rate;
     ++walk;
@@ -1442,7 +1511,8 @@ int main() {
         .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
         .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
         .set_light_energy( walk.get_light_energy() )
-        .set_light_size( light_size );
+        .set_light_size( light_size )
+        .set_frame_counter( frame_counter );
       rec.copy(
         dynamic_data,
         staging_dynamic_uniform[ image_index ],
@@ -1522,6 +1592,27 @@ int main() {
         { ao_vgauss_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
+
+      /*rec.compute_barrier(
+        {},
+        { ssr_out[ image_index ]->get_factory() }
+      );
+
+      rec.bind(
+        ssr_hgauss_pipeline,
+        { ssr_hgauss_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+      rec.compute_barrier(
+        {},
+        { ssr_gauss_temp[ image_index ]->get_factory() }
+      );
+      rec.bind(
+        ssr_vgauss_pipeline,
+        { ssr_vgauss_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );*/
+
       rec.compute_barrier(
         {},
         {
@@ -1605,6 +1696,7 @@ int main() {
     last_image_index = image_index;
     glfwPollEvents();
     ++current_frame;
+    ++frame_counter;
     current_frame %= framebuffers.size();
   }
   (*queue)->waitIdle();

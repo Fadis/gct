@@ -295,6 +295,7 @@ namespace gct::gltf {
     LIBGCT_SETTER( light_size )
     LIBGCT_SETTER( split_bias )
     LIBGCT_SETTER( shadow_mode )
+    LIBGCT_SETTER( frame_counter )
     glm::mat4 projection_matrix;
     glm::mat4 camera_matrix;
     glm::mat4 light_vp_matrix0;
@@ -310,6 +311,7 @@ namespace gct::gltf {
     float light_size;
     float split_bias;
     uint32_t shadow_mode;
+    uint32_t frame_counter;
     std::array< float, 5u > light_z;
   };
   std::tuple<
