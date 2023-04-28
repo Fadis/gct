@@ -536,6 +536,22 @@ int main() {
           )
           .setInitialLayout( vk::ImageLayout::eUndefined )
       );
+  const auto r32uici =
+    gct::image_create_info_t()
+      .set_basic(
+        vk::ImageCreateInfo()
+          .setImageType( vk::ImageType::e2D )
+          .setFormat( vk::Format::eR32Uint )
+          .setExtent( { width, height, 1 } )
+          .setMipLevels( 1 )
+          .setArrayLayers( 1 )
+          .setSamples( vk::SampleCountFlagBits::e1 )
+          .setTiling( vk::ImageTiling::eOptimal )
+          .setUsage(
+            vk::ImageUsageFlagBits::eStorage
+          )
+          .setInitialLayout( vk::ImageLayout::eUndefined )
+      );
   const auto rgba32ici =
     gct::image_create_info_t()
       .set_basic(
@@ -552,6 +568,169 @@ int main() {
           )
           .setInitialLayout( vk::ImageLayout::eUndefined )
       );
+
+  std::vector< std::shared_ptr< gct::image_view_t > > ssr_out;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssr_out.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_out;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    ssdgi_out.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( ssr_out, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( ssdgi_out, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
+
+  const auto [reproject_descriptor_set_layout,reproject_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/reproject/reproject.comp.spv"
+  );
+  const auto [reproject_clear_descriptor_set_layout,reproject_clear_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/reproject/clear.comp.spv"
+  );
+
+  std::vector< std::shared_ptr< gct::image_view_t > > reproject_specular;
+  std::vector< std::shared_ptr< gct::image_view_t > > reproject_specular_depth;
+  std::vector< std::shared_ptr< gct::image_view_t > > reproject_diffuse;
+  std::vector< std::shared_ptr< gct::image_view_t > > reproject_diffuse_depth;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    reproject_specular.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    reproject_specular_depth.push_back(
+      allocator->create_image(
+        r32uici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    reproject_diffuse.push_back(
+      allocator->create_image(
+        rgba32ici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    reproject_diffuse_depth.push_back(
+      allocator->create_image(
+        r32uici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+  }
+  {
+    auto command_buffer = queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( reproject_specular, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( reproject_specular_depth, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( reproject_diffuse, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( reproject_diffuse_depth, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_specular_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_diffuse_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    reproject_specular_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        reproject_descriptor_set_layout
+      )
+    );
+    reproject_specular_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_specular_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_specular_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssr_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_specular_descriptor_set.back())[ "dest_image" ] )
+          .add_image( reproject_specular[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_specular_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_specular_depth[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_specular_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
+      }
+    );
+    reproject_diffuse_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        reproject_descriptor_set_layout
+      )
+    );
+    reproject_diffuse_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "gbuffer" ] )
+          .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssdgi_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "dest_image" ] )
+          .add_image( reproject_diffuse[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_diffuse_depth[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
+      }
+    );
+  }
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_specular_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_diffuse_descriptor_set;
+  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+    reproject_clear_specular_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        reproject_clear_descriptor_set_layout
+      )
+    );
+    reproject_clear_specular_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_clear_specular_descriptor_set.back())[ "dest_image" ] )
+          .add_image( reproject_specular[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_clear_specular_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_specular_depth[ i ] )
+      }
+    );
+    reproject_clear_diffuse_descriptor_set.push_back(
+      descriptor_pool->allocate(
+        reproject_clear_descriptor_set_layout
+      )
+    );
+    reproject_clear_diffuse_descriptor_set.back()->update(
+      {
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_clear_diffuse_descriptor_set.back())[ "dest_image" ] )
+          .add_image( reproject_diffuse[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_clear_diffuse_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_diffuse_depth[ i ] )
+      }
+    );
+  }
 
   const auto [light_descriptor_set_layout,light_pipeline] = pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv"
@@ -607,9 +786,9 @@ int main() {
     );
   }
 
-  std::vector< std::shared_ptr< gct::image_view_t > > ao_temp;
+  std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_temp;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_temp.push_back(
+    ssdgi_temp.push_back(
       allocator->create_image(
         gct::image_create_info_t()
           .set_basic(
@@ -635,67 +814,49 @@ int main() {
     auto command_buffer = queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      recorder.set_image_layout( ao_temp, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( ssdgi_temp, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
   
-  const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/ao/vxao.comp.spv"
+  const auto [ssdgi_descriptor_set_layout,ssdgi_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/ssdgi/ssdgi.comp.spv"
   );
 
   //////////////
-  std::vector< std::shared_ptr< gct::image_view_t > > ao_out;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssdgi_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_out.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( ao_out, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_descriptor_set.push_back(
+    ssdgi_descriptor_set.push_back(
       descriptor_pool->allocate(
-        ao_descriptor_set_layout
+        ssdgi_descriptor_set_layout
       )
     );
-    ao_descriptor_set.back()->update(
+    ssdgi_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "gbuffer" ] )
+          .set_basic( (*ssdgi_descriptor_set.back())[ "gbuffer" ] )
           .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_out[ i ] ),
+          .set_basic( (*ssdgi_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssdgi_out[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "distance_field" ] )
+          .set_basic( (*ssdgi_descriptor_set.back())[ "distance_field" ] )
           .add_image(
             voxel_sampler,
             distance_field.get_image(),
             vk::ImageLayout::eShaderReadOnlyOptimal
           ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .set_basic( (*ssdgi_descriptor_set.back())[ "dynamic_uniforms" ] )
           .add_buffer( dynamic_uniform[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_descriptor_set.back())[ "diffuse_image" ] )
+          .set_basic( (*ssdgi_descriptor_set.back())[ "diffuse_image" ] )
           .add_image( diffuse[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic(
             vk::WriteDescriptorSet()
-              .setDstSet( **ao_descriptor_set.back() )
-              .setDstBinding( 4u )
+              .setDstSet( **ssdgi_descriptor_set.back() )
+              .setDstBinding( 5u )
               .setDescriptorCount( 1u )
               .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
           )
@@ -709,23 +870,24 @@ int main() {
                     environment_image->get_layout().get_uniform_layout()
                   )
               )
-          )
-
-
+          ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssdgi_descriptor_set.back())[ "reproject" ] )
+          .add_image( reproject_diffuse[ i ] ),
       }
     );
   }
 
-  const auto [ao_hgauss_descriptor_set_layout,ao_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/h24_64.comp.spv"
+  const auto [ssdgi_hgauss_descriptor_set_layout,ssdgi_hgauss_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/h12_32.comp.spv"
   );
-  const auto [ao_vgauss_descriptor_set_layout,ao_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/v24_64.comp.spv"
+  const auto [ssdgi_vgauss_descriptor_set_layout,ssdgi_vgauss_pipeline] = pipeline_cache->get_pipeline(
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/v12_32.comp.spv"
   );
 
-  std::vector< std::shared_ptr< gct::image_view_t > > ao_gauss_temp;
+  std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_gauss_temp;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_gauss_temp.push_back(
+    ssdgi_gauss_temp.push_back(
       allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -736,49 +898,49 @@ int main() {
     auto command_buffer = queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      recorder.set_image_layout( ao_gauss_temp, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( ssdgi_gauss_temp, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_hgauss_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssdgi_hgauss_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_hgauss_descriptor_set.push_back(
+    ssdgi_hgauss_descriptor_set.push_back(
       descriptor_pool->allocate(
-        ao_hgauss_descriptor_set_layout
+        ssdgi_hgauss_descriptor_set_layout
       )
     );
-    ao_hgauss_descriptor_set.back()->update(
+    ssdgi_hgauss_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "gbuffer" ] )
+          .set_basic( (*ssdgi_hgauss_descriptor_set.back())[ "gbuffer" ] )
           .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( ao_out[ i ] ),
+          .set_basic( (*ssdgi_hgauss_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssdgi_out[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_gauss_temp[ i ] )
+          .set_basic( (*ssdgi_hgauss_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssdgi_gauss_temp[ i ] )
       }
     );
   }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_vgauss_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > ssdgi_vgauss_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_vgauss_descriptor_set.push_back(
+    ssdgi_vgauss_descriptor_set.push_back(
       descriptor_pool->allocate(
-        ao_vgauss_descriptor_set_layout
+        ssdgi_vgauss_descriptor_set_layout
       )
     );
-    ao_vgauss_descriptor_set.back()->update(
+    ssdgi_vgauss_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "gbuffer" ] )
+          .set_basic( (*ssdgi_vgauss_descriptor_set.back())[ "gbuffer" ] )
           .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( ao_gauss_temp[ i ] ),
+          .set_basic( (*ssdgi_vgauss_descriptor_set.back())[ "src_image" ] )
+          .add_image( ssdgi_gauss_temp[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_out[ i ] )
+          .set_basic( (*ssdgi_vgauss_descriptor_set.back())[ "dest_image" ] )
+          .add_image( ssdgi_out[ i ] )
       }
     );
   }
@@ -788,24 +950,6 @@ int main() {
   );
 
   //////////////
-  std::vector< std::shared_ptr< gct::image_view_t > > ssr_out;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ssr_out.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( ssr_out, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  
   std::vector< std::shared_ptr< gct::descriptor_set_t > > ssr_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ssr_descriptor_set.push_back(
@@ -818,6 +962,9 @@ int main() {
         gct::write_descriptor_set_t()
           .set_basic( (*ssr_descriptor_set.back())[ "gbuffer" ] )
           .add_image( gbuffer.get_image_view( i ) ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "reproject" ] )
+          .add_image( reproject_specular[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ssr_descriptor_set.back())[ "dest_image" ] )
           .add_image( ssr_out[ i ] ),
@@ -1018,7 +1165,7 @@ int main() {
           .add_image( specular[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*mix_ao_descriptor_set.back())[ "occlusion" ] )
-          .add_image( ao_out[ i ] ),
+          .add_image( ssdgi_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*mix_ao_descriptor_set.back())[ "ssr_image" ] )
           .add_image( ssr_out[ i ] ),
@@ -1502,7 +1649,7 @@ int main() {
         tone_staging[ image_index ],
         tone[ image_index ]
       );
-      
+
       auto dynamic_data = gct::gltf::dynamic_uniforms_t()
         .set_projection_matrix( projection )
         .set_camera_matrix( walk.get_lookat() )
@@ -1518,6 +1665,59 @@ int main() {
         staging_dynamic_uniform[ image_index ],
         dynamic_uniform[ image_index ]
       );
+
+      rec.bind(
+        reproject_clear_pipeline,
+        { reproject_clear_specular_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+      
+      rec.bind(
+        reproject_clear_pipeline,
+        { reproject_clear_diffuse_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+      
+      rec.barrier(
+        vk::AccessFlagBits::eShaderRead,
+        vk::AccessFlagBits::eColorAttachmentWrite,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::DependencyFlagBits( 0 ),
+        {},
+        {
+          gbuffer.get_image( image_index ),
+        }
+      );
+      rec.compute_barrier(
+        {},
+        {
+          reproject_specular[ image_index ]->get_factory(),
+          reproject_diffuse[ image_index ]->get_factory()
+        }
+      );
+      rec.barrier(
+        vk::AccessFlagBits::eTransferRead,
+        vk::AccessFlagBits::eShaderRead,
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlagBits( 0 ),
+        { dynamic_uniform[ image_index ] },
+        {}
+      );
+
+      rec.bind(
+        reproject_pipeline,
+        { reproject_specular_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+      
+      rec.bind(
+        reproject_pipeline,
+        { reproject_diffuse_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+
       rec.barrier(
         vk::AccessFlagBits::eTransferRead,
         vk::AccessFlagBits::eShaderRead,
@@ -1527,6 +1727,7 @@ int main() {
         { dynamic_uniform[ image_index ] },
         {}
       );
+
       {
         auto render_pass_token = rec.begin_render_pass(
           fb.render_pass_begin_info,
@@ -1549,7 +1750,7 @@ int main() {
         gbuffer.get_image( image_index ),
         vk::ImageLayout::eGeneral
       );
-      
+
       rec.bind(
         light_pipeline,
         { light_descriptor_set[ image_index ] }
@@ -1558,12 +1759,16 @@ int main() {
       
       rec.compute_barrier(
         {},
-        { diffuse[ image_index ]->get_factory() }
+        {
+          diffuse[ image_index ]->get_factory(),
+          reproject_specular[ image_index ]->get_factory(),
+          reproject_diffuse[ image_index ]->get_factory()
+        }
       );
 
       rec.bind(
-        ao_pipeline,
-        { ao_descriptor_set[ image_index ] }
+        ssdgi_pipeline,
+        { ssdgi_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
 
@@ -1575,25 +1780,25 @@ int main() {
 
       rec.compute_barrier(
         {},
-        { ao_out[ image_index ]->get_factory() }
+        { ssdgi_out[ image_index ]->get_factory() }
       );
 
       rec.bind(
-        ao_hgauss_pipeline,
-        { ao_hgauss_descriptor_set[ image_index ] }
+        ssdgi_hgauss_pipeline,
+        { ssdgi_hgauss_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
-        { ao_gauss_temp[ image_index ]->get_factory() }
+        { ssdgi_gauss_temp[ image_index ]->get_factory() }
       );
       rec.bind(
-        ao_vgauss_pipeline,
-        { ao_vgauss_descriptor_set[ image_index ] }
+        ssdgi_vgauss_pipeline,
+        { ssdgi_vgauss_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
 
-      /*rec.compute_barrier(
+      rec.compute_barrier(
         {},
         { ssr_out[ image_index ]->get_factory() }
       );
@@ -1611,12 +1816,12 @@ int main() {
         ssr_vgauss_pipeline,
         { ssr_vgauss_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );*/
+      rec.dispatch_threads( width, height, 1 );
 
       rec.compute_barrier(
         {},
         {
-          ao_out[ image_index ]->get_factory(),
+          ssdgi_out[ image_index ]->get_factory(),
           ssr_out[ image_index ]->get_factory(),
           diffuse[ image_index ]->get_factory(),
           specular[ image_index ]->get_factory()

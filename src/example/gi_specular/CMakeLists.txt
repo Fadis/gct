@@ -81,7 +81,7 @@ add_shader( gi_specular geometry/world_mr_oc_em.frag )
 add_shader( gi_specular geometry/world_oc.frag )
 add_shader( gi_specular geometry/world_oc_em.frag )
 
-add_shader( gi_specular ao/vxao.comp )
+add_shader( gi_specular ssdgi/ssdgi.comp )
 
 add_shader( gi_specular ssr/ssr.comp )
 
@@ -99,6 +99,10 @@ add_shader( gi_specular selective_gauss/v24_64.comp )
 
 add_shader( gi_specular selective_gauss2/h1_8.comp )
 add_shader( gi_specular selective_gauss2/v1_8.comp )
+add_shader( gi_specular selective_gauss2/h12_32.comp )
+add_shader( gi_specular selective_gauss2/v12_32.comp )
+add_shader( gi_specular selective_gauss2/h24_64.comp )
+add_shader( gi_specular selective_gauss2/v24_64.comp )
 
 add_shader( gi_specular lighting/lighting.comp )
 add_shader( gi_specular gamma/gamma.comp )
@@ -107,3 +111,5 @@ add_shader( gi_specular mix_ao/mix_ao.comp )
 
 add_shader( gi_specular tone/tone.comp )
 
+add_shader( gi_specular reproject/reproject.comp )
+add_shader( gi_specular reproject/clear.comp )

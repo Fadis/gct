@@ -28,7 +28,6 @@ vec3 diffuse_ambient_light(
   float roughness,
   float metallicness
 ) {
-  //vec3 environment_diffuse = texture( environment_map, vec2( dir.x, -dir.y ) * 0.5 + 0.5 ).rgb;
   vec3 environment_diffuse = textureLod( environment_map, vec2( dir.x, dir.y ) * 0.5 + 0.5, 0.0 ).rgb * mix( albedo, vec3( 0, 0, 0 ), metallicness );
   return environment_diffuse;
 }
@@ -39,18 +38,18 @@ void main() {
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 center = center_.xyz;
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
-  const vec3 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) ).rgb;
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;
-  const float center_depth = center_.w;
+
   const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) ) * 2 * pi ) );
+
   const ivec3 image_size = imageSize( gbuffer );
+
   vec3 env_color = vec3( 0.0, 0.0, 0.0 );
-  float env_total = 0.0;
   for( int i = 0; i < poisson_sphere_sample_count; i++ ) {
     vec3 offset = ( rot3 * poisson_sphere[ i ] ) * kernel_size;
-    if( dot( offset, normal ) < 0.0 ) {
+    if( dot( normal, offset ) < 0.0 ) {
       offset = -offset;
     }
     vec3 world_pos = center + offset;
@@ -63,12 +62,11 @@ void main() {
     sample_pos.x = max( min( sample_pos.x, image_size.x - 1 ), 0 );
     sample_pos.y = max( min( sample_pos.y, image_size.y - 1 ), 0 );
     const float sample_depth = imageLoad( gbuffer, ivec3( sample_pos, 0 ) ).w;
-    float visibility = 1.0 - step( sample_depth, screen_pos.z );
-    vec3 dir = normalize( offset );
-    env_color += visibility * dot( normal, dir ) * diffuse_ambient_light( dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
-    env_total += dot( normal, dir );
+    if( sample_depth > screen_pos.z ) {
+      const vec3 dir = normalize( offset );
+      env_color += dot( normal, dir ) * diffuse_ambient_light( dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
+    }
   }
-  env_color /= env_total;
-  imageStore( dest_image, screen_pos, vec4( env_color, 1.0 ) );
+  imageStore( dest_image, screen_pos, vec4( env_color / poisson_sphere_sample_count, 1.0 ) );
 }
 

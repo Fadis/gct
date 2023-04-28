@@ -14,6 +14,7 @@ layout(local_size_x = 256, local_size_y = 1 ) in;
 const int kernel_size = 32;
 shared vec4[gl_WorkGroupSize.x+kernel_size*2+1] cache;
 shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] depth;
+shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] normal;
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
@@ -30,18 +31,22 @@ void main() {
   hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
   cache[ lcpos ] = imageLoad( src_image, lsample_pos );
   depth[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).xyz;
+  normal[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 2 ) ).xyz;
   if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
     cache[ hcpos ] = imageLoad( src_image, hsample_pos );
     depth[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).xyz;
+    normal[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 2 ) ).xyz;
   }
   barrier();
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec3 center_depth = depth[ lcpos + kernel_size ];
+  const vec3 center_normal = normal[ lcpos + kernel_size ];
   for( uint i = 0; i != gauss12_32_size; i++ ) {
     const vec3 sample_depth = depth[ lcpos + i ];
+    const vec3 sample_normal = normal[ lcpos + i ];
     const float distance = length( sample_depth - center_depth );
-    const float weight = 1.0 / ( 1.0 + distance );
+    float weight = ( 1.0 / ( 1.0 + distance ) ) * max( dot( center_normal, sample_normal ), 0 );
     sum += cache[ lcpos + i ] * gauss12_32[ i ] * weight;
     scale += gauss12_32[ i ] * weight;
   }

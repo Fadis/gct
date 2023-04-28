@@ -11,7 +11,6 @@ layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
 void main() {
-  const float kernel_size = 1.0;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec2 h0 = imageLoad( hbao_image, ivec3( screen_pos, 0 ) ).rg;
   const vec2 h90 = imageLoad( hbao_image, ivec3( screen_pos, 1 ) ).rg;
@@ -24,8 +23,10 @@ void main() {
     h135.x * h0.x +
     h0.x * h45.x +
     h45.x * h90.x +
-    h90.x * h135.x +
-    h135.x * h0.y ) / 8;
+    h90.x * h135.y +
+    h135.y * h0.y ) / 8;
+  visibility = max( ( max( h0.x + h0.y - 1.0, 0 ) * max( h90.x + h90.y - 1.0, 0 ) * max( h45.x + h45.y - 1.0, 0 ) * max( h135.x + h135.y - 1.0, 0 ) ), 0 );
   imageStore( dest_image, screen_pos, vec4( visibility, 1.0, 0.0, 1.0 ) );
+  //imageStore( dest_image, screen_pos, vec4( h135.y, 1.0, 0.0, 1.0 ) );
 }
 

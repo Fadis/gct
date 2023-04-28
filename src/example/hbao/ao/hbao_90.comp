@@ -4,21 +4,22 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 #include "constants.h"
+#include "push_constants.h"
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
 layout (binding = 1, rgba32f) writeonly uniform image2DArray dest_image;
 
-layout(local_size_x = 1, local_size_y = 256 ) in;
+layout(local_size_x = 1, local_size_y = 512 ) in;
 
-const int kernel_size = 120;
+const int kernel_size = 64;
 shared vec3[gl_WorkGroupSize.y+kernel_size*2+1] cache;
 
 void main() {
+  const ivec2 image_size = imageSize( dest_image ).xy;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint lcpos = gl_LocalInvocationID.y;
   {
-    const uint lcpos = gl_LocalInvocationID.y;
     const uint hcpos = lcpos + gl_WorkGroupSize.y;
-    const ivec2 image_size = imageSize( gbuffer ).xy;
     ivec2 lsample_pos = screen_pos;
     lsample_pos.y = lsample_pos.y - kernel_size;
     ivec2 hsample_pos = lsample_pos;
@@ -33,30 +34,35 @@ void main() {
     }
     barrier();
   }
-  const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 7 ) ).xyz;
-  const uint cache_center = gl_LocalInvocationID.y + kernel_size;
+  if( screen_pos.x >= image_size.x ) return;
+  if( screen_pos.y >= image_size.y ) return;
+  const uint cache_center = lcpos + kernel_size;
+  const vec3 center = cache[ cache_center ];
   const vec3 center_pos = cache[ cache_center ];
-  float l = 0.0;
+  const float center_distance = distance( dynamic_uniforms.eye_pos.xyz, cache[ cache_center ].xyz );
+  const vec3 center_direction = normalize( cache[ cache_center ].xyz - dynamic_uniforms.eye_pos.xyz );
+  const float next_pixel_scale = dot( center_direction, cache[ cache_center + 1 ].xyz - dynamic_uniforms.eye_pos.xyz );
+  const vec3 next_pixel_in_plane = ( cache[ cache_center + 1 ].xyz - dynamic_uniforms.eye_pos.xyz )/next_pixel_scale + dynamic_uniforms.eye_pos.xyz;
+  const float prev_pixel_scale = dot( center_direction, cache[ cache_center - 1 ].xyz - dynamic_uniforms.eye_pos.xyz );
+  const vec3 prev_pixel_in_plane = ( cache[ cache_center - 1 ].xyz - dynamic_uniforms.eye_pos.xyz )/prev_pixel_scale + dynamic_uniforms.eye_pos.xyz;
+  const float t =  atan( ( next_pixel_scale - prev_pixel_scale )/( distance( next_pixel_in_plane, prev_pixel_in_plane ) ) );
+  float l = -pi/2.0;
   for( uint i = 0; i != kernel_size; i++ ) {
-    const vec3 sample_pos = cache[ cache_center - 1 - i ];
-    vec3 diff = sample_pos - center_pos;
-    if( length( diff ) < 1.0 ) {
-      const vec3 tangent = normalize( diff );
-      l = max( l, dot( normal, tangent ) );
-    }
+    const float scale = dot( center_direction, cache[ cache_center - 1 - i ].xyz - dynamic_uniforms.eye_pos.xyz ); 
+    const vec3 next_pixel_in_plane = ( cache[ cache_center - 1 - i ].xyz - dynamic_uniforms.eye_pos.xyz )/scale + dynamic_uniforms.eye_pos.xyz;
+    const float h = atan( ( scale - center_distance )/( distance( center_pos, next_pixel_in_plane ) ) );
+    l = max( l, -h );
   }
-  float lratio = acos( max( min( l, 1 ), 0 ) )/( pi / 2.0 );
+  l = max( min( 1.0 - ( l )/( pi/2.0 ), 2.0 ), 0.0 );
 
-  float r = 0.0;
+  float r = -pi/2.0;
   for( uint i = 0; i != kernel_size; i++ ) {
-    const vec3 sample_pos = cache[ cache_center + 1 + i ];
-    vec3 diff = sample_pos - center_pos;
-    if( length( diff ) < 1.0 ) {
-      const vec3 tangent = normalize( diff );
-      r = max( r, dot( normal, tangent ) );
-    }
+    const float scale = dot( center_direction, cache[ cache_center + 1 + i ].xyz - dynamic_uniforms.eye_pos.xyz );
+    const vec3 next_pixel_in_plane = ( cache[ cache_center + 1 + i ].xyz - dynamic_uniforms.eye_pos.xyz )/scale +  dynamic_uniforms.eye_pos.xyz;
+    const float h =  atan( ( scale - center_distance )/( distance( center_pos, next_pixel_in_plane ) ) );
+    r = max( r, -h );
   }
-  float rratio = acos( max( min( r, 1 ), 0 ) )/( pi / 2.0 );
-  imageStore( dest_image, ivec3( screen_pos, 1 ), vec4( lratio, rratio, 0.0, 0.0 ) );
+  r = max( min( 1.0 - ( r )/( pi/2.0 ), 2.0 ), 0.0 );
+  imageStore( dest_image, ivec3( screen_pos, 1 ), vec4( l, r, 0.0, 0.0 ) );
 }
 

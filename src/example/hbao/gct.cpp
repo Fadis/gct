@@ -536,7 +536,10 @@ int main() {
           .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
           .set_basic( (*ao0_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_temp[ i ] )
+          .add_image( ao_temp[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ao0_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
       }
     );
   }

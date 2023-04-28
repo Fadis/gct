@@ -11,7 +11,7 @@ layout(local_size_x = 256, local_size_y = 1 ) in;
 
 #include "gauss.h"
 
-const int kernel_size = 8;
+const int kernel_size = 1;
 shared vec4[gl_WorkGroupSize.x+kernel_size*2+1] cache;
 shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] depth;
 shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] normal;
@@ -38,20 +38,17 @@ void main() {
     normal[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 2 ) ).xyz;
   }
   barrier();
-  const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).xy;
-  const float roughness = mr.g;
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec3 center_depth = depth[ lcpos + kernel_size ];
   const vec3 center_normal = normal[ lcpos + kernel_size ];
-  for( uint i = 0; i != gauss09_8_size; i++ ) {
+  for( uint i = 0; i != gauss0_1_size; i++ ) {
     const vec3 sample_depth = depth[ lcpos + i ];
     const vec3 sample_normal = normal[ lcpos + i ];
     const float distance = length( sample_depth - center_depth );
-    const float weight = ( 1.0 / ( 1.0 + distance ) ) * max( dot( center_normal, sample_normal ), 0 );
-    const float gauss = mix( roughness, gauss03_8[ i ], gauss09_8[ i ] );
-    sum += cache[ lcpos + i ] * gauss * weight;
-    scale += gauss * weight;
+    float weight = ( 1.0 / ( 1.0 + distance ) ) * max( dot( center_normal, sample_normal ), 0 );
+    sum += cache[ lcpos + i ] * gauss0_1[ i ] * weight;
+    scale += gauss0_1[ i ] * weight;
   }
   sum /= scale;
   imageStore( dest_image, screen_pos, sum );

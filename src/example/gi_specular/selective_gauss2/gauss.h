@@ -1,6 +1,13 @@
 #ifndef GCT_SHADER_GAUSS_H
 #define GCT_SHADER_GAUSS_H
 
+int gauss0_1_size = 3;
+float gauss0_1[3] = float[](
+  0.25,
+  0.5,
+  0.25
+);
+
 int gauss09_8_size = 9;
 float gauss09_8[9] = float[](
 2.276875677129121e-05,
