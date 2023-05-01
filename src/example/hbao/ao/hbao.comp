@@ -16,16 +16,7 @@ void main() {
   const vec2 h90 = imageLoad( hbao_image, ivec3( screen_pos, 1 ) ).rg;
   const vec2 h45 = imageLoad( hbao_image, ivec3( screen_pos, 2 ) ).rg;
   const vec2 h135 = imageLoad( hbao_image, ivec3( screen_pos, 3 ) ).rg;
-  float visibility = (
-    h0.y * h45.y +
-    h45.y * h90.y +
-    h90.y * h135.x +
-    h135.x * h0.x +
-    h0.x * h45.x +
-    h45.x * h90.x +
-    h90.x * h135.y +
-    h135.y * h0.y ) / 8;
-  visibility = max( ( max( h0.x + h0.y - 1.0, 0 ) * max( h90.x + h90.y - 1.0, 0 ) * max( h45.x + h45.y - 1.0, 0 ) * max( h135.x + h135.y - 1.0, 0 ) ), 0 );
+  float visibility = h0.x * h90.x * h45.x * h135.x;
   imageStore( dest_image, screen_pos, vec4( visibility, 1.0, 0.0, 1.0 ) );
   //imageStore( dest_image, screen_pos, vec4( h135.y, 1.0, 0.0, 1.0 ) );
 }

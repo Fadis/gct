@@ -24,6 +24,8 @@ subdirs(
   ssdo_with_bounce
   hbao
   voxelize
-  gi_diffuse
+  vxao
+  gi_diffuse2
   gi_specular
+  gi_specular2
 )

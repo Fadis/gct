@@ -32,41 +32,34 @@ void main() {
     hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
     hsample_pos.y += image_size.y;
     hsample_pos.y %= image_size.y;
-    cache[ lcpos ] = imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).rgb;
+    cache[ lcpos ] = ( dynamic_uniforms.camera_matrix * vec4( imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).xyz, 1.0 ) ).xyz;
     if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
-      cache[ hcpos ] = imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).rgb;
+      cache[ hcpos ] = ( dynamic_uniforms.camera_matrix * vec4( imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).xyz, 1.0 ) ).xyz;
     }
     barrier();
   }
   if( screen_pos.x >= image_size.x ) return;
   if( screen_pos.y >= image_size.y ) return;
   const uint cache_center = lcpos + kernel_size;
-  const vec3 center = cache[ cache_center ];
-  const vec3 center_pos = cache[ cache_center ];
-  const float center_distance = distance( dynamic_uniforms.eye_pos.xyz, cache[ cache_center ].xyz );
-  const vec3 center_direction = normalize( cache[ cache_center ].xyz - dynamic_uniforms.eye_pos.xyz );
-  const float next_pixel_scale = dot( center_direction, cache[ cache_center + 1 ].xyz - dynamic_uniforms.eye_pos.xyz );
-  const vec3 next_pixel_in_plane = ( cache[ cache_center + 1 ].xyz - dynamic_uniforms.eye_pos.xyz )/next_pixel_scale + dynamic_uniforms.eye_pos.xyz;
-  const float prev_pixel_scale = dot( center_direction, cache[ cache_center - 1 ].xyz - dynamic_uniforms.eye_pos.xyz );
-  const vec3 prev_pixel_in_plane = ( cache[ cache_center - 1 ].xyz - dynamic_uniforms.eye_pos.xyz )/prev_pixel_scale + dynamic_uniforms.eye_pos.xyz;
-  const float t =  atan( ( next_pixel_scale - prev_pixel_scale )/( distance( next_pixel_in_plane, prev_pixel_in_plane ) ) );
+  const float center_d = distance( cache[ cache_center + 1 ].xy, cache[ cache_center - 1 ].xy );
+  const float t = ( center_d > 0.0 ) ? atan( ( -cache[ cache_center + 1 ].z - -cache[ cache_center - 1 ].z)/center_d ) : 0.0;
   float l = -pi/2.0;
   for( uint i = 0; i != kernel_size; i++ ) {
-    const float scale = dot( center_direction, cache[ cache_center - 1 - i ].xyz - dynamic_uniforms.eye_pos.xyz ); 
-    const vec3 next_pixel_in_plane = ( cache[ cache_center - 1 - i ].xyz - dynamic_uniforms.eye_pos.xyz )/scale + dynamic_uniforms.eye_pos.xyz;
-    const float h = atan( ( scale - center_distance )/( distance( center_pos, next_pixel_in_plane ) ) );
-    l = max( l, -h );
+    if( abs( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z ) < 1.0 ) {
+      const float d = distance( cache[ cache_center - i - 1 ].xy, cache[ cache_center ].xy );
+      const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+      l = max( l, -h );
+    }
   }
-  l = max( min( 1.0 - ( l )/( pi/2.0 ), 2.0 ), 0.0 );
-
   float r = -pi/2.0;
   for( uint i = 0; i != kernel_size; i++ ) {
-    const float scale = dot( center_direction, cache[ cache_center + 1 + i ].xyz - dynamic_uniforms.eye_pos.xyz );
-    const vec3 next_pixel_in_plane = ( cache[ cache_center + 1 + i ].xyz - dynamic_uniforms.eye_pos.xyz )/scale +  dynamic_uniforms.eye_pos.xyz;
-    const float h =  atan( ( scale - center_distance )/( distance( center_pos, next_pixel_in_plane ) ) );
-    r = max( r, -h );
+    if( abs( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z ) < 1.0 ) {
+      const float d = distance( cache[ cache_center + i + 1 ].xy, cache[ cache_center ].xy );
+      const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+      r = max( r, -h );
+    }
   }
-  r = max( min( 1.0 - ( r )/( pi/2.0 ), 2.0 ), 0.0 );
-  imageStore( dest_image, ivec3( screen_pos, 2 ), vec4( l, r, 0.0, 0.0 ) );
+  float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/pi;
+  imageStore( dest_image, ivec3( screen_pos, 2 ), vec4( sum, 0.0, 0.0, 0.0 ) );
 }
 

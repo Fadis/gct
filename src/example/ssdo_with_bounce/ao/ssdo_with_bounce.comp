@@ -48,6 +48,7 @@ void main() {
   const ivec3 image_size = imageSize( gbuffer );
 
   vec3 env_color = vec3( 0.0, 0.0, 0.0 );
+  float scale = 0.0;
   for( int i = 0; i < poisson_sphere_sample_count; i++ ) {
     vec3 offset = ( rot3 * poisson_sphere[ i ] ) * kernel_size;
     if( dot( normal, offset ) < 0.0 ) {
@@ -62,20 +63,23 @@ void main() {
     );
     sample_pos.x = max( min( sample_pos.x, image_size.x - 1 ), 0 );
     sample_pos.y = max( min( sample_pos.y, image_size.y - 1 ), 0 );
+    const vec3 dir = normalize( offset );
+    const float r = max( dot( normal, dir ), 0.0 );
     const vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
+    const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
+    const vec3 sample_diffuse = imageLoad( diffuse_image, sample_pos ).rgb;
+    float travel_distance = distance( sample_world_pos.xyz, center );
+    const vec3 actual_dir = normalize( sample_world_pos.xyz - center );
     const float sample_depth = sample_world_pos.w;
-    if( sample_depth > screen_pos.z ) {
-      const vec3 dir = normalize( offset );
-      env_color += dot( normal, dir ) * diffuse_ambient_light( dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
-    }
-    else {
-      const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
-      const vec3 sample_diffuse = imageLoad( diffuse_image, sample_pos ).rgb;
-      float travel_distance = distance( sample_world_pos.xyz, center );
-      const vec3 actual_dir = normalize( sample_world_pos.xyz - center );
-      env_color += sample_diffuse * 1000 * 1/max( travel_distance * travel_distance, 1.0 ) * max( dot( normal, actual_dir ), 0 ) * max( dot( sample_normal, -actual_dir ), 0 );
-    }
+    float visibility = ( 1.0 - step( sample_depth, screen_pos.z ) );
+    env_color +=
+      mix(
+        vec3( visibility ),
+        sample_diffuse * 1000 * 1/max( travel_distance * travel_distance, 1.0 ) * max( dot( normal, actual_dir ), 0 ) * max( dot( sample_normal, -actual_dir ), 0 ),
+        diffuse_ambient_light( dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness ) * r
+      );
+    scale += r;
   }
-  imageStore( dest_image, screen_pos, vec4( env_color / poisson_sphere_sample_count, 1.0 ) );
+  imageStore( dest_image, screen_pos, vec4( env_color / scale, 1.0 ) );
 }
 

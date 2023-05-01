@@ -30,9 +30,10 @@ void main() {
   const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) ) * 2 * pi ) );
   const ivec3 image_size = imageSize( gbuffer );
   float visibility = 0.0;
+  float scale = 0.0;
   for( int i = 0; i < poisson_sphere_sample_count; i++ ) {
     vec3 offset = ( rot3 * poisson_sphere[ i ] ) * kernel_size;
-    if( dot( offset, normal ) < 0.0 ) {
+    if( dot( normal, offset ) < 0.0 ) {
       offset = -offset;
     }
     vec3 world_pos = center + offset;
@@ -44,9 +45,13 @@ void main() {
     );
     sample_pos.x = max( min( sample_pos.x, image_size.x - 1 ), 0 );
     sample_pos.y = max( min( sample_pos.y, image_size.y - 1 ), 0 );
+    const float r = max( dot( normal, normalize( offset ) ), 0.0 );
     const float sample_depth = imageLoad( gbuffer, ivec3( sample_pos, 0 ) ).w;
-    visibility += 1.0 - step( sample_depth, screen_pos.z );
+    visibility +=  ( 1.0 - step( sample_depth, screen_pos.z ) ) * r;
+    scale += r;
+
+    //visibility += 1.0 - step( sample_depth, screen_pos.z );
   }
-  imageStore( dest_image, screen_pos, vec4( visibility / poisson_sphere_sample_count, 0, 0, 0 ) );
+  imageStore( dest_image, screen_pos, vec4( visibility / scale, 0, 0, 0 ) );
 }
 
