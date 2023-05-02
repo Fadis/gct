@@ -19,6 +19,7 @@ subdirs(
   cursor
   text_input
   shadow
+  noao
   ssao
   ssdo
   ssdo_with_bounce

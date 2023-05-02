@@ -570,6 +570,7 @@ int main() {
       );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ssr_out;
+  std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_out;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ssr_out.push_back(
       allocator->create_image(
@@ -577,9 +578,6 @@ int main() {
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
-  }
-  std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_out;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     ssdgi_out.push_back(
       allocator->create_image(
         rgba32ici,
@@ -605,19 +603,14 @@ int main() {
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > reproject_specular;
-  std::vector< std::shared_ptr< gct::image_view_t > > reproject_specular_depth;
   std::vector< std::shared_ptr< gct::image_view_t > > reproject_diffuse;
-  std::vector< std::shared_ptr< gct::image_view_t > > reproject_diffuse_depth;
+  std::vector< std::shared_ptr< gct::image_view_t > > reproject_depth;
+  std::vector< std::shared_ptr< gct::image_view_t > > pre_history;
+  std::vector< std::shared_ptr< gct::image_view_t > > post_history;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
     reproject_specular.push_back(
       allocator->create_image(
         rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-    reproject_specular_depth.push_back(
-      allocator->create_image(
-        r32uici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
@@ -627,7 +620,19 @@ int main() {
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
-    reproject_diffuse_depth.push_back(
+    reproject_depth.push_back(
+      allocator->create_image(
+        r32uici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    pre_history.push_back(
+      allocator->create_image(
+        r32uici,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      )->get_view( vk::ImageAspectFlagBits::eColor )
+    );
+    post_history.push_back(
       allocator->create_image(
         r32uici,
         VMA_MEMORY_USAGE_GPU_ONLY
@@ -639,95 +644,73 @@ int main() {
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( reproject_specular, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( reproject_specular_depth, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( reproject_diffuse, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( reproject_diffuse_depth, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( reproject_depth, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( pre_history, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( post_history, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_specular_descriptor_set;
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_diffuse_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    reproject_specular_descriptor_set.push_back(
+    reproject_descriptor_set.push_back(
       descriptor_pool->allocate(
         reproject_descriptor_set_layout
       )
     );
-    reproject_specular_descriptor_set.back()->update(
+    reproject_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_specular_descriptor_set.back())[ "gbuffer" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "gbuffer" ] )
           .add_image( gbuffer.get_image_view( i ) ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_specular_descriptor_set.back())[ "src_image" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "src_specular" ] )
           .add_image( ssr_out[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_specular_descriptor_set.back())[ "dest_image" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "dest_specular" ] )
           .add_image( reproject_specular[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_specular_descriptor_set.back())[ "depth_image" ] )
-          .add_image( reproject_specular_depth[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*reproject_specular_descriptor_set.back())[ "dynamic_uniforms" ] )
-          .add_buffer( dynamic_uniform[ i ] )
-      }
-    );
-    reproject_diffuse_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        reproject_descriptor_set_layout
-      )
-    );
-    reproject_diffuse_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "src_image" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "src_diffuse" ] )
           .add_image( ssdgi_out[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "dest_image" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "dest_diffuse" ] )
           .add_image( reproject_diffuse[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "depth_image" ] )
-          .add_image( reproject_diffuse_depth[ i ] ),
+          .set_basic( (*reproject_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_depth[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_diffuse_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .set_basic( (*reproject_descriptor_set.back())[ "src_history" ] )
+          .add_image( post_history[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_descriptor_set.back())[ "dest_history" ] )
+          .add_image( pre_history[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_descriptor_set.back())[ "dynamic_uniforms" ] )
           .add_buffer( dynamic_uniform[ i ] )
       }
     );
   }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_specular_descriptor_set;
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_diffuse_descriptor_set;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_descriptor_set;
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    reproject_clear_specular_descriptor_set.push_back(
+    reproject_clear_descriptor_set.push_back(
       descriptor_pool->allocate(
         reproject_clear_descriptor_set_layout
       )
     );
-    reproject_clear_specular_descriptor_set.back()->update(
+    reproject_clear_descriptor_set.back()->update(
       {
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_clear_specular_descriptor_set.back())[ "dest_image" ] )
+          .set_basic( (*reproject_clear_descriptor_set.back())[ "dest_specular" ] )
           .add_image( reproject_specular[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_clear_specular_descriptor_set.back())[ "depth_image" ] )
-          .add_image( reproject_specular_depth[ i ] )
-      }
-    );
-    reproject_clear_diffuse_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        reproject_clear_descriptor_set_layout
-      )
-    );
-    reproject_clear_diffuse_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*reproject_clear_diffuse_descriptor_set.back())[ "dest_image" ] )
+          .set_basic( (*reproject_clear_descriptor_set.back())[ "dest_diffuse" ] )
           .add_image( reproject_diffuse[ i ] ),
         gct::write_descriptor_set_t()
-          .set_basic( (*reproject_clear_diffuse_descriptor_set.back())[ "depth_image" ] )
-          .add_image( reproject_diffuse_depth[ i ] )
+          .set_basic( (*reproject_clear_descriptor_set.back())[ "depth_image" ] )
+          .add_image( reproject_depth[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*reproject_clear_descriptor_set.back())[ "dest_history" ] )
+          .add_image( pre_history[ i ] )
       }
     );
   }
@@ -874,15 +857,21 @@ int main() {
         gct::write_descriptor_set_t()
           .set_basic( (*ssdgi_descriptor_set.back())[ "reproject" ] )
           .add_image( reproject_diffuse[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssdgi_descriptor_set.back())[ "src_history" ] )
+          .add_image( pre_history[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssdgi_descriptor_set.back())[ "dest_history" ] )
+          .add_image( post_history[ i ] )
       }
     );
   }
 
   const auto [ssdgi_hgauss_descriptor_set_layout,ssdgi_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/h12_32.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/hadaptive.comp.spv"
   );
   const auto [ssdgi_vgauss_descriptor_set_layout,ssdgi_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/v12_32.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/vadaptive.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ssdgi_gauss_temp;
@@ -919,7 +908,10 @@ int main() {
           .add_image( ssdgi_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ssdgi_hgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ssdgi_gauss_temp[ i ] )
+          .add_image( ssdgi_gauss_temp[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssdgi_hgauss_descriptor_set.back())[ "history" ] )
+          .add_image( post_history[ i ] )
       }
     );
   }
@@ -940,7 +932,10 @@ int main() {
           .add_image( ssdgi_gauss_temp[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ssdgi_vgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ssdgi_out[ i ] )
+          .add_image( ssdgi_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssdgi_vgauss_descriptor_set.back())[ "history" ] )
+          .add_image( post_history[ i ] )
       }
     );
   }
@@ -996,18 +991,19 @@ int main() {
                     environment_image->get_layout().get_uniform_layout()
                   )
               )
-          )
-
-
+          ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_descriptor_set.back())[ "src_history" ] )
+          .add_image( pre_history[ i ] )
       }
     );
   }
 
   const auto [ssr_hgauss_descriptor_set_layout,ssr_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/h1_8.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/hadaptive.comp.spv"
   );
   const auto [ssr_vgauss_descriptor_set_layout,ssr_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/v1_8.comp.spv"
+    CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/vadaptive.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ssr_gauss_temp;
@@ -1044,7 +1040,10 @@ int main() {
           .add_image( ssr_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ssr_hgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ssr_gauss_temp[ i ] )
+          .add_image( ssr_gauss_temp[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_hgauss_descriptor_set.back())[ "history" ] )
+          .add_image( post_history[ i ] )
       }
     );
   }
@@ -1065,7 +1064,10 @@ int main() {
           .add_image( ssr_gauss_temp[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*ssr_vgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ssr_out[ i ] )
+          .add_image( ssr_out[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*ssr_vgauss_descriptor_set.back())[ "history" ] )
+          .add_image( post_history[ i ] )
       }
     );
   }
@@ -1668,13 +1670,7 @@ int main() {
 
       rec.bind(
         reproject_clear_pipeline,
-        { reproject_clear_specular_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      
-      rec.bind(
-        reproject_clear_pipeline,
-        { reproject_clear_diffuse_descriptor_set[ image_index ] }
+        { reproject_clear_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
       
@@ -1693,7 +1689,8 @@ int main() {
         {},
         {
           reproject_specular[ image_index ]->get_factory(),
-          reproject_diffuse[ image_index ]->get_factory()
+          reproject_diffuse[ image_index ]->get_factory(),
+          pre_history[ image_index ]->get_factory()
         }
       );
       rec.barrier(
@@ -1708,16 +1705,10 @@ int main() {
 
       rec.bind(
         reproject_pipeline,
-        { reproject_specular_descriptor_set[ image_index ] }
+        { reproject_descriptor_set[ image_index ] }
       );
       rec.dispatch_threads( width, height, 1 );
       
-      rec.bind(
-        reproject_pipeline,
-        { reproject_diffuse_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-
       rec.barrier(
         vk::AccessFlagBits::eTransferRead,
         vk::AccessFlagBits::eShaderRead,
@@ -1762,7 +1753,26 @@ int main() {
         {
           diffuse[ image_index ]->get_factory(),
           reproject_specular[ image_index ]->get_factory(),
-          reproject_diffuse[ image_index ]->get_factory()
+          reproject_diffuse[ image_index ]->get_factory(),
+          pre_history[ image_index ]->get_factory()
+        }
+      );
+
+      rec.bind(
+        ssr_pipeline,
+        { ssr_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
+
+      rec.barrier(
+        vk::AccessFlagBits::eShaderRead,
+        vk::AccessFlagBits::eShaderWrite,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlagBits( 0 ),
+        {},
+        {
+          pre_history[ image_index ]->get_factory()
         }
       );
 
@@ -1772,16 +1782,19 @@ int main() {
       );
       rec.dispatch_threads( width, height, 1 );
 
-      rec.bind(
-        ssr_pipeline,
-        { ssr_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-
       rec.compute_barrier(
         {},
-        { ssdgi_out[ image_index ]->get_factory() }
+        {
+          ssdgi_out[ image_index ]->get_factory(),
+          post_history[ image_index ]->get_factory()
+        }
       );
+
+      rec.bind(
+        ssr_hgauss_pipeline,
+        { ssr_hgauss_descriptor_set[ image_index ] }
+      );
+      rec.dispatch_threads( width, height, 1 );
 
       rec.bind(
         ssdgi_hgauss_pipeline,
@@ -1803,11 +1816,6 @@ int main() {
         { ssr_out[ image_index ]->get_factory() }
       );
 
-      rec.bind(
-        ssr_hgauss_pipeline,
-        { ssr_hgauss_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         { ssr_gauss_temp[ image_index ]->get_factory() }

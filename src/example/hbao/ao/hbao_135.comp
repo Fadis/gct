@@ -65,7 +65,7 @@ void main() {
       r = max( r, -h );
     }
   }
-  float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/pi;
+  float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/2;
   imageStore( dest_image, ivec3( screen_pos, 3 ), vec4( sum, 0.0, 0.0, 0.0 ) );
 }
 

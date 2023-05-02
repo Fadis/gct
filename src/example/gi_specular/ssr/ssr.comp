@@ -11,6 +11,7 @@ layout (binding = 1, rgba32f) readonly uniform image2D reproject;
 layout (binding = 2, rgba32f) uniform image2D dest_image;
 layout (binding = 3) uniform sampler3D distance_field;
 layout (binding = 4) uniform sampler2D environment_map;
+layout (binding = 6, r32ui) readonly uniform uimage2D src_history;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
@@ -88,7 +89,7 @@ void main() {
     ( sample_screen_pos.x * 0.5 + 0.5 ) * ( image_size.x - 1 ), 
     ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
   );
-  if( sample_pos.x >= 0 && sample_pos.x < image_size.x && sample_pos.y >= 0 && sample_pos.y < image_size.y && sample_screen_pos.z >= 0 ) {
+  if( sample_pos.x >= 0 && sample_pos.x < image_size.x && sample_pos.y >= 0 && sample_pos.y < image_size.y && sample_screen_pos.z >= -1.0 ) {
     vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
     for( int j = 0; j < 16; j++ ) {
       if( sample_screen_pos.z < sample_world_pos.w ) {
@@ -134,8 +135,9 @@ void main() {
     result = travel_distance/20.0 * dot( normal, ray_dir ) * specular_ambient_light( ray_dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
   }
   
-  vec3 existing = imageLoad( reproject, screen_pos ).rgb;
   const int temporal_sample_count = int( max( 60.0 * roughness, 1.0 ) );
-  imageStore( dest_image, screen_pos, vec4( ( result + existing * ( temporal_sample_count - 1 ) )/temporal_sample_count, 1.0 ) );
+  vec3 existing = imageLoad( reproject, screen_pos ).rgb;
+  const uint history = min( imageLoad( src_history, screen_pos ).r, temporal_sample_count );
+  imageStore( dest_image, screen_pos, vec4( ( result + existing.rgb * history )/( history + 1 ), 1.0 ) );
 }
 

@@ -22,8 +22,9 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
   
-  const vec3 ambient = albedo.rgb * 0.01;
-  const vec3 ambient_diffuse = imageLoad( occlusion, screen_pos ).rgb * albedo.rgb;
+  const vec4 ambient_diffuse_occlusion = imageLoad( occlusion, screen_pos );
+  const vec3 ambient = ambient_diffuse_occlusion.a * 0.1 * albedo.rgb;
+  const vec3 ambient_diffuse = ambient_diffuse_occlusion.rgb * albedo.rgb;
   const vec3 ambient_specular = imageLoad( ssr_image, screen_pos ).rgb;
   const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
   const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;

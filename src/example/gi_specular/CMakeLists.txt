@@ -103,6 +103,8 @@ add_shader( gi_specular selective_gauss2/h12_32.comp )
 add_shader( gi_specular selective_gauss2/v12_32.comp )
 add_shader( gi_specular selective_gauss2/h24_64.comp )
 add_shader( gi_specular selective_gauss2/v24_64.comp )
+add_shader( gi_specular selective_gauss2/hadaptive.comp )
+add_shader( gi_specular selective_gauss2/vadaptive.comp )
 
 add_shader( gi_specular lighting/lighting.comp )
 add_shader( gi_specular gamma/gamma.comp )

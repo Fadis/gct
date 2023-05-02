@@ -4,9 +4,13 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, rgba32f) readonly uniform image2D src_image;
-layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
-layout (binding = 3, r32ui) uniform uimage2D depth_image;
+layout (binding = 1, rgba32f) readonly uniform image2D src_diffuse;
+layout (binding = 2, rgba32f) readonly uniform image2D src_specular;
+layout (binding = 3, rgba32f) writeonly uniform image2D dest_diffuse;
+layout (binding = 4, rgba32f) writeonly uniform image2D dest_specular;
+layout (binding = 5, r32ui) uniform uimage2D depth_image;
+layout (binding = 6, r32ui) readonly uniform uimage2D src_history;
+layout (binding = 7, r32ui) writeonly uniform uimage2D dest_history;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
@@ -36,25 +40,34 @@ void main()  {
   new_screen_pos.xyz *= 0.5;
   new_screen_pos.xyz += 0.5;
   const ivec3 new_screen_pos_in_integer = ivec3( new_screen_pos.xyz * ivec3( image_right_bottom, 65535 ) );
-  vec4 value = imageLoad( src_image, screen_pos );
-  //imageStore( dest_image, new_screen_pos_in_integer.xy, value );
-  //return;
 
   uint existing_depth = imageLoad( depth_image, new_screen_pos_in_integer.xy ).r;
   for( uint retry = 0; retry != 4; retry++ ) {
     if( existing_depth > uint( new_screen_pos_in_integer.z ) ) {
       uint result = imageAtomicCompSwap( depth_image, new_screen_pos_in_integer.xy, existing_depth, uint( new_screen_pos_in_integer.z ) );
       if( result == existing_depth ) {
-        vec4 value = imageLoad( src_image, screen_pos );
-        if( isnan( value.r ) ) return;
-        if( isnan( value.g ) ) return;
-        if( isnan( value.b ) ) return;
-        if( isnan( value.a ) ) return;
-        if( isinf( value.r ) ) return;
-        if( isinf( value.g ) ) return;
-        if( isinf( value.b ) ) return;
-        if( isinf( value.a ) ) return;
-        imageStore( dest_image, new_screen_pos_in_integer.xy, value );
+        vec4 diffuse = imageLoad( src_diffuse, screen_pos );
+        vec4 specular = imageLoad( src_specular, screen_pos );
+        if( isnan( diffuse.r ) ) return;
+        if( isnan( diffuse.g ) ) return;
+        if( isnan( diffuse.b ) ) return;
+        if( isnan( diffuse.a ) ) return;
+        if( isinf( diffuse.r ) ) return;
+        if( isinf( diffuse.g ) ) return;
+        if( isinf( diffuse.b ) ) return;
+        if( isinf( diffuse.a ) ) return;
+        if( isnan( specular.r ) ) return;
+        if( isnan( specular.g ) ) return;
+        if( isnan( specular.b ) ) return;
+        if( isnan( specular.a ) ) return;
+        if( isinf( specular.r ) ) return;
+        if( isinf( specular.g ) ) return;
+        if( isinf( specular.b ) ) return;
+        if( isinf( specular.a ) ) return;
+        imageStore( dest_diffuse, new_screen_pos_in_integer.xy, diffuse );
+        imageStore( dest_specular, new_screen_pos_in_integer.xy, specular );
+        uint history = imageLoad( src_history, screen_pos ).r;
+        imageStore( dest_history, new_screen_pos_in_integer.xy, uvec4( history, 0, 0, 0 ) );
         return;
       }
       existing_depth = result;

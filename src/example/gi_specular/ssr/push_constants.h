@@ -1,7 +1,7 @@
 #ifndef GCT_SHADER_PUSH_CONSTANTS_H
 #define GCT_SHADER_PUSH_CONSTANTS_H
 
-layout(binding = 5) uniform DynamicUniforms {
+layout(binding = 7) uniform DynamicUniforms {
   mat4 projection_matrix;
   mat4 camera_matrix;
   mat4 light_vp_matrix0;
