@@ -38,9 +38,6 @@ void main()  {
   new_screen_pos.xyz *= 0.5;
   new_screen_pos.xyz += 0.5;
   const ivec3 new_screen_pos_in_integer = ivec3( new_screen_pos.xyz * ivec3( image_right_bottom, 65535 ) );
-  vec4 value = imageLoad( src_image, screen_pos );
-  //imageStore( dest_image, new_screen_pos_in_integer.xy, value );
-  //return;
 
   uint existing_depth = imageLoad( depth_image, new_screen_pos_in_integer.xy ).r;
   for( uint retry = 0; retry != 4; retry++ ) {

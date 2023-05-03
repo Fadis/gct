@@ -6,12 +6,9 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 2, r32f) readonly uniform image2D reproject;
 layout (binding = 3, r32f) uniform image2D dest_image;
-layout (binding = 4) uniform sampler3D distance_field;
+layout (binding = 4) uniform sampler3D voxel;
 layout (binding = 5) uniform sampler2D environment_map;
-layout (binding = 6, r32ui) readonly uniform uimage2D src_history;
-layout (binding = 7, r32ui) writeonly uniform uimage2D dest_history;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
@@ -39,11 +36,8 @@ vec3 diffuse_ambient_light(
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
-  vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+  vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 7 ) ).xyz;
   const vec4 view_normal = ( dynamic_uniforms.camera_matrix * vec4( normal, 1.0 ) );
-  if( view_normal.z/view_normal.w < 0.0 ) {
-    normal = -normal;
-  }
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;
@@ -58,30 +52,26 @@ void main() {
   float visibility = 0.0;
   vec3 center_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center, 1.0 ) ).xyz;
   
-  {
-    vec3 ray_dir = ( rot3 * poisson_sphere_surface[ ( int( rand1( vec2( screen_pos.yx ) ) * poisson_sphere_surface_sample_count ) + dynamic_uniforms.frame_counter / 3 ) % poisson_sphere_surface_sample_count ] );
+  for( uint i = 0; i < poisson_sphere_surface_sample_count; i++ ) {
+    vec3 ray_dir = ( rot3 * poisson_sphere_surface[ ( int( rand1( vec2( screen_pos.yx ) ) * poisson_sphere_surface_sample_count ) + i ) % poisson_sphere_surface_sample_count ] );
     if( dot( normal, ray_dir ) < 0.0 ) {
       ray_dir = -ray_dir;
     }
     vec3 current_pos_in_voxel_space = center_in_voxel_space;
     const vec3 direction_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space;
-    for( int j = 0; j < 64; j++ ) {
-      float r = texture( distance_field, current_pos_in_voxel_space ).r;
-      current_pos_in_voxel_space += direction_in_voxel_space * r;
+    float speed = 0.0005;
+    float distance = 0.0;
+    float v = 1.0;
+    current_pos_in_voxel_space += direction_in_voxel_space;
+    for( int j = 0; j < 8; j++ ) {
+      const float hit = textureLod( voxel, current_pos_in_voxel_space, distance * 60 ).r;
+        v *= 1.0 - hit;
+      speed *= 2.0;
+      distance += speed;
+      current_pos_in_voxel_space += direction_in_voxel_space * speed;
     }
-    vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
-    vec4 sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
-    sample_screen_pos /= sample_screen_pos.w;
-    ivec2 sample_pos = ivec2(
-      ( sample_screen_pos.x * 0.5 + 0.5 ) * ( image_size.x - 1 ), 
-      ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
-    );
-    const float travel_distance = distance( world_pos.xyz, center );
-    visibility = max( 1.0/(1.0+travel_distance*travel_distance) * dot( normal, ray_dir ), 0 );
+    visibility += v * dot( normal, ray_dir );
   }
-  vec4 existing = imageLoad( reproject, screen_pos ).rgba;
-  const uint history = min( imageLoad( src_history, screen_pos ).r, 20 );
-  imageStore( dest_image, screen_pos, vec4( ( visibility + existing.r * history )/( history + 1 ), 0.0, 0.0, 1.0 ) );
-  imageStore( dest_history, screen_pos, uvec4( history + 1, 0, 0, 0 ) );
+  imageStore( dest_image, screen_pos, vec4( visibility/poisson_sphere_surface_sample_count, 0.0, 0.0, 1.0 ) );
 }
 

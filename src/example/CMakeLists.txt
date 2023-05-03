@@ -26,7 +26,7 @@ subdirs(
   hbao
   voxelize
   vxao
+  rtao
   gi_diffuse2
   gi_specular
-  gi_specular2
 )

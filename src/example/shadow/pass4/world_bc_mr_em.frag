@@ -24,7 +24,7 @@ void main()  {
   float metallicness = mr.b * uniforms.metalness;
   vec4 diffuse_color = texture( base_color, input_texcoord ) * uniforms.base_color;
   if( diffuse_color.a <= 0.0 ) discard;
-  float ambient = 1.0;
+  float ambient = dynamic_uniforms.ambient * dynamic_uniforms.light_energy;
   vec3 emissive = uniforms.emissive.rgb * texture( emissive, input_texcoord ).rgb;
   float shadow_level = pcss_omni( input_position.xyz, dynamic_uniforms.light_pos.xyz, dynamic_uniforms.light_size );
   vec3 linear = light_with_mask( L, V, N, V, N, diffuse_color.rgb, roughness, metallicness, ambient, emissive, dynamic_uniforms.light_energy, shadow_level );

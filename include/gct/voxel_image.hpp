@@ -16,10 +16,14 @@ public:
   voxel_image(
     const std::shared_ptr< allocator_t > &allocator,
     unsigned int size,
-    vk::Format format
+    vk::Format format,
+    unsigned int mip = 1u
   );
   const std::shared_ptr< gct::image_view_t > &get_image() const {
-    return image;
+    return view;
+  }
+  const std::vector< std::shared_ptr< gct::image_view_t > > &get_single_mip_view() const {
+    return single_mip_view;
   }
   const std::shared_ptr< gct::render_pass_t > &get_render_pass() const {
     return render_pass;
@@ -37,7 +41,8 @@ public:
     return scissor;
   }
 private:
-  std::shared_ptr< gct::image_view_t > image;
+  std::shared_ptr< gct::image_view_t > view;
+  std::vector< std::shared_ptr< gct::image_view_t > > single_mip_view;
   std::shared_ptr< gct::render_pass_t > render_pass;
   std::shared_ptr< gct::framebuffer_t > framebuffer;
   gct::render_pass_begin_info_t rpbi;

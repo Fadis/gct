@@ -25,7 +25,7 @@ void main()  {
   float roughness = mr.g * uniforms.roughness;
   float metallicness = mr.b * uniforms.metalness;
   vec4 diffuse_color = uniforms.base_color;
-  float ambient = 1.0;
+  float ambient = dynamic_uniforms.ambient * dynamic_uniforms.light_energy;
   vec3 emissive = uniforms.emissive.rgb * texture( emissive, input_texcoord ).rgb;
   vec3 WV = normalize( dynamic_uniforms.eye_pos.xyz-pos );
   vec3 WN = normal;

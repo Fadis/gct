@@ -29,6 +29,7 @@ layout(set=1,binding = 0) uniform DynamicUniforms {
   float split_bias;
   int shadow_mode;
   int frame_counter;
+  float ambient;
   float light_z[ 5 ];
 } dynamic_uniforms;
 

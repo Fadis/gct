@@ -105,7 +105,7 @@ void main() {
     }
   }
   vec4 existing = imageLoad( reproject, screen_pos ).rgba;
-  const uint history = min( imageLoad( src_history, screen_pos ).r, 20 );
+  const uint history = min( imageLoad( src_history, screen_pos ).r, 60 );
   imageStore( dest_image, screen_pos, vec4( ( env_color + existing.rgb * history )/( history + 1 ), ( visibility + existing.a * history )/(history + 1) ) );
   imageStore( dest_history, screen_pos, uvec4( history + 1, 0, 0, 0 ) );
 }

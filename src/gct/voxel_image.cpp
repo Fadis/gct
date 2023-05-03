@@ -13,16 +13,17 @@ namespace gct {
 voxel_image::voxel_image(
   const std::shared_ptr< allocator_t > &allocator,
   unsigned int size,
-  vk::Format format
+  vk::Format format,
+  unsigned int mip
 ) {
-  image = allocator->create_image(
+  const auto image = allocator->create_image(
     gct::image_create_info_t()
       .set_basic(
         vk::ImageCreateInfo()
           .setImageType( vk::ImageType::e3D )
           .setFormat( format )
           .setExtent( { 1u << size, 1u << size, 1u << size } )
-          .setMipLevels( 1 )
+          .setMipLevels( mip )
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
           .setTiling( vk::ImageTiling::eOptimal )
@@ -34,7 +35,26 @@ voxel_image::voxel_image(
           .setInitialLayout( vk::ImageLayout::eUndefined )
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
-  )->get_view( vk::ImageAspectFlagBits::eColor );
+  );
+  view = image->get_view( vk::ImageAspectFlagBits::eColor );
+  for( unsigned int i = 0u; i != mip; ++i ) {
+    single_mip_view.push_back( image->get_view(
+      image_view_create_info_t()
+        .set_basic(
+          vk::ImageViewCreateInfo()
+            .setSubresourceRange(
+              vk::ImageSubresourceRange()
+                .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                .setBaseMipLevel( i )
+                .setLevelCount( 1 )
+                .setBaseArrayLayer( 0 )
+                .setLayerCount( 1 )
+            )
+            .setViewType( to_image_view_type( image->get_props().get_basic().imageType, image->get_props().get_basic().arrayLayers ) )
+        )
+        .rebuild_chain()
+    ) );
+  }
 
   render_pass = get_device( *allocator ).get_render_pass(
     gct::render_pass_create_info_t()

@@ -9,6 +9,8 @@ layout (binding = 3, rgba32f) readonly uniform image2D specular_image;
 layout (binding = 4, rgba32f) writeonly uniform image2D dest_image;
 layout (binding = 5, rgba32f) writeonly uniform image2D bloom_image;
 
+#include "push_constants.h"
+
 layout (std430, binding = 6) buffer Output {
   uint value;
   float scale;
@@ -20,7 +22,7 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
   
-  const vec3 ambient = 0.1 * albedo.rgb;
+  const vec3 ambient = dynamic_uniforms.ambient * dynamic_uniforms.light_energy * albedo.rgb;
   const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
   const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;
   const vec3 total = ( ambient + diffuse.rgb + specular ) / tone.scale;

@@ -5,10 +5,28 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
 
-layout (binding = 2, r32ui) writeonly uniform uimage3D dest_image;
+layout (binding = 2, r8) writeonly uniform image3D l0_image;
+layout (binding = 3, r8) writeonly uniform image3D l1_image;
+layout (binding = 4, r8) writeonly uniform image3D l2_image;
+layout (binding = 5, r8) writeonly uniform image3D l3_image;
 
 void main() {
   const ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
-  imageStore( dest_image, pos, uvec4( 0x40000000, 0, 0, 0 ) );
+  imageStore( l0_image, pos, vec4( 0, 0, 0, 0 ) );
+  const vec3 l1_image_size = imageSize( l1_image );
+  if( pos.x >= l1_image_size.x ) return;
+  if( pos.y >= l1_image_size.y ) return;
+  if( pos.z >= l1_image_size.z ) return;
+  imageStore( l1_image, pos, vec4( 0, 0, 0, 0 ) );
+  const vec3 l2_image_size = imageSize( l2_image );
+  if( pos.x >= l2_image_size.x ) return;
+  if( pos.y >= l2_image_size.y ) return;
+  if( pos.z >= l2_image_size.z ) return;
+  imageStore( l2_image, pos, vec4( 0, 0, 0, 0 ) );
+  const vec3 l3_image_size = imageSize( l3_image );
+  if( pos.x >= l3_image_size.x ) return;
+  if( pos.y >= l3_image_size.y ) return;
+  if( pos.z >= l3_image_size.z ) return;
+  imageStore( l3_image, pos, vec4( 0, 0, 0, 0 ) );
 }
 

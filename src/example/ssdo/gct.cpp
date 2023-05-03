@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_set>
+#include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -33,11 +34,6 @@
 #include <gct/gbuffer.hpp>
 #include <gct/hysteresis.hpp>
 
-struct spec_t {
-  std::uint32_t local_x_size = 0u;
-  std::uint32_t local_y_size = 0u;
-};
-
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
   std::shared_ptr< gct::semaphore_t > draw_complete;
@@ -52,7 +48,25 @@ struct tone_state_t {
   float scale;
 };
 
-int main() {
+int main( int argc, const char *argv[] ) {
+  namespace po = boost::program_options;
+  po::options_description desc( "Options" );
+  desc.add_options()
+    ( "help,h", "show this message" )
+    ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
+    ( "model,m", po::value< std::string >(), "glTF filename" )
+    ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" );
+  po::variables_map vm;
+  po::store( po::parse_command_line( argc, argv, desc ), vm );
+  po::notify( vm );
+  if( vm.count( "help" ) || !vm.count( "model" ) ) {
+    std::cout << desc << std::endl;
+    return 0;
+  }
+  const std::string walk_state_filename = vm[ "walk" ].as< std::string >();
+  const std::string model_filename = vm[ "model" ].as< std::string >();
+  const float ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
+
   gct::glfw::get();
   uint32_t iext_count = 0u;
   auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
@@ -712,7 +726,10 @@ int main() {
           .add_image( bloom_out[ i ] ),
         gct::write_descriptor_set_t()
           .set_basic( (*mix_ao_descriptor_set.back())[ "tone" ] )
-          .add_buffer( tone[ i ] )
+          .add_buffer( tone[ i ] ),
+        gct::write_descriptor_set_t()
+          .set_basic( (*mix_ao_descriptor_set.back())[ "dynamic_uniforms" ] )
+          .add_buffer( dynamic_uniform[ i ] )
       }
     );
   }
@@ -846,10 +863,7 @@ int main() {
   {
     auto rec = gcb->begin();
     doc = gct::gltf::load_gltf(
-      //"/home/fadis/pi_simple.gltf",
-      //"/home/fadis/box4.gltf",
-      "/home/fadis/gltf/Sponza/glTF/Sponza.gltf",
-      //"/home/fadis/gltf/BoomBox/glTF/BoomBox.gltf",
+      model_filename,
       device,
       rec,
       allocator,
@@ -899,10 +913,10 @@ int main() {
   vk::Rect2D const cube_scissor( vk::Offset2D(0, 0), vk::Extent2D( shadow_map_size, shadow_map_size ) );
 
 
-  const glm::mat4 projection = glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
+  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
   const float light_size = 0.3;
 
-  gct::glfw_walk walk( center, scale );
+  gct::glfw_walk walk( center, scale, walk_state_filename );
   const auto point_lights = gct::gltf::get_point_lights(
     doc.node,
     doc.point_light
@@ -995,7 +1009,8 @@ int main() {
           .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
           .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
           .set_light_energy( walk.get_light_energy() )
-          .set_light_size( light_size );
+          .set_light_size( light_size )
+          .set_ambient( ambient_level );
         rec.copy(
           dynamic_data,
           staging_cube_uniform[ i + image_index * 6u ],
@@ -1047,7 +1062,8 @@ int main() {
         .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
         .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
         .set_light_energy( walk.get_light_energy() )
-        .set_light_size( light_size );
+        .set_light_size( light_size )
+        .set_ambient( ambient_level );
       rec.copy(
         dynamic_data,
         staging_dynamic_uniform[ image_index ],
@@ -1201,5 +1217,6 @@ int main() {
     current_frame %= framebuffers.size();
   }
   (*queue)->waitIdle();
+  walk.save( walk_state_filename );
 }
 

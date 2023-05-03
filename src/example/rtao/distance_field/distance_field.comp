@@ -1,0 +1,45 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1, r32ui) readonly uniform uimage3D src_image;
+layout (binding = 2, r32f) writeonly uniform image3D dest_image;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
+
+ivec3 decode_pos( uint v ) {
+  return ivec3(
+    ( v >> 20 ) & 0x3FF,
+    ( v >> 10 ) & 0x3FF,
+    ( v ) & 0x3FF
+  );
+}
+
+uint encode_pos( ivec3 v ) {
+  return
+    ( v.x << 20 ) |
+    ( v.y << 10 ) |
+    v.z;
+}
+
+bool empty( uint v ) {
+  return ( v >> 30 ) != 0;
+}
+
+
+void main()  {
+  const ivec3 image_size = imageSize( src_image );
+  const ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
+  if( pos.x >= image_size.x ) return;
+  if( pos.y >= image_size.y ) return;
+  if( pos.z >= image_size.z ) return;
+  const uint center_encoded = imageLoad( src_image, pos ).r;
+  if( empty( center_encoded ) ) return;
+  vec3 centerf = vec3( decode_pos( center_encoded ) ) / vec3( image_size - ivec3( 1, 1, 1 ) );
+  vec3 posf = vec3( pos ) / vec3( image_size - ivec3( 1, 1, 1 ) );
+  const float eps = 0.04;
+  float dist = distance( posf, centerf ) - eps;
+  imageStore( dest_image, pos, vec4( dist, 0.0, 0.0, 0.0 ) );
+}
+

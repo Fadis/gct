@@ -43,7 +43,7 @@ void main() {
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec3 center_depth = depth[ lcpos + kernel_size ];
   const vec3 center_normal = normal[ lcpos + kernel_size ];
-  const uint gauss_head = ( 4 - min( 4, imageLoad( history, screen_pos ).r >> 2 ) ) * adaptive_gauss8_16_size;
+  const uint gauss_head = ( 5 - min( 5, imageLoad( history, screen_pos ).r >> 2 ) ) * adaptive_gauss8_16_size;
   for( uint i = 0; i != adaptive_gauss8_16_size; i++ ) {
     const vec3 sample_depth = depth[ lcpos + i ];
     const vec3 sample_normal = normal[ lcpos + i ];

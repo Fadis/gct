@@ -29,6 +29,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/instance.hpp>
 #include <gct/surface.hpp>
 
@@ -102,6 +103,11 @@ namespace gct {
       const glm::vec3 &center_,
       float scale_
     );
+    glfw_walk(
+      const glm::vec3 &center_,
+      float scale_,
+      const std::string &filename_
+    ); 
     void operator()( glfw_window&, int key, int scancode, int action, int mods );
     void operator++();
     const glm::vec3 &get_camera_pos() const { return camera_pos; }
@@ -121,11 +127,15 @@ namespace gct {
     bool end() const {
       return end_;
     }
+    void to_json( nlohmann::json& );
+    void from_json( const nlohmann::json& );
+    void save( const std::string &filename_ );
   private:
     glm::vec3 center;
     float scale;
     glm::vec3 camera_pos;
-    float camera_angle;
+    float camera_angle_h;
+    float camera_angle_v;
     float speed;
     glm::vec3 light_pos;
     float light_energy;
