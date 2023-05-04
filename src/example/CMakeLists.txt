@@ -24,6 +24,8 @@ subdirs(
   ssdo
   ssdo_with_bounce
   hbao
+  hbao_with_biased_horizon
+  hbao_with_distance_mask
   voxelize
   vxao
   rtao

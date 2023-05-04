@@ -15,10 +15,10 @@ void main()  {
   const ivec3 l1_image_size = imageSize( l1_image );
   const ivec3 l2_image_size = imageSize( l2_image );
   const ivec3 l3_image_size = imageSize( l3_image );
-  const ivec3 l0_world_pos = ivec3( ( input_position.xyz ) * ( l0_image_size.xyz - vec3( 1, 1, 1 ) ) );
-  const ivec3 l1_world_pos = ivec3( ( input_position.xyz ) * ( l1_image_size.xyz - vec3( 1, 1, 1 ) ) );
-  const ivec3 l2_world_pos = ivec3( ( input_position.xyz ) * ( l2_image_size.xyz - vec3( 1, 1, 1 ) ) );
-  const ivec3 l3_world_pos = ivec3( ( input_position.xyz ) * ( l3_image_size.xyz - vec3( 1, 1, 1 ) ) );
+  const ivec3 l0_world_pos = ivec3( ( input_position.xyz ) * ( l0_image_size.xyz ) );
+  const ivec3 l1_world_pos = ivec3( ( input_position.xyz ) * ( l1_image_size.xyz ) );
+  const ivec3 l2_world_pos = ivec3( ( input_position.xyz ) * ( l2_image_size.xyz ) );
+  const ivec3 l3_world_pos = ivec3( ( input_position.xyz ) * ( l3_image_size.xyz ) );
   imageStore( l0_image, l0_world_pos, vec4( 1, 0, 0, 0 ) );
   imageStore( l1_image, l1_world_pos, vec4( 1, 0, 0, 0 ) );
   imageStore( l2_image, l2_world_pos, vec4( 1, 0, 0, 0 ) );

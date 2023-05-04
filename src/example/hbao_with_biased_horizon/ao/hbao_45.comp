@@ -1,0 +1,61 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+#include "constants.h"
+#include "push_constants.h"
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rg32f) writeonly uniform image2DArray dest_image;
+
+layout(local_size_x = 512, local_size_y = 1 ) in;
+
+const int kernel_size = 64;
+shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+
+void main() {
+  const ivec2 image_size = imageSize( dest_image ).xy;
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.x, ( gl_GlobalInvocationID.x + gl_GlobalInvocationID.y ) % image_size.y );
+  const uint lcpos = gl_LocalInvocationID.x;
+  {
+    const uint hcpos = lcpos + gl_WorkGroupSize.x;
+    ivec2 lsample_pos = screen_pos;
+    lsample_pos.x = lsample_pos.x - kernel_size;
+    lsample_pos.y = lsample_pos.y - kernel_size;
+    ivec2 hsample_pos = lsample_pos;
+    hsample_pos.x += int( gl_WorkGroupSize.x );
+    hsample_pos.y += int( gl_WorkGroupSize.x );
+    lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
+    lsample_pos.y += image_size.y;
+    lsample_pos.y %= image_size.y;
+    hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
+    hsample_pos.y += image_size.y;
+    hsample_pos.y %= image_size.y;
+    cache[ lcpos ] = ( dynamic_uniforms.camera_matrix * vec4( imageLoad( gbuffer, ivec3( lsample_pos, 0 ) ).xyz, 1.0 ) ).xyz;
+    if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
+      cache[ hcpos ] = ( dynamic_uniforms.camera_matrix * vec4( imageLoad( gbuffer, ivec3( hsample_pos, 0 ) ).xyz, 1.0 ) ).xyz;
+    }
+    barrier();
+  }
+  if( screen_pos.x >= image_size.x ) return;
+  if( screen_pos.y >= image_size.y ) return;
+  const uint cache_center = lcpos + kernel_size;
+  const float center_d = distance( cache[ cache_center + 1 ].xy, cache[ cache_center - 1 ].xy );
+  const float t = ( center_d > 0.0 ) ? atan( ( -cache[ cache_center + 1 ].z - -cache[ cache_center - 1 ].z)/center_d ) : 0.0;
+  float l = t;
+  for( uint i = 0; i != kernel_size; i++ ) {
+    const float d = distance( cache[ cache_center - i - 1 ].xy, cache[ cache_center ].xy );
+    const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+    l = max( l, mix( -h, t, float( i )/float( kernel_size ) ) );
+  }
+  float r = -t;
+  for( uint i = 0; i != kernel_size; i++ ) {
+    const float d = distance( cache[ cache_center + i + 1 ].xy, cache[ cache_center ].xy );
+    const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+    r = max( r, mix( -h, -t, float( i )/float( kernel_size ) ) );
+  }
+  float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/2;
+  imageStore( dest_image, ivec3( screen_pos, 2 ), vec4( sum, 0.0, 0.0, 0.0 ) );
+}
+

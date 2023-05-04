@@ -52,7 +52,9 @@ void main() {
     sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + gauss_head ] * weight;
     scale += adaptive_gauss8_16[ i + gauss_head ] * weight;
   }
-  sum /= scale;
+  if( scale > 0.0 ) {
+    sum /= scale;
+  }
   //imageStore( dest_image, screen_pos, cache[ lcpos + kernel_size ] );
   imageStore( dest_image, screen_pos, sum );
 }

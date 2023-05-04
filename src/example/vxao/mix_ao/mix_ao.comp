@@ -31,7 +31,5 @@ void main()  {
 
   imageStore( dest_image, screen_pos, vec4( total, albedo.a ) );
   imageStore( bloom_image, screen_pos, vec4( bloom, 1.0 ) );
-  //imageStore( dest_image, screen_pos, vec4( vec3( imageLoad( occlusion, screen_pos ).r ), 1.0 ) ); 
-  //imageStore( bloom_image, screen_pos, vec4( 0.0, 0.0, 0.0, 1.0 ) );
 }
 

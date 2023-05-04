@@ -38,6 +38,10 @@ void main() {
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 center = center_.xyz;
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+  if( normal == vec3( 0, 0, 0 ) ) {
+    imageStore( dest_image, screen_pos, vec4( 0, 0, 0, 0 ) );
+    return;
+  }
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;

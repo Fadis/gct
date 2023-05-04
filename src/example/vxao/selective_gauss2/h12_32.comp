@@ -50,7 +50,9 @@ void main() {
     sum += cache[ lcpos + i ] * gauss12_32[ i ] * weight;
     scale += gauss12_32[ i ] * weight;
   }
-  sum /= scale;
+  if( scale > 0.0 ) {
+    sum /= scale;
+  }
   imageStore( dest_image, screen_pos, sum );
 }
 

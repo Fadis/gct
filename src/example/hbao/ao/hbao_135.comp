@@ -49,21 +49,17 @@ void main() {
   const uint cache_center = lcpos + kernel_size;
   const float center_d = distance( cache[ cache_center + 1 ].xy, cache[ cache_center - 1 ].xy );
   const float t = ( center_d > 0.0 ) ? atan( ( -cache[ cache_center + 1 ].z - -cache[ cache_center - 1 ].z)/center_d ) : 0.0;
-  float l = -pi/2.0;
+  float l = t;
   for( uint i = 0; i != kernel_size; i++ ) {
-    if( abs( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z ) < 1.0 ) {
-      const float d = distance( cache[ cache_center - i - 1 ].xy, cache[ cache_center ].xy );
-      const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
-      l = max( l, -h );
-    }
+    const float d = distance( cache[ cache_center - i - 1 ].xy, cache[ cache_center ].xy );
+    const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center - i - 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+    l = max( l, -h );
   }
-  float r = -pi/2.0;
+  float r = -t;
   for( uint i = 0; i != kernel_size; i++ ) {
-    if( abs( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z ) < 1.0 ) {
-      const float d = distance( cache[ cache_center + i + 1 ].xy, cache[ cache_center ].xy );
-      const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
-      r = max( r, -h );
-    }
+    const float d = distance( cache[ cache_center + i + 1 ].xy, cache[ cache_center ].xy );
+    const float h = ( d > 0.0 ) ? atan( ( -cache[ cache_center + i + 1 ].z - -cache[ cache_center ].z)/d ) : -pi/2.0;
+    r = max( r, -h );
   }
   float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/2;
   imageStore( dest_image, ivec3( screen_pos, 3 ), vec4( sum, 0.0, 0.0, 0.0 ) );

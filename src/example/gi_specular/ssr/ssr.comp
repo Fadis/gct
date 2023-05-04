@@ -57,6 +57,10 @@ void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+  if( normal == vec3( 0, 0, 0 ) ) {
+    imageStore( dest_image, screen_pos, vec4( 0, 0, 0, 0 ) );
+    return;
+  }
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;
@@ -77,10 +81,10 @@ void main() {
   const vec3 offset = rot3 * vec3( ( rot2 * poisson_disk[ i ] ) * roughness, 0.0 );
   const vec3 ray_dir  = normalize( ray_center + offset );
   vec3 current_pos_in_voxel_space = center_in_voxel_space;
-  const vec3 direction_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space;
+  const vec3 direction_in_voxel_space = normalize( ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space );
   for( int j = 0; j < 64; j++ ) {
     float r = texture( distance_field, current_pos_in_voxel_space ).r;
-    current_pos_in_voxel_space += direction_in_voxel_space * r;
+    current_pos_in_voxel_space += direction_in_voxel_space * r/16.0;
   }
   vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
   vec4 sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
