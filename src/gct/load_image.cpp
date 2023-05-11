@@ -308,7 +308,9 @@ namespace gct {
     const std::string &filename,
     unsigned int mipmap,
     unsigned int depth,
-    unsigned int channel
+    unsigned int channel,
+    const std::optional< double > &clamp_min,
+    const std::optional< double > &clamp_max
   ) {
     const auto width = image->get_props().get_basic().extent.width >> mipmap;
     const auto height = image->get_props().get_basic().extent.height >> mipmap;
@@ -350,7 +352,7 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( image );
     get_factory()->unbound()->keep.push_back( temporary );
     get_factory()->unbound()->cbs.push_back(
-      [image,temporary,width,height,filename,allocator,channels,component_size,channel,component_type]( vk::Result result ) {
+      [image,temporary,width,height,filename,allocator,channels,component_size,channel,component_type,clamp_min,clamp_max]( vk::Result result ) {
         auto out = ImageOutput::create( filename );
         if( !out ) throw -1;
         ImageSpec spec( width, height, 4, TypeDesc::UINT8 );
@@ -366,8 +368,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? std::uint8_t( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? std::uint8_t( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {
@@ -390,8 +392,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? std::uint16_t( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? std::uint16_t( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {
@@ -414,8 +416,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? std::uint32_t( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? std::uint32_t( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {
@@ -438,8 +440,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? std::uint64_t( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? std::uint64_t( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {
@@ -462,8 +464,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? float( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? float( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {
@@ -486,8 +488,8 @@ namespace gct {
               iter = std::next( iter, channels );
             }
           }
-          const auto min = *std::min_element( temp.begin(), temp.end() );
-          const auto max = *std::max_element( temp.begin(), temp.end() );
+          const auto min = clamp_min ? double( *clamp_min ) : *std::min_element( temp.begin(), temp.end() );
+          const auto max = clamp_max ? double( *clamp_max ) : *std::max_element( temp.begin(), temp.end() );
           std::vector< std::uint8_t > color;
           color.reserve( width * height * 4u );
           for( unsigned int i = 0u; i != width * height; ++i ) {

@@ -88,6 +88,8 @@ add_shader( vxao gauss/v12_32.comp )
 
 add_shader( vxao selective_gauss2/h1_8.comp )
 add_shader( vxao selective_gauss2/v1_8.comp )
+add_shader( vxao selective_gauss2/h5_16.comp )
+add_shader( vxao selective_gauss2/v5_16.comp )
 add_shader( vxao selective_gauss2/h12_32.comp )
 add_shader( vxao selective_gauss2/v12_32.comp )
 add_shader( vxao selective_gauss2/hadaptive.comp )

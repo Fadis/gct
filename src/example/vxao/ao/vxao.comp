@@ -36,7 +36,7 @@ vec3 diffuse_ambient_light(
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec4 center_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
-  vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 7 ) ).xyz;
+  vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
   if( normal == vec3( 0, 0, 0 ) ) {
     imageStore( dest_image, screen_pos, vec4( 0, 0, 0, 0 ) );
     return;
@@ -47,29 +47,29 @@ void main() {
   const float roughness = mr.g;
   const vec3 center = center_.xyz;
   
-  const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) + dynamic_uniforms.frame_counter / 48 ) * 2 * pi ) );
-  
   const ivec3 image_size = imageSize( gbuffer );
   const ivec2 image_right_bottom = image_size.xy - ivec2( 1, 1 );
   
   vec3 env_color = vec3( 0.0, 0.0, 0.0 );
   float visibility = 0.0;
-  vec3 center_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center, 1.0 ) ).xyz;
+  vec3 center_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center + normal * 0.05, 1.0 ) ).xyz;
   
   for( uint i = 0; i < poisson_sphere_surface_sample_count; i++ ) {
-    vec3 ray_dir = ( rot3 * poisson_sphere_surface[ ( int( rand1( vec2( screen_pos.yx ) ) * poisson_sphere_surface_sample_count ) + i ) % poisson_sphere_surface_sample_count ] );
+    vec3 ray_dir = ( poisson_sphere_surface[ i ] );
     if( dot( normal, ray_dir ) < 0.0 ) {
       ray_dir = -ray_dir;
     }
     vec3 current_pos_in_voxel_space = center_in_voxel_space;
     const vec3 direction_in_voxel_space = ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space;
-    float speed = 0.0005;
+    float speed = 0.125/512.0;
     float distance = 0.0;
     float v = 1.0;
-    current_pos_in_voxel_space += direction_in_voxel_space;
-    for( int j = 0; j < 8; j++ ) {
-      const float hit = textureLod( voxel, current_pos_in_voxel_space, distance * 60 ).r;
-        v *= 1.0 - hit;
+    for( int j = 0; j < 12; j++ ) {
+      const float hit = textureLod( voxel, current_pos_in_voxel_space, j * 1.0/8.0 ).r;
+      if( hit >= 0.9 ) {
+        v = 0.0;
+        break;
+      }
       speed *= 2.0;
       distance += speed;
       current_pos_in_voxel_space += direction_in_voxel_space * speed;

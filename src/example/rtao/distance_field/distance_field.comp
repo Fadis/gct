@@ -38,7 +38,7 @@ void main()  {
   if( empty( center_encoded ) ) return;
   vec3 centerf = vec3( decode_pos( center_encoded ) ) / vec3( image_size - ivec3( 1, 1, 1 ) );
   vec3 posf = vec3( pos ) / vec3( image_size - ivec3( 1, 1, 1 ) );
-  const float eps = 0.04;
+  const float eps = 0.001;
   float dist = distance( posf, centerf ) - eps;
   imageStore( dest_image, pos, vec4( dist, 0.0, 0.0, 0.0 ) );
 }

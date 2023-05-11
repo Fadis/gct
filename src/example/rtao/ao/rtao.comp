@@ -45,7 +45,6 @@ void main() {
     return;
   }
   const vec4 view_normal = ( dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( normal, 1.0 ) );
-  normal = -normal;
   const vec2 mr = imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).rg;
   const float metallicness = mr.r;
   const float roughness = mr.g;
@@ -67,13 +66,14 @@ void main() {
     }
     vec3 current_pos_in_voxel_space = center_in_voxel_space;
     const vec3 direction_in_voxel_space = normalize( ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space );
-    for( int j = 0; j < 16; j++ ) {
+    current_pos_in_voxel_space += direction_in_voxel_space * 4.0/512.0;
+    for( int j = 0; j < 64; j++ ) {
       float r = texture( distance_field, current_pos_in_voxel_space ).r;
-      current_pos_in_voxel_space += direction_in_voxel_space * r/8.0;
+      current_pos_in_voxel_space += direction_in_voxel_space * r;
     }
     vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
     const float travel_distance = distance( world_pos.xyz, center );
-    visibility = max( ( 1.0/(1.0+travel_distance*travel_distance) ) * dot( normal, ray_dir ), 0 );
+    visibility = ( travel_distance > 3.0 ? 1.0 : 0.0 ) * dot( normal, ray_dir );
   }
 
   vec4 existing = imageLoad( reproject, screen_pos ).rgba;

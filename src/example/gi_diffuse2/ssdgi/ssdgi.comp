@@ -66,9 +66,10 @@ void main() {
     }
     vec3 current_pos_in_voxel_space = center_in_voxel_space;
     const vec3 direction_in_voxel_space = normalize( ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space );
+    current_pos_in_voxel_space += direction_in_voxel_space * 4.0/512.0;
     for( int j = 0; j < 64; j++ ) {
       float r = texture( distance_field, current_pos_in_voxel_space ).r;
-      current_pos_in_voxel_space += direction_in_voxel_space * r / 32.0;
+      current_pos_in_voxel_space += direction_in_voxel_space * r;
     }
     vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
     vec4 sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
@@ -78,46 +79,19 @@ void main() {
       ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
     );
     if( sample_pos.x >= 0 && sample_pos.x < image_size.x && sample_pos.y >= 0 && sample_pos.y < image_size.y && sample_screen_pos.z > -1.0 ) {
-      vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
-      for( int j = 0; j < 16; j++ ) {
-        if( sample_screen_pos.z < sample_world_pos.w ) {
-          break;
-        }
-        world_pos -= ray_dir * 0.01;
-        sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
-        sample_screen_pos /= sample_screen_pos.w;
-        sample_pos = ivec2(
-          ( sample_screen_pos.x * 0.5 + 0.5 ) * ( image_size.x - 1 ), 
-          ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
-        );
-        sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
-      }
+      const vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
       float travel_distance = distance( sample_world_pos.xyz, center );
       const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
       const vec3 sample_diffuse = imageLoad( diffuse_image, sample_pos ).rgb;
       const vec3 actual_dir = normalize( sample_world_pos.xyz - center );
-      env_color = sample_diffuse * 500 * 1/max( travel_distance * travel_distance, 1.0 ) * max( dot( normal, actual_dir ), 0 ) * max( dot( sample_normal, -actual_dir ), 0 );
+      env_color = sample_diffuse * 100 * 1/max( travel_distance * travel_distance, 1.0 ) * max( dot( normal, actual_dir ), 0 ) * max( dot( sample_normal, -actual_dir ), 0 );
+      visibility = ( travel_distance > 3.0 ? 1.0 : 0.0 ) * dot( normal, ray_dir );
     }
     else {
       const float travel_distance = min( distance( world_pos.xyz, center ), 20 );
       env_color = travel_distance/20.0 * dot( normal, ray_dir ) * diffuse_ambient_light( ray_dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
+      visibility = ( travel_distance > 3.0 ? 1.0 : 0.0 ) * dot( normal, ray_dir );
     }
-  }
-  {
-    normal = -normal;
-    vec3 ray_dir = ( rot3 * poisson_sphere_surface[ ( int( rand1( vec2( screen_pos.yx ) ) * poisson_sphere_surface_sample_count ) + dynamic_uniforms.frame_counter / 3 ) % poisson_sphere_surface_sample_count ] );
-    if( dot( normal, ray_dir ) < 0.0 ) {
-      ray_dir = -ray_dir;
-    }
-    vec3 current_pos_in_voxel_space = center_in_voxel_space;
-    const vec3 direction_in_voxel_space = normalize( ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space );
-    for( int j = 0; j < 16; j++ ) {
-      float r = texture( distance_field, current_pos_in_voxel_space ).r;
-      current_pos_in_voxel_space += direction_in_voxel_space * r/8.0;
-    }
-    vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
-    const float travel_distance = distance( world_pos.xyz, center );
-    visibility = max( 1.0/(1.0+travel_distance*travel_distance) * dot( normal, ray_dir ), 0 );
   }
   vec4 existing = imageLoad( reproject, screen_pos ).rgba;
   const uint history = min( imageLoad( src_history, screen_pos ).r, 60 );

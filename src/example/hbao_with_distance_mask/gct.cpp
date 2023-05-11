@@ -600,72 +600,6 @@ int main( int argc, const char *argv[] ) {
     );
   }
 
-  const auto [ao_hgauss_descriptor_set_layout,ao_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/h12_32.comp.spv"
-  );
-  const auto [ao_vgauss_descriptor_set_layout,ao_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/selective_gauss/v12_32.comp.spv"
-  );
-
-  std::vector< std::shared_ptr< gct::image_view_t > > ao_gauss_temp;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_gauss_temp.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( ao_gauss_temp, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_hgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_hgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        ao_hgauss_descriptor_set_layout
-      )
-    );
-    ao_hgauss_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( ao_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_hgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_gauss_temp[ i ] )
-      }
-    );
-  }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_vgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    ao_vgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        ao_vgauss_descriptor_set_layout
-      )
-    );
-    ao_vgauss_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( ao_gauss_temp[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*ao_vgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( ao_out[ i ] )
-      }
-    );
-  }
 
   for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
 
@@ -679,12 +613,6 @@ int main( int argc, const char *argv[] ) {
       }
     );
   }
-
-
-
-
-
-
 
   std::vector< std::shared_ptr< gct::buffer_t > > tone;
   std::vector< std::shared_ptr< gct::buffer_t > > tone_staging;
@@ -1190,25 +1118,6 @@ int main( int argc, const char *argv[] ) {
       );
       rec.dispatch_threads( width, height, 1 );
       
-      rec.compute_barrier(
-        {},
-        { ao_out[ image_index ]->get_factory() }
-      );
-
-      rec.bind(
-        ao_hgauss_pipeline,
-        { ao_hgauss_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.compute_barrier(
-        {},
-        { ao_gauss_temp[ image_index ]->get_factory() }
-      );
-      rec.bind(
-        ao_vgauss_pipeline,
-        { ao_vgauss_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
       rec.compute_barrier(
         {},
         {

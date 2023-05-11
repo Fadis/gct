@@ -78,13 +78,14 @@ void main() {
 
   vec3 result = vec3( 0.0, 0.0, 0.0 );
   const int i = ( dynamic_uniforms.frame_counter / 3 ) % poisson_disk_sample_count;
-  const vec3 offset = rot3 * vec3( ( rot2 * poisson_disk[ i ] ) * roughness, 0.0 );
-  const vec3 ray_dir  = normalize( ray_center + offset );
+  const vec3 offset = rot3 * vec3( ( rot2 * poisson_disk[ i ] ), 0.0 );
+  const vec3 ray_dir  = normalize( mix( ray_center, offset, roughness ) );
   vec3 current_pos_in_voxel_space = center_in_voxel_space;
   const vec3 direction_in_voxel_space = normalize( ( dynamic_uniforms.voxel * vec4( center + ray_dir, 1.0 ) ).xyz - current_pos_in_voxel_space );
+  current_pos_in_voxel_space += direction_in_voxel_space * 4.0/512.0;
   for( int j = 0; j < 64; j++ ) {
     float r = texture( distance_field, current_pos_in_voxel_space ).r;
-    current_pos_in_voxel_space += direction_in_voxel_space * r/16.0;
+    current_pos_in_voxel_space += direction_in_voxel_space * r;
   }
   vec3 world_pos = ( dynamic_uniforms.inversed_voxel * vec4( current_pos_in_voxel_space, 1.0 ) ).xyz;
   vec4 sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
@@ -94,33 +95,19 @@ void main() {
     ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
   );
   if( sample_pos.x >= 0 && sample_pos.x < image_size.x && sample_pos.y >= 0 && sample_pos.y < image_size.y && sample_screen_pos.z >= -1.0 ) {
-    vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
-    for( int j = 0; j < 16; j++ ) {
-      if( sample_screen_pos.z < sample_world_pos.w ) {
-        break;
-      }
-      world_pos -= ray_dir * 0.1;
-      sample_screen_pos = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( world_pos, 1.0 );
-      sample_screen_pos /= sample_screen_pos.w;
-      sample_pos = ivec2(
-        ( sample_screen_pos.x * 0.5 + 0.5 ) * ( image_size.x - 1 ), 
-        ( sample_screen_pos.y * 0.5 + 0.5 ) * ( image_size.y - 1 )
-      );
-      sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
-    }
+    const vec4 sample_world_pos = imageLoad( gbuffer, ivec3( sample_pos, 0 ) );
     const vec3 sample_normal = imageLoad( gbuffer, ivec3( sample_pos, 2 ) ).xyz;
-    const vec2 sample_mr = imageLoad( gbuffer, ivec3( sample_pos, 4 ) ).xy;
-    const float sample_roughness = sample_mr.g;
-    const float sample_metallicness = sample_mr.r;
-    const vec4 sample_albedo = imageLoad( gbuffer, ivec3( sample_pos, 1 ) ).rgba;
-    const vec3 sample_emissive = imageLoad( gbuffer, ivec3( sample_pos, 3 ) ).rgb;
-    const float sample_shadow_level = imageLoad( gbuffer, ivec3( sample_pos, 6 ) ).r; 
-    
-    const vec3 N = sample_normal;
-    const vec3 V = normalize( center - sample_world_pos.xyz );
-    const vec3 L = normalize( dynamic_uniforms.light_pos.xyz - sample_world_pos.xyz );
-    const float rec = max( dot( normal, -V ), 0 );
-    if( rec > 0 ) {
+    if( sample_normal != vec3( 0, 0, 0 ) ) {
+      const vec2 sample_mr = imageLoad( gbuffer, ivec3( sample_pos, 4 ) ).xy;
+      const float sample_roughness = sample_mr.g;
+      const float sample_metallicness = sample_mr.r;
+      const vec4 sample_albedo = imageLoad( gbuffer, ivec3( sample_pos, 1 ) ).rgba;
+      const vec3 sample_emissive = imageLoad( gbuffer, ivec3( sample_pos, 3 ) ).rgb;
+      const float sample_shadow_level = imageLoad( gbuffer, ivec3( sample_pos, 6 ) ).r; 
+      
+      const vec3 N = sample_normal;
+      const vec3 V = normalize( center - sample_world_pos.xyz );
+      const vec3 L = normalize( dynamic_uniforms.light_pos.xyz - sample_world_pos.xyz );
       vec3 sample_diffuse = diffuse_with_mask(
         L, V, N, sample_albedo.rgb, sample_roughness, sample_metallicness, sample_emissive,
         dynamic_uniforms.light_energy,
@@ -131,12 +118,16 @@ void main() {
         dynamic_uniforms.light_energy,
         sample_shadow_level
       );
-      result = max( dot( normal, -V ), 0 ) * ( sample_diffuse + sample_specular );
+      result = max( max( dot( normal, -V ), 0 ) * ( sample_diffuse + sample_specular ), vec3( 0, 0, 0 ) );
+    }
+    else {
+      float travel_distance = min( distance( world_pos.xyz, center ), 20.0 );
+      result = max( travel_distance/20.0 * dot( normal, ray_dir ) * specular_ambient_light( ray_dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness ), vec3( 0, 0, 0 ) );
     }
   }
   else {
     float travel_distance = min( distance( world_pos.xyz, center ), 20.0 );
-    result = travel_distance/20.0 * dot( normal, ray_dir ) * specular_ambient_light( ray_dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness );
+    result = max( travel_distance/20.0 * dot( normal, ray_dir ) * specular_ambient_light( ray_dir, vec3( 1.0, 1.0, 1.0 ), roughness, metallicness ), vec3( 0, 0, 0 ) );
   }
   
   const int temporal_sample_count = int( max( 60.0 * roughness, 1.0 ) );

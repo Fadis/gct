@@ -7,6 +7,7 @@
 #include <array>
 #include <tuple>
 #include <memory>
+#include <optional>
 #include <boost/range/iterator_range.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
@@ -83,7 +84,9 @@ namespace gct {
       const std::string &filename,
       unsigned int mipmap,
       unsigned int depth,
-      unsigned int channel
+      unsigned int channel,
+      const std::optional< double > &clamp_min = std::nullopt,
+      const std::optional< double > &clamp_max = std::nullopt
     );
     std::shared_ptr< image_t > load_astc(
       const std::shared_ptr< allocator_t > &allocator,
