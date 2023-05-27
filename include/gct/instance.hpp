@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <functional>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/instance_create_info.hpp>

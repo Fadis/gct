@@ -52,6 +52,7 @@ if( ENABLE_WERROR )
 endif()
 set( CMAKE_CXX_STANDARD "20" )
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
+option( ENABLE_EXAMPLES "build examples" OFF )
 
 # compile option (Debug) 
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g ${ADDITIONAL_COMPILER_FLAGS}")

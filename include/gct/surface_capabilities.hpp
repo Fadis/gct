@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <optional>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

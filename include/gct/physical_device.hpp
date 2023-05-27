@@ -5,7 +5,7 @@
 #include <vector>
 #include <unordered_set>
 #include <boost/container/static_vector.hpp>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device_properties.hpp>
 #include <gct/physical_device_features.hpp>

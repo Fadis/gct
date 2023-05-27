@@ -2,7 +2,7 @@
 #define LIBGCT_INCLUDE_GCT_QUEUE_FAMILY_PROPERTIES_HPP
 #include <iostream>
 #include <optional>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/extension.hpp>

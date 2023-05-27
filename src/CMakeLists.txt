@@ -259,6 +259,8 @@ set_target_properties(
 
 install( TARGETS gct_glfw )
 
+if( ENABLE_EXAMPLES )
+
 add_executable( graphics
   example/graphics.cpp
 )
@@ -361,3 +363,5 @@ target_link_libraries(
 )
 
 subdirs( example )
+
+endif()

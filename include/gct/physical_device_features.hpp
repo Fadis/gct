@@ -1,7 +1,7 @@
 #ifndef LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_FEATURES_HPP
 #define LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_FEATURES_HPP
 #include <optional>
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

@@ -2,7 +2,8 @@
 #define LIBGCT_INCLUDE_GCT_QUEUE_HPP
 #include <optional>
 #include <memory>
-#include <nlohmann/json.hpp>
+#include <unordered_map>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/queue_requirement.hpp>
 #include <gct/created_from.hpp>
