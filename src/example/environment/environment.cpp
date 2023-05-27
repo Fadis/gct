@@ -41,6 +41,10 @@
 #include <gct/gltf.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/render_pass_begin_info.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/primitive.hpp>
 
 struct fb_resources_t {

@@ -1,7 +1,9 @@
 #ifndef LIBGCT_INCLUDE_GCT_QUEUE_HPP
 #define LIBGCT_INCLUDE_GCT_QUEUE_HPP
+#include <tuple>
 #include <optional>
 #include <memory>
+#include <vector>
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

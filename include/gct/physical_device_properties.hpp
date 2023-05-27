@@ -1,7 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_PROPERTIES_HPP
 #define LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_PROPERTIES_HPP
-#include <iostream>
-#include <optional>
+#include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/get_extensions.hpp>

@@ -1,7 +1,5 @@
 #ifndef LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_MEMORY_PROPERTIES_HPP
 #define LIBGCT_INCLUDE_GCT_PHYSICAL_DEVICE_MEMORY_PROPERTIES_HPP
-#include <iostream>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/get_extensions.hpp>

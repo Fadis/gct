@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <unordered_map>
 namespace gct {
   class device_t;
   class command_buffer_recorder_t;

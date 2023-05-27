@@ -29,6 +29,10 @@
 #include <gct/color.hpp>
 #include <gct/timer.hpp>
 #include <gct/cubemap.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::image_t > color;

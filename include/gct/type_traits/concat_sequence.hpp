@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_CONCAT_SEQUENCE_HPP
 #define GCT_TYPE_TRAITS_CONCAT_SEQUENCE_HPP
 
-#include <type_traits>
-
 namespace gct::type_traits {
 
   template< typename T, typename U  >

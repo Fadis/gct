@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/ray_tracing_shader_group_create_info.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <vulkan2json/RayTracingShaderGroupCreateInfoKHR.hpp>

@@ -1,7 +1,7 @@
 #ifndef GCT_GRAPHICS_PIPELINE_CREATE_INFO_HPP
 #define GCT_GRAPHICS_PIPELINE_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>

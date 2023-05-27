@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/semaphore_create_info.hpp>
 #include <vulkan2json/SemaphoreCreateInfo.hpp>
 #ifdef VK_VERSION_1_1

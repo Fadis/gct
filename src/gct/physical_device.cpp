@@ -1,9 +1,10 @@
+#include <nlohmann/json.hpp>
 #include <gct/queue.hpp>
 #include <gct/device.hpp>
 #include <gct/physical_device.hpp>
-#include <gct/format.hpp>
 #include <gct/surface.hpp>
 #include <gct/instance.hpp>
+#include <gct/format.hpp>
 #include <gct/display_surface_create_info.hpp>
 namespace gct {
   void to_json( nlohmann::json &root, const physical_device_t &v ) {

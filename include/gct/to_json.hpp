@@ -1,5 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_TO_JSON_HPP
 #define LIBGCT_INCLUDE_GCT_TO_JSON_HPP
+#include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 

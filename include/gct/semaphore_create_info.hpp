@@ -1,7 +1,6 @@
 #ifndef GCT_SEMAPHORE_CREATE_INFO_HPP
 #define GCT_SEMAPHORE_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

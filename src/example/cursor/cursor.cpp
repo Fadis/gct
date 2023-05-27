@@ -36,6 +36,10 @@
 #include <gct/input/device_monitor.hpp>
 #include <gct/sched/thread_pool.hpp>
 #include <gct/sched/epoll_notifier.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/sched/wait.hpp>
 
 struct fb_resources_t {

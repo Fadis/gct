@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_SEQUENCE_SIZE_HPP
 #define GCT_TYPE_TRAITS_SEQUENCE_SIZE_HPP
 
-#include <type_traits>
-
 namespace gct::type_traits {
 
 template< typename T >

@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <cstring>
 #include <gct/descriptor_set_layout_create_info.hpp>
 #include <gct/spv2vk.hpp>

@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 #include <tuple>
+#include <limits>
 #include <unordered_map>
 #include <gct/shader_module.hpp>
 #include <gct/device.hpp>

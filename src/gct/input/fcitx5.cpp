@@ -18,7 +18,7 @@ namespace gct::input {
 fcitx5::fcitx5_internal::fcitx5_internal(
   const std::shared_ptr< sched::thread_pool_t > &tp
 ) : thread_pool( tp ) {
- conn = sdbus::createDefaultBusConnection();
+ conn = sdbus::createSessionBusConnection();
  input_method = sdbus::createProxy( *conn, "org.fcitx.Fcitx5", "/org/freedesktop/portal/inputmethod" );
  conn->enterEventLoopAsync();
 }

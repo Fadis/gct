@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/display_mode_create_info.hpp>
 #include <vulkan2json/DisplayModeCreateInfoKHR.hpp>
 

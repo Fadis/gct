@@ -1,4 +1,4 @@
-#include <iostream>
+#include <nlohmann/json.hpp>
 #include <gct/ray_tracing_pipeline_create_info.hpp>
 #include <gct/device.hpp>
 #include <gct/pipeline_layout.hpp>
@@ -8,6 +8,8 @@
 #include <gct/pipeline_library_create_info.hpp>
 #include <gct/ray_tracing_pipeline_interface_create_info.hpp>
 #include <gct/pipeline_dynamic_state_create_info.hpp>
+#include <gct/pipeline_cache.hpp>
+#include <gct/descriptor_set_layout.hpp>
 #include <gct/get_device.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <vulkan2json/RayTracingPipelineCreateInfoKHR.hpp>

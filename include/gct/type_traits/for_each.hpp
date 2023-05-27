@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_FOR_EACH_HPP
 #define GCT_TYPE_TRAITS_FOR_EACH_HPP
 
-#include <type_traits>
-
 namespace gct::type_traits {
 
 template< template< typename ... > typename F, typename T >

@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <gct/sampler_create_info.hpp>
 #include <vulkan2json/SamplerCreateInfo.hpp>
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME

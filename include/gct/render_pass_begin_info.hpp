@@ -1,7 +1,6 @@
 #ifndef GCT_RENDER_PASS_BEGIN_INFO_HPP
 #define GCT_RENDER_PASS_BEGIN_INFO_HPP
 #include <memory>
-#include <unordered_map>
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

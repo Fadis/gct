@@ -4,14 +4,11 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device.hpp>
-#include <gct/command_pool.hpp>
+#include <gct/queue.hpp>
 #include <gct/created_from.hpp>
-#include <gct/swapchain.hpp>
-#include <gct/descriptor_pool.hpp>
-#include <gct/descriptor_set_layout.hpp>
-#include <gct/render_pass.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <gct/acceleration_structure_build_sizes_info.hpp>
 #endif
@@ -22,13 +19,17 @@ namespace gct {
   struct instance_t;
   class allocator_t;
   class surface_t;
+  class swapchain_t;
   class swapchain_create_info_t;
   class descriptor_pool_create_info_t;
+  class descriptor_pool_t;
   class descriptor_set_layout_create_info_t;
+  class descriptor_set_layout_t;
   class pipeline_cache_t;
   class pipeline_cache_create_info_t;
   class pipeline_layout_t;
   class pipeline_layout_create_info_t;
+  class render_pass_create_info_t;
   class render_pass_t;
   class shader_module_create_info_t;
   class shader_module_t;
@@ -39,6 +40,7 @@ namespace gct {
   class fence_create_info_t;
   class fence_t;
   class queue_t;
+  class command_pool_t;
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
   class acceleration_structure_build_geometry_info_t;
 #endif

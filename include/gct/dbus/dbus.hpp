@@ -1,6 +1,6 @@
 #ifndef GCT_DBUS_DBUS_HPP
 #define GCT_DBUS_DBUS_HPP
-
+#include <tuple>
 #include <memory>
 #include <exception>
 #include <sdbus-c++/sdbus-c++.h>

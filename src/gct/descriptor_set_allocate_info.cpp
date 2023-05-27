@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/descriptor_set_allocate_info.hpp>
 #include <vulkan2json/DescriptorSetAllocateInfo.hpp>

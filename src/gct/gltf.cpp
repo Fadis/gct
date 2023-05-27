@@ -7,6 +7,8 @@
 #include <gct/image_view.hpp>
 #include <gct/sampler.hpp>
 #include <gct/device.hpp>
+#include <gct/render_pass.hpp>
+#include <gct/format.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
@@ -17,7 +19,6 @@
 #include <gct/pipeline_depth_stencil_state_create_info.hpp>
 #include <gct/pipeline_color_blend_state_create_info.hpp>
 #include <gct/pipeline_dynamic_state_create_info.hpp>
-#include <gct/format.hpp>
 #include <gct//pipeline_vertex_input_state_create_info.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>

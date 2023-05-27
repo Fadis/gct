@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/instance.hpp>
 #include <gct/physical_device_properties.hpp>
 #include <gct/physical_device_features.hpp>

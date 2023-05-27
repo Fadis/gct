@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/buffer_create_info.hpp>
 #include <vulkan2json/BufferCreateInfo.hpp>
 #ifdef VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME

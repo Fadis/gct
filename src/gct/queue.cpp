@@ -2,6 +2,7 @@
 #include <numeric>
 #include <vector>
 #include <cstdint>
+#include <functional>
 #include <gct/queue.hpp>
 #include <gct/surface.hpp>
 #include <gct/command_pool.hpp>

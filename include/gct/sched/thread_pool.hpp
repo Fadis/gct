@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <concepts>
 #include <exception>
-#include <iostream>
 #include <mutex>
 #include <thread>
 #include <array>

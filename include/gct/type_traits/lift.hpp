@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_LIFT_HPP
 #define GCT_TYPE_TRAITS_LIFT_HPP
 
-#include <type_traits>
-
 namespace gct::type_traits {
 
 template< template< typename... > typename L, typename T >

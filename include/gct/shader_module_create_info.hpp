@@ -1,7 +1,7 @@
 #ifndef GCT_SHADER_MODULE_CREATE_INFO_HPP
 #define GCT_SHADER_MODULE_CREATE_INFO_HPP
+#include <string>
 #include <memory>
-#include <optional>
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

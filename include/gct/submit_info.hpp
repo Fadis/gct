@@ -1,7 +1,7 @@
 #ifndef GCT_SUBMIT_INFO_HPP
 #define GCT_SUBMIT_INFO_HPP
 #include <memory>
-#include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <nlohmann/json_fwd.hpp>

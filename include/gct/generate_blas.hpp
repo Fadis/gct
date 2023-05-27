@@ -8,6 +8,7 @@ namespace gct {
   class acceleration_structure_t;
   class command_buffer_recorder_t;
   class allocator_t;
+  class pipeline_vertex_input_state_create_info_t;
   namespace gltf {
     std::tuple<
       std::vector< std::shared_ptr< acceleration_structure_t > >,

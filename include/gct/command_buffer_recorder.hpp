@@ -1,5 +1,6 @@
 #ifndef GCT_COMMAND_BUFFER_RECORDER_HPP
 #define GCT_COMMAND_BUFFER_RECORDER_HPP
+#include <string>
 #include <cstdint>
 #include <memory>
 #include <vector>

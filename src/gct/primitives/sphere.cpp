@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <locale>
-#include <gct/format.hpp>
+#include <cmath>
 #include <gct/vertex_attributes.hpp>
 #include <gct/primitive.hpp>
 #include <gct/spirv_reflect.h>

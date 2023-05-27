@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/pipeline_library_create_info.hpp>
 #include <gct/pipeline.hpp>
 #include <vulkan2json/PipelineLibraryCreateInfoKHR.hpp>

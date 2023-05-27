@@ -1,6 +1,5 @@
 #include <iostream>
 #include <unordered_set>
-#include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -18,8 +17,8 @@
 #include <gct/acceleration_structure_geometry.hpp>
 #include <gct/acceleration_structure_build_geometry_info.hpp>
 #include <gct/acceleration_structure_geometry_triangles_data.hpp>
+#include <gct/command_buffer_recorder.hpp>
 #include <gct/generate_tlas.hpp>
-#include <vulkan2json/AccelerationStructureInstanceKHR.hpp>
 namespace gct::gltf {
   vk::TransformMatrixKHR to_transform_matrix(
     const glm::mat4 &src

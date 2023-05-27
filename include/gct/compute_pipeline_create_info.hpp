@@ -1,7 +1,6 @@
 #ifndef GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #define GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>

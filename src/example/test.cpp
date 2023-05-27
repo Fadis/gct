@@ -32,6 +32,11 @@
 #include <gct/strided_device_address_region.hpp>
 #include <gct/ray_tracing_pipeline_create_info.hpp>
 #include <gct/ray_tracing_pipeline.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer_create_info.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/generate_blas.hpp>
 #include <gct/generate_tlas.hpp>
 #include <gct/round_up.hpp>

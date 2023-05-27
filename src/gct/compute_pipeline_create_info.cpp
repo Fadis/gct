@@ -1,7 +1,10 @@
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/pipeline_layout.hpp>
+#include <gct/pipeline_cache.hpp>
+#include <gct/descriptor_set_layout.hpp>
 #include <gct/compute_pipeline_create_info.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/get_device.hpp>

@@ -1,6 +1,6 @@
+#include <nlohmann/json.hpp>
 #include <gct/strided_device_address_region.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-#include <nlohmann/json.hpp>
 #include <gct/device_address.hpp>
 #include <vulkan2json/StridedDeviceAddressRegionKHR.hpp>
 namespace gct {

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <boost/program_options.hpp>
 #include <gct/text/layout_engine.hpp>

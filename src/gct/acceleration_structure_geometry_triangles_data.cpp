@@ -5,7 +5,7 @@
 #include <memory>
 #include <optional>
 #include <vulkan/vulkan.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json.hpp>
 #include <gct/extension.hpp>
 #include <gct/device_or_host_address_const.hpp>
 #include <vulkan2json/AccelerationStructureGeometryTrianglesDataKHR.hpp>

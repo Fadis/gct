@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/buffer.hpp>
 #include <gct/acceleration_structure_create_info.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME

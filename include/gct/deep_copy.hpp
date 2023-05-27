@@ -4,7 +4,6 @@
 #include <type_traits>
 #include <utility>
 #include <memory>
-#include <nlohmann/json.hpp>
 
 namespace gct {
   template< typename T >
@@ -34,21 +33,6 @@ namespace gct {
   };
   template< typename ...T >
   using deep_copy_unique_ptr = deep_copy_t< std::unique_ptr< T... > >;
-
-  template< typename T >
-  void to_json( nlohmann::json &root, const deep_copy_unique_ptr< T > &v ) {
-    if( v )
-      root = *v;
-    else
-      root = nullptr;
-  }
-  template< typename T >
-  void from_json( const nlohmann::json &root, deep_copy_unique_ptr< T > &v ) {
-    if( root.is_null() )
-      v.reset();
-    else
-      v.reset( T( root ) );
-  }
 }
 
 #endif

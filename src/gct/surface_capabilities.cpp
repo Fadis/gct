@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/instance.hpp>
 #include <gct/surface_capabilities.hpp>
 #ifdef VK_KHR_SURFACE_EXTENSION_NAME

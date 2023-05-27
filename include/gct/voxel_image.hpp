@@ -2,6 +2,7 @@
 #define GCT_VOXEL_IMAGE_HPP
 #include <array>
 #include <memory>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <gct/render_pass_begin_info.hpp>

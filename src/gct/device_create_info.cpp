@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/device_create_info.hpp>
 #include <vulkan2json/DeviceCreateInfo.hpp>
 #ifdef VK_VERSION_1_1

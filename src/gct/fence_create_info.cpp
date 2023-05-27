@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/fence_create_info.hpp>
 #include <vulkan2json/FenceCreateInfo.hpp>
 #ifdef VK_VERSION_1_1

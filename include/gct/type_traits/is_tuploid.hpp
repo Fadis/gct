@@ -2,7 +2,6 @@
 #define GCT_TYPE_TRAITS_IS_TUPLOID_HPP
 
 #include <tuple>
-#include <array>
 #include <type_traits>
 
 namespace gct::type_traits {

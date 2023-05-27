@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/ray_tracing_pipeline_interface_create_info.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <vulkan2json/RayTracingPipelineInterfaceCreateInfoKHR.hpp>

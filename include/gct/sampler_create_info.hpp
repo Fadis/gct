@@ -1,7 +1,7 @@
 #ifndef GCT_SAMPLER_CREATE_INFO_HPP
 #define GCT_SAMPLER_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

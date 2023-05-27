@@ -2,7 +2,6 @@
 #define LIBGCT_INCLUDE_GCT_SURFACE_CAPABILITIES_HPP
 
 #include <vector>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

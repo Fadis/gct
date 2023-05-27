@@ -20,6 +20,11 @@
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <gct/render_pass_begin_info.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer_create_info.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/submit_info.hpp>
 #include <gct/fence.hpp>
 #include <gct/wait_for_sync.hpp>

@@ -23,6 +23,7 @@
  */
 
 #define GLFW_INCLUDE_VULKAN
+#include <string>
 #include <vector>
 #include <unordered_set>
 #include <filesystem>

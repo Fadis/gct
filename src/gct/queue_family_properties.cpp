@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/to_json.hpp>
 #include <gct/queue_family_properties.hpp>
 #include <vulkan2json/QueueFamilyProperties.hpp>

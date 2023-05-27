@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <fstream>
 #include <iterator>
 #include <vulkan2json/PipelineCacheCreateInfo.hpp>

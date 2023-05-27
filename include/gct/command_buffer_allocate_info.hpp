@@ -1,7 +1,6 @@
 #ifndef GCT_COMMAND_BUFFER_ALLOCATE_INFO_HPP
 #define GCT_COMMAND_BUFFER_ALLOCATE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

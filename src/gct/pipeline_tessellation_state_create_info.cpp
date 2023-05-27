@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/pipeline_tessellation_state_create_info.hpp>
 #include <vulkan2json/PipelineTessellationStateCreateInfo.hpp>

@@ -2,6 +2,7 @@
 #define LIBGCT_INCLUDE_GCT_SWAPCHAIN_HPP
 
 #include <memory>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/swapchain_create_info.hpp>

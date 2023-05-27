@@ -1,6 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_DPI_HPP
 #define LIBGCT_INCLUDE_GCT_DPI_HPP
-
+#include <tuple>
 #include <boost/rational.hpp>
 #include <nlohmann/json_fwd.hpp>
 

@@ -81,6 +81,11 @@ pkg_check_modules(ICUUC REQUIRED icu-uc)
 pkg_check_modules(LIBINPUT REQUIRED libinput)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 pkg_check_modules(SDBUSCPP REQUIRED sdbus-c++)
+if( LIBINPUT_VERSION VERSION_LESS "1.19" )
+  add_definitions( -DGCT_LIBINPUT_NO_POINTER_WHEEL )
+  add_definitions( -DGCT_LIBINPUT_NO_GESTURE_HOLD )
+endif()
+
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/external/VulkanMemoryAllocator/include/vk_mem_alloc.h

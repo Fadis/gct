@@ -26,7 +26,6 @@
 #include <cstddef>
 #include <memory>
 #include <filesystem>
-#include <string>
 namespace gct {
   class mmaped_file {
   public:

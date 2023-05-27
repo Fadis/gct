@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/surface.hpp>
 #include <gct/descriptor_pool_create_info.hpp>
 #include <vulkan2json/DescriptorPoolCreateInfo.hpp>

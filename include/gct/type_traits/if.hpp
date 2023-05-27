@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_IF_HPP
 #define GCT_TYPE_TRAITS_IF_HPP
 
-#include <type_traits>
-
 namespace gct::type_traits {
 
 template< bool cond, typename T, typename U >

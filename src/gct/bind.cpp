@@ -4,7 +4,6 @@
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
-#include <gct/format.hpp>
 #include <gct/descriptor_set.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/graphics_pipeline.hpp>

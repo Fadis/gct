@@ -4,7 +4,6 @@
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
-#include <gct/format.hpp>
 #include <gct/buffer.hpp>
 
 namespace gct {

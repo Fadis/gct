@@ -1,12 +1,14 @@
 #ifndef GCT_INPUT_FCITX5_HPP
 #define GCT_INPUT_FCITX5_HPP
-
+#include <string>
+#include <tuple>
 #include <exception>
 #include <memory>
 #include <vector>
 #include <utility>
 #include <unordered_set>
 #include <mutex>
+#include <optional>
 #include <gct/input/key_state.hpp>
 #include <gct/input/xkbcommon.hpp>
 #include <gct/dbus/dbus.hpp>

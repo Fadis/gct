@@ -1,5 +1,6 @@
 #ifndef GCT_BUFFER_HPP
 #define GCT_BUFFER_HPP
+#include <string>
 #include <memory>
 #include <vulkan/vulkan.hpp>
 #pragma GCC diagnostic push

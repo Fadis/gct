@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <vulkan2json/BufferViewCreateInfo.hpp>
 namespace gct {

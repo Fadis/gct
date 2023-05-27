@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/image.hpp>
 #include <gct/image_view.hpp>
 #include <gct/framebuffer_create_info.hpp>

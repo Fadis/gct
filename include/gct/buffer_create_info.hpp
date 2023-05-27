@@ -1,7 +1,6 @@
 #ifndef GCT_BUFFER_CREATE_INFO_HPP
 #define GCT_BUFFER_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>

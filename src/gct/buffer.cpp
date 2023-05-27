@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/buffer_view.hpp>
 #include <gct/buffer_view_create_info.hpp>

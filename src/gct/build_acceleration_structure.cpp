@@ -1,4 +1,5 @@
 #include <vector>
+#include <functional>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/acceleration_structure_build_geometry_info.hpp>

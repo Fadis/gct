@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/graphics_pipeline.hpp>

@@ -7,6 +7,7 @@
 #include <utility>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 #include <boost/type_erasure/any.hpp>
 #include <boost/type_erasure/constructible.hpp>
 #include <boost/type_erasure/callable.hpp>

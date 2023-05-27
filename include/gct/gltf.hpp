@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <gct/exception.hpp>

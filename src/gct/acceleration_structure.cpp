@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
 #include <gct/buffer.hpp>

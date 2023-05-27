@@ -1,3 +1,4 @@
+#include <functional>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/framebuffer.hpp>

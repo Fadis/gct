@@ -142,6 +142,7 @@ void libinput_t::libinput_internal_t::poll() {
       else if( type == LIBINPUT_EVENT_POINTER_BUTTON ) {
         push( pointer, std::move( event ) );
       }
+#ifndef GCT_LIBINPUT_NO_POINTER_WHEEL
       else if( type == LIBINPUT_EVENT_POINTER_AXIS ) {
         push( pointer, std::move( event ) );
       }
@@ -154,6 +155,7 @@ void libinput_t::libinput_internal_t::poll() {
       else if( type == LIBINPUT_EVENT_POINTER_SCROLL_CONTINUOUS ) {
         push( pointer, std::move( event ) );
       }
+#endif
       else if( type == LIBINPUT_EVENT_TOUCH_DOWN ) {
         push( touch, std::move( event ) );
       }
@@ -211,12 +213,14 @@ void libinput_t::libinput_internal_t::poll() {
       else if( type == LIBINPUT_EVENT_GESTURE_PINCH_END ) {
         push( gesture, std::move( event ) );
       }
+#ifndef GCT_LIBINPUT_NO_GESTURE_HOLD
       else if( type == LIBINPUT_EVENT_GESTURE_HOLD_BEGIN ) {
         push( gesture, std::move( event ) );
       }
       else if( type == LIBINPUT_EVENT_GESTURE_HOLD_END ) {
         push( gesture, std::move( event ) );
       }
+#endif
       else if( type == LIBINPUT_EVENT_SWITCH_TOGGLE ) {
         push( switch_, std::move( event ) );
       }
@@ -297,6 +301,7 @@ pointer_event libinput_pointer_event_to_gct_pointer_event( libinput_event_pointe
       }
     };
   }
+#ifndef GCT_LIBINPUT_NO_POINTER_WHEEL
   else if( type == ::libinput_event_type::LIBINPUT_EVENT_POINTER_SCROLL_WHEEL ) {
     return pointer_event {
       time,
@@ -336,6 +341,7 @@ pointer_event libinput_pointer_event_to_gct_pointer_event( libinput_event_pointe
       }
     };
   }
+#endif
   else throw -1;
 
 }

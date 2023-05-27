@@ -1,7 +1,6 @@
 #ifndef GCT_DESCRIPTOR_IMAGE_INFO_HPP
 #define GCT_DESCRIPTOR_IMAGE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

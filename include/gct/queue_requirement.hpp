@@ -1,6 +1,7 @@
 #ifndef LIBGCT_INCLUDE_GCT_QUEUE_REQUIREMENT_HPP
 #define LIBGCT_INCLUDE_GCT_QUEUE_REQUIREMENT_HPP
 #include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 
 namespace gct {

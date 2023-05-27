@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <gct/shader_module_create_info.hpp>
 #include <vulkan2json/ShaderModuleCreateInfo.hpp>
 #ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME

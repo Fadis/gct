@@ -1,3 +1,4 @@
+#include <mutex>
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/image_create_info.hpp>
@@ -24,6 +25,10 @@
 #include <gct/image.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/primitive.hpp>
+#include <gct/render_pass_create_info.hpp>
+#include <gct/render_pass.hpp>
+#include <gct/framebuffer_create_info.hpp>
+#include <gct/framebuffer.hpp>
 #include <gct/canvas.hpp>
 
 namespace gct {

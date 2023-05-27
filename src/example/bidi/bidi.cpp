@@ -30,6 +30,11 @@
 #include <gct/html_color.hpp>
 #include <gct/eotf.hpp>
 #include <gct/dpi.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer_create_info.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/text/layout_engine.hpp>
 
 struct fb_resources_t {

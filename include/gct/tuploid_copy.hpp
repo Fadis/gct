@@ -1,6 +1,6 @@
 #ifndef GCT_TUPLOID_COPY_HPP
 #define GCT_TUPLOID_COPY_HPP
-
+#include <tuple>
 #include <gct/concepts/tuploid.hpp>
 
 namespace gct {

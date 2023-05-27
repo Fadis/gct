@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/display_mode.hpp>
 #include <gct/display_surface_create_info.hpp>
 #ifdef VK_KHR_DISPLAY_EXTENSION_NAME

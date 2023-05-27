@@ -18,6 +18,9 @@
 #include <gct/fence.hpp>
 #include <gct/fence_create_info.hpp>
 #include <gct/queue.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/descriptor_set_layout.hpp>
+#include <gct/descriptor_pool.hpp>
 #include <gct/device.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <gct/acceleration_structure_build_geometry_info.hpp>

@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
 #include <gct/spv2vk.hpp>

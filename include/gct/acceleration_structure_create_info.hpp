@@ -1,7 +1,6 @@
 #ifndef GCT_ACCELERATION_STRUCTURE_CREATE_INFO_HPP
 #define GCT_ACCELERATION_STRUCTURE_CREATE_INFO_HPP
 #include <memory>
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <nlohmann/json_fwd.hpp>

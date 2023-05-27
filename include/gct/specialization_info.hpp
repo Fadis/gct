@@ -1,7 +1,7 @@
 #ifndef GCT_SPECIALIZATION_INFO_HPP
 #define GCT_SPECIALIZATION_INFO_HPP
 #include <memory>
-#include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 

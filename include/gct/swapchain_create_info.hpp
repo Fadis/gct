@@ -2,7 +2,6 @@
 #define GCT_SWAPCHAIN_CREATE_INFO_HPP
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

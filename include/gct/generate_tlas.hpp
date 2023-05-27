@@ -1,7 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_GENERATE_TLAS_HPP
 #define LIBGCT_INCLUDE_GCT_GENERATE_TLAS_HPP
 #include <memory>
-#include <tuple>
 #include <vector>
 #include <vulkan/vulkan.hpp>
 namespace gct {

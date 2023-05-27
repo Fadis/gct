@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/surface.hpp>
 #include <gct/render_pass_create_info.hpp>
 #include <vulkan2json/RenderPassCreateInfo.hpp>

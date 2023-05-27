@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <optional>
 #include <xkbcommon/xkbcommon.h>
 #include <gct/input/key_state.hpp>
 #include <gct/future.hpp>

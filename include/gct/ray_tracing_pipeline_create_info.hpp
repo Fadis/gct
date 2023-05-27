@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <memory>
-#include <optional>
+#include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/deep_copy.hpp>
 #include <gct/extension.hpp>

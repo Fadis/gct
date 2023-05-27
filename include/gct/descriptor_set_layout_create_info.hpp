@@ -1,5 +1,6 @@
 #ifndef GCT_DESCRIPTOR_SET_LAYOUT_CREATE_INFO_HPP
 #define GCT_DESCRIPTOR_SET_LAYOUT_CREATE_INFO_HPP
+#include <string>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>

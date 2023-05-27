@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/surface.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/framebuffer.hpp>

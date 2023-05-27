@@ -1,8 +1,6 @@
 #ifndef GCT_TYPE_TRAITS_HAS_INSERT_HPP
 #define GCT_TYPE_TRAITS_HAS_INSERT_HPP
 
-#include <tuple>
-#include <array>
 #include <type_traits>
 #include <gct/voider.hpp>
 

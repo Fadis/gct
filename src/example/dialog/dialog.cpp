@@ -27,6 +27,10 @@
 #include <gct/display_surface_create_info.hpp>
 #include <gct/canvas.hpp>
 #include <gct/html_color.hpp>
+#include <gct/command_buffer.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/framebuffer.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/eotf.hpp>
 
 struct fb_resources_t {

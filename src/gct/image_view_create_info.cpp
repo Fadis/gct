@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/image_view_create_info.hpp>
 #include <vulkan2json/ImageViewCreateInfo.hpp>
 #ifdef VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME

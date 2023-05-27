@@ -1,7 +1,6 @@
 #ifndef GCT_DEVICE_CREATE_INFO_H
 #define GCT_DEVICE_CREATE_INFO_H
 
-#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>

@@ -1,6 +1,6 @@
 #ifndef LIBGCT_INCLUDE_GCT_DESCRIPTOR_SET_HPP
 #define LIBGCT_INCLUDE_GCT_DESCRIPTOR_SET_HPP
-
+#include <string>
 #include <memory>
 #include <unordered_map>
 #include <vector>

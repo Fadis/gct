@@ -34,6 +34,9 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/shader_module.hpp>
+#include <gct/descriptor_set_layout_create_info.hpp>
+#include <gct/descriptor_set_layout.hpp>
+#include <gct/descriptor_set.hpp>
 #include <gct/device.hpp>
 namespace gct::gltf {
   std::shared_ptr< shader_module_t > get_suboptimal_shader(

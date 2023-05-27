@@ -25,6 +25,9 @@
 #include <memory>
 #include <utility>
 #include <thread>
+#include <array>
+#include <unordered_map>
+#include <mutex>
 #include <vulkan/vulkan.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>

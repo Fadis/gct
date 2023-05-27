@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
 #include <vulkan2json/PipelineVertexInputStateCreateInfo.hpp>

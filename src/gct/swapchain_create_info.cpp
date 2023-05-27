@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/surface.hpp>
 #include <gct/swapchain_create_info.hpp>
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME

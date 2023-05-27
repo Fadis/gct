@@ -2,7 +2,6 @@
 #define GCT_PIPELINE_CACHE_CREATE_INFO_HPP
 #include <string>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

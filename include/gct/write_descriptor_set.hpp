@@ -1,7 +1,7 @@
 #ifndef GCT_WRITE_DESCRIPTOR_SET_HPP
 #define GCT_WRITE_DESCRIPTOR_SET_HPP
 #include <memory>
-#include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/descriptor_image_info.hpp>

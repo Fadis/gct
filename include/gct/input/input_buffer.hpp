@@ -4,8 +4,8 @@
 #include <exception>
 #include <memory>
 #include <vector>
-#include <iostream>
 #include <utility>
+#include <optional>
 #include <gct/input/libinput.hpp>
 #include <gct/non_copyable_function.hpp>
 #include <gct/future.hpp>
