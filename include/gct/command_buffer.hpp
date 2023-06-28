@@ -46,12 +46,16 @@ namespace gct {
     );
     bool wait_for_executed();
     bool wait_for_executed( std::uint64_t );
+    void set_submit_mode(
+      const command_buffer_begin_info_t &begin_info
+    );
   private:
     void on_executed( vk::Result );
     command_buffer_allocate_info_t props;
     vk::UniqueHandle< vk::CommandBuffer, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
     std::vector< std::any > keep;
     std::vector< std::function< void( vk::Result ) > > cbs;
+    bool reuse = false;
   };
   class bound_command_buffer_t : public created_from< bound_command_pool_t >, public std::enable_shared_from_this< bound_command_buffer_t > {
   public:

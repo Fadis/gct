@@ -64,6 +64,12 @@ namespace gct {
     std::vector< vk::Format > format_list_formats;
   public:
     image_create_info_t &add_format( vk::Format );
+    template< typename Iterator >
+    image_create_info_t &add_format( Iterator begin, Iterator end ) {
+      for( auto iter = begin; iter != end; ++iter )
+        add_format( *iter );
+      return *this;
+    }
     image_create_info_t &clear_format();
     const std::vector< vk::Format > &get_format_list_formats() const { return format_list_formats; }
 #endif

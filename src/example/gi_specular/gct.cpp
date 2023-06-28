@@ -514,7 +514,7 @@ int main( int argc, const char *argv[] ) {
         allocator,
         "../images/environment.png",
         vk::ImageUsageFlagBits::eSampled,
-        true, true
+        true, gct::integer_attribute_t::srgb
       );
       recorder.transfer_to_compute_barrier(
         {},

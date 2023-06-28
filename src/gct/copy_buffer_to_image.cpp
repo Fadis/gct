@@ -54,7 +54,7 @@ namespace gct {
             .setAspectMask( format_to_aspect( dest->get_props().get_basic().format ) )
             .setMipLevel( 0 )
             .setBaseArrayLayer( 0 )
-            .setLayerCount( 1 )
+            .setLayerCount( dest->get_props().get_basic().arrayLayers )
         )
         .setImageOffset(
           vk::Offset3D()

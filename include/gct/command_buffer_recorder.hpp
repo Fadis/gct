@@ -15,6 +15,7 @@
 #include <gct/command_buffer_begin_info.hpp>
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
 #include <gct/font.hpp>
+#include <gct/numeric_types.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -70,7 +71,8 @@ namespace gct {
       const std::string &filename,
       vk::ImageUsageFlagBits usage,
       bool mipmap,
-      bool srgb
+      integer_attribute_t attr = integer_attribute_t::srgb,
+      unsigned int max_channels_per_layer = 4
     );
     void dump_image(
       const std::shared_ptr< allocator_t > &allocator,

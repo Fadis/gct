@@ -28,8 +28,10 @@ namespace gct {
     handle = std::move( (*pool->get_factory())->allocateCommandBuffersUnique( props.get_basic() )[ 0 ] );
   }
   void command_buffer_t::reset() {
-    handle->reset( vk::CommandBufferResetFlags( 0 ) );
-    keep.clear();
+    if( !reuse ) {
+      handle->reset( vk::CommandBufferResetFlags( 0 ) );
+      keep.clear();
+    }
     cbs.clear();
   }
   void command_buffer_t::on_executed( vk::Result result ) {
@@ -37,6 +39,21 @@ namespace gct {
       cb( result );        
     }
     reset();
+  }
+  void command_buffer_t::set_submit_mode(
+    const command_buffer_begin_info_t &begin_info
+  ) {
+    if( reuse ) {
+      handle->reset( vk::CommandBufferResetFlags( 0 ) );
+      keep.clear();
+      cbs.clear();
+    }
+    if( begin_info.get_basic().flags & vk::CommandBufferUsageFlagBits::eOneTimeSubmit ) {
+      reuse = false;
+    }
+    else {
+      reuse = true;
+    }
   }
   bound_command_buffer_t::bound_command_buffer_t(
     const std::shared_ptr< bound_command_pool_t > &pool,
@@ -92,6 +109,7 @@ namespace gct {
   command_buffer_recorder_t bound_command_buffer_t::begin(
     const command_buffer_begin_info_t &begin_info
   ) {
+    unbound()->set_submit_mode( begin_info );
     return command_buffer_recorder_t(
       shared_from_this(),
       begin_info

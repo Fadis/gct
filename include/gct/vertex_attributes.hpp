@@ -78,7 +78,7 @@ namespace gct {
     U src,
     const vertex_input_detail_t &detail
   ) {
-    if( detail.format.normalize ) {
+    if( detail.format.attr == integer_attribute_t::normalized ) {
       if( src == U( 0 ) ) dest = 0u;
       else {
         if( detail.format.sign ) {
@@ -99,7 +99,7 @@ namespace gct {
         }
       }
     }
-    else if( detail.format.srgb ) {
+    else if( detail.format.attr == integer_attribute_t::srgb ) {
       throw -1; // not implemented
     }
     else {
@@ -115,7 +115,7 @@ namespace gct {
     U src,
     const vertex_input_detail_t &detail
   ) {
-    if( detail.format.normalize ) {
+    if( detail.format.attr == integer_attribute_t::normalized ) {
       if( src == U( 0 ) ) dest = 0u;
       else {
         if( detail.format.sign ) {
@@ -146,7 +146,7 @@ namespace gct {
         }
       }
     }
-    else if( detail.format.srgb ) {
+    else if( detail.format.attr == integer_attribute_t::srgb ) {
       throw -1; // not implemented
     }
     else {

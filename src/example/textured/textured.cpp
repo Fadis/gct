@@ -242,7 +242,7 @@ int main() {
         allocator,
         "../images/globe_color.png",
         vk::ImageUsageFlagBits::eSampled,
-        true, true
+        true, gct::integer_attribute_t::srgb
       );
       recorder.barrier(
         vk::AccessFlagBits::eTransferWrite,

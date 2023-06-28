@@ -1,9 +1,12 @@
 #include <vector>
 #include "vulkan/vulkan.hpp"
-
+#include <gct/get_extensions.hpp>
 namespace gct {
-  const std::vector< vk::Format > &get_all_formats() {
-    static const std::vector< vk::Format > instance{
+  std::vector< vk::Format > get_all_formats(
+    std::uint32_t api_version,
+    const extension_map_t &available_extensions
+  ) {
+    std::vector< vk::Format > formats{
       vk::Format::eUndefined,
       vk::Format::eR4G4UnormPack8,
       vk::Format::eR4G4B4A4UnormPack16,
@@ -188,139 +191,182 @@ namespace gct {
       vk::Format::eAstc12x10UnormBlock,
       vk::Format::eAstc12x10SrgbBlock,
       vk::Format::eAstc12x12UnormBlock,
-      vk::Format::eAstc12x12SrgbBlock,
+      vk::Format::eAstc12x12SrgbBlock
+    };
 #ifdef VK_VERSION_1_1
-      vk::Format::eG8B8G8R8422Unorm,
-      vk::Format::eB8G8R8G8422Unorm,
-      vk::Format::eG8B8R83Plane420Unorm,
-      vk::Format::eG8B8R82Plane420Unorm,
-      vk::Format::eG8B8R83Plane422Unorm,
-      vk::Format::eG8B8R82Plane422Unorm,
-      vk::Format::eG8B8R83Plane444Unorm,
-      vk::Format::eR10X6UnormPack16,
-      vk::Format::eR10X6G10X6Unorm2Pack16,
-      vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16,
-      vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16,
-      vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16,
-      vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16,
-      vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16,
-      vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16,
-      vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16,
-      vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16,
-      vk::Format::eR12X4UnormPack16,
-      vk::Format::eR12X4G12X4Unorm2Pack16,
-      vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16,
-      vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16,
-      vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16,
-      vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16,
-      vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16,
-      vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16,
-      vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16,
-      vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16,
-      vk::Format::eG16B16G16R16422Unorm,
-      vk::Format::eB16G16R16G16422Unorm,
-      vk::Format::eG16B16R163Plane420Unorm,
-      vk::Format::eG16B16R162Plane420Unorm,
-      vk::Format::eG16B16R163Plane422Unorm,
-      vk::Format::eG16B16R162Plane422Unorm,
-      vk::Format::eG16B16R163Plane444Unorm,
+    if( api_version >= VK_MAKE_VERSION( 1, 1, 0 ) ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eG8B8G8R8422Unorm,
+        vk::Format::eB8G8R8G8422Unorm,
+        vk::Format::eG8B8R83Plane420Unorm,
+        vk::Format::eG8B8R82Plane420Unorm,
+        vk::Format::eG8B8R83Plane422Unorm,
+        vk::Format::eG8B8R82Plane422Unorm,
+        vk::Format::eG8B8R83Plane444Unorm,
+        vk::Format::eR10X6UnormPack16,
+        vk::Format::eR10X6G10X6Unorm2Pack16,
+        vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16,
+        vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16,
+        vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16,
+        vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16,
+        vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16,
+        vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16,
+        vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16,
+        vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16,
+        vk::Format::eR12X4UnormPack16,
+        vk::Format::eR12X4G12X4Unorm2Pack16,
+        vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16,
+        vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16,
+        vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16,
+        vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16,
+        vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16,
+        vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16,
+        vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16,
+        vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16,
+        vk::Format::eG16B16G16R16422Unorm,
+        vk::Format::eB16G16R16G16422Unorm,
+        vk::Format::eG16B16R163Plane420Unorm,
+        vk::Format::eG16B16R162Plane420Unorm,
+        vk::Format::eG16B16R163Plane422Unorm,
+        vk::Format::eG16B16R162Plane422Unorm,
+        vk::Format::eG16B16R163Plane444Unorm
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
 #ifdef VK_VERSION_1_3
-      vk::Format::eG8B8R82Plane444Unorm,
-      vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16,
-      vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16,
-      vk::Format::eG16B16R162Plane444Unorm,
-      vk::Format::eA4R4G4B4UnormPack16,
-      vk::Format::eA4B4G4R4UnormPack16,
-      vk::Format::eAstc4x4SfloatBlock,
-      vk::Format::eAstc5x4SfloatBlock,
-      vk::Format::eAstc5x5SfloatBlock,
-      vk::Format::eAstc6x5SfloatBlock,
-      vk::Format::eAstc6x6SfloatBlock,
-      vk::Format::eAstc8x5SfloatBlock,
-      vk::Format::eAstc8x6SfloatBlock,
-      vk::Format::eAstc8x8SfloatBlock,
-      vk::Format::eAstc10x5SfloatBlock,
-      vk::Format::eAstc10x6SfloatBlock,
-      vk::Format::eAstc10x8SfloatBlock,
-      vk::Format::eAstc10x10SfloatBlock,
-      vk::Format::eAstc12x10SfloatBlock,
-      vk::Format::eAstc12x12SfloatBlock,
+    if( api_version >= VK_MAKE_VERSION( 1, 3, 0 ) ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eG8B8R82Plane444Unorm,
+        vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16,
+        vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16,
+        vk::Format::eG16B16R162Plane444Unorm,
+        vk::Format::eA4R4G4B4UnormPack16,
+        vk::Format::eA4B4G4R4UnormPack16,
+        vk::Format::eAstc4x4SfloatBlock,
+        vk::Format::eAstc5x4SfloatBlock,
+        vk::Format::eAstc5x5SfloatBlock,
+        vk::Format::eAstc6x5SfloatBlock,
+        vk::Format::eAstc6x6SfloatBlock,
+        vk::Format::eAstc8x5SfloatBlock,
+        vk::Format::eAstc8x6SfloatBlock,
+        vk::Format::eAstc8x8SfloatBlock,
+        vk::Format::eAstc10x5SfloatBlock,
+        vk::Format::eAstc10x6SfloatBlock,
+        vk::Format::eAstc10x8SfloatBlock,
+        vk::Format::eAstc10x10SfloatBlock,
+        vk::Format::eAstc12x10SfloatBlock,
+        vk::Format::eAstc12x12SfloatBlock
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
 #ifdef VK_IMG_FORMAT_PVRTC_EXTENSION_NAME
-      vk::Format::ePvrtc12BppUnormBlockIMG,
-      vk::Format::ePvrtc14BppUnormBlockIMG,
-      vk::Format::ePvrtc22BppUnormBlockIMG,
-      vk::Format::ePvrtc24BppUnormBlockIMG,
-      vk::Format::ePvrtc12BppSrgbBlockIMG,
-      vk::Format::ePvrtc14BppSrgbBlockIMG,
-      vk::Format::ePvrtc22BppSrgbBlockIMG,
-      vk::Format::ePvrtc24BppSrgbBlockIMG,
+    if( available_extensions.find( VK_IMG_FORMAT_PVRTC_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::ePvrtc12BppUnormBlockIMG,
+        vk::Format::ePvrtc14BppUnormBlockIMG,
+        vk::Format::ePvrtc22BppUnormBlockIMG,
+        vk::Format::ePvrtc24BppUnormBlockIMG,
+        vk::Format::ePvrtc12BppSrgbBlockIMG,
+        vk::Format::ePvrtc14BppSrgbBlockIMG,
+        vk::Format::ePvrtc22BppSrgbBlockIMG,
+        vk::Format::ePvrtc24BppSrgbBlockIMG
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
-#ifdef VK_EXT_4444_FORMATS_EXTENSION_NAME
-      vk::Format::eA4B4G4R4UnormPack16EXT,
-      vk::Format::eA4R4G4B4UnormPack16EXT,
+#ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
+    if( available_extensions.find( VK_NV_OPTICAL_FLOW_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eR16G16S105NV
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
 #ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
-      vk::Format::eAstc10x10SfloatBlockEXT,
-      vk::Format::eAstc10x5SfloatBlockEXT,
-      vk::Format::eAstc10x6SfloatBlockEXT,
-      vk::Format::eAstc10x8SfloatBlockEXT,
-      vk::Format::eAstc12x10SfloatBlockEXT,
-      vk::Format::eAstc12x12SfloatBlockEXT,
-      vk::Format::eAstc4x4SfloatBlockEXT,
-      vk::Format::eAstc5x4SfloatBlockEXT,
-      vk::Format::eAstc5x5SfloatBlockEXT,
-      vk::Format::eAstc6x5SfloatBlockEXT,
-      vk::Format::eAstc6x6SfloatBlockEXT,
-      vk::Format::eAstc8x5SfloatBlockEXT,
-      vk::Format::eAstc8x6SfloatBlockEXT,
-      vk::Format::eAstc8x8SfloatBlockEXT,
+    if( available_extensions.find( VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eAstc10x10SfloatBlockEXT,
+        vk::Format::eAstc10x5SfloatBlockEXT,
+        vk::Format::eAstc10x6SfloatBlockEXT,
+        vk::Format::eAstc10x8SfloatBlockEXT,
+        vk::Format::eAstc12x10SfloatBlockEXT,
+        vk::Format::eAstc12x12SfloatBlockEXT,
+        vk::Format::eAstc4x4SfloatBlockEXT,
+        vk::Format::eAstc5x4SfloatBlockEXT,
+        vk::Format::eAstc5x5SfloatBlockEXT,
+        vk::Format::eAstc6x5SfloatBlockEXT,
+        vk::Format::eAstc6x6SfloatBlockEXT,
+        vk::Format::eAstc8x5SfloatBlockEXT,
+        vk::Format::eAstc8x6SfloatBlockEXT,
+        vk::Format::eAstc8x8SfloatBlockEXT,
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
 #ifdef VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME
-      vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16KHR,
-      vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16KHR,
-      vk::Format::eB16G16R16G16422UnormKHR,
-      vk::Format::eB8G8R8G8422UnormKHR,
-      vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16KHR,
-      vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16KHR,
-      vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16KHR,
-      vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16KHR,
-      vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16KHR,
-      vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16KHR,
-      vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16KHR,
-      vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16KHR,
-      vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16KHR,
-      vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16KHR,
-      vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16KHR,
-      vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16KHR,
-      vk::Format::eG16B16G16R16422UnormKHR,
-      vk::Format::eG16B16R162Plane420UnormKHR,
-      vk::Format::eG16B16R162Plane422UnormKHR,
-      vk::Format::eG16B16R163Plane420UnormKHR,
-      vk::Format::eG16B16R163Plane422UnormKHR,
-      vk::Format::eG16B16R163Plane444UnormKHR,
-      vk::Format::eG8B8G8R8422UnormKHR,
-      vk::Format::eG8B8R82Plane420UnormKHR,
-      vk::Format::eG8B8R82Plane422UnormKHR,
-      vk::Format::eG8B8R83Plane420UnormKHR,
-      vk::Format::eG8B8R83Plane422UnormKHR,
-      vk::Format::eG8B8R83Plane444UnormKHR,
-      vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16KHR,
-      vk::Format::eR10X6G10X6Unorm2Pack16KHR,
-      vk::Format::eR10X6UnormPack16KHR,
-      vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16KHR,
-      vk::Format::eR12X4G12X4Unorm2Pack16KHR,
-      vk::Format::eR12X4UnormPack16KHR,
+    if( available_extensions.find( VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eB10X6G10X6R10X6G10X6422Unorm4Pack16KHR,
+        vk::Format::eB12X4G12X4R12X4G12X4422Unorm4Pack16KHR,
+        vk::Format::eB16G16R16G16422UnormKHR,
+        vk::Format::eB8G8R8G8422UnormKHR,
+        vk::Format::eG10X6B10X6G10X6R10X6422Unorm4Pack16KHR,
+        vk::Format::eG10X6B10X6R10X62Plane420Unorm3Pack16KHR,
+        vk::Format::eG10X6B10X6R10X62Plane422Unorm3Pack16KHR,
+        vk::Format::eG10X6B10X6R10X63Plane420Unorm3Pack16KHR,
+        vk::Format::eG10X6B10X6R10X63Plane422Unorm3Pack16KHR,
+        vk::Format::eG10X6B10X6R10X63Plane444Unorm3Pack16KHR,
+        vk::Format::eG12X4B12X4G12X4R12X4422Unorm4Pack16KHR,
+        vk::Format::eG12X4B12X4R12X42Plane420Unorm3Pack16KHR,
+        vk::Format::eG12X4B12X4R12X42Plane422Unorm3Pack16KHR,
+        vk::Format::eG12X4B12X4R12X43Plane420Unorm3Pack16KHR,
+        vk::Format::eG12X4B12X4R12X43Plane422Unorm3Pack16KHR,
+        vk::Format::eG12X4B12X4R12X43Plane444Unorm3Pack16KHR,
+        vk::Format::eG16B16G16R16422UnormKHR,
+        vk::Format::eG16B16R162Plane420UnormKHR,
+        vk::Format::eG16B16R162Plane422UnormKHR,
+        vk::Format::eG16B16R163Plane420UnormKHR,
+        vk::Format::eG16B16R163Plane422UnormKHR,
+        vk::Format::eG16B16R163Plane444UnormKHR,
+        vk::Format::eG8B8G8R8422UnormKHR,
+        vk::Format::eG8B8R82Plane420UnormKHR,
+        vk::Format::eG8B8R82Plane422UnormKHR,
+        vk::Format::eG8B8R83Plane420UnormKHR,
+        vk::Format::eG8B8R83Plane422UnormKHR,
+        vk::Format::eG8B8R83Plane444UnormKHR,
+        vk::Format::eR10X6G10X6B10X6A10X6Unorm4Pack16KHR,
+        vk::Format::eR10X6G10X6Unorm2Pack16KHR,
+        vk::Format::eR10X6UnormPack16KHR,
+        vk::Format::eR12X4G12X4B12X4A12X4Unorm4Pack16KHR,
+        vk::Format::eR12X4G12X4Unorm2Pack16KHR,
+        vk::Format::eR12X4UnormPack16KHR
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
 #ifdef VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME
-      vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16EXT,
-      vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16EXT,
-      vk::Format::eG8B8R82Plane444UnormEXT,
-      vk::Format::eG16B16R162Plane444UnormEXT,
+    if( available_extensions.find( VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eG10X6B10X6R10X62Plane444Unorm3Pack16EXT,
+        vk::Format::eG12X4B12X4R12X42Plane444Unorm3Pack16EXT,
+        vk::Format::eG8B8R82Plane444UnormEXT,
+        vk::Format::eG16B16R162Plane444UnormEXT
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
 #endif
-    };
-    return instance;
+#ifdef VK_EXT_4444_FORMATS_EXTENSION_NAME
+    if( available_extensions.find( VK_EXT_4444_FORMATS_EXTENSION_NAME ) != available_extensions.end() ) {
+      const static std::vector< vk::Format > additional{
+        vk::Format::eA4B4G4R4UnormPack16EXT,
+        vk::Format::eA4R4G4B4UnormPack16EXT
+      };
+      formats.insert( formats.end(), additional.begin(), additional.end() );
+    }
+#endif
+    return formats;
   }
 }
 

@@ -228,7 +228,7 @@ namespace gct::gltf {
           image_path.string(),
           vk::ImageUsageFlagBits::eSampled,
           true,
-          false
+          integer_attribute_t::normalized
         )
       );
       if( !use_format_list ) {
@@ -241,7 +241,7 @@ namespace gct::gltf {
             image_path.string(),
             vk::ImageUsageFlagBits::eSampled,
             true,
-            true
+            integer_attribute_t::srgb
           )
         );
         images.back().set_srgb_view(

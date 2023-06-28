@@ -243,19 +243,19 @@ int main() {
         allocator,
         "../images/globe_color.png",
         vk::ImageUsageFlagBits::eSampled,
-        true, true
+        true, gct::integer_attribute_t::srgb
       );
       normal_image = recorder.load_image(
         allocator,
         "../images/globe_normal.png",
         vk::ImageUsageFlagBits::eSampled,
-        true, false
+        true, gct::integer_attribute_t::normalized
       );
       roughness_image = recorder.load_image(
         allocator,
         "../images/globe_roughness.png",
         vk::ImageUsageFlagBits::eSampled,
-        true, false
+        true, gct::integer_attribute_t::normalized
       );
       recorder.barrier(
         vk::AccessFlagBits::eTransferWrite,
