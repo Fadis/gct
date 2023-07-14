@@ -71,6 +71,37 @@ namespace gct {
       usage
     );
   }
+  std::shared_ptr< buffer_t > allocator_t::create_buffer(
+    const buffer_create_info_t &create_info,
+    VmaMemoryUsage usage,
+    VmaAllocationCreateFlags flags
+  ) {
+    return std::shared_ptr< buffer_t >(
+      new buffer_t(
+        shared_from_this(),
+        create_info,
+        usage,
+        flags
+      )
+    );
+  }
+  std::shared_ptr< buffer_t > allocator_t::create_buffer(
+    std::size_t size,
+    vk::BufferUsageFlags buffer_usage,
+    VmaMemoryUsage usage,
+    VmaAllocationCreateFlags flags
+  ) {
+    return create_buffer(
+      buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size )
+            .setUsage( buffer_usage )
+        ),
+      usage,
+      flags
+    );
+  }
   std::shared_ptr< pixel_buffer_t > allocator_t::create_pixel_buffer(
     const buffer_create_info_t &create_info,
     VmaMemoryUsage usage,

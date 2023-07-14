@@ -1,0 +1,62 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_memory_scope_semantics : enable
+
+layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1 ) in;
+layout(std430, binding = 0) buffer input_vector {
+  float input_data[];
+};
+layout(std430, binding = 1) buffer output_vector {
+  float output_data[];
+};
+layout(constant_id = 1) const uint input_length = 32;
+
+shared float[32] temp;
+
+void main() {
+  const uint offset = gl_LocalInvocationID.x;
+  const uint batch = gl_GlobalInvocationID.z;
+  float max = 0.0;
+  for(
+    uint i = offset;
+    i < input_length;
+    i += 1024
+  ) {
+    float v = input_data[ i + input_length * batch ];
+    if( v > max ) {
+      max = v;
+    }
+  }
+  const float smax = subgroupMax( max );
+  if( gl_SubgroupInvocationID == 0 ) {
+    temp[ gl_SubgroupID ] = smax;
+  }
+  barrier();
+  const float gmax = subgroupMax( temp[ gl_SubgroupInvocationID ] );
+  float sum = 0.0;
+  for(
+    uint i = offset;
+    i < input_length;
+    i += 1024
+  ) {
+    sum += exp( input_data[ i + input_length * batch ] - gmax );
+  }
+  const float ssum = subgroupAdd( sum );
+  if( gl_SubgroupInvocationID == 0 ) {
+    temp[ gl_SubgroupID ] = ssum;
+  }
+  barrier();
+  const float gsum = subgroupAdd( temp[ gl_SubgroupInvocationID ] );
+  for(
+    uint i = offset;
+    i < input_length;
+    i += 1024
+  ) {
+    output_data[ i + input_length * batch ] = exp( input_data[ i + input_length * batch ] - gmax ) / gsum;
+  }
+}
+

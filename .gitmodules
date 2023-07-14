@@ -19,3 +19,6 @@
 [submodule "external/hdmap"]
 	path = external/hdmap
 	url = https://github.com/Fadis/hdmap.git
+[submodule "external/half"]
+	path = external/half
+	url = https://github.com/ROCmSoftwarePlatform/half.git

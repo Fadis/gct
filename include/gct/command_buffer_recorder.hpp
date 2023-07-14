@@ -9,6 +9,8 @@
 #include <tuple>
 #include <memory>
 #include <optional>
+#include <filesystem>
+#include <tuple>
 #include <boost/range/iterator_range.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
@@ -16,6 +18,7 @@
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
 #include <gct/font.hpp>
 #include <gct/numeric_types.hpp>
+#include <gct/nnef_data.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -66,6 +69,17 @@ namespace gct {
       const std::string &filename,
       vk::BufferUsageFlags usage
     );
+    void load_buffer(
+      const std::shared_ptr< allocator_t > &allocator,
+      const void * addr,
+      std::size_t size,
+      const std::shared_ptr< buffer_t > &dest
+    );
+    void load_buffer(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::vector< uint8_t > &data,
+      const std::shared_ptr< buffer_t > &dest
+    );
     std::shared_ptr< image_t > load_image(
       const std::shared_ptr< allocator_t > &allocator,
       const std::string &filename,
@@ -73,6 +87,16 @@ namespace gct {
       bool mipmap,
       integer_attribute_t attr = integer_attribute_t::srgb,
       unsigned int max_channels_per_layer = 4
+    );
+    std::shared_ptr< std::vector< std::uint8_t > > dump_buffer(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::shared_ptr< buffer_t > &buffer
+    );
+    nnef_data_t
+    load_nnef_data(
+      const std::shared_ptr< allocator_t > &allocator,
+      const std::filesystem::path &path,
+      vk::BufferUsageFlags usage
     );
     void dump_image(
       const std::shared_ptr< allocator_t > &allocator,

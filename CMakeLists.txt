@@ -85,6 +85,7 @@ if( LIBINPUT_VERSION VERSION_LESS "1.19" )
   add_definitions( -DGCT_LIBINPUT_NO_POINTER_WHEEL )
   add_definitions( -DGCT_LIBINPUT_NO_GESTURE_HOLD )
 endif()
+find_package(NNEF REQUIRED)
 
 
 configure_file(
@@ -120,6 +121,17 @@ INSTALL(
   DESTINATION
   include/gct/include/spirv/unified1/
 )
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/half/include/half.hpp
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/half.hpp
+  COPYONLY
+)
+INSTALL(
+  FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/half.hpp
+  DESTINATION
+  include/gct/
+)
 
 INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -138,6 +150,7 @@ INCLUDE_DIRECTORIES(
   ${HARFBUZZ_INCLUDE_DIRS}
   ${ICUUC_INCLUDE_DIRS}
   ${X11_xkbcommon_INCLUDE_PATH}
+  ${NNEF_INCLUDE_DIRS}
 )
 link_directories(
   ${Boost_LIBRARY_DIRS}

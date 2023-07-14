@@ -68,7 +68,8 @@ namespace gct {
     buffer_t(
       const std::shared_ptr< allocator_t >&,
       const buffer_create_info_t&,
-      VmaMemoryUsage usage
+      VmaMemoryUsage usage,
+      VmaAllocationCreateFlags flags = VmaAllocationCreateFlags( 0 )
     );
     buffer_t( const buffer_t& ) = delete;
     buffer_t( buffer_t&& ) = default;

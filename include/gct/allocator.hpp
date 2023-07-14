@@ -45,6 +45,18 @@ namespace gct {
       vk::BufferUsageFlags,
       VmaMemoryUsage usage
     );
+    std::shared_ptr< buffer_t > create_buffer(
+      const buffer_create_info_t&,
+      VmaMemoryUsage usage,
+      VmaAllocationCreateFlags flags
+    );
+    std::shared_ptr< buffer_t > create_buffer(
+      std::size_t size,
+      vk::BufferUsageFlags,
+      VmaMemoryUsage usage,
+      VmaAllocationCreateFlags flags
+    );
+
 
     std::shared_ptr< pixel_buffer_t > create_pixel_buffer(
       const buffer_create_info_t &create_info,

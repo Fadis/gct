@@ -1,0 +1,150 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_memory_scope_semantics : enable
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1 ) in;
+layout(std430, binding = 0) buffer input_vector {
+  float input_data[];
+};
+layout(std430, binding = 1) buffer weight {
+  float weight_data[];
+};
+layout(std430, binding = 2) buffer output_vector {
+  float output_data[];
+};
+layout(std430, binding = 3) buffer bias {
+  float bias_data[];
+};
+
+layout(constant_id = 1) const int filter_size_x = 0;
+layout(constant_id = 2) const int filter_size_y = 0;
+layout(constant_id = 3) const int filter_size_z = 0;
+layout(constant_id = 4) const int lpadding = 0;
+layout(constant_id = 5) const int rpadding = 0;
+layout(constant_id = 6) const int tpadding = 0;
+layout(constant_id = 7) const int bpadding = 0;
+layout(constant_id = 8) const int stride_x = 0;
+layout(constant_id = 9) const int stride_y = 0;
+layout(constant_id = 10) const int dilation_x = 0;
+layout(constant_id = 11) const int dilation_y = 0;
+layout(constant_id = 12) const int input_dim_x = 0;
+layout(constant_id = 13) const int input_dim_y = 0;
+layout(constant_id = 14) const int input_dim_z = 0;
+layout(constant_id = 15) const int output_dim_x = 0;
+layout(constant_id = 16) const int output_dim_y = 0;
+layout(constant_id = 17) const int output_dim_z = 0;
+layout(constant_id = 18) const float border_value = 0.0;
+layout(constant_id = 19) const int bias_mode = 0;
+layout(constant_id = 20) const float bias_value = 0;
+
+int get_filter_length() {
+  return filter_size_x * filter_size_y * filter_size_z;
+}
+
+int get_filter_offset( int i ) {
+  return get_filter_length() * int( gl_GlobalInvocationID.z % output_dim_z ) + i;
+}
+
+int get_input_offset( int i ) {
+  const int input_channel = i / ( filter_size_x * filter_size_y );
+  const int input_relative_i = i % ( filter_size_x * filter_size_y );
+  const int input_relative_x = ( input_relative_i % filter_size_x ) * dilation_x;
+  const int input_relative_y = ( input_relative_i / filter_size_x ) * dilation_y;
+  const int output_x = int( gl_GlobalInvocationID.x );
+  const int output_y = int( gl_GlobalInvocationID.y );
+  const int input_x = output_x * stride_x - lpadding + input_relative_x;
+  const int input_y = output_y * stride_y - tpadding + input_relative_y;
+  const int batch = int( gl_GlobalInvocationID.z ) / output_dim_z;
+  return
+    (
+      input_x < 0 || input_x >= input_dim_x ||
+      input_y < 0 || input_y >= input_dim_y ||
+      output_x < 0 || output_x >= output_dim_x ||
+      output_y < 0 || output_y >= output_dim_y
+    ) ?
+    -1 :
+    input_dim_x * input_dim_y * input_dim_z * batch +
+    input_dim_x * input_dim_y * input_channel +
+    input_dim_x * input_y +
+    input_x;
+}
+
+int get_output_offset() {
+  const int output_x = int( gl_GlobalInvocationID.x );
+  const int output_y = int( gl_GlobalInvocationID.y );
+  const int output_channel = int( gl_GlobalInvocationID.z % output_dim_z );
+  const int batch = int( gl_GlobalInvocationID.z ) / output_dim_z;
+  return
+    (
+      output_x >= output_dim_x ||
+      output_y >= output_dim_y
+    ) ?
+    -1 :
+    output_dim_x * output_dim_y * output_dim_z * batch +
+    output_dim_x * output_dim_y * output_channel +
+    output_dim_x * output_y +
+    output_x;
+}
+
+shared float[filter_size_x*filter_size_y*filter_size_z] filter_cache;
+
+void load_filter() {
+  const uint local_id =
+    gl_LocalInvocationID.x +
+    gl_LocalInvocationID.y * gl_WorkGroupSize.x +
+    gl_LocalInvocationID.z * gl_WorkGroupSize.y * gl_WorkGroupSize.x;
+  const uint local_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y * gl_WorkGroupSize.z;
+  const uint filter_size = uint( get_filter_length() );
+  const uint cycles = filter_size / local_size + ( bool( filter_size % local_size ) ? 1 : 0 );
+  for( uint c = 0u; c != cycles; c++ ) {
+    uint i = c * local_size + local_id;
+    const int filter_offset = get_filter_offset( int( i ) );
+    if( i < filter_size ) {
+      filter_cache[ i ] = weight_data[ filter_offset ];
+    }
+  }
+}
+
+float get_input( int i ) {
+  const int input_offset = get_input_offset( i );
+  return
+    ( input_offset < 0 ) ?
+    border_value :
+    input_data[ input_offset ];
+}
+
+float get_filter( int i ) {
+  return filter_cache[ i ];
+}
+
+float get_bias() {
+  const int output_channel = int( gl_GlobalInvocationID.z % output_dim_z );
+  return
+    ( bias_mode == 0 ) ?
+    bias_value :
+    bias_data[ output_channel ];
+}
+
+void set_output( float v ) {
+  const int output_offset = get_output_offset();
+  if( output_offset >= 0 ) {
+    output_data[ output_offset ] = v;
+  }
+}
+
+void main() {
+  load_filter();
+  barrier();
+  const int filter_length = get_filter_length();
+  float sum = 0.0;
+  for( int i = 0; i != filter_length; i++ ) {
+    sum += get_input( i ) * get_filter( i );
+  }
+  sum += get_bias();
+  set_output( sum );
+}
+

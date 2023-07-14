@@ -1,4 +1,5 @@
 #include <fstream>
+#include <gct/exception.hpp>
 #include <gct/buffer.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
@@ -21,7 +22,8 @@ namespace gct {
     auto temporary_buffer = allocator->create_buffer(
       size,
       vk::BufferUsageFlagBits::eTransferSrc,
-      VMA_MEMORY_USAGE_CPU_TO_GPU
+      VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
+      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
     );
     {
       auto mapped = temporary_buffer->map< std::uint8_t >();
@@ -90,6 +92,86 @@ namespace gct {
       allocator,
       data,
       usage
+    );
+  }
+  std::shared_ptr< std::vector< std::uint8_t > > command_buffer_recorder_t::dump_buffer(
+    const std::shared_ptr< allocator_t > &allocator,
+    const std::shared_ptr< buffer_t > &buffer
+  ) {
+    std::shared_ptr< std::vector< std::uint8_t > > host_buffer(
+      new std::vector< std::uint8_t >(
+        buffer->get_props().get_basic().size
+      )
+    );
+    const auto staging_buffer = allocator->create_buffer(
+      buffer->get_props().get_basic().size,
+      vk::BufferUsageFlagBits::eTransferDst,
+      VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+    copy(
+      buffer,
+      staging_buffer
+    );
+    get_factory()->unbound()->keep.push_back( buffer );
+    get_factory()->unbound()->keep.push_back( staging_buffer );
+    get_factory()->unbound()->cbs.push_back(
+      [staging_buffer,host_buffer]( vk::Result result ) {
+        auto mapped = staging_buffer->map< std::uint8_t >();
+        std::copy(
+          mapped.begin(),
+          mapped.end(),
+          host_buffer->begin()
+        );
+      }
+    );
+    return host_buffer;
+  }
+  void command_buffer_recorder_t::load_buffer(
+    const std::shared_ptr< allocator_t > &allocator,
+    const void * addr,
+    std::size_t size,
+    const std::shared_ptr< buffer_t > &dest
+  ) {
+    if( dest->get_props().get_basic().size < size ) {
+      throw exception::length_error( "load_buffer : destination buffer is smaller than source length", __FILE__, __LINE__ );
+    }
+    auto temporary_buffer = allocator->create_buffer(
+      size,
+      vk::BufferUsageFlagBits::eTransferSrc,
+      VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
+      VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+    );
+    {
+      auto mapped = temporary_buffer->map< std::uint8_t >();
+      std::copy(
+        reinterpret_cast< const std::uint8_t* >( addr ),
+        std::next( reinterpret_cast< const std::uint8_t* >( addr ), size ),
+        mapped.begin()
+      );
+    }
+    (*get_factory())->copyBuffer(
+      **temporary_buffer,
+      **dest,
+      {
+        vk::BufferCopy()
+          .setSrcOffset( 0 )
+          .setDstOffset( 0 )
+          .setSize( size )
+      }
+    );
+    get_factory()->unbound()->keep.push_back( std::move( temporary_buffer ) );
+    get_factory()->unbound()->keep.push_back( std::move( dest ) );
+  }
+  void command_buffer_recorder_t::load_buffer(
+    const std::shared_ptr< allocator_t > &allocator,
+    const std::vector< uint8_t > &data,
+    const std::shared_ptr< buffer_t > &dest
+  ) {
+    load_buffer(
+      allocator,
+      reinterpret_cast< const void* >( data.data() ),
+      data.size(),
+      dest
     );
   }
 }

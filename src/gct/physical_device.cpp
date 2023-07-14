@@ -70,7 +70,7 @@ namespace gct {
       detect_vertex_buffer_formats();
     }
   void physical_device_t::detect_vertex_buffer_formats() {
-    for( const auto &format: get_all_formats( props.get_basic().apiVersion, props.get_available_extensions() ) ) {
+    for( const auto &format: get_all_formats( std::min( get_factory()->get_props().get_basic().pApplicationInfo->apiVersion, props.get_basic().apiVersion ), props.get_activated_extensions() ) ) {
       const auto props = handle.getFormatProperties( format );
       if( props.bufferFeatures & vk::FormatFeatureFlagBits::eVertexBuffer ) {
         vertex_buffer_formats.insert( format );

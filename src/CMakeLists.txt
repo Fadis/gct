@@ -111,6 +111,7 @@ add_library( gct SHARED
   gct/command_buffer.cpp
   gct/command_buffer_recorder.cpp
   gct/load_buffer.cpp
+  gct/load_nnef_data.cpp
   gct/load_image.cpp
   gct/copy_buffer.cpp
   gct/copy_image.cpp
@@ -206,6 +207,8 @@ add_library( gct SHARED
   gct/primitives/cube.cpp
   gct/primitives/sphere.cpp
   gct/primitives/cursor.cpp
+  gct/nnef_data.cpp
+  gct/numeric_type_to_oiio_type.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -258,6 +261,42 @@ set_target_properties(
 )
 
 install( TARGETS gct_glfw )
+
+if( NNEF_FOUND )
+add_library( gct_dnn SHARED
+  gct/dnn/nnef.cpp
+  gct/dnn/nnef2json.cpp
+  gct/dnn/graph.cpp
+  gct/dnn/linear.cpp
+  gct/dnn/convolution.cpp
+  gct/dnn/relu.cpp
+  gct/dnn/softmax.cpp
+  gct/dnn/max_pool.cpp
+  gct/dnn/reshape.cpp
+  gct/dnn/load_image.cpp
+  gct/dnn/synset_mapping.cpp
+)
+
+target_link_libraries(
+  gct_dnn
+  Threads::Threads
+  ${CMAKE_DL_LIBS}
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${NNEF_LIBRARIES}
+)
+
+set_target_properties(
+  gct_dnn
+  PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
+)
+
+install( TARGETS gct_dnn )
+
+endif()
+
 
 if( ENABLE_EXAMPLES )
 

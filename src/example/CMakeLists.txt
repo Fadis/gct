@@ -31,4 +31,10 @@ subdirs(
   rtao
   gi_diffuse2
   gi_specular
+  cooperative_matrix
+  linear
+  convolution
+  load_nnef
+  exec_nnef
+  dnn_eval
 )

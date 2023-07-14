@@ -18,7 +18,8 @@ namespace gct {
   buffer_t::buffer_t(
     const std::shared_ptr< allocator_t > &allocator,
     const buffer_create_info_t &create_info,
-    VmaMemoryUsage usage
+    VmaMemoryUsage usage,
+    VmaAllocationCreateFlags flags
   ) :
     created_from< allocator_t >( allocator ),
     props( create_info ),
@@ -26,6 +27,7 @@ namespace gct {
     props.rebuild_chain();
     VmaAllocationCreateInfo buffer_alloc_info = {};
     VkBufferCreateInfo raw_buffer_create_info = static_cast< VkBufferCreateInfo >( props.get_basic() );
+    buffer_alloc_info.flags = flags;
     buffer_alloc_info.usage = usage;
     VkBuffer buffer_;
     const auto result = vmaCreateBuffer( **allocator, &raw_buffer_create_info, &buffer_alloc_info, &buffer_, allocation.get(), nullptr );
