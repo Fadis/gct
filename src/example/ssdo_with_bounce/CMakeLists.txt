@@ -17,7 +17,10 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
+add_shader( ssdo_with_bounce shadow_mat/shadow_mat.comp )
+
 add_shader( ssdo_with_bounce shadow/world.vert )
+add_shader( ssdo_with_bounce shadow/world.geom )
 add_shader( ssdo_with_bounce shadow/world.frag )
 
 add_shader( ssdo_with_bounce geometry/tangent.frag )

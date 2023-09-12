@@ -63,9 +63,7 @@ namespace gct {
     auto &device = get_device( *this );
     auto shader = device.get_shader_module( path );
     auto descriptor_set_layout = device.get_descriptor_set_layout(
-      gct::descriptor_set_layout_create_info_t()
-        .add_binding( shader->get_props().get_reflection() )
-        .rebuild_chain()
+      shader->get_props().get_reflection(), 0u
     );
     auto pipeline = get_pipeline(
       gct::compute_pipeline_create_info_t()

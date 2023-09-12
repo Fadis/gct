@@ -12,15 +12,20 @@
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device_create_info.hpp>
+#include <gct/buffer.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/image.hpp>
 #include <gct/swapchain.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/sampler_create_info.hpp>
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
+#include <gct/pipeline_layout.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <gct/compute_pipeline_create_info.hpp>
+#include <gct/compute_pipeline.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/submit_info.hpp>
 #include <gct/shader_module.hpp>
@@ -37,11 +42,12 @@
 #include <gct/command_pool.hpp>
 #include <gct/framebuffer.hpp>
 #include <gct/render_pass.hpp>
-
-struct spec_t {
-  std::uint32_t local_x_size = 0u;
-  std::uint32_t local_y_size = 0u;
-};
+#include <gct/cubemap_matrix_generator.hpp>
+#include <gct/image_filter.hpp>
+#include <gct/named_resource.hpp>
+#include <gct/compute.hpp>
+#include <gct/common_sample_setup.hpp>
+#include <gct/tone_mapping.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -52,115 +58,16 @@ struct fb_resources_t {
   bool initial = true;
 };
 
-struct tone_state_t {
-  std::uint32_t max;
-  float scale;
-};
-
 int main( int argc, const char *argv[] ) {
-  namespace po = boost::program_options;
-  po::options_description desc( "Options" );
-  desc.add_options()
-    ( "help,h", "show this message" )
-    ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
-    ( "model,m", po::value< std::string >(), "glTF filename" )
-    ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" );
-  po::variables_map vm;
-  po::store( po::parse_command_line( argc, argv, desc ), vm );
-  po::notify( vm );
-  if( vm.count( "help" ) || !vm.count( "model" ) ) {
-    std::cout << desc << std::endl;
-    return 0;
-  }
-  const std::string walk_state_filename = vm[ "walk" ].as< std::string >();
-  const std::string model_filename = vm[ "model" ].as< std::string >();
-  const float ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
-
-  gct::glfw::get();
-  uint32_t iext_count = 0u;
-  auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
-  std::vector< const char* > iext{};
-  for( uint32_t i = 0u; i != iext_count; ++i )
-    iext.push_back( exts[ i ] );
-  iext.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
-  const auto ilayers = gct::get_instance_layers();
-  const auto iexts = gct::get_instance_extensions( std::vector< const char* >() );
-  std::shared_ptr< gct::instance_t > instance(
-    new gct::instance_t(
-      gct::instance_create_info_t()
-        .set_application_info(
-          vk::ApplicationInfo()
-            .setPApplicationName( "my_application" )
-            .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
-            .setApiVersion( VK_MAKE_VERSION( 1, 3, 0 ) )
-        )
-        .add_layer(
-          "VK_LAYER_KHRONOS_validation"
-        )
-        .add_extension(
-          iext.begin(), iext.end()
-        )
-    )
-  );
-  instance->set_debug_callback(
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-    vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-    [](
-      vk::DebugUtilsMessageSeverityFlagBitsEXT,
-      vk::DebugUtilsMessageTypeFlagsEXT,
-      const vk::DebugUtilsMessengerCallbackDataEXT &data
-    ) {
-      std::cout << "validation : " << data.pMessage << std::endl;
-      std::abort();
-    }
-  );
-
-  auto groups = instance->get_physical_devices( {} );
-  auto selected = groups[ 0 ].with_extensions( {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
-    VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
-    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-    VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-  } );
-  std::cout << nlohmann::json( groups[ 0 ] ).dump( 2 ) << std::endl;
-
-  std::uint32_t width = 1920u*2;
-  std::uint32_t height = 1080u*2;
-
-  gct::glfw_window window( width, height, "window title", false );
-  gct::glfw::get().poll();
-  auto surface = window.get_surface( *groups[ 0 ].devices[ 0 ] );
-  std::cout << nlohmann::json( *surface ).dump( 2 ) << std::endl;
- 
-  std::vector< gct::queue_requirement_t > queue_requirements{
-    gct::queue_requirement_t{
-      vk::QueueFlagBits::eGraphics,
-      0u,
-      vk::Extent3D(),
-#ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-      vk::QueueGlobalPriorityEXT(),
-#endif
-      { **surface },
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer
-    }
-  };
-  auto device = selected.create_device(
-    queue_requirements,
-    gct::device_create_info_t()
-  );
-  auto queue = device->get_queue( 0u );
-  auto gcb = queue->get_command_pool()->allocate();
-
-  auto swapchain = device->get_swapchain( surface );
-  auto swapchain_images = swapchain->get_images();
-  std::cout << "swapchain images : " << swapchain_images.size() << std::endl;
-
-  auto descriptor_pool = device->get_descriptor_pool(
+  const gct::common_sample_setup res(
+    argc, argv,
+    {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
+      VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
+      VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+      VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    },
     gct::descriptor_pool_create_info_t()
       .set_basic(
         vk::DescriptorPoolCreateInfo()
@@ -168,266 +75,111 @@ int main( int argc, const char *argv[] ) {
           .setMaxSets( 250 )
       )
       .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 2 )
+      .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 1 )
       .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 9 )
       .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 8 )
       .rebuild_chain()
   );
 
-  auto pipeline_cache = device->get_pipeline_cache();
-
-  auto shadow_render_pass = device->get_render_pass(
-    gct::render_pass_create_info_t()
-      .add_attachment(
-        vk::AttachmentDescription()
-          .setFormat( vk::Format::eR32G32Sfloat )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setLoadOp( vk::AttachmentLoadOp::eClear )
-          .setStoreOp( vk::AttachmentStoreOp::eStore )
-          .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
-          .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
-          .setFinalLayout( vk::ImageLayout::eShaderReadOnlyOptimal )
-      )
-      .add_attachment(
-        vk::AttachmentDescription()
-          .setFormat( vk::Format::eD32Sfloat )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setLoadOp( vk::AttachmentLoadOp::eClear )
-          .setStoreOp( vk::AttachmentStoreOp::eStore )
-          .setStencilLoadOp( vk::AttachmentLoadOp::eDontCare )
-          .setStencilStoreOp( vk::AttachmentStoreOp::eDontCare )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
-          .setFinalLayout( vk::ImageLayout::eDepthStencilAttachmentOptimal )
-      )
-      .add_subpass(
-        gct::subpass_description_t()
-          .add_color_attachment( 0, vk::ImageLayout::eColorAttachmentOptimal )
-          .set_depth_stencil_attachment( 1, vk::ImageLayout::eDepthStencilAttachmentOptimal )
-          .rebuild_chain()
-      )
-      .rebuild_chain()
-  );
-
-  VmaAllocatorCreateInfo allocator_create_info{};
-  auto allocator = device->get_allocator(
-    allocator_create_info
+  gct::cubemap_matrix_generator shadow_mat(
+    res.allocator,
+    res.descriptor_pool,
+    res.pipeline_cache,
+    CMAKE_CURRENT_BINARY_DIR "/shadow_mat/shadow_mat.comp.spv",
+    res.swapchain_images.size()
   );
 
   const unsigned int shadow_map_size = 1024u;
-  std::vector< gct::cubemap_images > cubemap_images;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    cubemap_images.emplace_back( gct::cubemap_images(
-      allocator,
-      {
-        gct::image_create_info_t()
-          .set_basic(
-            vk::ImageCreateInfo()
-              .setImageType( vk::ImageType::e2D )
-              .setFormat( vk::Format::eR32G32Sfloat )
-              .setExtent(
-                vk::Extent3D()
-                  .setWidth( shadow_map_size )
-                  .setHeight( shadow_map_size )
-                  .setDepth( 1 )
-              )
-              .setUsage(
-                vk::ImageUsageFlagBits::eColorAttachment |
-                vk::ImageUsageFlagBits::eSampled |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-          ),
-        gct::image_create_info_t()
-          .set_basic(
-            vk::ImageCreateInfo()
-              .setImageType( vk::ImageType::e2D )
-              .setFormat( vk::Format::eD32Sfloat )
-              .setExtent(
-                vk::Extent3D()
-                  .setWidth( shadow_map_size )
-                  .setHeight( shadow_map_size )
-                  .setDepth( 1 )
-              )
-              .setUsage(
-                vk::ImageUsageFlagBits::eDepthStencilAttachment |
-                vk::ImageUsageFlagBits::eSampled
-              )
-          )
-      },
-      shadow_render_pass,
-      std::vector< vk::ClearValue >{
-        vk::ClearColorValue( gct::color::web::white ),
-        vk::ClearDepthStencilValue( 1.f, 0 )
-      }
-    ) );
-  }
-  auto cubemap_sampler = device->get_sampler(
+  gct::gbuffer shadow_gbuffer(
+    gct::gbuffer_create_info()
+      .set_allocator( res.allocator )
+      .set_width( shadow_map_size )
+      .set_height( shadow_map_size )
+      .set_layer( 6 )
+      .set_swapchain_image_count( res.swapchain_images.size() )
+      .set_color_buffer_count( 1 )
+      .set_flags( vk::ImageCreateFlagBits::eCubeCompatible )
+      .set_format( vk::Format::eR32G32Sfloat ) 
+      .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
+      .set_clear_color( gct::color::web::white )
+  );
+
+  gct::cubemap_images2 cubemap_images( shadow_gbuffer.get_image_views() );
+
+  auto cubemap_sampler = res.device->get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
 
   constexpr std::size_t gbuf_count = 8u;
   gct::gbuffer gbuffer(
-    allocator,
-    width,
-    height,
-    swapchain_images.size(),
+    res.allocator,
+    res.width,
+    res.height,
+    res.swapchain_images.size(),
     gbuf_count
   );
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( gbuffer.get_image_views(), vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
 
   std::vector< fb_resources_t > framebuffers;
 
-  const auto dynamic_descriptor_set_layout = device->get_descriptor_set_layout(
-    gct::descriptor_set_layout_create_info_t()
-      .add_binding(
-        vk::DescriptorSetLayoutBinding()
-          .setBinding( 0 )
-          .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-          .setDescriptorCount( 1u )
-          .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
-      )
-      .add_binding(
-        vk::DescriptorSetLayoutBinding()
-          .setBinding( 1 )
-          .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-          .setDescriptorCount( 1u )
-          .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
-      )
+  const auto dynamic_descriptor_set_layout = res.device->get_descriptor_set_layout(
+    {
+      CMAKE_CURRENT_BINARY_DIR "/geometry",
+      CMAKE_CURRENT_BINARY_DIR "/shadow"
+    },
+    1u
   );
-  std::vector< std::shared_ptr< gct::buffer_t > > staging_dynamic_uniform;
-  std::vector< std::shared_ptr< gct::buffer_t > > dynamic_uniform;
+  std::vector< std::shared_ptr< gct::mappable_buffer_t > > dynamic_uniform;
   std::vector< std::shared_ptr< gct::descriptor_set_t > > dynamic_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    staging_dynamic_uniform.emplace_back(
-      allocator->create_buffer(
-        sizeof( gct::gltf::dynamic_uniforms_t ),
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
-      )
-    );
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     dynamic_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_mappable_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
-        vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        vk::BufferUsageFlagBits::eUniformBuffer
       )
     );
     dynamic_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         dynamic_descriptor_set_layout
       )
     );
-    std::vector< gct::write_descriptor_set_t > updates;
-    updates.push_back(
-      gct::write_descriptor_set_t()
-        .set_basic(
-          vk::WriteDescriptorSet()
-            .setDstSet( **dynamic_descriptor_set.back() )
-            .setDstBinding( 0u )
-            .setDescriptorCount( 1u )
-            .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-        )
-        .add_buffer( dynamic_uniform.back() )
-    );
-    updates.push_back(
-      gct::write_descriptor_set_t()
-        .set_basic(
-          vk::WriteDescriptorSet()
-            .setDstSet( **dynamic_descriptor_set.back() )
-            .setDstBinding( 1u )
-            .setDescriptorCount( 1u )
-            .setDescriptorType( vk::DescriptorType::eCombinedImageSampler )
-        )
-        .add_image(
-          gct::descriptor_image_info_t()
-            .set_sampler( cubemap_sampler )
-            .set_image_view( cubemap_images[ i ].get_cube_image_views( 0 ) )
-            .set_basic(
-              vk::DescriptorImageInfo()
-                .setImageLayout(
-                  vk::ImageLayout::eShaderReadOnlyOptimal
-                )
-            )
-        )
-    );
-    dynamic_descriptor_set.back()->update( updates );
+    dynamic_descriptor_set.back()->update({
+      { "dynamic_uniforms", dynamic_uniform.back() },
+      { "shadow", cubemap_sampler, cubemap_images.get_cube_image_views()[ i ], vk::ImageLayout::eShaderReadOnlyOptimal }
+    });
   }
 
-  const auto r32ici =
-    gct::image_create_info_t()
-      .set_basic(
-        vk::ImageCreateInfo()
-          .setImageType( vk::ImageType::e2D )
-          .setFormat( vk::Format::eR32Sfloat )
-          .setExtent( { width, height, 1 } )
-          .setMipLevels( 1 )
-          .setArrayLayers( 1 )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage
-          )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
-      );
   const auto rgba32ici =
     gct::image_create_info_t()
       .set_basic(
-        vk::ImageCreateInfo()
-          .setImageType( vk::ImageType::e2D )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
-          .setExtent( { width, height, 1 } )
-          .setMipLevels( 1 )
-          .setArrayLayers( 1 )
-          .setSamples( vk::SampleCountFlagBits::e1 )
-          .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage
-          )
-          .setInitialLayout( vk::ImageLayout::eUndefined )
+        gct::basic_2d_image( res.width, res.height )
+          .setUsage( vk::ImageUsageFlagBits::eStorage )
       );
 
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     framebuffers.emplace_back(
       fb_resources_t{
-        device->get_semaphore(),
-        device->get_semaphore(),
-        device->get_semaphore(),
-        queue->get_command_pool()->allocate(),
+        res.device->get_semaphore(),
+        res.device->get_semaphore(),
+        res.device->get_semaphore(),
+        res.queue->get_command_pool()->allocate(),
         gbuffer.get_render_pass_begin_info( i )
       }
     );
   }
 
-
-  const auto [light_descriptor_set_layout,light_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv"
+  const auto diffuse = res.allocator->create_image_views(
+    rgba32ici,
+    VMA_MEMORY_USAGE_GPU_ONLY,
+    res.swapchain_images.size()
+  );
+  const auto specular = res.allocator->create_image_views(
+    rgba32ici,
+    VMA_MEMORY_USAGE_GPU_ONLY,
+    res.swapchain_images.size()
   );
 
-  std::vector< std::shared_ptr< gct::image_view_t > > diffuse;
-  std::vector< std::shared_ptr< gct::image_view_t > > specular;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    diffuse.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-    specular.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( diffuse, vk::ImageLayout::eGeneral );
@@ -435,303 +187,116 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > light_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    light_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        light_descriptor_set_layout
-      )
-    );
-    light_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "diffuse_image" ] )
-          .add_image( diffuse[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "specular_image" ] )
-          .add_image( specular[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*light_descriptor_set.back())[ "dynamic_uniforms" ] )
-          .add_buffer( dynamic_uniform[ i ] )
-      }
-    );
-  }
 
-
-  std::vector< std::shared_ptr< gct::buffer_t > > tone;
-  std::vector< std::shared_ptr< gct::buffer_t > > tone_staging;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    tone.push_back(
-      allocator->create_buffer(
-        sizeof( tone_state_t ),
-        vk::BufferUsageFlagBits::eStorageBuffer|
-        vk::BufferUsageFlagBits::eTransferDst|
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )
-    );
-    tone_staging.push_back(
-      allocator->create_buffer(
-        sizeof( tone_state_t ),
-        vk::BufferUsageFlagBits::eTransferDst|
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
-      )
-    );
-  }
-  
-
-  const auto [mix_ao_descriptor_set_layout,mix_ao_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv"
+  const auto lighting = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv" )
+      .set_swapchain_image_count( res.swapchain_images.size() )
+      .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "diffuse_image", diffuse } )
+      .add_resource( { "specular_image", specular } )
+      .add_resource( { "dynamic_uniforms", dynamic_uniform } )
   );
 
+  const auto mixed_out = res.allocator->create_image_views(
+    rgba32ici,
+    VMA_MEMORY_USAGE_GPU_ONLY,
+    res.swapchain_images.size()
+  );
 
-  std::vector< std::shared_ptr< gct::image_view_t > > mixed_out;
-  std::vector< std::shared_ptr< gct::image_view_t > > bloom_out;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    mixed_out.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-    bloom_out.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( mixed_out, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( bloom_out, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
 
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > mix_ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    mix_ao_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        mix_ao_descriptor_set_layout
-      )
-    );
-    mix_ao_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "gbuffer" ] )
-          .add_image( gbuffer.get_image_view( i ) ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "diffuse_image" ] )
-          .add_image( diffuse[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "specular_image" ] )
-          .add_image( specular[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "dest_image" ] )
-          .add_image( mixed_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "bloom_image" ] )
-          .add_image( bloom_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "tone" ] )
-          .add_buffer( tone[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*mix_ao_descriptor_set.back())[ "dynamic_uniforms" ] )
-          .add_buffer( dynamic_uniform[ i ] )
-      }
-    );
-  }
-
-  const auto [bloom_hgauss_descriptor_set_layout,bloom_hgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv"
-  );
-  const auto [bloom_vgauss_descriptor_set_layout,bloom_vgauss_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv"
+  const gct::tone_mapping tone(
+    gct::tone_mapping_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv" )
+      .set_input( mixed_out )
   );
 
-  std::vector< std::shared_ptr< gct::image_view_t > > bloom_gauss_temp;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    bloom_gauss_temp.push_back(
-      allocator->create_image(
-        rgba32ici,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )->get_view( vk::ImageAspectFlagBits::eColor )
-    );
-  }
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( bloom_gauss_temp, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > bloom_hgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    bloom_hgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        bloom_hgauss_descriptor_set_layout
-      )
-    );
-    bloom_hgauss_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*bloom_hgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( bloom_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*bloom_hgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( bloom_gauss_temp[ i ] )
-      }
-    );
-  }
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > bloom_vgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    bloom_vgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        bloom_vgauss_descriptor_set_layout
-      )
-    );
-    bloom_vgauss_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*bloom_vgauss_descriptor_set.back())[ "src_image" ] )
-          .add_image( bloom_gauss_temp[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*bloom_vgauss_descriptor_set.back())[ "dest_image" ] )
-          .add_image( bloom_out[ i ] )
-      }
-    );
-  }
-
-
-
-  const auto [tone_descriptor_set_layout,tone_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv"
+  const auto bloom_gauss = gct::image_filter(
+    gct::image_filter_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv" )
+      .set_input_name( "diffuse_image" )
+      .set_input( diffuse )
+      .set_output_name( "bloom_image" )
+      .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "specular_image", specular } )
+      .add_resource( { "dest_image", mixed_out } )
+      .add_resource( { "tone", tone.get_buffer() } )
+      .add_resource( { "dynamic_uniforms", dynamic_uniform } )
+  )(
+    gct::image_filter_create_info()
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv" )
+  )(
+    gct::image_filter_create_info()
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv" )
   );
-
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > tone_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    tone_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        tone_descriptor_set_layout
-      )
-    );
-    tone_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*tone_descriptor_set.back())[ "src_image" ] )
-          .add_image( mixed_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*tone_descriptor_set.back())[ "tone" ] )
-          .add_buffer( tone[ i ] )
-      }
-    );
-  }
-
-  const auto [gamma_descriptor_set_layout,gamma_pipeline] = pipeline_cache->get_pipeline(
-    CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv"
+  
+  const auto gamma = gct::image_filter(
+    gct::image_filter_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv" )
+      .set_input( mixed_out )
+      .set_output( res.swapchain_image_views )
+      .add_resource( { "bloom_image", bloom_gauss.get_output(), vk::ImageLayout::eGeneral } )
   );
-  {
-    auto command_buffer = queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( swapchain_images, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-  std::vector< std::shared_ptr< gct::image_view_t > > swapchain_image_views;
-  for( const auto &image: swapchain_images ) {
-    swapchain_image_views.push_back( image->get_view( vk::ImageAspectFlagBits::eColor ) );
-  }
-
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > gamma_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
-    gamma_descriptor_set.push_back(
-      descriptor_pool->allocate(
-        gamma_descriptor_set_layout
-      )
-    );
-    gamma_descriptor_set.back()->update(
-      {
-        gct::write_descriptor_set_t()
-          .set_basic( (*gamma_descriptor_set.back())[ "src_image" ] )
-          .add_image( mixed_out[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*gamma_descriptor_set.back())[ "dest_image" ] )
-          .add_image( swapchain_image_views[ i ] ),
-        gct::write_descriptor_set_t()
-          .set_basic( (*gamma_descriptor_set.back())[ "bloom_image" ] )
-          .add_image( bloom_out[ i ] )
-      }
-    );
-  }
-
 
   gct::gltf::document_t doc;
   {
-    auto rec = gcb->begin();
-    doc = gct::gltf::load_gltf(
-      model_filename,
-      device,
-      rec,
-      allocator,
-      descriptor_pool,
-      {
-        shadow_render_pass,
-        gbuffer.get_render_pass()
-      },
-      {
-        CMAKE_CURRENT_BINARY_DIR "/shadow",
-        CMAKE_CURRENT_BINARY_DIR "/geometry"
-      },
-      0,
-      framebuffers.size(),
-      0,
-      float( width ) / float( height ),
-      false,
-      {
-        dynamic_descriptor_set_layout
-      }
-    );
+    const auto gcb = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = gcb->begin();
+      doc = gct::gltf::load_gltf(
+        res.model_filename,
+        res.device,
+        rec,
+        res.allocator,
+        res.descriptor_pool,
+        {
+          shadow_gbuffer.get_render_pass(),
+          gbuffer.get_render_pass()
+        },
+        {
+          CMAKE_CURRENT_BINARY_DIR "/shadow",
+          CMAKE_CURRENT_BINARY_DIR "/geometry"
+        },
+        0,
+        framebuffers.size(),
+        0,
+        float( res.width ) / float( res.height ),
+        false,
+        {
+          dynamic_descriptor_set_layout
+        }
+      );
+    }
+    gcb->execute_and_wait();
   }
-  gcb->execute_and_wait();
 
   auto center = ( doc.node.min + doc.node.max ) / 2.f;
   auto scale = std::abs( glm::length( doc.node.max - doc.node.min ) );
 
-  gct::cubemap_matrix cubemap_matrix( 
-    glm::vec3{ 0.f, 0.f, 0.f },
-    std::min( 0.1f*scale, 0.5f ),
-    2.f*scale
-  );
-
-  auto const viewport =
-    vk::Viewport()
-      .setWidth( width )
-      .setHeight( height )
-      .setMinDepth( 0.0f )
-      .setMaxDepth( 1.0f );
-  vk::Rect2D const scissor( vk::Offset2D(0, 0), vk::Extent2D( width, height ) );
-  auto const cube_viewport =
-    vk::Viewport()
-      .setWidth( shadow_map_size )
-      .setHeight( shadow_map_size )
-      .setMinDepth( 0.0f )
-      .setMaxDepth( 1.0f );
-  vk::Rect2D const cube_scissor( vk::Offset2D(0, 0), vk::Extent2D( shadow_map_size, shadow_map_size ) );
-
-
-  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
+  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(res.width)/float(res.height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;
 
-  gct::glfw_walk walk( center, scale, walk_state_filename );
+  gct::glfw_walk walk( center, scale, res.walk_state_filename );
   const auto point_lights = gct::gltf::get_point_lights(
     doc.node,
     doc.point_light
@@ -740,59 +305,37 @@ int main( int argc, const char *argv[] ) {
     walk.set_light_energy( point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100 );
     walk.set_light_pos( point_lights[ 0 ].location );
   }
-  window.set_on_key(
+  res.window->set_on_key(
     [&walk]( gct::glfw_window &p, int key, int scancode, int action, int mods ) {
       walk( p, key, scancode, action, mods );
     }
   );
-  window.set_on_closed(
+  res.window->set_on_closed(
     [&walk]( auto & ) {
       walk.set_end();
     }
   );
 
-  std::vector< std::shared_ptr< gct::buffer_t > > staging_cube_uniform;
-  std::vector< std::shared_ptr< gct::buffer_t > > cube_uniform;
-  std::vector< std::shared_ptr< gct::descriptor_set_t > > cube_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size() * 6u; ++i ) {
-    staging_cube_uniform.emplace_back(
-      allocator->create_buffer(
+  std::vector< std::shared_ptr< gct::mappable_buffer_t > > shadow_uniform;
+  std::vector< std::shared_ptr< gct::descriptor_set_t > > shadow_descriptor_set;
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
+    shadow_uniform.emplace_back(
+      res.allocator->create_mappable_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        vk::BufferUsageFlagBits::eUniformBuffer
       )
     );
-    cube_uniform.emplace_back(
-      allocator->create_buffer(
-        sizeof( gct::gltf::dynamic_uniforms_t ),
-        vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )
-    );
-    cube_descriptor_set.push_back(
-      descriptor_pool->allocate(
+    shadow_descriptor_set.push_back(
+      res.descriptor_pool->allocate(
         dynamic_descriptor_set_layout
       )
     );
-    std::vector< gct::write_descriptor_set_t > updates;
-    updates.push_back(
-      gct::write_descriptor_set_t()
-        .set_basic(
-          vk::WriteDescriptorSet()
-            .setDstSet( **cube_descriptor_set.back() )
-            .setDstBinding( 0u )
-            .setDescriptorCount( 1u )
-            .setDescriptorType( vk::DescriptorType::eUniformBuffer )
-        )
-        .add_buffer( cube_uniform.back() )
-    );
-    cube_descriptor_set.back()->update( updates );
+    shadow_descriptor_set.back()->update({
+      { "dynamic_uniforms", shadow_uniform.back() },
+      { "matrices", shadow_mat.get_buffer()[ i ] }
+    });
   }
   
-  gct::hysteresis< float > tone_scale(
-    1.f, 10, 60
-  );
-
   uint32_t current_frame = 0u;
   uint32_t last_image_index = framebuffers.size();
   while( !walk.end() ) {
@@ -804,48 +347,42 @@ int main( int argc, const char *argv[] ) {
       sync.command_buffer->wait_for_executed();
     }
     else sync.initial = false;
-    auto image_index = swapchain->acquire_next_image( sync.image_acquired );
+    auto image_index = res.swapchain->acquire_next_image( sync.image_acquired );
     auto &fb = framebuffers[ image_index ];
-    {
-      auto mapped = tone_staging[ image_index ]->map< tone_state_t >();
-      tone_scale.set( mapped.begin()->max / 65536.f );
-      mapped.begin()->max = 0u;
-      mapped.begin()->scale = tone_scale.get();
-    }
-
+    
     {
       auto rec = sync.command_buffer->begin();
-      cubemap_matrix.move_center( walk.get_light_pos() );
+      
+      tone.set( rec, image_index );
 
-      for( unsigned int i = 0u; i != 6u; ++i ) {
+      shadow_mat( rec, walk.get_light_pos(), std::min( 0.1f*scale, 0.5f ), 2.f*scale, image_index );
+
+      {
         auto dynamic_data = gct::gltf::dynamic_uniforms_t()
-          .set_projection_matrix( cubemap_matrix.get_projection_matrix() )
-          .set_camera_matrix( cubemap_matrix.get_view_matrix( i ) )
           .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
           .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
           .set_light_energy( walk.get_light_energy() )
           .set_light_size( light_size )
-          .set_ambient( ambient_level );
+          .set_ambient( res.ambient_level );
         rec.copy(
           dynamic_data,
-          staging_cube_uniform[ i + image_index * 6u ],
-          cube_uniform[ i + image_index * 6u ]
+          shadow_uniform[ image_index ]
         );
-        rec.barrier(
-          vk::AccessFlagBits::eTransferRead,
-          vk::AccessFlagBits::eShaderRead,
-          vk::PipelineStageFlagBits::eTransfer,
-          vk::PipelineStageFlagBits::eVertexShader,
-          vk::DependencyFlagBits( 0 ),
-          { cube_uniform[ i + image_index * 6u ] },
-          {}
-        );
+      }
+
+      rec.transfer_to_graphics_barrier(
+        {
+          shadow_uniform[ image_index ]->get_buffer()
+        },
+        {}
+      );
+      {
         auto render_pass_token = rec.begin_render_pass(
-          cubemap_images[ image_index ].get_render_pass_begin_info( i ),
+          shadow_gbuffer.get_render_pass_begin_info( image_index ),
           vk::SubpassContents::eInline
         );
-        rec->setViewport( 0, 1, &cube_viewport );
-        rec->setScissor( 0, 1, &cube_scissor );
+        rec->setViewport( 0, 1, &shadow_gbuffer.get_viewport() );
+        rec->setScissor( 0, 1, &shadow_gbuffer.get_scissor() );
         gct::gltf::draw_node(
           rec,
           doc.node,
@@ -853,10 +390,14 @@ int main( int argc, const char *argv[] ) {
           doc.buffer,
           0u,
           {
-            cube_descriptor_set[ i + image_index * 6u ]
+            shadow_descriptor_set[ image_index ]
           }
         );
       }
+      rec.convert_image(
+        shadow_gbuffer.get_image( image_index ),
+        vk::ImageLayout::eShaderReadOnlyOptimal
+      );
       rec.barrier(
         vk::AccessFlagBits::eColorAttachmentWrite,
         vk::AccessFlagBits::eShaderRead,
@@ -864,33 +405,26 @@ int main( int argc, const char *argv[] ) {
         vk::PipelineStageFlagBits::eFragmentShader,
         vk::DependencyFlagBits( 0 ),
         {},
-        { cubemap_images[ image_index ].get_image( 0 ) }
+        {
+          shadow_gbuffer.get_image( image_index )
+        }
       );
-
-      rec.copy(
-        tone_staging[ image_index ],
-        tone[ image_index ]
-      );
-      auto dynamic_data = gct::gltf::dynamic_uniforms_t()
-        .set_projection_matrix( projection )
-        .set_camera_matrix( walk.get_lookat() )
-        .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-        .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
-        .set_light_energy( walk.get_light_energy() )
-        .set_light_size( light_size )
-        .set_ambient( ambient_level );
-      rec.copy(
-        dynamic_data,
-        staging_dynamic_uniform[ image_index ],
-        dynamic_uniform[ image_index ]
-      );
-      rec.barrier(
-        vk::AccessFlagBits::eTransferRead,
-        vk::AccessFlagBits::eShaderRead,
-        vk::PipelineStageFlagBits::eTransfer,
-        vk::PipelineStageFlagBits::eVertexShader,
-        vk::DependencyFlagBits( 0 ),
-        { dynamic_uniform[ image_index ] },
+      {
+        auto dynamic_data = gct::gltf::dynamic_uniforms_t()
+          .set_projection_matrix( projection )
+          .set_camera_matrix( walk.get_lookat() )
+          .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+          .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+          .set_light_energy( walk.get_light_energy() )
+          .set_light_size( light_size )
+          .set_ambient( res.ambient_level );
+        rec.copy(
+          dynamic_data,
+          dynamic_uniform[ image_index ]
+        );
+      }
+      rec.transfer_to_graphics_barrier(
+        { dynamic_uniform[ image_index ]->get_buffer() },
         {}
       );
       {
@@ -898,8 +432,8 @@ int main( int argc, const char *argv[] ) {
           fb.render_pass_begin_info,
           vk::SubpassContents::eInline
         );
-        rec->setViewport( 0, 1, &viewport );
-        rec->setScissor( 0, 1, &scissor );
+        rec->setViewport( 0, 1, &gbuffer.get_viewport() );
+        rec->setScissor( 0, 1, &gbuffer.get_scissor() );
         gct::gltf::draw_node(
           rec,
           doc.node,
@@ -915,12 +449,8 @@ int main( int argc, const char *argv[] ) {
         gbuffer.get_image( image_index ),
         vk::ImageLayout::eGeneral
       );
-      
-      rec.bind(
-        light_pipeline,
-        { light_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
+
+      lighting( rec, image_index, res.width, res.height, 1u );
 
       rec.compute_barrier(
         {},
@@ -929,64 +459,15 @@ int main( int argc, const char *argv[] ) {
           specular[ image_index ]->get_factory()
         }
       );
-      rec.bind(
-        mix_ao_pipeline,
-        { mix_ao_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.compute_barrier(
-        {},
-        {
-          mixed_out[ image_index ]->get_factory(),
-          bloom_out[ image_index ]->get_factory()
-        }
-      );
-      rec.bind(
-        bloom_hgauss_pipeline,
-        { bloom_hgauss_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.compute_barrier(
-        {},
-        { bloom_gauss_temp[ image_index ]->get_factory() }
-      );
-      rec.bind(
-        bloom_vgauss_pipeline,
-        { bloom_vgauss_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.compute_barrier(
-        {},
-        { bloom_out[ image_index ]->get_factory() }
-      );
-      rec.transfer_to_compute_barrier(
-        { tone[ image_index ] },
-        {}
-      );
-      rec.bind(
-        tone_pipeline,
-        { tone_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.compute_to_transfer_barrier(
-        { tone[ image_index ] },
-        {}
-      );
-      rec.copy(
-        tone[ image_index ],
-        tone_staging[ image_index ]
-      );
+
+      bloom_gauss( rec, image_index );
+
+      tone.get( rec, image_index );
+      
+      gamma( rec, image_index );
+      
       rec.convert_image(
-        swapchain_images[ image_index ],
-        vk::ImageLayout::eGeneral
-      );
-      rec.bind(
-        gamma_pipeline,
-        { gamma_descriptor_set[ image_index ] }
-      );
-      rec.dispatch_threads( width, height, 1 );
-      rec.convert_image(
-        swapchain_images[ image_index ],
+        res.swapchain_images[ image_index ],
         vk::ImageLayout::ePresentSrcKHR
       );
     }
@@ -995,17 +476,17 @@ int main( int argc, const char *argv[] ) {
         .add_wait_for( sync.image_acquired, vk::PipelineStageFlagBits::eColorAttachmentOutput )
         .add_signal_to( sync.draw_complete )
     );
-    queue->present(
+    res.queue->present(
       gct::present_info_t()
         .add_wait_for( sync.draw_complete )
-        .add_swapchain( swapchain, image_index )
+        .add_swapchain( res.swapchain, image_index )
     );
     last_image_index = image_index;
     glfwPollEvents();
     ++current_frame;
     current_frame %= framebuffers.size();
   }
-  (*queue)->waitIdle();
-  walk.save( walk_state_filename );
+  (*res.queue)->waitIdle();
+  walk.save( res.walk_state_filename );
 }
 

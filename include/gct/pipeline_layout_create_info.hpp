@@ -26,6 +26,9 @@ namespace gct {
       const std::shared_ptr< shader_module_t > &v
     );
     pipeline_layout_create_info_t &clear_push_constant_range();
+    const std::vector< vk::PushConstantRange > &get_push_constant_range() const {
+      return push_constant_range;
+    }
   };
   void to_json( nlohmann::json &root, const pipeline_layout_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_layout_create_info_t &v );

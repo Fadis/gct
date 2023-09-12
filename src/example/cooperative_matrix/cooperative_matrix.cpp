@@ -203,7 +203,7 @@ int main() {
     }
   );
 
-  std::shared_ptr< std::vector< std::uint8_t > > host_d_dest;
+  std::vector< std::uint8_t > host_d_dest;
 
   {
     auto rec = command_buffer->begin();
@@ -223,16 +223,20 @@ int main() {
       { d },
       {}
     );
-    host_d_dest = rec.dump_buffer( allocator, d );
+    rec.dump_buffer( allocator, d ).then(
+      [&]( std::vector< std::uint8_t > &&v ) {
+        host_d_dest = std::move( v );
+      }
+    );
   }
   command_buffer->execute(
     gct::submit_info_t()
   );
   command_buffer->wait_for_executed();
-  std::vector< half_float::half > host_d_float( host_d_dest->size() / sizeof( half_float::half ) );
+  std::vector< half_float::half > host_d_float( host_d_dest.size() / sizeof( half_float::half ) );
   std::copy(
-    host_d_dest->begin(),
-    host_d_dest->end(),
+    host_d_dest.begin(),
+    host_d_dest.end(),
     reinterpret_cast< std::uint8_t* >( host_d_float.data() )
   );
   std::cout << "#!/usr/bin/env python" << std::endl;

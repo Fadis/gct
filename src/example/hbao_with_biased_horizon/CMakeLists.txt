@@ -17,7 +17,10 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
+add_shader( hbao_with_biased_horizon shadow_mat/shadow_mat.comp )
+
 add_shader( hbao_with_biased_horizon shadow/world.vert )
+add_shader( hbao_with_biased_horizon shadow/world.geom )
 add_shader( hbao_with_biased_horizon shadow/world.frag )
 
 add_shader( hbao_with_biased_horizon geometry/tangent.frag )

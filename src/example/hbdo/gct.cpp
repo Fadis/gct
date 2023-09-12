@@ -939,7 +939,7 @@ int main() {
   vk::Rect2D const cube_scissor( vk::Offset2D(0, 0), vk::Extent2D( shadow_map_size, shadow_map_size ) );
 
 
-  const glm::mat4 projection = glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
+  const glm::mat4 projection = glm::perspective( 0.39959648408210363f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;
 
   gct::glfw_walk walk( center, scale );

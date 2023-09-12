@@ -15,6 +15,9 @@ namespace gct {
   class fence_t;
   class submit_info_t;
   class bound_command_buffer_t;
+  class render_pass_begin_info_t;
+  class compute_pipeline_t;
+  class graphics_pipeline_t;
   class command_buffer_t : public created_from< command_pool_t >, public std::enable_shared_from_this< command_buffer_t > {
   public:
     friend command_buffer_recorder_t;
@@ -98,10 +101,28 @@ namespace gct {
     void wait_for_executed();
     bool wait_for_executed( std::uint64_t );
     void execute_and_wait();
+    void set_current_render_pass( const render_pass_begin_info_t& );
+    void clear_current_render_pass();
+    const std::shared_ptr< render_pass_begin_info_t > &get_current_render_pass() const {
+      return current_render_pass;
+    }
+    void set_current_compute_pipeline( const std::shared_ptr< compute_pipeline_t >& );
+    void clear_current_compute_pipeline();
+    const std::shared_ptr< compute_pipeline_t > &get_current_compute_pipeline() const {
+      return current_compute_pipeline;
+    }
+    void set_current_graphics_pipeline( const std::shared_ptr< graphics_pipeline_t >& );
+    void clear_current_graphics_pipeline();
+    const std::shared_ptr< graphics_pipeline_t > &get_current_graphics_pipeline() const {
+      return current_graphics_pipeline;
+    }
   private:
     std::shared_ptr< command_buffer_t > buffer;
     std::shared_ptr< fence_t > fence;
     bool executing = false;
+    std::shared_ptr< render_pass_begin_info_t > current_render_pass;
+    std::shared_ptr< compute_pipeline_t > current_compute_pipeline;
+    std::shared_ptr< graphics_pipeline_t > current_graphics_pipeline;
   };
 }
 

@@ -1,0 +1,84 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, r32f) writeonly uniform image2D dest_image;
+
+layout(local_size_x = 256, local_size_y = 4 ) in;
+
+layout(push_constant) uniform PushConstants {
+  vec4 eye_pos;
+  vec4 light_pos;
+  vec4 g;
+  vec4 fog_color;
+  float light_energy;
+  uint stride;
+  uint vertex_offset;
+} push_constants;
+
+layout(std430, binding = 2) buffer vertex_buffer {
+  float vertices[];
+};
+
+void main()  {
+  const int line_index = int( gl_GlobalInvocationID.x );
+  const int line_count = int( gl_NumWorkGroups.x * gl_WorkGroupSize.x );
+  const int vertex_index = int( gl_GlobalInvocationID.y );
+  const int vertex_count = int( gl_NumWorkGroups.y * gl_WorkGroupSize.y );
+  const int in_index = int( ( line_index * vertex_count + vertex_index ) * push_constants.stride );
+  const vec2 screen_pos_f = vec2(
+    min( vertices[ in_index + push_constants.vertex_offset ] * 0.5 + 0.5, 1.0 ),
+    min( vertices[ in_index + push_constants.vertex_offset + 1 ] * 0.5 + 0.5, 1.0 )
+  ) * vec2( imageSize( gbuffer ).xy - ivec2( 1, 1 ) );
+  const uint prev_in_index = ( line_index * vertex_count + max( vertex_index - 1, 0 ) ) * push_constants.stride;
+  const vec2 prev_screen_pos_f = vec2(
+    min( vertices[ prev_in_index + push_constants.vertex_offset ] * 0.5 + 0.5, 1.0 ),
+    min( vertices[ prev_in_index + push_constants.vertex_offset + 1 ] * 0.5 + 0.5, 1.0 )
+  ) * vec2( imageSize( gbuffer ).xy - ivec2( 1, 1 ) );
+  const uint next_in_index = ( line_index * vertex_count + min( vertex_index + 1, vertex_count - 1 ) ) * push_constants.stride;
+  const vec2 next_screen_pos_f = vec2(
+    min( vertices[ next_in_index + push_constants.vertex_offset ] * 0.5 + 0.5, 1.0 ),
+    min( vertices[ next_in_index + push_constants.vertex_offset + 1 ] * 0.5 + 0.5, 1.0 )
+  ) * vec2( imageSize( gbuffer ).xy - ivec2( 1, 1 ) );
+
+  const float threshold = 0.1;
+  const int amp = 64;
+
+  if( vertex_index != 0 ) {
+    float prev_z = imageLoad( gbuffer, ivec3( vec2( screen_pos_f ), 0 ) ).w;
+    int left = amp;
+    while( left > 0 ) {
+      float sample_z = imageLoad( gbuffer, ivec3( ivec2( mix( screen_pos_f, prev_screen_pos_f, float( left - 1 )/amp ) ), 0 ) ).w;
+      if( abs( prev_z - sample_z ) > threshold ) {
+        break;
+      }
+      prev_z = sample_z;
+      left--;
+    }
+    const float upper = float( vertex_index )/float( vertex_count );
+    const float lower = ( left == 0 ) ? float( vertex_index - 1 )/float( vertex_count ) : upper;
+    for( uint i = left; i <= amp; ++i ) {
+      const float coord = mix( lower, upper, float( i )/amp ) ;
+      imageStore( dest_image, ivec2( line_index, ( vertex_index - 1 ) * amp + i ), vec4( coord, 0.0, 0.0, 1.0 ) );
+    }
+  }
+  float prev_z = imageLoad( gbuffer, ivec3( vec2( screen_pos_f ), 0 ) ).w;
+  int right = 0;
+  while( right < amp ) {
+    float sample_z = imageLoad( gbuffer, ivec3( ivec2( mix( screen_pos_f, next_screen_pos_f, float( right + 1 )/amp ) ), 0 ) ).w;
+    if( abs( prev_z - sample_z ) > threshold ) {
+      break;
+    }
+    prev_z = sample_z;
+    right++;
+  }
+  const float lower = float( vertex_index )/float( vertex_count );
+  const float upper = ( right == amp ) ? float( vertex_index + 1 )/float( vertex_count ) : lower;
+  for( uint i = 0; i <= min( right, 15 ); ++i ) {
+    const float coord = mix( lower, upper, float( i )/amp );
+    imageStore( dest_image, ivec2( line_index, vertex_index * amp + i ), vec4( coord, 0.0, 0.0, 1.0 ) );
+  }
+}
+

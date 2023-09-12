@@ -20,8 +20,12 @@ namespace gct {
   private:
     std::vector< vk::PipelineColorBlendAttachmentState > attachment;
   public:
-    pipeline_color_blend_state_create_info_t &add_attachment( const vk::PipelineColorBlendAttachmentState& ); 
-    pipeline_color_blend_state_create_info_t &clear_attachment(); 
+    pipeline_color_blend_state_create_info_t &add_attachment( const vk::PipelineColorBlendAttachmentState& );
+    pipeline_color_blend_state_create_info_t &add_attachment();
+    pipeline_color_blend_state_create_info_t &clear_attachment();
+    const std::vector< vk::PipelineColorBlendAttachmentState > &get_attachment() const {
+      return attachment;
+    }
   };
   void to_json( nlohmann::json &root, const pipeline_color_blend_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_color_blend_state_create_info_t &v );

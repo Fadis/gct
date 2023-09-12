@@ -17,10 +17,12 @@ namespace gct {
     (*get_factory())->beginRenderPass(
       temp.get_basic(), subpass_contents
     );
+    get_factory()->set_current_render_pass( temp );
     return std::shared_ptr< void >(
       nullptr,
-      [command_buffer=get_factory(),begin_info]( void* ) {
+      [command_buffer=get_factory(),begin_info=temp]( void* ) {
         (*command_buffer)->endRenderPass();
+        command_buffer->clear_current_render_pass();
         const auto fb = begin_info.get_framebuffer();
         const auto rp = begin_info.get_render_pass();
         if( fb && rp ) {

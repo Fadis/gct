@@ -32,6 +32,7 @@
 #include <gct/gltf.hpp>
 #include <gct/color.hpp>
 #include <gct/timer.hpp>
+#include <gct/image.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::image_t > color;

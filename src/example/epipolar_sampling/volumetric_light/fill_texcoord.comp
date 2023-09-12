@@ -1,0 +1,42 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1, r32f) uniform image2D dest_image;
+
+layout(local_size_x = 256, local_size_y = 4 ) in;
+
+void main()  {
+  const int line_index = int( gl_GlobalInvocationID.x );
+  const int line_count = int( gl_NumWorkGroups.x * gl_WorkGroupSize.x );
+  const int vertex_index = int( gl_GlobalInvocationID.y );
+  const int vertex_count = int( gl_NumWorkGroups.y * gl_WorkGroupSize.y );
+  float old = imageLoad( dest_image, ivec2( line_index, vertex_index ) ).r;
+  if( old >= 0.0 ) return;
+  int left = vertex_index;
+  float left_value = old;
+  for( left = vertex_index; left >= 0; left-- ) {
+    left_value = imageLoad( dest_image, ivec2( line_index, left ) ).r;
+    if( left_value >= 0.0 ) {
+      break;
+    }
+  }
+  int right = vertex_index;
+  float right_value = old;
+  for( right = vertex_index; right < vertex_count; right++ ) {
+    right_value = imageLoad( dest_image, ivec2( line_index, right ) ).r;
+    if( left_value >= 0.0 ) {
+      break;
+    }
+  }
+  if( left_value < 0.0 ) {
+    left_value = right_value;
+  }
+  if( right_value < 0.0 ) {
+    right_value = left_value;
+  }
+  float value = mix( left_value, right_value, float( vertex_index - left )/float( right - left ) );
+  imageStore( dest_image, ivec2( line_index, vertex_index ), vec4( value, 0.0, 0.0, 1.0 ) );
+}
+

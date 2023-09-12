@@ -2,6 +2,7 @@
 #define GCT_ALLOCATOR_HPP
 #include <string>
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
@@ -13,13 +14,18 @@
 #include <gct/vk_mem_alloc.h>
 #pragma GCC diagnostic pop
 #include <gct/created_from.hpp>
-#include <gct/buffer.hpp>
-#include <gct/image.hpp>
+#include <gct/image_create_info.hpp>
+#include <gct/buffer_create_info.hpp>
 #include <gct/vk_mem_alloc.h>
 
 namespace gct {
   class device_t;
   class image_create_info_t;
+  class image_t;
+  class image_view_t;
+  class buffer_t;
+  class pixel_buffer_t;
+  class mappable_buffer_t;
   class allocator_t : public created_from< device_t >, public std::enable_shared_from_this< allocator_t > {
   public:
     allocator_t(
@@ -36,6 +42,11 @@ namespace gct {
       const image_create_info_t&,
       VmaMemoryUsage usage
     );
+    std::vector< std::shared_ptr< image_view_t > > create_image_views(
+      const image_create_info_t&,
+      VmaMemoryUsage usage,
+      unsigned int count
+    );
     std::shared_ptr< buffer_t > create_buffer(
       const buffer_create_info_t&,
       VmaMemoryUsage usage
@@ -56,8 +67,22 @@ namespace gct {
       VmaMemoryUsage usage,
       VmaAllocationCreateFlags flags
     );
-
-
+    std::shared_ptr< mappable_buffer_t > create_mappable_buffer(
+      const buffer_create_info_t&
+    );
+    std::shared_ptr< mappable_buffer_t > create_mappable_buffer(
+      std::size_t size,
+      vk::BufferUsageFlags
+    );
+    std::shared_ptr< mappable_buffer_t > create_mappable_buffer(
+      const buffer_create_info_t&,
+      VmaAllocationCreateFlags flags
+    );
+    std::shared_ptr< mappable_buffer_t > create_mappable_buffer(
+      std::size_t size,
+      vk::BufferUsageFlags,
+      VmaAllocationCreateFlags flags
+    );
     std::shared_ptr< pixel_buffer_t > create_pixel_buffer(
       const buffer_create_info_t &create_info,
       VmaMemoryUsage usage,
@@ -80,6 +105,8 @@ namespace gct {
     std::shared_ptr< VmaAllocator > handle;
   };
 }
+
+void to_json( nlohmann::json &dest, const VmaAllocatorCreateInfo &src );
 
 #endif
 

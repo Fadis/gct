@@ -2,6 +2,9 @@ add_executable( astc
   astc.cpp
 )
 
+target_compile_definitions( astc PRIVATE -DCMAKE_CURRENT_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" )
+target_compile_definitions( astc PRIVATE -DCMAKE_CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
+
 target_link_libraries(
   astc
   gct

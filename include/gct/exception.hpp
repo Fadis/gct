@@ -28,6 +28,7 @@
     base ( const std::string &what ) : std:: base ( what ), where_( nullptr ), line_( 0 ) {} \
     base ( const char *what ) : std:: base ( what ), where_( nullptr ), line_( 0 ) {} \
     base ( const char *what, const char *w, int l ) : std:: base ( what ), where_( w ), line_( l ) {} \
+    base ( const std::string &what, const char *w, int l ) : std:: base ( what ), where_( w ), line_( l ) {} \
     const char *where() const { return where_; } \
     int line() const { return line_; } \
   private: \
@@ -52,6 +53,7 @@ namespace gct::exception {
     name ( const std::string &what ) : ::gct::exception:: base ( what ) {} \
     name ( const char *what ) : ::gct::exception:: base ( what ) {} \
     name ( const char *what, const char *w, int l ) : ::gct::exception:: base ( what, w, l ) {} \
+    name ( const std::string &what, const char *w, int l ) : ::gct::exception:: base ( what, w, l ) {} \
   };
 #endif
 

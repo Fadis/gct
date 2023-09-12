@@ -5,6 +5,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
+#include <gct/buffer.hpp>
 #include <gct/queue.hpp>
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>

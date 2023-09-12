@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <nlohmann/json.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/shader_module.hpp>
+#include <gct/spv2vk.hpp>
 #include <vulkan2json/PipelineLayoutCreateInfo.hpp>
 namespace gct {
   void to_json( nlohmann::json &root, const pipeline_layout_create_info_t &v ) {
@@ -49,12 +51,27 @@ namespace gct {
     if( !v->get_props().has_reflection() )
       throw exception::invalid_argument( "Reflection is required to set shader directly to pipeline", __FILE__, __LINE__ );
     if( v->get_props().get_reflection()->push_constant_block_count == 1u ) {
-      return add_push_constant_range(
-        vk::PushConstantRange()
-          .setStageFlags( vk::ShaderStageFlagBits::eCompute )
-          .setOffset( v->get_props().get_reflection()->push_constant_blocks[ 0 ].offset )
-          .setSize( v->get_props().get_reflection()->push_constant_blocks[ 0 ].size )
+      const auto existing = std::find_if(
+        push_constant_range.begin(),
+        push_constant_range.end(),
+        [&]( const auto e ) {
+          return
+            e.offset == v->get_props().get_reflection()->push_constant_blocks[ 0 ].offset &&
+            e.size == v->get_props().get_reflection()->push_constant_blocks[ 0 ].size;
+        }
       );
+      if( existing != push_constant_range.end() ) {
+        existing->stageFlags |= spv2vk( v->get_props().get_reflection()->shader_stage );
+        return *this;
+      }
+      else {
+        return add_push_constant_range(
+          vk::PushConstantRange()
+            .setStageFlags( spv2vk( v->get_props().get_reflection()->shader_stage ) )
+            .setOffset( v->get_props().get_reflection()->push_constant_blocks[ 0 ].offset )
+            .setSize( v->get_props().get_reflection()->push_constant_blocks[ 0 ].size )
+        );
+      }
     }
     return *this;
   }

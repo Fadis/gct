@@ -15,7 +15,7 @@ include(CheckCXXSourceCompiles)
 include(GNUInstallDirs)
 
 # build type
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 set( ADDITIONAL_COMPILE_FLAGS )
 option( ENABLE_ADDRSAN "build with address sanitizer" OFF )

@@ -26,6 +26,7 @@ namespace gct {
     bind_pipeline(
       pipeline
     );
+    get_factory()->set_current_compute_pipeline( pipeline );
   }
   void command_buffer_recorder_t::bind(
     std::shared_ptr< graphics_pipeline_t > pipeline,
@@ -40,6 +41,7 @@ namespace gct {
     bind_pipeline(
       pipeline
     );
+    get_factory()->set_current_graphics_pipeline( pipeline );
   }
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
   void command_buffer_recorder_t::bind(

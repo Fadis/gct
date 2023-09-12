@@ -3,11 +3,65 @@
 #include <gct/write_descriptor_set.hpp>
 #include <gct/acceleration_structure.hpp>
 #include <gct/buffer.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/image_view.hpp>
 #include <gct/image.hpp>
 #include <gct/sampler.hpp>
+#include <gct/named_resource.hpp>
 
 namespace gct {
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< image_view_t > &image_view
+  ) {
+    set_name( name );
+    add_image( image_view );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< sampler_t > &sampler,
+    const std::shared_ptr< image_view_t > &image_view
+  ) {
+    set_name( name );
+    add_image( sampler, image_view );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< image_view_t > &image_view,
+    vk::ImageLayout layout
+  ) {
+    set_name( name );
+    add_image( image_view, layout );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< sampler_t > &sampler,
+    const std::shared_ptr< image_view_t > &image_view,
+    vk::ImageLayout layout
+  ) {
+    set_name( name );
+    add_image( sampler, image_view, layout );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< buffer_t > &buffer
+  ) {
+    set_name( name );
+    add_buffer( buffer );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    const std::shared_ptr< mappable_buffer_t > &buffer
+  ) {
+    set_name( name );
+    add_buffer( buffer );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const named_resource &r,
+    unsigned int index
+  ) {
+    add( r, index );
+  }
   write_descriptor_set_t &write_descriptor_set_t::rebuild_chain() {
     if( !image.empty() ) {
       raw_image.clear();
@@ -119,6 +173,19 @@ namespace gct {
     );
   }
   write_descriptor_set_t &write_descriptor_set_t::add_image(
+    const std::shared_ptr< image_view_t > &image_view,
+    vk::ImageLayout layout
+  ) {
+    return add_image(
+      gct::descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+            .setImageLayout( layout )
+        )
+        .set_image_view( image_view )
+    );
+  }
+  write_descriptor_set_t &write_descriptor_set_t::add_image(
     const std::shared_ptr< sampler_t > &sampler,
     const std::shared_ptr< image_view_t > &image_view,
     vk::ImageLayout layout
@@ -155,9 +222,66 @@ namespace gct {
         )
     );
   }
+  write_descriptor_set_t &write_descriptor_set_t::add_buffer( const std::shared_ptr< mappable_buffer_t > &v ) {
+    return add_buffer( v->get_buffer() );
+  }
   write_descriptor_set_t &write_descriptor_set_t::clear_buffer() {
     buffer.clear();
     chained = false;
+    return *this;
+  }
+  write_descriptor_set_t &write_descriptor_set_t::add(
+    const named_resource &r,
+    unsigned int index
+  ) {
+    set_name( r.get_name() );
+    set_index( r.get_index() );
+    if( r.is_uniform() ) {
+      if( r.is_buffer() ) {
+        add_buffer( r.get_uniform_buffer() );
+      }
+      else if( r.is_image() ) {
+        add_image( r.get_uniform_image() );
+      }
+      else if( r.is_combined_image() ) {
+        const auto & [s,i] = r.get_uniform_combined_image();
+        add_image( s, i );
+      }
+      else if( r.is_image_with_layout() ) {
+        const auto & [i,l] = r.get_uniform_image_with_layout();
+        add_image( i, l );
+      }
+      else if( r.is_combined_image_with_layout() ) {
+        const auto & [s,i,l] = r.get_uniform_combined_image_with_layout();
+        add_image( s, i, l );
+      }
+      else {
+        throw -1;
+      }
+    }
+    else {
+      if( r.is_buffer() ) {
+        add_buffer( r.get_buffer()[ index ] );
+      }
+      else if( r.is_image() ) {
+        add_image( r.get_image()[ index ] );
+      }
+      else if( r.is_combined_image() ) {
+        const auto & [s,i] = r.get_combined_image()[ index ];
+        add_image( s, i );
+      }
+      else if( r.is_image_with_layout() ) {
+        const auto & [i,l] = r.get_image_with_layout()[ index ];
+        add_image( i, l );
+      }
+      else if( r.is_combined_image_with_layout() ) {
+        const auto & [s,i,l] = r.get_combined_image_with_layout()[ index ];
+        add_image( s, i, l );
+      }
+      else {
+        throw -1;
+      }
+    }
     return *this;
   }
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME

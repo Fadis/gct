@@ -1,8 +1,13 @@
+#include <nlohmann/json.hpp>
 #include <gct/instance.hpp>
 #include <gct/device.hpp>
 #include <gct/allocated_image.hpp>
 #include <gct/allocator.hpp>
 #include <gct/format.hpp>
+#include <gct/buffer.hpp>
+#include <gct/image.hpp>
+#include <gct/image_view.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/version.h>
 
@@ -18,7 +23,13 @@ namespace gct {
     VmaAllocator allocator;
     {
       const auto result = vmaCreateAllocator( &props, &allocator );
-      if( result != VK_SUCCESS ) vk::throwResultException( vk::Result( result ), "アロケータを作成できない" );
+      if( result != VK_SUCCESS ) {
+#if VK_HEADER_VERSION >= 256
+        vk::detail::throwResultException( vk::Result( result ), "アロケータを作成できない" );
+#else
+        vk::throwResultException( vk::Result( result ), "アロケータを作成できない" );
+#endif
+      }
     }
     handle.reset(
       new VmaAllocator( allocator ),
@@ -42,6 +53,18 @@ namespace gct {
         usage
       )
     );
+  }
+  std::vector< std::shared_ptr< image_view_t > > allocator_t::create_image_views(
+    const image_create_info_t &create_info,
+    VmaMemoryUsage usage,
+    unsigned int count
+  ) {
+    std::vector< std::shared_ptr< image_view_t > > temp;
+    temp.reserve( count );
+    for( unsigned int i = 0u; i != count; ++i ) {
+      temp.push_back( create_image( create_info, usage )->get_view() );
+    }
+    return temp;
   }
   
   std::shared_ptr< buffer_t > allocator_t::create_buffer(
@@ -102,6 +125,58 @@ namespace gct {
       flags
     );
   }
+
+  std::shared_ptr< mappable_buffer_t > allocator_t::create_mappable_buffer(
+    const buffer_create_info_t &create_info
+  ) {
+    return std::shared_ptr< mappable_buffer_t >(
+      new mappable_buffer_t(
+        shared_from_this(),
+        create_info
+      )
+    );
+  }
+  std::shared_ptr< mappable_buffer_t > allocator_t::create_mappable_buffer(
+    std::size_t size,
+    vk::BufferUsageFlags buffer_usage
+  ) {
+    return create_mappable_buffer(
+      buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size )
+            .setUsage( buffer_usage )
+        )
+    );
+  }
+  std::shared_ptr< mappable_buffer_t > allocator_t::create_mappable_buffer(
+    const buffer_create_info_t &create_info,
+    VmaAllocationCreateFlags flags
+  ) {
+    return std::shared_ptr< mappable_buffer_t >(
+      new mappable_buffer_t(
+        shared_from_this(),
+        create_info,
+        flags
+      )
+    );
+  }
+  std::shared_ptr< mappable_buffer_t > allocator_t::create_mappable_buffer(
+    std::size_t size,
+    vk::BufferUsageFlags buffer_usage,
+    VmaAllocationCreateFlags flags
+  ) {
+    return create_mappable_buffer(
+      buffer_create_info_t()
+        .set_basic(
+          vk::BufferCreateInfo()
+            .setSize( size )
+            .setUsage( buffer_usage )
+        ),
+      flags
+    );
+  }
+
   std::shared_ptr< pixel_buffer_t > allocator_t::create_pixel_buffer(
     const buffer_create_info_t &create_info,
     VmaMemoryUsage usage,
@@ -225,5 +300,33 @@ namespace gct {
     image.set_format( image_create_info.format );
     return image;
   }*/
+}
+
+void to_json( nlohmann::json &dest, const VmaAllocatorCreateInfo &src ) {
+  dest = nlohmann::json::object();
+  dest[ "flags" ] = nlohmann::json::array();
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ) {
+    dest[ "flags" ].push_back( "EXTERNALLY_SYNCHRONIZED" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT ) {
+    dest[ "flags" ].push_back( "KHR_DEDICATED_ALLOCATION" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT ) {
+    dest[ "flags" ].push_back( "KHR_BIND_MEMORY2" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT ) {
+    dest[ "flags" ].push_back( "EXT_MEMORY_BUDGET" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_AMD_DEVICE_COHERENT_MEMORY_BIT ) {
+    dest[ "flags" ].push_back( "AMD_DEVICE_COHERENT_MEMORY" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT ) {
+    dest[ "flags" ].push_back( "BUFFER_DEVICE_ADDRESS" );
+  }
+  if( src.flags & VmaAllocatorCreateFlagBits::VMA_ALLOCATOR_CREATE_EXT_MEMORY_PRIORITY_BIT ) {
+    dest[ "flags" ].push_back( "EXT_MEMORY_PRIORITY" );
+  }
+  dest[ "preferredLargeHeapBlockSize" ] = src.preferredLargeHeapBlockSize;
+  dest[ "vulkanApiVersion" ] = src.vulkanApiVersion;
 }
 

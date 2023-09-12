@@ -29,6 +29,7 @@ namespace gct {
 #ifdef VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineRasterizationStateStreamCreateInfoEXT, stream )
 #endif
+    pipeline_rasterization_state_create_info_t();
   };
   void to_json( nlohmann::json &root, const pipeline_rasterization_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_rasterization_state_create_info_t &v );

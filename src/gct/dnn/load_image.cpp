@@ -3,6 +3,7 @@
 #include <gct/allocator.hpp>
 #include <gct/nnef_data.hpp>
 #include <gct/numeric_type_to_oiio_type.hpp>
+#include <gct/buffer.hpp>
 #include <gct/dnn/nnef.hpp>
 #include <gct/dnn/load_image.hpp>
 

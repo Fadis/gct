@@ -7,6 +7,8 @@
 #include <gct/allocator.hpp>
 #include <gct/get_device.hpp>
 #include <gct/device.hpp>
+#include <gct/image.hpp>
+#include <gct/image_view.hpp>
 #include <gct/voxel_image.hpp>
 
 namespace gct {

@@ -1,0 +1,105 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 5) uniform samplerCubeArray light_extinction;
+layout (binding = 6, rgba32f) readonly uniform image2DArray view_extinction;
+layout (binding = 7, rgba32f) writeonly uniform image2D scattering;
+layout (binding = 8, rgba32f) writeonly uniform image2D extinction;
+
+layout(push_constant) uniform PushConstants {
+  vec4 g;
+  vec4 color;
+  vec4 eye_pos;
+  vec4 light_pos;
+  vec4 light_energy;
+  float light_near;
+  float light_far;
+  float view_near;
+  float view_far;
+  uint split_count;
+} push_constants;
+
+#include "omnishadow.h"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
+
+#include "constants.h"
+#include "volumetric.h"
+
+float get_linear_z_from_world( float d, float z_near, float z_far ) {
+  return max( ( d - z_near )/( z_far - z_near ), 0.0 );
+}
+
+float get_linear_z( float d, float z_near, float z_far ) {
+  return ( ( 2.0 * z_near * z_far / ( z_far + z_near - d * ( z_far - z_near ) ) ) - z_near ) / abs( z_far - z_near );
+}
+
+void main()  {
+  // スクリーンの各ピクセルについて
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  // ワールド空間での座標posを得る
+  const vec4 pos_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
+  const vec3 pos = pos_.xyz;
+  
+  float scattering_sum = 0.0;
+
+  const vec4 va = imageLoad( view_extinction, ivec3( screen_pos, 0 ) );
+  const vec4 vb = imageLoad( view_extinction, ivec3( screen_pos, 1 ) );
+  // 視点からのOSMのレイヤーのうち、視点からposまでの間にあるレイヤーについて
+  for( int view_step = 0; view_step != 64; view_step++ ) {
+    const vec3 sample_pos = mix( push_constants.eye_pos.xyz, pos.xyz, float( view_step + 1 ) / 64.0 );
+    const float view_linear_z = get_linear_z_from_world( distance( sample_pos, push_constants.eye_pos.xyz ), push_constants.view_near, push_constants.view_far );
+    // view_step番目のレイヤーから視点に届く光のエネルギーの割合を求める
+    float view_extinction = va.r/2.0 * view_linear_z;
+    view_extinction += va.g/(2.0 * pi * 1.0 ) * sin( 2.0 * pi * 1.0 * view_linear_z );
+    view_extinction += va.b/(2.0 * pi * 2.0 ) * sin( 2.0 * pi * 2.0 * view_linear_z );
+    view_extinction += va.a/(2.0 * pi * 3.0 ) * sin( 2.0 * pi * 3.0 * view_linear_z );
+    view_extinction += vb.g/(2.0 * pi * 1.0 ) * ( 1.0 - cos( 2.0 * pi * 1.0 * view_linear_z ) );
+    view_extinction += vb.b/(2.0 * pi * 2.0 ) * ( 1.0 - cos( 2.0 * pi * 2.0 * view_linear_z ) );
+    view_extinction += vb.a/(2.0 * pi * 3.0 ) * ( 1.0 - cos( 2.0 * pi * 3.0 * view_linear_z ) );
+    view_extinction = max( min( 1.0, view_extinction ), 0.0 );
+    const float particle_density = view_extinction/push_constants.color.x;
+    view_extinction = max( 0.0, 1.0 - view_extinction );
+    // このview_stepで光の吸収が生じていたら
+    // 光源からこのview_stepの位置までの間に生じる光の吸収を求める
+    vec3 light_to_pos = sample_pos - push_constants.light_pos.xyz;
+    const vec4 la = texture( light_extinction, vec4( light_to_pos, 0 ) );
+    const vec4 lb = texture( light_extinction, vec4( light_to_pos, 1 ) );
+    const float light_linear_z = get_linear_z_from_world( distance( sample_pos, push_constants.light_pos.xyz ), push_constants.light_near, push_constants.light_far );
+    float light_extinction = la.r/2.0 * light_linear_z;
+    light_extinction += la.g/(2.0 * pi * 1.0 ) * sin( 2.0 * pi * 1.0 * light_linear_z );
+    light_extinction += la.b/(2.0 * pi * 2.0 ) * sin( 2.0 * pi * 2.0 * light_linear_z );
+    light_extinction += la.a/(2.0 * pi * 3.0 ) * sin( 2.0 * pi * 3.0 * light_linear_z );
+    light_extinction += lb.g/(2.0 * pi * 1.0 ) * ( 1.0 - cos( 2.0 * pi * 1.0 * light_linear_z ) );
+    light_extinction += lb.b/(2.0 * pi * 2.0 ) * ( 1.0 - cos( 2.0 * pi * 2.0 * light_linear_z ) );
+    light_extinction += lb.a/(2.0 * pi * 3.0 ) * ( 1.0 - cos( 2.0 * pi * 3.0 * light_linear_z ) );
+    light_extinction = max( min( 1.0, light_extinction ), 0.0 );
+    light_extinction = max( 0.0, 1.0 - min( 1.0, light_extinction ) );
+    const vec3 V = normalize( push_constants.eye_pos.xyz - sample_pos );
+    const vec3 L = normalize( push_constants.light_pos.xyz - sample_pos );
+    const float theta = acos( dot( V, L ) );
+    // このview_stepから視点に届く光の散乱を求める
+    scattering_sum += view_extinction * light_extinction * henyey_greenstein_schlick( push_constants.g.x, theta ) * distance( push_constants.eye_pos.xyz, pos.xyz )/64.0 * particle_density;
+  }
+  const vec3 scattering_en = scattering_sum * push_constants.light_energy.rgb;
+  float view_extinction;
+  {
+    const float view_linear_z = get_linear_z_from_world( distance( pos.xyz, push_constants.eye_pos.xyz ), push_constants.view_near, push_constants.view_far );
+    // view_step番目のレイヤーから視点に届く光のエネルギーの割合を求める
+    view_extinction = va.r/2.0 * view_linear_z;
+    view_extinction += va.g/(2.0 * pi * 1.0 ) * sin( 2.0 * pi * 1.0 * view_linear_z );
+    view_extinction += va.b/(2.0 * pi * 2.0 ) * sin( 2.0 * pi * 2.0 * view_linear_z );
+    view_extinction += va.a/(2.0 * pi * 3.0 ) * sin( 2.0 * pi * 3.0 * view_linear_z );
+    view_extinction += vb.g/(2.0 * pi * 1.0 ) * ( 1.0 - cos( 2.0 * pi * 1.0 * view_linear_z ) );
+    view_extinction += vb.b/(2.0 * pi * 2.0 ) * ( 1.0 - cos( 2.0 * pi * 2.0 * view_linear_z ) );
+    view_extinction += vb.a/(2.0 * pi * 3.0 ) * ( 1.0 - cos( 2.0 * pi * 3.0 * view_linear_z ) );
+    view_extinction = max( min( 1.0, view_extinction ), 0.0 );
+    view_extinction = max( 0.0, 1.0 - view_extinction );
+  }
+  imageStore( scattering, screen_pos, vec4( scattering_en, 1.0 ) );
+  imageStore( extinction, screen_pos, vec4( vec3( view_extinction ), 1.0 ) );
+}
+

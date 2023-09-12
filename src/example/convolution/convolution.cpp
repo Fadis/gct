@@ -246,7 +246,7 @@ int main() {
     }
   );
 
-  std::shared_ptr< std::vector< std::uint8_t > > host_output_byte;
+  std::vector< std::uint8_t > host_output_byte;
 
   {
     auto rec = command_buffer->begin();
@@ -266,15 +266,19 @@ int main() {
       { device_output },
       {}
     );
-    host_output_byte = rec.dump_buffer( allocator, device_output );
+    rec.dump_buffer( allocator, device_output ).then(
+      [&]( std::vector< std::uint8_t > &&v ) {
+        host_output_byte = std::move( v );
+      }
+    );
   }
   command_buffer->execute(
     gct::submit_info_t()
   );
   command_buffer->wait_for_executed();
   std::copy(
-    host_output_byte->begin(),
-    host_output_byte->end(),
+    host_output_byte.begin(),
+    host_output_byte.end(),
     reinterpret_cast< std::uint8_t* >( host_output.data() )
   );
   for( unsigned int k = 0u; k != spec.output_dim_z; ++k ) {

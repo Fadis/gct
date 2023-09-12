@@ -192,7 +192,7 @@ namespace gct::gltf {
     return root;
   }
   void draw_node(
-    const command_buffer_recorder_t &rec,
+    command_buffer_recorder_t &rec,
     const node_t &node,
     const meshes_t &meshes,
     const buffers_t &buffers,
@@ -204,40 +204,36 @@ namespace gct::gltf {
     if( node.has_mesh ) {
       const auto &mesh = meshes[ node.mesh ];
       for( const auto &primitive: mesh.primitive ) {
-        rec->bindPipeline( vk::PipelineBindPoint::eGraphics, **primitive.pipeline[ pipeline_index ] );
+        std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set{
+          primitive.descriptor_set
+        };
+        for( auto &e: env_descriptor_set ) {
+          descriptor_set.push_back( e );
+        };
+        rec.bind(
+          primitive.pipeline[ pipeline_index ],
+          descriptor_set
+        );
         auto pc = push_constants_t()
           .set_world_matrix( node.matrix )
           .set_fid( pipeline_index );
         rec->pushConstants(
           **primitive.pipeline_layout,
-          vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment,
-          0,
-          sizeof( push_constants_t ),
+          primitive.pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
+          primitive.pipeline_layout->get_props().get_push_constant_range()[ 0 ].offset,
+          primitive.pipeline_layout->get_props().get_push_constant_range()[ 0 ].size,
           &pc
-        );
-        std::vector< vk::DescriptorSet > descriptor_set{
-          **primitive.descriptor_set
-        };
-        for( auto &e: env_descriptor_set ) {
-          descriptor_set.push_back( **e );
-        };
-        rec->bindDescriptorSets(
-          vk::PipelineBindPoint::eGraphics,
-          **primitive.pipeline_layout,
-          0,
-          descriptor_set,
-          {}
         );
         for( const auto &[bind_point,view]: primitive.vertex_buffer ) {
           std::vector< vk::Buffer > vb{ **buffers[ view.index ] };
           rec->bindVertexBuffers( bind_point, vb, view.offset );
         }
         if( !primitive.indexed ) {
-          rec->draw( primitive.count, 1, 0, 0 );
+          rec.draw( primitive.count, 1, 0, 0 );
         }
         else {
           rec->bindIndexBuffer( **buffers[ primitive.index_buffer.index ], primitive.index_buffer.offset, primitive.index_buffer_type );
-          rec->drawIndexed( primitive.count, 1, 0, 0, 0 );
+          rec.draw_indexed( primitive.count, 1, 0, 0, 0 );
         }
       }
     }

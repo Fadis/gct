@@ -53,5 +53,19 @@ namespace gct {
     chained = false;
     return *this;
   }
+  pipeline_color_blend_state_create_info_t &pipeline_color_blend_state_create_info_t::add_attachment() {
+    add_attachment(
+      vk::PipelineColorBlendAttachmentState()
+        .setBlendEnable( false )
+        .setColorWriteMask(
+          vk::ColorComponentFlagBits::eR |
+          vk::ColorComponentFlagBits::eG |
+          vk::ColorComponentFlagBits::eB |
+          vk::ColorComponentFlagBits::eA
+        )
+    );
+    chained = false;
+    return *this;
+  }
 }
 

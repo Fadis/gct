@@ -17,7 +17,10 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
+add_shader( gi_diffuse2 shadow_mat/shadow_mat.comp )
+
 add_shader( gi_diffuse2 shadow/world.vert )
+add_shader( gi_diffuse2 shadow/world.geom )
 add_shader( gi_diffuse2 shadow/world.frag )
 
 add_shader( gi_diffuse2 voxel/clear.comp )

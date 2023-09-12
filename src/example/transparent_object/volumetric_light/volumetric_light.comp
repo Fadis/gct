@@ -1,0 +1,61 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rgba32f) readonly uniform image2D back_gbuffer;
+layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
+layout(binding = 4) uniform samplerCube transparent_shadow;
+
+layout(local_size_x = 256, local_size_y = 4 ) in;
+
+layout(push_constant) uniform PushConstants {
+  vec4 eye_pos;
+  vec4 light_pos;
+  vec4 g;
+  vec4 fog_color;
+  float light_energy;
+} push_constants;
+
+#include "constants.h"
+#include "omnishadow.h"
+#include "volumetric.h"
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  // ワールド座標系での半透明な物体の表側の表面の座標
+  const vec3 front = imageLoad( gbuffer, ivec3( screen_pos, 0 ) ).xyz;
+  // ワールド座標系での半透明な物体の裏側の表面の座標
+  const vec3 back = imageLoad( back_gbuffer, screen_pos ).xyz;
+
+  vec3 sum = vec3( 0.0, 0.0, 0.0 );
+
+  // ワールド座標系での光源から飛んできた光が物体と衝突する座標
+  vec3 light_front = texture( transparent_shadow, front - push_constants.light_pos.xyz ).xyz;
+
+  // 表側から裏側までの距離(=半透明な物体中を光が進む距離)
+  float dist = distance( front, back );
+  // 上記の区間を16分割して各区間での光の吸収と散乱を求める
+  for( uint d = 0; d != 16; d++ ) {
+    const vec3 sample_pos = mix( back, front, float( d )/16.0 );
+    // シャドウマップでこの位置に光源からの光が届くかを調べる
+    if( simple_shadow_omni( sample_pos.xyz, push_constants.light_pos.xyz ) != 0.0 ) {
+      // 光源からsample_posに向かう光が受ける吸収
+      const vec3 incoming_rate = beer_lambert( push_constants.fog_color.xyz, distance( sample_pos, light_front ) );
+      // sample_posから視点に向かう光が受ける吸収
+      const vec3 outgoing_rate = beer_lambert( push_constants.fog_color.xyz, distance( sample_pos, front ) );
+      // sample_posに届く光のエネルギー
+      const vec3 incoming_light = incoming_rate * push_constants.light_energy;
+      const vec3 V = normalize(push_constants.eye_pos.xyz-sample_pos);
+      const vec3 L = normalize(push_constants.light_pos.xyz-sample_pos);
+      const float theta = acos( dot( V, L ) );
+      // sample_posを経て視点に届く光のエネルギー
+      const vec3 outgoing_light = outgoing_rate * incoming_light * henyey_greenstein_schlick( push_constants.g.xyz, theta );
+      // 上のエネルギーを区間について積分
+      sum += outgoing_light * dist/16.0;
+    }
+  }
+  imageStore( dest_image, screen_pos, vec4( sum, dist ) );
+}
+

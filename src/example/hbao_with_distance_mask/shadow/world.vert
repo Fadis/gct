@@ -16,8 +16,8 @@ out gl_PerVertex
 void main() {
   vec4 local_pos = vec4( input_position.xyz, 1.0 );
   vec4 pos = push_constants.world_matrix * local_pos;
-  gl_Position = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * pos;
-  output_position = dynamic_uniforms.camera_matrix * pos;
+  gl_Position = pos;
+  output_position = pos;
 }
 
 

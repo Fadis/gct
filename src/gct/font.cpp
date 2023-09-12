@@ -30,6 +30,7 @@
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/command_buffer_recorder.hpp>
+#include <gct/buffer.hpp>
 #include <gct/font.hpp>
 namespace gct {
 

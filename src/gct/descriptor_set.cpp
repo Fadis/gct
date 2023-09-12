@@ -33,8 +33,13 @@ namespace gct {
       updates.end(),
       std::back_inserter( unwrapped ),
       [&]( auto &v ) {
+        const auto &name = v.get_name();
+        if( !name.empty() ) {
+          v.set_basic( (*this)[ name ] );
+        }
         v.rebuild_chain();
         auto basic = v.get_basic();
+        basic.setDstArrayElement( v.get_index() );
         basic.setDstSet( *handle );
         return basic;
       }

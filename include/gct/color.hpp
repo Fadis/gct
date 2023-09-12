@@ -173,6 +173,9 @@ constexpr std::array< float, 4u > whitesmoke{ 0.913099f, 0.913099f, 0.913099f, 1
 constexpr std::array< float, 4u > snow{ 1.000000f, 0.955973f, 0.955973f, 1.0f };
 constexpr std::array< float, 4u > white{ 1.000000f, 1.000000f, 1.000000f, 1.0f };
 }
+namespace gct::color::special {
+constexpr std::array< float, 4u > transparent{ 0.0f, 0.0f, 0.0f, 0.0f };
+}
 
 #endif
 

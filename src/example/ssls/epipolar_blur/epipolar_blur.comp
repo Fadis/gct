@@ -1,0 +1,35 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2D src_image;
+layout (binding = 1, r32f) writeonly uniform image2D dest_image;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include "push_constants.h"
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  vec4 light_pos_in_screen_ = dynamic_uniforms.projection_matrix * dynamic_uniforms.camera_matrix * vec4( dynamic_uniforms.light_pos.xyz, 1.0 );
+  light_pos_in_screen_ /= light_pos_in_screen_.z;
+  
+  // スクリーン空間での光源の位置
+  const vec2 light_pos_in_screen = vec2( ( ( light_pos_in_screen_.xy + 1.0 ) * 0.5 ) * imageSize( src_image ) );
+
+  // スクリーン空間でのこのスレッドが処理しているピクセルの位置
+  const vec2 screen_pos_in_float = vec2( screen_pos );
+  
+  float sum = 0.0;
+  // 両者の間を64分割する
+  for( uint i = 1; i != 64; i++ ) {
+    // 分割点の座標
+    const vec2 sample_pos = mix( screen_pos_in_float, light_pos_in_screen, float( i )/ 64.0 );
+    const float distance = length( sample_pos - screen_pos_in_float );
+    // 各分割点におけるぼかした光源の光のエネルギーを光源からその位置までの距離で割って総和を取る
+    sum += imageLoad( src_image, ivec2( sample_pos ) ).r/distance;
+  }
+  imageStore( dest_image, screen_pos, vec4( sum, 0.0, 0.0, 1.0 ) );
+}
+

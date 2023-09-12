@@ -6,6 +6,7 @@
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/queue.hpp>
+#include <gct/buffer.hpp>
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device_create_info.hpp>

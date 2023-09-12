@@ -65,5 +65,10 @@ namespace gct {
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
+  pipeline_multisample_state_create_info_t::pipeline_multisample_state_create_info_t() {
+    set_basic(
+      vk::PipelineMultisampleStateCreateInfo()
+    );
+  }
 }
 

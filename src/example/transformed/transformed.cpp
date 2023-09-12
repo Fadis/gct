@@ -13,6 +13,7 @@
 #include <gct/allocator.hpp>
 #include <gct/device_create_info.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/image.hpp>
 #include <gct/swapchain.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>

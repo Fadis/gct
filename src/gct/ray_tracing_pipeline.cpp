@@ -35,11 +35,19 @@ namespace gct {
 
     auto wrapped = (*cache->get_factory())->createRayTracingPipelinesKHRUnique( **deferred_operation, **cache, { props.get_basic() } );
     if( wrapped.result != vk::Result::eSuccess && wrapped.result != vk::Result::eOperationDeferredKHR ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+#else
       vk::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+#endif
     }
     auto future = async( deferred_operation );
     if( future.get() != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+#else
       vk::throwResultException( wrapped.result, "createRayTracingPipeline failed" );
+#endif
     }
     handle = std::move( wrapped.value[ 0 ] );
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME

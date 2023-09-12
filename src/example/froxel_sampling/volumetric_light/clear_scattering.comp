@@ -1,0 +1,12 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 3, rgba32f) uniform image3D scattering;
+
+void main()  {
+  const ivec3 screen_pos = ivec3( gl_GlobalInvocationID.xyz );
+  imageStore( scattering, screen_pos, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+}
+

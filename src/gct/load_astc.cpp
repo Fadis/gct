@@ -10,6 +10,7 @@
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/get_device.hpp>
+#include <gct/image.hpp>
 #include <gct/astc.hpp>
 #include <gct/format.hpp>
 #include <gct/mmaped_file.hpp>

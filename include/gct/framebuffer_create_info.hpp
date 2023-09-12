@@ -30,6 +30,7 @@ namespace gct {
     }
     std::uint32_t get_width() const;
     std::uint32_t get_height() const;
+    std::uint32_t get_layer() const;
   };
   void to_json( nlohmann::json &root, const framebuffer_create_info_t &v );
   void from_json( const nlohmann::json &root, framebuffer_create_info_t &v );

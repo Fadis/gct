@@ -216,6 +216,28 @@ namespace gct {
     chained = false;
     return *this;
   }
+  vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height ) {
+    return vk::ImageCreateInfo()
+      .setImageType( vk::ImageType::e2D )
+      .setFormat( vk::Format::eR32G32B32A32Sfloat )
+      .setExtent( { width, height, 1 } )
+      .setMipLevels( 1 )
+      .setArrayLayers( 1 )
+      .setSamples( vk::SampleCountFlagBits::e1 )
+      .setTiling( vk::ImageTiling::eOptimal )
+      .setInitialLayout( vk::ImageLayout::eUndefined );
+  }
+  vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth ) {
+    return vk::ImageCreateInfo()
+      .setImageType( vk::ImageType::e3D )
+      .setFormat( vk::Format::eR32G32B32A32Sfloat )
+      .setExtent( { width, height, depth } )
+      .setMipLevels( 1 )
+      .setArrayLayers( 1 )
+      .setSamples( vk::SampleCountFlagBits::e1 )
+      .setTiling( vk::ImageTiling::eOptimal )
+      .setInitialLayout( vk::ImageLayout::eUndefined );
+  }
 #endif
 }
 

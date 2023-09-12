@@ -11,6 +11,7 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/get_device.hpp>
 #include <gct/image_view.hpp>
+#include <gct/buffer.hpp>
 #include <gct/image.hpp>
 #include <gct/format.hpp>
 #include <gct/spectrum.hpp>
@@ -444,6 +445,7 @@ namespace gct {
     const std::shared_ptr< image_t > &image,
     const std::string &filename,
     unsigned int mipmap,
+    unsigned int layer,
     unsigned int depth
   ) {
     const auto width = image->get_props().get_basic().extent.width >> mipmap;
@@ -481,6 +483,7 @@ namespace gct {
     }
     else throw -1;
     const bool bgra = is_bgra( image->get_props().get_basic().format );
+    const auto srgb = is_srgb( image->get_props().get_basic().format );
 
     copy(
       image,
@@ -491,6 +494,7 @@ namespace gct {
           vk::ImageSubresourceLayers()
             .setAspectMask( vk::ImageAspectFlagBits::eColor )
             .setMipLevel( mipmap )
+            .setBaseArrayLayer( layer )
             .setLayerCount( 1 )
         )
         .setImageExtent(
@@ -509,10 +513,13 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( image );
     get_factory()->unbound()->keep.push_back( temporary );
     get_factory()->unbound()->cbs.push_back(
-      [image,temporary,width,height,filename,allocator,channels,component_size,oiio_type,bgra]( vk::Result result ) {
+      [image,temporary,width,height,filename,allocator,channels,component_size,oiio_type,bgra,srgb]( vk::Result result ) {
         auto out = ImageOutput::create( filename );
         if( !out ) throw -1;
         ImageSpec spec( width, height, channels, oiio_type );
+        if( !srgb ) {
+          spec.attribute ("oiio:ColorSpace", "scene_linear");
+        }
         if( bgra ) {
           spec.channelnames.assign({ "B", "G", "R", "A" });
         }
@@ -528,6 +535,7 @@ namespace gct {
     const std::shared_ptr< image_t > &image,
     const std::string &filename,
     unsigned int mipmap,
+    unsigned int layer,
     unsigned int depth,
     unsigned int channel,
     const std::optional< double > &clamp_min,
@@ -555,6 +563,7 @@ namespace gct {
           vk::ImageSubresourceLayers()
             .setAspectMask( vk::ImageAspectFlagBits::eColor )
             .setMipLevel( mipmap )
+            .setBaseArrayLayer( layer )
             .setLayerCount( 1 )
         )
         .setImageExtent(
@@ -747,5 +756,23 @@ namespace gct {
         layout
       );
     }
+  }
+  void command_buffer_recorder_t::set_image_layout(
+    const std::shared_ptr< image_view_t > &view,
+    vk::ImageLayout layout
+  ) {
+    convert_image(
+      view->get_factory(),
+      layout
+    );
+  }
+  void command_buffer_recorder_t::set_image_layout(
+    const std::shared_ptr< image_t > &image,
+    vk::ImageLayout layout
+  ) {
+    convert_image(
+      image,
+      layout
+    );
   }
 }

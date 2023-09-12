@@ -134,7 +134,8 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode
   ) {
     if( primitive.material < 0 || doc.materials.size() <= size_t( primitive.material ) ) throw invalid_gltf( "参照されたmaterialが存在しない", __FILE__, __LINE__ );
     const auto &material = doc.materials[ primitive.material ];
@@ -252,11 +253,17 @@ namespace gct::gltf {
     auto descriptor_set_layout = device->get_descriptor_set_layout(
       descriptor_set_layout_create_info
     );
+    vk::ShaderStageFlags stages =
+      vk::ShaderStageFlagBits::eVertex|
+      vk::ShaderStageFlagBits::eFragment;
+    if( !gs.empty() ) {
+      stages |= vk::ShaderStageFlagBits::eGeometry;
+    }
     auto pipeline_layout_create_info = gct::pipeline_layout_create_info_t()
       .add_descriptor_set_layout( descriptor_set_layout )
       .add_push_constant_range(
         vk::PushConstantRange()
-          .setStageFlags( vk::ShaderStageFlagBits::eVertex|vk::ShaderStageFlagBits::eFragment )
+          .setStageFlags( stages )
           .setOffset( 0 )
           .setSize( sizeof( gct::gltf::push_constants_t ) )
       );
@@ -284,7 +291,8 @@ namespace gct::gltf {
           vertex_input_attribute,
           !material.doubleSided,
           material.alphaMode == fx::gltf::Material::AlphaMode::Blend,
-          false
+          false,
+          dynamic_cull_mode
         )
       );
       ++i;
@@ -458,7 +466,8 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode
   ) {
     if( index < 0 || doc.meshes.size() <= size_t( index ) ) throw invalid_gltf( "参照されたmeshが存在しない", __FILE__, __LINE__ );
     const auto &mesh = doc.meshes[ index ];
@@ -488,7 +497,8 @@ namespace gct::gltf {
         textures,
         swapchain_size,
         shader_mask,
-        env_descriptor_set_layout
+        env_descriptor_set_layout,
+        dynamic_cull_mode
       ) );
       min[ 0 ] = std::min( min[ 0 ], mesh_.primitive.back().min[ 0 ] );
       min[ 1 ] = std::min( min[ 1 ], mesh_.primitive.back().min[ 1 ] );
@@ -513,7 +523,8 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode
   ) {
     meshes_t mesh;
     auto pipeline_cache = device->get_pipeline_cache();
@@ -533,7 +544,8 @@ namespace gct::gltf {
           textures,
           swapchain_size,
           shader_mask,
-          env_descriptor_set_layout
+          env_descriptor_set_layout,
+          dynamic_cull_mode
         )
       );
     return mesh;

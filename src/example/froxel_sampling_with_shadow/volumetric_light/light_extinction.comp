@@ -1,0 +1,55 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout(binding = 0) uniform sampler3D fog_level;
+layout(binding = 1, rgba32f) writeonly uniform image3D extinction;
+
+layout(binding = 2) uniform FroxelState {
+  mat4 world_to_screen;
+  mat4 screen_to_world;
+  mat4 world_to_voxel;
+  vec4 min_g;
+  vec4 max_g;
+  vec4 min_color;
+  vec4 max_color;
+  vec4 eye_pos;
+  vec4 light_pos;
+  vec4 light_energy;
+} froxel_state;
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 64 ) in;
+
+#include "constants.h"
+#include "volumetric.h"
+#include "omnishadow.h"
+
+void main()  {
+  const ivec3 screen_pos_i = ivec3( gl_GlobalInvocationID.xyz );
+  const vec3 screen_pos_f = vec3( screen_pos_i ) / vec3( imageSize( extinction ).xyz ) * 2.0 - 1.0;
+  // froxelの各交点において
+  vec4 pos = froxel_state.screen_to_world * vec4( screen_pos_f, 1.0 );
+  pos /= pos.w;
+
+  vec3 light_energy = vec3( 1.0, 1.0, 1.0 );
+  const float dist = distance( froxel_state.light_pos.xyz, pos.xyz ) / 64.0;
+  
+  // この段階ではシャドウマップを適用しない
+  // 光源からfroxelの交点までの間を64分割
+  for( uint i = 0; i != 64; i++ ) {
+    // 各分割点の座標
+    const vec3 sample_pos = mix( froxel_state.light_pos.xyz, pos.xyz, i / 64.0 );
+    vec4 sample_pos_in_voxel = froxel_state.world_to_voxel * vec4( sample_pos, 1.0 );
+    sample_pos_in_voxel /= sample_pos_in_voxel.w;
+    // 分割点における霧の濃さを得る
+    const float level = texture( fog_level, sample_pos_in_voxel.xyz * 0.5 + 0.5 ).r;
+    // この区間を通る光の吸収を求める
+    const vec3 incoming_rate = beer_lambert( mix( froxel_state.min_color.xyz, froxel_state.max_color.xyz, level ), dist );
+    // この区間で生じた吸収の分だけ光のエネルギーを小さくする
+    light_energy *= incoming_rate;
+  }
+
+  imageStore( extinction, screen_pos_i, vec4( max( light_energy, vec3( 0.0, 0.0, 0.0 ) ), 1.0 ) );
+}
+

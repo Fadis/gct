@@ -2109,7 +2109,8 @@ void to_json( nlohmann::json &root, const SpvReflectDescriptorBinding &v ) {
   root[ "descriptor_type" ] = v.descriptor_type;
   root[ "resource_type" ] = v.resource_type;
   root[ "image" ] = v.image;
-
+  if( v.type_description )
+    root[ "type_description" ] = *v.type_description;
 }
 
 void to_json( nlohmann::json &root, const SpvReflectShaderModule &v ) {

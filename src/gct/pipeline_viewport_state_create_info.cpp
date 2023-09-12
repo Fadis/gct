@@ -118,5 +118,24 @@ namespace gct {
     chained = false;
     return *this;
   }
+  pipeline_viewport_state_create_info_t &pipeline_viewport_state_create_info_t::add_size(
+    unsigned int width,
+    unsigned int height
+  ) {
+    add_viewport(
+      vk::Viewport()
+        .setWidth( width )
+        .setHeight( height )
+        .setMinDepth( 0.0f )
+        .setMaxDepth( 1.0f )
+    );
+    add_scissor(
+      vk::Rect2D()
+        .setOffset( { 0, 0 } )
+        .setExtent( { width, height } )
+    );
+    chained = false;
+    return *this;
+  }
 }
 

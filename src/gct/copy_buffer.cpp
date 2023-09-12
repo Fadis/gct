@@ -1,5 +1,6 @@
 #include <fstream>
 #include <gct/buffer.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
 #include <gct/command_pool.hpp>
@@ -53,5 +54,15 @@ namespace gct {
       std::copy( src.begin(), src.end(), mapped.begin() );
     }
     copy( staging, dest );
+  }
+  void command_buffer_recorder_t::copy(
+    const boost::iterator_range< const std::uint8_t* > &src,
+    const std::shared_ptr< mappable_buffer_t > &dest
+  ) {
+    copy(
+      src,
+      dest->get_staging_buffer(),
+      dest->get_buffer()
+    );
   }
 }

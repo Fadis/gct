@@ -23,6 +23,8 @@
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
+#include <gct/buffer.hpp>
+#include <gct/image.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/device_address.hpp>
 #include <gct/acceleration_structure.hpp>
@@ -422,7 +424,11 @@ int main() {
       std::next( shader_binding_table_data.data(), raygen_shader_binding_offset )
     );
     if( get_raygen_handles_result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( get_raygen_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#else
       vk::throwResultException( get_raygen_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#endif
     }
     const auto get_miss_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
       **ray_tracing_pipeline,
@@ -432,7 +438,11 @@ int main() {
       std::next( shader_binding_table_data.data(), miss_shader_binding_offset )
     );
     if( get_miss_handles_result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( get_miss_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#else
       vk::throwResultException( get_miss_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#endif
     }
     const auto get_hit_handles_result = (*device)->getRayTracingShaderGroupHandlesKHR(
       **ray_tracing_pipeline,
@@ -442,7 +452,11 @@ int main() {
       std::next( shader_binding_table_data.data(), hit_shader_binding_offset )
     );
     if( get_hit_handles_result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( get_hit_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#else
       vk::throwResultException( get_hit_handles_result, "getRayTracingShaderGroupHandlesKHR failed" );
+#endif
     }
     std::cout << nlohmann::json( shader_binding_table_data ) << std::endl;
     shader_binding_table = rec.load_buffer(

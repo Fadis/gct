@@ -1,0 +1,61 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout(local_size_x = 128, local_size_y = 8 ) in;
+
+layout(push_constant) uniform PushConstants {
+  mat2 local_to_screen_matrix;
+  vec2 light_pos;
+  uint stride;
+  uint vertex_offset;
+  uint texcoord_offset;
+} push_constants;
+
+layout(std430, binding = 0) buffer vertex_buffer {
+  float vertices[];
+};
+
+void main() {
+  const uint line_index = gl_GlobalInvocationID.x;
+  const uint line_count = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+  const uint vertex_index = gl_GlobalInvocationID.y;
+  const uint vertex_count = gl_NumWorkGroups.y * gl_WorkGroupSize.y;
+  const vec2 texcoord = vec2(
+    float( line_index )/float( line_count - 1 ),
+    float( vertex_index )/float( vertex_count - 1 )
+  );
+  const vec2 light_pos = push_constants.light_pos;
+  // 光源から放射状に伸びる直線とスクリーンの4辺が交差する点を求める
+  const float intersection_pos = float( line_index )/float( line_count - 1 ) * 4;
+  const uint border_id = min( uint( intersection_pos ), 3 );
+  const float local_intersection_pos = max( min( intersection_pos - float( border_id ), 1.0 ), 0.0 );
+  vec2 end =
+    ( border_id == 0 ) ?
+    vec2( mix( -1.0, 1.0, local_intersection_pos ), -1.0 ) :
+    (
+      ( border_id == 1 ) ?
+      vec2( 1.0, mix( -1.0, 1.0, local_intersection_pos ) ) :
+      (
+        ( border_id == 2 ) ?
+        vec2( mix( 1.0, -1.0, local_intersection_pos ), 1.0 ) :
+        vec2( -1.0, mix( 1.0, -1.0, local_intersection_pos ) )
+      )
+    );
+  end.x = max( min( end.x, 1.0 ), -1.0 );
+  end.y = max( min( end.y, 1.0 ), -1.0 );
+  const float tangent = ( end.y - light_pos.y )/( end.x - light_pos.x );
+  const float shift = end.y - tangent * end.x;
+  const vec2 begin = light_pos;
+  // 求めた交点と光源の間を分割し、分割点の位置を求める
+  // 分割点の間隔は光源から遠くなるほど大きくなるようにする
+  const vec2 pos = push_constants.local_to_screen_matrix * mix( begin, end, texcoord.y * texcoord.y );
+  const uint out_index = ( line_index * vertex_count + vertex_index ) * push_constants.stride;
+  // 頂点バッファに分割点の位置を書く
+  vertices[ out_index + push_constants.vertex_offset ] = pos.x;
+  vertices[ out_index + push_constants.vertex_offset + 1 ] = pos.y;
+  vertices[ out_index + push_constants.texcoord_offset ] = texcoord.x;
+  vertices[ out_index + push_constants.texcoord_offset + 1 ] = texcoord.y;
+}
+

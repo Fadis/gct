@@ -20,6 +20,7 @@ subdirs(
   text_input
   shadow
   noao
+  noao2
   ssao
   ssdo
   ssdo_with_bounce
@@ -37,4 +38,16 @@ subdirs(
   load_nnef
   exec_nnef
   dnn_eval
+  cubemap
+  physically_fog
+  ssls
+  epipolar_sampling
+  froxel_sampling
+  froxel_sampling_with_shadow
+  transparent_plane
+  transparent_object
+  traditional_fog
+  simple_particle
+  osm
+  fom
 )

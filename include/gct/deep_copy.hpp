@@ -26,6 +26,7 @@ namespace gct {
     deep_copy_t( deep_copy_t &&v ) : T( std::move( static_cast< T&& >( v ) ) ) {}
     deep_copy_t &operator=( deep_copy_t &&v ) {
       static_cast< T& >( *this ) = std::move( static_cast< T&& >( v ) );
+      return *this;
     }
     explicit operator bool() const {
       return bool( static_cast< const T& >( *this ) );

@@ -1344,6 +1344,26 @@ namespace gct {
     static const std::vector< vk::Format > instance;
     return instance;
   }
+  bool operator==( const numeric_type_t &l, const numeric_type_t &r ) {
+    return
+      l.component == r.component &&
+      l.depth == r.depth &&
+      l.sign == r.sign &&
+      l.attr == r.attr &&
+      l.composite == r.composite &&
+      l.rows == r.rows &&
+      l.cols == r.cols;
+  }
+  bool operator!=( const numeric_type_t &l, const numeric_type_t &r ) {
+    return
+      l.component != r.component ||
+      l.depth != r.depth ||
+      l.sign != r.sign ||
+      l.attr != r.attr ||
+      l.composite != r.composite ||
+      l.rows != r.rows ||
+      l.cols != r.cols;
+  }
   void to_json( nlohmann::json &dest, const numeric_component_type_t &src ) {
     if( src == numeric_component_type_t::void_ ) dest = "void";
     else if( src == numeric_component_type_t::bool_ ) dest = "bool";

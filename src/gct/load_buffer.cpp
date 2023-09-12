@@ -1,6 +1,8 @@
+#include <iostream>
 #include <fstream>
 #include <gct/exception.hpp>
 #include <gct/buffer.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
 #include <gct/command_pool.hpp>
@@ -94,15 +96,12 @@ namespace gct {
       usage
     );
   }
-  std::shared_ptr< std::vector< std::uint8_t > > command_buffer_recorder_t::dump_buffer(
+  future< std::vector< std::uint8_t > > command_buffer_recorder_t::dump_buffer(
     const std::shared_ptr< allocator_t > &allocator,
     const std::shared_ptr< buffer_t > &buffer
   ) {
-    std::shared_ptr< std::vector< std::uint8_t > > host_buffer(
-      new std::vector< std::uint8_t >(
-        buffer->get_props().get_basic().size
-      )
-    );
+    promise< std::vector< std::uint8_t > > p;
+    auto f = p.get_future();
     const auto staging_buffer = allocator->create_buffer(
       buffer->get_props().get_basic().size,
       vk::BufferUsageFlagBits::eTransferDst,
@@ -115,16 +114,57 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( buffer );
     get_factory()->unbound()->keep.push_back( staging_buffer );
     get_factory()->unbound()->cbs.push_back(
-      [staging_buffer,host_buffer]( vk::Result result ) {
+      [staging_buffer,p=std::move(p)]( vk::Result result ) mutable {
+        std::cout << __FILE__ << " " << __LINE__ << std::endl;
+        std::vector< std::uint8_t > host_buffer(
+          staging_buffer->get_props().get_basic().size
+        );
         auto mapped = staging_buffer->map< std::uint8_t >();
         std::copy(
           mapped.begin(),
           mapped.end(),
-          host_buffer->begin()
+          host_buffer.begin()
         );
+        p.set_value( std::move( host_buffer ) );
       }
     );
-    return host_buffer;
+    return f;
+  }
+  future< std::vector< std::uint8_t > > command_buffer_recorder_t::dump_buffer(
+    const std::shared_ptr< buffer_t > &buffer,
+    const std::shared_ptr< buffer_t > &staging_buffer
+  ) {
+    promise< std::vector< std::uint8_t > > p;
+    auto f = p.get_future();
+    copy(
+      buffer,
+      staging_buffer
+    );
+    get_factory()->unbound()->keep.push_back( buffer );
+    get_factory()->unbound()->keep.push_back( staging_buffer );
+    get_factory()->unbound()->cbs.push_back(
+      [staging_buffer,p=std::move(p)]( vk::Result result ) mutable {
+        std::vector< std::uint8_t > host_buffer(
+          staging_buffer->get_props().get_basic().size
+        );
+        auto mapped = staging_buffer->map< std::uint8_t >();
+        std::copy(
+          mapped.begin(),
+          mapped.end(),
+          host_buffer.begin()
+        );
+        p.set_value( std::move( host_buffer ) );
+      }
+    );
+    return f;
+  }
+  future< std::vector< std::uint8_t > > command_buffer_recorder_t::dump_buffer(
+    const std::shared_ptr< mappable_buffer_t > &buffer
+  ) {
+    return dump_buffer(
+      buffer->get_buffer(),
+      buffer->get_staging_buffer()
+    );
   }
   void command_buffer_recorder_t::load_buffer(
     const std::shared_ptr< allocator_t > &allocator,

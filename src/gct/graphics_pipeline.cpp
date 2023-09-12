@@ -32,8 +32,13 @@ namespace gct {
 #endif
     props.rebuild_chain();
     auto wrapped = (*cache->get_factory())->createGraphicsPipelinesUnique( **cache, { props.get_basic() } );
-    if( wrapped.result != vk::Result::eSuccess )
+    if( wrapped.result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( wrapped.result, "createGraphicsPipeline failed" );
+#else
       vk::throwResultException( wrapped.result, "createGraphicsPipeline failed" );
+#endif
+    }
     handle = std::move( wrapped.value[ 0 ] );
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     if( use_feedback ) {

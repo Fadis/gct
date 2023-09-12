@@ -1,4 +1,4 @@
-
+#include <gct/buffer.hpp>
 #include <gct/image.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
@@ -131,6 +131,62 @@ namespace gct {
       vk::AccessFlagBits::eTransferWrite,
       vk::AccessFlagBits::eShaderRead,
       vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_to_graphics_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eVertexShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::graphics_to_transfer_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_to_graphics_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eVertexShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::graphics_to_compute_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
       vk::PipelineStageFlagBits::eComputeShader,
       vk::DependencyFlagBits( 0 ),
       buffer,

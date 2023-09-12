@@ -11,6 +11,7 @@
 #include <optional>
 #include <filesystem>
 #include <tuple>
+#include <type_traits>
 #include <boost/range/iterator_range.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
@@ -19,10 +20,14 @@
 #include <gct/font.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/nnef_data.hpp>
+#include <gct/future.hpp>
+#include <gct/type_traits/is_lifted.hpp>
+#include <gct/type_traits/nth_type.hpp>
 
 namespace gct {
   struct command_pool_t;
   class buffer_t;
+  class mappable_buffer_t;
   class allocator_t;
   class image_t;
   class image_view_t;
@@ -88,10 +93,47 @@ namespace gct {
       integer_attribute_t attr = integer_attribute_t::srgb,
       unsigned int max_channels_per_layer = 4
     );
-    std::shared_ptr< std::vector< std::uint8_t > > dump_buffer(
+    future< std::vector< std::uint8_t > > dump_buffer(
       const std::shared_ptr< allocator_t > &allocator,
       const std::shared_ptr< buffer_t > &buffer
     );
+    future< std::vector< std::uint8_t > > dump_buffer(
+      const std::shared_ptr< buffer_t > &buffer,
+      const std::shared_ptr< buffer_t > &staging_buffer
+    );
+    future< std::vector< std::uint8_t > > dump_buffer(
+      const std::shared_ptr< mappable_buffer_t > &buffer
+    );
+    template< typename T >
+    auto dump_buffer_as(
+      const std::shared_ptr< mappable_buffer_t > &buffer
+    ) -> std::enable_if_t<
+      !type_traits::is_lifted_by_v< T, std::vector >,
+      future< T >
+    > {
+      return dump_buffer( buffer ).then(
+        []( std::vector< std::uint8_t > &&v ) -> T {
+          return *reinterpret_cast< T* >( v.data() );
+        }
+      );
+    }
+    template< typename T >
+    auto dump_buffer_as(
+      const std::shared_ptr< mappable_buffer_t > &buffer
+    ) -> std::enable_if_t<
+      type_traits::is_lifted_by_v< T, std::vector >,
+      future< T >
+    > {
+      return dump_buffer( buffer ).then(
+        []( std::vector< std::uint8_t > &&v ) -> T {
+          T temp(
+            reinterpret_cast< typename T::value_type* >( v.data() ),
+            std::next( reinterpret_cast< typename T::value_type* >( v.data() ), v.size()/sizeof( typename T::value_type ) )
+          );
+          return temp;
+        }
+      );
+    }
     nnef_data_t
     load_nnef_data(
       const std::shared_ptr< allocator_t > &allocator,
@@ -103,6 +145,7 @@ namespace gct {
       const std::shared_ptr< image_t > &image,
       const std::string &filename,
       unsigned int mipmap,
+      unsigned int layer = 0u,
       unsigned int depth = 0u
     );
     void dump_field(
@@ -110,6 +153,7 @@ namespace gct {
       const std::shared_ptr< image_t > &image,
       const std::string &filename,
       unsigned int mipmap,
+      unsigned int layer,
       unsigned int depth,
       unsigned int channel,
       const std::optional< double > &clamp_min = std::nullopt,
@@ -148,6 +192,23 @@ namespace gct {
           reinterpret_cast< const std::uint8_t* >( &src ) + sizeof( T )
         ),
         staging,
+        dest
+      );
+    }
+    void copy(
+      const boost::iterator_range< const std::uint8_t* >&,
+      const std::shared_ptr< mappable_buffer_t >&
+    );
+    template< typename T >
+    void copy(
+      const T &src,
+      const std::shared_ptr< mappable_buffer_t > &dest
+    ) {
+      copy(
+        boost::make_iterator_range(
+          reinterpret_cast< const std::uint8_t* >( &src ),
+          reinterpret_cast< const std::uint8_t* >( &src ) + sizeof( T )
+        ),
         dest
       );
     }
@@ -274,6 +335,22 @@ namespace gct {
       const std::vector< std::shared_ptr< image_t > > &image
     );
     std::vector< vk::ImageMemoryBarrier > compute_to_transfer_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > transfer_to_graphics_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > graphics_to_transfer_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > compute_to_graphics_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > graphics_to_compute_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
@@ -438,6 +515,14 @@ namespace gct {
       const std::vector< std::shared_ptr< image_t > > &images,
       vk::ImageLayout layout
     );
+    void set_image_layout(
+      const std::shared_ptr< image_view_t > &views,
+      vk::ImageLayout layout
+    );
+    void set_image_layout(
+      const std::shared_ptr< image_t > &images,
+      vk::ImageLayout layout
+    );
 
     const command_buffer_begin_info_t &get_props() const { return props; }
     vk::CommandBuffer &operator*();
@@ -449,7 +534,33 @@ namespace gct {
       std::uint32_t y,
       std::uint32_t z
     );
+    void draw(
+      std::uint32_t vertex_count,
+      std::uint32_t instnce_count,
+      std::uint32_t first_vertex,
+      std::uint32_t first_instance
+    );
+    void draw_indexed(
+      std::uint32_t index_count,
+      std::uint32_t instnce_count,
+      std::uint32_t first_index,
+      std::int32_t vertex_offset,
+      std::uint32_t first_instance
+    );
+    void draw_indirect(
+      const std::shared_ptr< buffer_t > &buffer,
+      vk::DeviceSize offset,
+      std::uint32_t raw_count,
+      std::uint32_t stride
+    );
+    void draw_indexed_indirect(
+      const std::shared_ptr< buffer_t > &buffer,
+      vk::DeviceSize offset,
+      std::uint32_t raw_count,
+      std::uint32_t stride
+    );
   private:
+    void update_framebuffer_image_layout();
     command_buffer_begin_info_t props;
     bool local_size_is_available;
     std::array< std::uint32_t, 3u > local_size;

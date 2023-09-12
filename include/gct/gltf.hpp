@@ -257,7 +257,8 @@ namespace gct::gltf {
     int shader_mask,
     float aspect_ratio,
     bool ray_trace,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode = false
   );
   struct push_constants_t {
     LIBGCT_SETTER( world_matrix )
@@ -337,7 +338,8 @@ namespace gct::gltf {
     const std::vector< vk::VertexInputAttributeDescription > &vertex_input_attribute,
     bool cull,
     bool blend,
-    bool back_side
+    bool back_side,
+    bool dynamic_cull_mode
   );
   primitive_t create_primitive(
     const fx::gltf::Document &doc,
@@ -355,7 +357,8 @@ namespace gct::gltf {
     const std::vector< shader_t > &shader,
     const textures_t &textures,
     uint32_t swapchain_size,
-    int shader_mask
+    int shader_mask,
+    bool dynamic_cull_mode
   );
   meshes_t create_mesh(
     const fx::gltf::Document &doc,
@@ -369,7 +372,8 @@ namespace gct::gltf {
     const textures_t &textures,
     uint32_t swapchain_size,
     int shader_mask,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode
   );
   node_t create_node(
     const fx::gltf::Document &doc,
@@ -390,7 +394,7 @@ namespace gct::gltf {
     const cameras_t &cameras
   );
   void draw_node(
-    const command_buffer_recorder_t &rec,
+    command_buffer_recorder_t &rec,
     const node_t &node,
     const meshes_t &meshes,
     const buffers_t &buffers,

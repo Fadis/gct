@@ -88,5 +88,18 @@ namespace gct {
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
+  pipeline_rasterization_state_create_info_t::pipeline_rasterization_state_create_info_t() {
+    set_basic(
+      vk::PipelineRasterizationStateCreateInfo()
+        .setDepthClampEnable( false )
+        .setRasterizerDiscardEnable( false )
+        .setPolygonMode( vk::PolygonMode::eFill )
+        .setCullMode( vk::CullModeFlagBits::eNone )
+        .setFrontFace( vk::FrontFace::eClockwise )
+        .setDepthBiasEnable( false )
+        .setLineWidth( 1.0f )
+    ); 
+  }
+
 }
 

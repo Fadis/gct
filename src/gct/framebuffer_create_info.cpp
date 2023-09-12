@@ -37,7 +37,10 @@ namespace gct {
     );
     basic
       .setAttachmentCount( raw_attachment.size() )
-      .setPAttachments( raw_attachment.data() );
+      .setPAttachments( raw_attachment.data() )
+      .setWidth( get_width() )
+      .setHeight( get_height() )
+      .setLayers( get_layer() );
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( attachments )
@@ -61,6 +64,10 @@ namespace gct {
   std::uint32_t framebuffer_create_info_t::get_height() const {
     if( attachment.empty() ) return get_basic().height;
     return attachment[ 0 ]->get_factory()->get_props().get_basic().extent.height;
+  }
+  std::uint32_t framebuffer_create_info_t::get_layer() const {
+    if( attachment.empty() ) return get_basic().layers;
+    return attachment[ 0 ]->get_props().get_basic().subresourceRange.layerCount;
   }
 }
 

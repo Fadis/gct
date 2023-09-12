@@ -111,5 +111,26 @@ namespace gct {
         );
     return instance;
   }
+  const sampler_create_info_t &get_basic_cubic_sampler_create_info() {
+    static const sampler_create_info_t instance =
+      sampler_create_info_t()
+        .set_basic(
+          vk::SamplerCreateInfo()
+            .setMagFilter( vk::Filter::eCubicEXT )
+            .setMinFilter( vk::Filter::eCubicEXT )
+            .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+            .setAddressModeU( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeV( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeW( vk::SamplerAddressMode::eClampToEdge )
+            .setAnisotropyEnable( false )
+            .setCompareEnable( false )
+            .setMipLodBias( 0.f )
+            .setMinLod( 0.f )
+            .setMaxLod( VK_LOD_CLAMP_NONE )
+            .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+            .setUnnormalizedCoordinates( false )
+        );
+    return instance;
+  }
 }
 

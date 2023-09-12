@@ -1,4 +1,5 @@
 #include <fstream>
+#include <gct/buffer.hpp>
 #include <gct/image.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>

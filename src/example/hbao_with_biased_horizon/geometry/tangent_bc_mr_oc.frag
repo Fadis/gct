@@ -37,7 +37,6 @@ void main()  {
   output_material = vec4( metalness, roughness, 0.0, 0.0 );
   output_optflow = vec4( optflow, 0.0 );
   output_shadow = vec4( shadow_level0, shadow_level1, shadow_level2, shadow_level3 );
-  output_face_normal = vec4( normalize( input_face_normal.xyz ), 1.0 );
 }
 
 

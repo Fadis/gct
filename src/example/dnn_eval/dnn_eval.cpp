@@ -139,24 +139,28 @@ int main( int argc, const char *argv[] ) {
   );
   command_buffer->wait_for_executed();
 
-  std::shared_ptr< std::vector< std::uint8_t > > host_output_byte;
+  std::vector< std::uint8_t > host_output_byte;
   {
     auto rec = command_buffer->begin();
     (*graph)( rec );
     rec.compute_to_transfer_barrier(
       { device_output.buffer }, {}
     );
-    host_output_byte = rec.dump_buffer( allocator, device_output.buffer );
+    rec.dump_buffer( allocator, device_output.buffer ).then(
+      [&]( std::vector< std::uint8_t > &&v ) {
+        host_output_byte = std::move( v );
+      }
+    );
   }
   command_buffer->execute(
     gct::submit_info_t()
   );
   command_buffer->wait_for_executed();
 
-  std::vector< float > result( host_output_byte->size() / sizeof( float ) );
+  std::vector< float > result( host_output_byte.size() / sizeof( float ) );
   std::copy(
-    host_output_byte->begin(),
-    host_output_byte->end(),
+    host_output_byte.begin(),
+    host_output_byte.end(),
     reinterpret_cast< std::uint8_t* >( result.data() )
   );
   std::vector< std::tuple< unsigned int, std::string, float > > sorted;

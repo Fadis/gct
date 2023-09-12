@@ -1,12 +1,16 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <nlohmann/json.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/image_view.hpp>
 #include <gct/allocator.hpp>
 #include <gct/framebuffer.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/format.hpp>
+#include <gct/image.hpp>
+#include <gct/buffer.hpp>
+#include <gct/gbuffer.hpp>
 #include <gct/cubemap.hpp>
 
 namespace gct {
@@ -141,6 +145,68 @@ void cubemap_matrix::move_center( const glm::vec3 &center ) {
   std::tie( proj, view ) = get_cubemap_matrix(
     center, near, far
   );
+}
+
+void cubemap_matrix::to_json( nlohmann::json &dest ) const {
+  dest = nlohmann::json::object();
+  dest[ "projection" ] = nlohmann::json::array();
+  for( unsigned int r = 0u; r != 4u; ++r ) {
+    dest[ "projection" ].push_back( nlohmann::json::array() );
+    for( unsigned int c = 0u; c != 4u; ++c ) {
+      dest[ "projection" ][ r ].push_back( double( proj[ r ][ c ] ) );
+    }
+  }
+  dest[ "view" ] = nlohmann::json::array();
+  for( unsigned int v = 0u; v != 6u; ++v ) {
+    dest[ "view" ].push_back( nlohmann::json::array() );
+    for( unsigned int r = 0u; r != 4u; ++r ) {
+      dest[ "view" ][ v ].push_back( nlohmann::json::array() );
+      for( unsigned int c = 0u; c != 4u; ++c ) {
+        dest[ "view" ][ v ][ r ].push_back( double( view[ v ][ r ][ c ] ) );
+      }
+    }
+  }
+}
+
+cubemap_images2::cubemap_images2(
+  const std::vector< std::shared_ptr< image_view_t > > &images
+) {
+  for( unsigned int swapchain_image_index = 0u; swapchain_image_index != images.size(); ++swapchain_image_index ) {
+    const auto &ci = images[ swapchain_image_index ]->get_props().get_basic();
+    if( ci.viewType == vk::ImageViewType::e2DArray && ci.subresourceRange.layerCount == 6u ) {
+      cube_image_views.push_back(
+        images[ swapchain_image_index ]->get_factory()->get_view(
+          image_view_create_info_t()
+            .set_basic(
+              vk::ImageViewCreateInfo()
+                .setSubresourceRange( ci.subresourceRange )
+                .setViewType( vk::ImageViewType::eCube )
+            )
+            .rebuild_chain()
+        )
+      );
+    }
+    else if( ci.viewType == vk::ImageViewType::e2DArray && ci.subresourceRange.layerCount % 6u == 0u ) {
+      cube_image_views.push_back(
+        images[ swapchain_image_index ]->get_factory()->get_view(
+          image_view_create_info_t()
+            .set_basic(
+              vk::ImageViewCreateInfo()
+                .setSubresourceRange( ci.subresourceRange )
+                .setViewType( vk::ImageViewType::eCubeArray )
+            )
+            .rebuild_chain()
+        )
+      );
+    }
+    else {
+      throw -1;
+    }
+  }
+}
+
+void to_json( nlohmann::json &dest, const cubemap_matrix &src ) {
+  src.to_json( dest );
 }
 
 

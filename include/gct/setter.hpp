@@ -29,13 +29,18 @@
     return *this; \
   } \
   template< typename ArgType > \
-  decltype(auto) set_ ## name ( const ArgType &v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) ) >* = nullptr ) { \
+  decltype(auto) set_ ## name ( const ArgType &v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) && !std::is_array_v< std::remove_cvref_t< ArgType > > ) >* = nullptr ) { \
     this -> name = v; \
     return *this; \
   } \
   template< typename ArgType > \
-  decltype(auto) set_ ## name ( ArgType &&v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) ) >* = nullptr ) { \
+  decltype(auto) set_ ## name ( ArgType &&v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) && !std::is_array_v< std::remove_cvref_t< ArgType > > ) >* = nullptr ) { \
     this -> name = std::move( v ); \
+    return *this; \
+  } \
+  template< typename ArgType > \
+  decltype(auto) set_ ## name ( ArgType &v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) && !std::is_array_v< std::remove_cvref_t< ArgType > > ) >* = nullptr ) { \
+    this -> name = v; \
     return *this; \
   } \
   template< typename ...ArgType > \

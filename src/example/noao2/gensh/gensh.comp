@@ -1,0 +1,65 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#include "constants.h"
+#include "sh.h"
+
+layout (std430, binding = 0) buffer SHCoefBlock {
+  SHCoef sh;
+} shcoef;
+layout(binding = 1) uniform samplerCube src_image;
+
+layout(local_size_x = 32, local_size_y = 32 ) in;
+
+
+shared SHCoef[32] coef_s;
+shared float[32] weight_s;
+
+void main() {
+  vec2 image_pos = ( ( vec2( gl_LocalInvocationID.xy ) + 0.5 ) / vec2( gl_WorkGroupSize.xy ) ) * 2.0 - 1.0;
+  const uint index = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+  vec3 dir[6] = vec3[](
+    normalize( vec3( 1, image_pos.y, image_pos.x ) ),
+    normalize( vec3( -1, image_pos.y, image_pos.x ) ),
+    normalize( vec3( image_pos.x, 1, image_pos.y ) ),
+    normalize( vec3( image_pos.x, -1, image_pos.y ) ),
+    normalize( vec3( image_pos.x, image_pos.y, 1 ) ),
+    normalize( vec3( image_pos.x, image_pos.y, -1 ) )
+  );
+  SHCoef sh = zero_coefficients();
+  const float temp = 1.0 + image_pos.x * image_pos.x + image_pos.y * image_pos.y;
+  float weight = ( 4.0 / ( sqrt( temp ) * temp ) ) * 6;
+  for( uint face = 0; face != 6; face++ ) {
+    const vec4 value = texture( src_image, dir[ face ] );
+    const SHCoef partial = get_partial_coefficients( dir[ face ], value );
+    for( uint i = 0; i != 9; i++ ) {
+      sh.coef[ i ] += partial.coef[ i ];
+    }
+  }
+  for( uint i = 0; i != 9; i++ ) {
+    vec4 temp = subgroupAdd( sh.coef[ i ] );
+    if( gl_SubgroupInvocationID == 0 ) {
+      coef_s[ gl_SubgroupID ].coef[ i ] = temp;
+    }
+  }
+  {
+    float temp = subgroupAdd( weight );
+    if( gl_SubgroupInvocationID == 0 ) {
+      weight_s[ gl_SubgroupID ] = temp;
+    }
+  }
+  barrier();
+  weight = subgroupAdd( weight_s[ gl_SubgroupInvocationID ] );
+  sh = coef_s[ gl_SubgroupInvocationID ];
+  for( uint i = 0; i != 9; i++ ) {
+    vec4 temp = subgroupAdd( sh.coef[ i ] );
+    if( index == 0 ) {
+      shcoef.sh.coef[ i ] = temp * 4.0 * pi / weight;
+    }
+  }
+}
+

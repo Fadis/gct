@@ -36,5 +36,16 @@ namespace gct {
     ) {
     props.rebuild_chain();
   }
+  std::vector< std::shared_ptr< image_view_t > >
+  get_views(
+    const std::vector< std::shared_ptr< image_t > > &images
+  ) {
+    std::vector< std::shared_ptr< image_view_t > > temp;
+    temp.reserve( temp.size() );
+    for( unsigned int i = 0u; i != images.size(); ++i ) {
+      temp.push_back( images[ i ]->get_view() );
+    }
+    return temp;
+  }
 }
 

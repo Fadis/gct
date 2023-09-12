@@ -1,5 +1,6 @@
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
+#include <gct/buffer.hpp>
 #include <gct/buffer_view_create_info.hpp>
 #include <gct/buffer_view.hpp>
 

@@ -7,7 +7,7 @@
 #include "push_constants.h"
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, rgba32f) writeonly uniform image2DArray dest_image;
+layout (binding = 1, rgba32f) writeonly uniform image2DArray temp_image;
 
 layout(local_size_x = 1, local_size_y = 512 ) in;
 
@@ -15,7 +15,7 @@ const int kernel_size = 64;
 shared vec3[gl_WorkGroupSize.y+kernel_size*2+1] cache;
 
 void main() {
-  const ivec2 image_size = imageSize( dest_image ).xy;
+  const ivec2 image_size = imageSize( temp_image ).xy;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const uint lcpos = gl_LocalInvocationID.y;
   {
@@ -52,6 +52,6 @@ void main() {
     r = max( r, mix( -h, -t, float( i )/float( kernel_size ) ) );
   }
   float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/2;
-  imageStore( dest_image, ivec3( screen_pos, 1 ), vec4( sum, 0.0, 0.0, 0.0 ) );
+  imageStore( temp_image, ivec3( screen_pos, 1 ), vec4( sum, 0.0, 0.0, 0.0 ) );
 }
 

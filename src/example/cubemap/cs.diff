@@ -1,0 +1,105 @@
+--- cube.cpp	2023-09-19 15:45:20.578620616 +0900
++++ shadow.cpp	2023-09-19 15:44:26.404418934 +0900
+@@ -1,21 +1,20 @@
+       { 
+         auto cube_mat_pc = gct::cubemat_push_constant_t()
+           .set_ioffset( glm::ivec4( 0, 0, 0, 0 ) )
+-          .set_offset( glm::vec4( walk.get_camera_pos(), 1.f ) ) //////
++          .set_offset( glm::vec4( walk.get_light_pos(), 1.f ) )
+           .set_near( std::min( 0.1f*scale, 0.5f ) )
+           .set_far( 2.f*scale );
+         rec->pushConstants(
+-          **cube_mat_pipeline->get_props().get_layout(),
++          **shadow_mat_pipeline->get_props().get_layout(),
+           vk::ShaderStageFlagBits::eCompute,
+           0u,
+           sizeof( gct::cubemat_push_constant_t ),
+           reinterpret_cast< void* >( &cube_mat_pc )
+         );
+       }
+-
+       rec.bind(
+-        cube_mat_pipeline,
+-        { cube_mat_descriptor_set }
++        shadow_mat_pipeline,
++        { shadow_mat_descriptor_set }
+       );
+       rec.dispatch_threads( 6, 1, 1 );
+       rec.barrier(
+@@ -25,21 +24,21 @@
+         vk::PipelineStageFlagBits::eGeometryShader,
+         vk::DependencyFlagBits( 0 ),
+         {
+-          cube_mat_storage
++          shadow_mat_storage
+         },
+         {}
+       );
+  
+       {
+         auto dynamic_data = gct::gltf::dynamic_uniforms_t()
+-          .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.f ) )
+-          .set_light_pos( glm::vec4( walk.get_light_pos(), 1.f ) )
++          .set_eye_pos( glm::vec4( walk.get_light_pos(), 1.f ) )
++          .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+           .set_light_energy( walk.get_light_energy() )
+           .set_light_size( light_size )
+           .set_ambient( ambient_level );
+         rec.copy(
+           dynamic_data,
+-          cube_uniform
++          shadow_uniform
+         );
+       }
+  
+@@ -50,30 +49,42 @@
+         vk::PipelineStageFlagBits::eVertexShader,
+         vk::DependencyFlagBits( 0 ),
+         {
+-          cube_uniform->get_buffer()
++          shadow_uniform->get_buffer()
+         },
+         {}
+       );
+       {
+         auto render_pass_token = rec.begin_render_pass(
+-          cube_gbuffer.get_render_pass_begin_info( 0 ),
++          shadow_gbuffer.get_render_pass_begin_info( 0 ),
+           vk::SubpassContents::eInline
+         );
+-        rec->setViewport( 0, 1, &cube_viewport );
+-        rec->setScissor( 0, 1, &cube_scissor );
++        rec->setViewport( 0, 1, &shadow_viewport );
++        rec->setScissor( 0, 1, &shadow_scissor );
+         gct::gltf::draw_node(
+           rec,
+           doc.node,
+           doc.mesh,
+           doc.buffer,
+-          1u,
++          0u,
+           {
+-            cube_descriptor_set
++            shadow_descriptor_set
+           }
+         );
+       }
+       rec.convert_image(
+-        cube_gbuffer.get_image( 0 ),
+-        vk::ImageLayout::eGeneral
++        shadow_gbuffer.get_image( 0 ),
++        vk::ImageLayout::eShaderReadOnlyOptimal
+       );
++      rec.barrier(
++        vk::AccessFlagBits::eColorAttachmentWrite,
++        vk::AccessFlagBits::eShaderRead,
++        vk::PipelineStageFlagBits::eColorAttachmentOutput,
++        vk::PipelineStageFlagBits::eFragmentShader,
++        vk::DependencyFlagBits( 0 ),
++        {},
++        {
++          shadow_gbuffer.get_image( 0 )
++        }
++      );
++
+ 

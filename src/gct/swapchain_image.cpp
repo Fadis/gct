@@ -1,6 +1,7 @@
 #include <gct/swapchain.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/image_view_create_info.hpp>
+#include <gct/format.hpp>
 #include <gct/swapchain_image.hpp>
 
 namespace gct {
@@ -55,6 +56,9 @@ namespace gct {
         )
         .rebuild_chain()
     );
+  }
+  std::shared_ptr< image_view_t > swapchain_image_t::get_view() {
+    return get_view( format_to_aspect( get_props().get_basic().format ) );
   }
   std::shared_ptr< device_t > swapchain_image_t::get_device() const {
     return get_factory()->get_factory();

@@ -75,18 +75,15 @@ namespace gct {
           .setSrcOffsets({
             vk::Offset3D(),
             vk::Offset3D()
-              .setX( std::min(
-                std::max( src->get_props().get_basic().extent.width >> mip, 1u ),
-                std::max( dest->get_props().get_basic().extent.width >> mip, 1u )
-              ) )
-              .setY( std::min(
-                std::max( src->get_props().get_basic().extent.height >> mip, 1u ),
-                std::max( dest->get_props().get_basic().extent.height >> mip, 1u )
-              ) )
-              .setZ( std::min(
-                std::max( src->get_props().get_basic().extent.depth >> mip, 1u ),
-                std::max( dest->get_props().get_basic().extent.depth >> mip, 1u )
-              ) )
+              .setX(
+                std::max( src->get_props().get_basic().extent.width >> mip, 1u )
+              )
+              .setY(
+                std::max( src->get_props().get_basic().extent.height >> mip, 1u )
+              )
+              .setZ(
+                std::max( src->get_props().get_basic().extent.depth >> mip, 1u )
+              )
           })
           .setDstSubresource(
             vk::ImageSubresourceLayers()
@@ -101,18 +98,15 @@ namespace gct {
           .setDstOffsets({
             vk::Offset3D(),
             vk::Offset3D()
-              .setX( std::min(
-                std::max( src->get_props().get_basic().extent.width >> mip, 1u ),
+              .setX(
                 std::max( dest->get_props().get_basic().extent.width >> mip, 1u )
-              ) )
-              .setY( std::min(
-                std::max( src->get_props().get_basic().extent.height >> mip, 1u ),
+              )
+              .setY(
                 std::max( dest->get_props().get_basic().extent.height >> mip, 1u )
-              ) )
-              .setZ( std::min(
-                std::max( src->get_props().get_basic().extent.depth >> mip, 1u ),
+              )
+              .setZ(
                 std::max( dest->get_props().get_basic().extent.depth >> mip, 1u )
-              ) )
+              )
           })
       );
     }

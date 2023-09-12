@@ -12,7 +12,9 @@
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device_create_info.hpp>
+#include <gct/buffer.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/image.hpp>
 #include <gct/swapchain.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
@@ -1076,7 +1078,7 @@ int main( int argc, const char *argv[] ) {
 
   const glm::mat4 voxel_camera = glm::mat4( 1.0 );
 
-  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), 150.f*scale );
+  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;
 
   gct::glfw_walk walk( center, scale, walk_state_filename );
@@ -1268,6 +1270,7 @@ int main( int argc, const char *argv[] ) {
             allocator,
             distance_field.get_image()->get_factory(),
             "test_" + std::to_string( d ) + ".png",
+            0,
             0,
             d,
             0

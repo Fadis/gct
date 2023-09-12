@@ -37,6 +37,7 @@
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
+#include <gct/image.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/command_buffer.hpp>
@@ -312,93 +313,26 @@ int main() {
     command_buffer->wait_for_executed();
   }
 
-
-  const auto viewport =
-    gct::pipeline_viewport_state_create_info_t()
-      /*.set_basic(
-        vk::PipelineViewportStateCreateInfo()
-      )*/
-      .add_viewport(
-        vk::Viewport()
-          .setWidth( width )
-          .setHeight( height )
-          .setMinDepth( 0.0f )
-          .setMaxDepth( 1.0f )
-      )
-      .add_scissor(
-        vk::Rect2D()
-          .setOffset( { 0, 0 } )
-          .setExtent( { width, height } )
-      )
-      .rebuild_chain();
-
-  const auto rasterization =
-    gct::pipeline_rasterization_state_create_info_t()
-      .set_basic(
-        vk::PipelineRasterizationStateCreateInfo()
-          .setDepthClampEnable( false )
-          .setRasterizerDiscardEnable( false )
-          .setPolygonMode( vk::PolygonMode::eFill )
-          .setCullMode( vk::CullModeFlagBits::eNone )
-          .setFrontFace( vk::FrontFace::eClockwise )
-          .setDepthBiasEnable( false )
-          .setLineWidth( 1.0f )
-      );
-
-  const auto multisample =
-    gct::pipeline_multisample_state_create_info_t()
-      .set_basic(
-        vk::PipelineMultisampleStateCreateInfo()
-      );
-
-  const auto stencil_op = vk::StencilOpState()
-    .setCompareOp( vk::CompareOp::eAlways )
-    .setFailOp( vk::StencilOp::eKeep )
-    .setPassOp( vk::StencilOp::eKeep );
-
-  const auto depth_stencil =
-    gct::pipeline_depth_stencil_state_create_info_t()
-      .set_basic(
-        vk::PipelineDepthStencilStateCreateInfo()
-          .setDepthTestEnable( true )
-          .setDepthWriteEnable( true )
-          .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
-          .setDepthBoundsTestEnable( false )
-          .setStencilTestEnable( false )
-          .setFront( stencil_op )
-          .setBack( stencil_op )
-      );
-
-  const auto color_blend =
-    gct::pipeline_color_blend_state_create_info_t()
-      .add_attachment(
-        vk::PipelineColorBlendAttachmentState()
-          .setBlendEnable( false )
-          .setColorWriteMask(
-            vk::ColorComponentFlagBits::eR |
-            vk::ColorComponentFlagBits::eG |
-            vk::ColorComponentFlagBits::eB |
-            vk::ColorComponentFlagBits::eA
-          )
-      );
-
   auto pipeline = pipeline_cache->get_pipeline(
     gct::graphics_pipeline_create_info_t()
       .add_stage( vs )
       .add_stage( fs )
       .set_vertex_input( vistat )
       .set_input_assembly( input_assembly )
-      .set_viewport( viewport )
-      .set_rasterization( rasterization )
-      .set_multisample( multisample )
-      .set_depth_stencil( depth_stencil )
-      .set_color_blend( color_blend )
-      .set_dynamic(
-        gct::pipeline_dynamic_state_create_info_t()
+      .set_viewport(
+        gct::pipeline_viewport_state_create_info_t()
+          .add_size( width, height )
+      )
+      .set_color_blend(
+        gct::pipeline_color_blend_state_create_info_t()
+          .add_attachment()
       )
       .set_layout( pipeline_layout )
       .set_render_pass( render_pass, 0 )
+      .fill_untouched()
   );
+
+  std::cout << nlohmann::json( pipeline->get_props() ).dump( 2 ) << std::endl;
 
   auto camera_pos = glm::vec3{ 0.f, -3.f, 6.0f };
   float camera_angle = 0;//M_PI;
@@ -448,12 +382,7 @@ int main() {
           fb.uniform_staging,
           fb.uniform
         );
-        recorder.barrier(
-          vk::AccessFlagBits::eTransferRead,
-          vk::AccessFlagBits::eShaderRead,
-          vk::PipelineStageFlagBits::eTransfer,
-          vk::PipelineStageFlagBits::eVertexShader,
-          vk::DependencyFlagBits( 0 ),
+        recorder.transfer_to_graphics_barrier(
           { fb.uniform },
           {}
         );
@@ -461,11 +390,9 @@ int main() {
           fb.render_pass_begin_info,
           vk::SubpassContents::eInline
         );
-        recorder.bind_pipeline( pipeline );
-        recorder.bind_descriptor_set(
-          vk::PipelineBindPoint::eGraphics,
-          pipeline_layout,
-          fb.descriptor_set
+        recorder.bind(
+          pipeline,
+          { fb.descriptor_set }
         );
         recorder.bind_vertex_buffer( vertex_buffer );
         recorder->draw( vertex_count, 1, 0, 0 );

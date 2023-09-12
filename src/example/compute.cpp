@@ -22,6 +22,7 @@
 #include <gct/command_pool.hpp>
 #include <gct/write_descriptor_set.hpp>
 #include <gct/gltf.hpp>
+#include <gct/buffer.hpp>
 
 struct spec_t {
   std::uint32_t local_x_size = 0u;

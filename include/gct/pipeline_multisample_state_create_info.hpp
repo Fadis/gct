@@ -23,6 +23,7 @@ namespace gct {
 #ifdef VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineSampleLocationsStateCreateInfoEXT, sample_locations )
 #endif
+    pipeline_multisample_state_create_info_t();
   };
   void to_json( nlohmann::json &root, const pipeline_multisample_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_multisample_state_create_info_t &v );

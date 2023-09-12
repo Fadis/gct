@@ -218,6 +218,33 @@ namespace gct {
       )
     );
   }
+  std::shared_ptr< descriptor_set_layout_t > device_t::get_descriptor_set_layout( const shader_module_reflection_t &reflection, std::uint32_t set_id ) {
+    return get_descriptor_set_layout(
+      gct::descriptor_set_layout_create_info_t()
+        .add_binding( reflection, set_id )
+        .rebuild_chain()
+    );
+  }
+  std::shared_ptr< descriptor_set_layout_t > device_t::get_descriptor_set_layout( const std::vector< std::filesystem::path > &path, std::uint32_t set_id ) {
+    gct::descriptor_set_layout_create_info_t ci;
+    for( const auto &p: path ) {
+      for( const auto &f: std::filesystem::directory_iterator( p ) ) {
+        if( f.is_regular_file() ) {
+          const auto filename = f.path().filename().string();
+          if( filename.size() > 4u && filename.substr( filename.size() - 4u ) == ".spv" ) {
+            ci.add_binding(
+              gct::shader_module_create_info_t()
+                .load( f.path() )
+                .get_reflection(),
+              set_id
+            );
+          }
+        }
+      }
+    }
+    ci.rebuild_chain();
+    return get_descriptor_set_layout( ci );
+  }
   std::shared_ptr< pipeline_cache_t > device_t::get_pipeline_cache( const pipeline_cache_create_info_t &create_info ) {
     return std::shared_ptr< pipeline_cache_t >(
       new pipeline_cache_t(

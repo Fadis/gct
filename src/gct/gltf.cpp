@@ -567,7 +567,8 @@ namespace gct::gltf {
     const std::vector< vk::VertexInputAttributeDescription > &vertex_input_attribute,
     bool cull,
     bool blend,
-    bool back_side
+    bool back_side,
+    bool dynamic_cull_mode
   ) {
     const auto stencil_op = vk::StencilOpState()
       .setFailOp( vk::StencilOp::eKeep )
@@ -636,6 +637,20 @@ namespace gct::gltf {
             .setBack( stencil_op )
         );
     }
+    auto dsci = pipeline_dynamic_state_create_info_t()
+      .add_dynamic_state( vk::DynamicState::eViewport )
+      .add_dynamic_state( vk::DynamicState::eScissor );
+    if( dynamic_cull_mode ) {
+#if defined(VK_VERSION_1_3)
+      dsci
+        .add_dynamic_state( vk::DynamicState::eCullMode )
+        .add_dynamic_state( vk::DynamicState::eDepthCompareOp );
+#elif defined(VK_KHR_VULKAN_EXTENDED_DYNAMIC_EXTENSION_NAME)
+      dsci
+        .add_dynamic_state( vk::DynamicState::eCullModeExt )
+        .add_dynamic_state( vk::DynamicState::eDepthCompareOpExt );
+#endif
+    }
 
     return pipeline_cache->get_pipeline(
       graphics_pipeline_create_info_t()
@@ -666,8 +681,8 @@ namespace gct::gltf {
                 .setRasterizerDiscardEnable( VK_FALSE )
                 .setPolygonMode( vk::PolygonMode::eFill )
                 .setCullMode(
-                  //cull ?
-                  //( back_side ? vk::CullModeFlagBits::eFront : vk::CullModeFlagBits::eBack ) :
+                  cull ?
+                  ( back_side ? vk::CullModeFlagBits::eFront : vk::CullModeFlagBits::eBack ) :
                   vk::CullModeFlagBits::eNone
                 )
                 .setFrontFace( vk::FrontFace::eCounterClockwise )
@@ -683,11 +698,7 @@ namespace gct::gltf {
         )
         .set_depth_stencil( std::move( dssci ) )
         .set_color_blend( std::move( cbsci ) )
-        .set_dynamic(
-          pipeline_dynamic_state_create_info_t()
-            .add_dynamic_state( vk::DynamicState::eViewport )
-            .add_dynamic_state( vk::DynamicState::eScissor )
-        )
+        .set_dynamic( std::move( dsci ) )
         .set_layout( pipeline_layout )
         .set_render_pass( render_pass, subpass )
         .rebuild_chain()

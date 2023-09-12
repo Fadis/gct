@@ -35,6 +35,10 @@ namespace gct {
     pipeline_viewport_state_create_info_t &add_scissor( const vk::Rect2D &v );
     pipeline_viewport_state_create_info_t &clear_scissor();
     const std::vector< vk::Rect2D > &get_scissor() const { return scissor; }
+    pipeline_viewport_state_create_info_t &add_size(
+      unsigned int width,
+      unsigned int height
+    );
   };
   void to_json( nlohmann::json &root, const pipeline_viewport_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_viewport_state_create_info_t &v );

@@ -10,6 +10,7 @@
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/get_device.hpp>
+#include <gct/gbuffer.hpp>
 #include <vulkan2json/GraphicsPipelineCreateInfo.hpp>
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #include <vulkan2json/AttachmentSampleCountInfoAMD.hpp>
@@ -211,6 +212,12 @@ namespace gct {
     }
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const std::vector< std::shared_ptr< shader_module_t > > &v ) {
+    for( const auto &e: v ) {
+      add_stage( e );
+    }
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_stage() {
     stage.clear();
     chained = false;
@@ -253,6 +260,11 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_vertex_input() {
+    vertex_input.reset( new pipeline_vertex_input_state_create_info_t() );
+    chained = false;
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_vertex_input() {
     vertex_input.reset();
     chained = false;
@@ -260,6 +272,11 @@ namespace gct {
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_input_assembly( const pipeline_input_assembly_state_create_info_t &v ) {
     input_assembly.reset( new pipeline_input_assembly_state_create_info_t( v ) );
+    chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_input_assembly() {
+    input_assembly.reset( new pipeline_input_assembly_state_create_info_t() );
     chained = false;
     return *this;
   }
@@ -273,6 +290,11 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_tessellation() {
+    tessellation.reset( new pipeline_tessellation_state_create_info_t() );
+    chained = false;
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_tessellation() {
     tessellation.reset();
     chained = false;
@@ -280,6 +302,11 @@ namespace gct {
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_viewport( const pipeline_viewport_state_create_info_t &v ) {
     viewport.reset( new pipeline_viewport_state_create_info_t( v ) );
+    chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_viewport() {
+    viewport.reset( new pipeline_viewport_state_create_info_t() );
     chained = false;
     return *this;
   }
@@ -293,6 +320,11 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_rasterization() {
+    rasterization.reset( new pipeline_rasterization_state_create_info_t() );
+    chained = false;
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_rasterization() {
     rasterization.reset();
     chained = false;
@@ -300,6 +332,11 @@ namespace gct {
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_multisample( const pipeline_multisample_state_create_info_t &v ) {
     multisample.reset( new pipeline_multisample_state_create_info_t( v ) );
+    chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_multisample() {
+    multisample.reset( new pipeline_multisample_state_create_info_t() );
     chained = false;
     return *this;
   }
@@ -313,6 +350,11 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_depth_stencil() {
+    depth_stencil.reset( new pipeline_depth_stencil_state_create_info_t() );
+    chained = false;
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_depth_stencil() {
     depth_stencil.reset();
     chained = false;
@@ -320,6 +362,11 @@ namespace gct {
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend( const pipeline_color_blend_state_create_info_t &v ) {
     color_blend.reset( new pipeline_color_blend_state_create_info_t( v ) );
+    chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend() {
+    color_blend.reset( new pipeline_color_blend_state_create_info_t() );
     chained = false;
     return *this;
   }
@@ -333,9 +380,59 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_dynamic() {
+    dynamic.reset( new pipeline_dynamic_state_create_info_t() );
+    chained = false;
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_dynamic() {
     dynamic.reset();
     chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::fill_untouched() {
+    if( !vertex_input ) set_vertex_input();
+    if( !input_assembly ) set_input_assembly();
+    if( !tessellation ) set_tessellation();
+    if( !viewport ) set_viewport();
+    if( !rasterization ) set_rasterization();
+    if( !multisample ) set_multisample();
+    if( !depth_stencil ) set_depth_stencil();
+    if( !color_blend ) set_color_blend();
+    if( !dynamic ) set_dynamic();
+    return *this;
+  }
+  const pipeline_viewport_state_create_info_t &graphics_pipeline_create_info_t::get_viewport() const {
+    if( viewport ) {
+      return *viewport;
+    }
+    else {
+      static const pipeline_viewport_state_create_info_t dummy;
+      return dummy;
+    }
+  }
+  const pipeline_color_blend_state_create_info_t &graphics_pipeline_create_info_t::get_color_blend() const {
+    if( color_blend ) {
+      return *color_blend;
+    }
+    else {
+      static const pipeline_color_blend_state_create_info_t dummy;
+      return dummy;
+    }
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_gbuffer(
+    const gbuffer &g
+  ) {
+    set_viewport(
+      gct::pipeline_viewport_state_create_info_t()
+        .add_size( g.get_props().width, g.get_props().height )
+    );
+    set_render_pass( g.get_render_pass(), 0 );
+    pipeline_color_blend_state_create_info_t temp;
+    for( unsigned int i = 0u; i != g.get_props().layer; ++i ) {
+      temp.add_attachment();
+    }
+    set_color_blend( temp );
     return *this;
   }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {

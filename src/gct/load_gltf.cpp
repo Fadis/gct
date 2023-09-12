@@ -37,7 +37,8 @@ namespace gct::gltf {
     int shader_mask,
     float aspect_ratio,
     bool ray_trace,
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout
+    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
+    bool dynamic_cull_mode
   ) {
     fx::gltf::Document doc = fx::gltf::LoadFromText( path.string() );
     document_t document;
@@ -95,7 +96,8 @@ namespace gct::gltf {
       document.texture, //
       swapchain_size,
       shader_mask,
-      env_descriptor_set_layout
+      env_descriptor_set_layout,
+      dynamic_cull_mode
     ) );
     document.set_point_light( create_point_light(
       doc

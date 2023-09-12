@@ -15,7 +15,6 @@ namespace gct {
     basic
       .setWidth( props.get_width() )
       .setHeight( props.get_height() )
-      .setLayers( 1u )
       .setRenderPass( **render_pass );
     props
       .set_basic( std::move( basic ) )

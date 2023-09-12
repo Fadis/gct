@@ -17,7 +17,10 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
+add_shader( ssao shadow_mat/shadow_mat.comp )
+
 add_shader( ssao shadow/world.vert )
+add_shader( ssao shadow/world.geom )
 add_shader( ssao shadow/world.frag )
 
 add_shader( ssao geometry/tangent.frag )

@@ -76,18 +76,33 @@ namespace gct {
       const auto info = vk::PhysicalDeviceSurfaceInfo2KHR()
         .setSurface( surface );
       auto err = pdev->getSurfaceCapabilities2KHR( &info, &basic );
-      if( err == vk::Result::eSuccess )
+      if( err == vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+        vk::detail::throwResultException( vk::Result( err ), "getSurfaceCapabilities2KHR failed" );
+#else
         vk::throwResultException( vk::Result( err ), "getSurfaceCapabilities2KHR failed" );
+#endif
+      }
       {
         std::uint32_t format_count = 0u;
         err = pdev->getSurfaceFormats2KHR( &info, &format_count, nullptr );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormats2KHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormats2KHR failed" );
+#endif
+        }
         std::vector< vk::SurfaceFormat2KHR > root( format_count );
         formats.resize( format_count );
         err = pdev->getSurfaceFormats2KHR( &info, &format_count, root.data() );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormats2KHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormats2KHR failed" );
+#endif
+}
         for( std::uint32_t i = 0u; i != format_count; ++i ) {
           formats[ i ].basic = root[ i ].surfaceFormat;
         }
@@ -98,13 +113,23 @@ namespace gct {
       {
         std::uint32_t format_count = 0u;
         auto err = pdev->getSurfaceFormatsKHR( surface, &format_count, nullptr );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#endif
+        }
         std::vector< vk::SurfaceFormatKHR > root( format_count );
         formats.resize( format_count );
         err = pdev->getSurfaceFormatsKHR( surface, &format_count, root.data() );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#endif
+        }
         for( std::uint32_t i = 0u; i != format_count; ++i ) {
           formats[ i ].basic = root[ i ];
         }
@@ -116,13 +141,23 @@ namespace gct {
       {
         std::uint32_t format_count = 0u;
         auto err = pdev->getSurfaceFormatsKHR( surface, &format_count, nullptr );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#endif
+        }
         std::vector< vk::SurfaceFormatKHR > root( format_count );
         formats.resize( format_count );
         err = pdev->getSurfaceFormatsKHR( surface, &format_count, root.data() );
-        if( err != vk::Result::eSuccess )
+        if( err != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+          vk::detail::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#else
           vk::throwResultException( vk::Result( err ), "getSurfaceFormatsKHR failed" );
+#endif
+        }
         for( std::uint32_t i = 0u; i != format_count; ++i ) {
           formats[ i ].basic = root[ i ];
         }

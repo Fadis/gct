@@ -1,6 +1,6 @@
 #include <iostream>
-#include <unordered_set>
 #include <utility>
+#include <boost/program_options.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -13,7 +13,9 @@
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device_create_info.hpp>
+#include <gct/buffer.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/image.hpp>
 #include <gct/swapchain.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
@@ -75,6 +77,18 @@ struct uniform_t {
 };
 
 int main( int argc, char *argv[] ) {
+  namespace po = boost::program_options;
+  po::options_description desc( "Options" );
+  desc.add_options()
+    ( "help,h", "show this message" )
+    ( "validation,v", po::bool_switch(), "enable validation layer" );
+  po::variables_map vm; 
+  po::store( po::parse_command_line( argc, argv, desc ), vm );
+  po::notify( vm );
+  if( vm.count( "help" ) ) { 
+    std::cout << desc << std::endl;
+    return 0;
+  }
   gct::glfw::get();
   uint32_t iext_count = 0u;
   auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
@@ -83,23 +97,25 @@ int main( int argc, char *argv[] ) {
     iext.push_back( exts[ i ] );
   const auto ilayers = gct::get_instance_layers();
   const auto iexts = gct::get_instance_extensions( std::vector< const char* >() );
-  std::shared_ptr< gct::instance_t > instance(
-    new gct::instance_t(
-      gct::instance_create_info_t()
-        .set_application_info(
-          vk::ApplicationInfo()
-            .setPApplicationName( argc ? argv[ 0 ] : "my_application" )
-            .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
-            .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
-        )
-        .add_layer(
-          "VK_LAYER_KHRONOS_validation"
-        )
-        .add_extension(
-          iext.begin(), iext.end()
-        )
+  auto ici = gct::instance_create_info_t()
+    .set_application_info(
+      vk::ApplicationInfo()
+        .setPApplicationName( argc ? argv[ 0 ] : "my_application" )
+        .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
+        .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
     )
+    .add_extension(
+      iext.begin(), iext.end()
+    );
+  if( vm[ "validation" ].as< bool >() ) {
+    ici.add_layer(
+      "VK_LAYER_KHRONOS_validation"
+    );
+  }
+  std::shared_ptr< gct::instance_t > instance(
+    new gct::instance_t( ici )
   );
+  instance->abort_on_validation_failure();
 
   auto groups = instance->get_physical_devices( {} );
   auto selected = groups[ 0 ].with_extensions( {
@@ -181,15 +197,17 @@ int main( int argc, char *argv[] ) {
   const auto vs = device->get_shader_module( "./src/example/roughness_mask/shader.vert.spv" );
   const auto fs = device->get_shader_module( "./src/example/roughness_mask/shader.frag.spv" );
  
-  const auto descriptor_set_layout = device->get_descriptor_set_layout(
-    gct::descriptor_set_layout_create_info_t()
+  const auto descriptor_set_layout = device->get_descriptor_set_layout({
+    CMAKE_CURRENT_BINARY_DIR "/../roughness_mask/"
+  });
+  /*  gct::descriptor_set_layout_create_info_t()
       .add_binding(
         vs->get_props().get_reflection()
       )
       .add_binding(
         fs->get_props().get_reflection()
       )
-  );
+  );*/
 
   auto base_color_sampler = device->get_sampler(
     gct::sampler_create_info_t()

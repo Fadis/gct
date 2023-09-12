@@ -1,0 +1,104 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 5) uniform samplerCubeArray light_extinction;
+layout (binding = 6, r32f) readonly uniform image2DArray view_extinction;
+layout (binding = 7, rgba32f) writeonly uniform image2D scattering;
+layout (binding = 8, rgba32f) writeonly uniform image2D extinction;
+
+layout(push_constant) uniform PushConstants {
+  vec4 g;
+  vec4 color;
+  vec4 eye_pos;
+  vec4 light_pos;
+  vec4 light_energy;
+  float light_near;
+  float light_far;
+  float view_near;
+  float view_far;
+  uint split_count;
+} push_constants;
+
+#include "omnishadow.h"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
+
+#include "constants.h"
+#include "volumetric.h"
+
+float get_linear_z_from_world( float d, float z_near, float z_far ) {
+  return ( d - z_near )/( z_far - z_near );
+}
+
+float get_linear_z( float d, float z_near, float z_far ) {
+  return ( ( 2.0 * z_near * z_far / ( z_far + z_near - d * ( z_far - z_near ) ) ) - z_near ) / abs( z_far - z_near );
+}
+void main() {
+  // スクリーンの各ピクセルについて
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  // ワールド空間での座標posを得る
+  const vec4 pos_ = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
+  const vec3 pos = pos_.xyz;
+  
+  float scattering_sum = 0.0;
+
+  uint accumulated_layer = 0;
+  float view_extinction_floor = 0.0;
+  // 視点からのOSMのレイヤーのうち、視点からposまでの間にあるレイヤーについて
+  for( int view_step = 0; view_step != 64; view_step++ ) {
+    const vec3 sample_pos = mix( push_constants.eye_pos.xyz, pos.xyz, float( view_step + 1 ) / 64.0 );
+    const float view_linear_z = get_linear_z_from_world( distance( sample_pos, push_constants.eye_pos.xyz ), push_constants.view_near, push_constants.view_far );
+    const uint view_layer = uint( push_constants.split_count * view_linear_z );
+    const float view_last_layer_depth = push_constants.split_count * view_linear_z - view_layer;
+
+    // view_step番目のレイヤーから視点に届く光のエネルギーの割合を求める
+    while( accumulated_layer < view_layer ) {
+      view_extinction_floor += imageLoad( view_extinction, ivec3( screen_pos, accumulated_layer ) ).r;
+      accumulated_layer++;
+    }
+    float view_extinction = view_extinction_floor + imageLoad( view_extinction, ivec3( screen_pos, accumulated_layer ) ).r * view_last_layer_depth;
+    const float particle_density = view_extinction;
+    view_extinction = beer_lambert( push_constants.color.x, view_extinction );
+    //view_extinction = ( 1.0 - view_extinction );
+    // このview_stepで光の吸収が生じていたら
+    // 光源からこのview_stepの位置までの間に生じる光の吸収を求める
+    vec3 light_to_pos = sample_pos - push_constants.light_pos.xyz;
+    const float light_linear_z = get_linear_z_from_world( distance( sample_pos, push_constants.light_pos.xyz ), push_constants.light_near, push_constants.light_far );
+    const uint light_layer = uint( push_constants.split_count * light_linear_z );
+    const float light_last_layer_depth = push_constants.split_count * light_linear_z - light_layer;
+    float light_extinction_ = 0.0;
+    for( uint i = 0; i < light_layer; i++ ) {
+      light_extinction_ += texture( light_extinction, vec4( light_to_pos, float( i ) ) ).r;
+      i++;
+    }
+    light_extinction_ += texture( light_extinction, vec4( light_to_pos, float( light_layer ) ) ).r * light_last_layer_depth;
+    light_extinction_ = beer_lambert( push_constants.color.x, light_extinction_ );
+    //light_extinction_ = ( 1.0 - light_extinction_ );
+    const vec3 V = normalize( push_constants.eye_pos.xyz - sample_pos );
+    const vec3 L = normalize( push_constants.light_pos.xyz - sample_pos );
+    const float theta = acos( dot( V, L ) );
+    // このview_stepから視点に届く光の散乱を求める
+    scattering_sum += view_extinction * light_extinction_ * henyey_greenstein_schlick( push_constants.g.x, theta ) * particle_density * distance( push_constants.eye_pos.xyz, sample_pos )/64.0;
+  }
+  const vec3 scattering_en = scattering_sum * push_constants.light_energy.rgb;
+  float view_extinction_;
+  {
+    const float view_linear_z = get_linear_z_from_world( distance( pos.xyz, push_constants.eye_pos.xyz ), push_constants.view_near, push_constants.view_far );
+    const uint view_layer = uint( push_constants.split_count * view_linear_z );
+    const float view_last_layer_depth = push_constants.split_count * view_linear_z - view_layer;
+    while( accumulated_layer < view_layer ) {
+      view_extinction_floor += imageLoad( view_extinction, ivec3( screen_pos, accumulated_layer ) ).r;
+      accumulated_layer++;
+    }
+    view_extinction_ = view_extinction_floor + imageLoad( view_extinction, ivec3( screen_pos, accumulated_layer ) ).r * view_last_layer_depth;
+    //view_extinction_ *= distance( push_constants.eye_pos.xyz, pos.xyz )/64.0;
+    view_extinction_ = beer_lambert( push_constants.color.x, view_extinction_ );
+    //view_extinction_ = max( min( 1.0, view_extinction_ ), 0.0 );
+    //view_extinction_ = 1.0 - view_extinction_;
+  }
+  imageStore( scattering, screen_pos, vec4( scattering_en, 1.0 ) );
+  imageStore( extinction, screen_pos, vec4( vec3( view_extinction_ ), 1.0 ) );
+}

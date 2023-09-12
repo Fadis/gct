@@ -22,3 +22,7 @@
 [submodule "external/half"]
 	path = external/half
 	url = https://github.com/ROCmSoftwarePlatform/half.git
+[submodule "external/psrdnoise"]
+	path = external/psrdnoise
+	url = https://github.com/stegu/psrdnoise.git
+	branch = main

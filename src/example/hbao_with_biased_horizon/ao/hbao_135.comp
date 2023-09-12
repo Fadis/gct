@@ -7,13 +7,13 @@
 #include "push_constants.h"
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, rg32f) writeonly uniform image2DArray dest_image;
+layout (binding = 1, rg32f) writeonly uniform image2DArray temp_image;
 
 layout(local_size_x = 512, local_size_y = 1 ) in;
 
 vec3 get_view_pos( ivec2 ipos, float depth ) {
   const float scaled_depth = /*1.0 -*/ ( depth * 0.5 + 0.5 );
-  const vec2 uv = ( ( vec2( ipos ) / vec2( imageSize( dest_image ) ) ) * 2.0 - 1.0 );
+  const vec2 uv = ( ( vec2( ipos ) / vec2( imageSize( temp_image ) ) ) * 2.0 - 1.0 );
   return vec3( uv * scaled_depth, scaled_depth );
 }
 
@@ -21,7 +21,7 @@ const int kernel_size = 64;
 shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] cache;
 
 void main() {
-  const ivec2 image_size = imageSize( dest_image ).xy;
+  const ivec2 image_size = imageSize( temp_image ).xy;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.x, ( -int( gl_GlobalInvocationID.x ) + int( gl_GlobalInvocationID.y + image_size.y * 3 ) ) % image_size.y );
   const uint lcpos = gl_LocalInvocationID.x;
   {
@@ -62,6 +62,6 @@ void main() {
     r = max( r, mix( -h, -t, float( i )/float( kernel_size ) ) );
   }
   float sum = ( -cos( ( pi - l + t ) ) -  -cos( r + t ) )/2;
-  imageStore( dest_image, ivec3( screen_pos, 3 ), vec4( sum, 0.0, 0.0, 0.0 ) );
+  imageStore( temp_image, ivec3( screen_pos, 3 ), vec4( sum, 0.0, 0.0, 0.0 ) );
 }
 

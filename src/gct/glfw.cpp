@@ -181,8 +181,13 @@ namespace gct {
   ) {
     VkSurfaceKHR raw_surface;
     VkResult err = glfwCreateWindowSurface( VkInstance( **pdev.get_factory() ), handle.get(), nullptr, &raw_surface );
-    if( err )
+    if( err ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( vk::Result( err ), "glfwCreateWindowSurface failed" );
+#else
       vk::throwResultException( vk::Result( err ), "glfwCreateWindowSurface failed" );
+#endif
+    }
     return std::shared_ptr< surface_t >(
       new surface_t(
         pdev,

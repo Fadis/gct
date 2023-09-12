@@ -21,6 +21,7 @@
 #include <gct/pipeline_layout.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/render_pass_begin_info.hpp>
+#include <gct/buffer.hpp>
 #include <gct/image.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/primitive.hpp>

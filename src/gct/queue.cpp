@@ -220,8 +220,13 @@ namespace gct {
     auto info = info_;
     info.rebuild_chain();
     auto present_result = queue.presentKHR( &info.get_basic() );
-    if( present_result != vk::Result::eSuccess )
+    if( present_result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( present_result, "presentKHR failed" );
+#else
       vk::throwResultException( present_result, "presentKHR failed" );
+#endif
+    }
   }
 #endif
 }

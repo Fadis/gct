@@ -74,6 +74,8 @@ namespace gct {
     const std::vector< vk::Format > &get_format_list_formats() const { return format_list_formats; }
 #endif
   };
+  vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );
+  vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );
   void to_json( nlohmann::json &root, const image_create_info_t &v );
   void from_json( const nlohmann::json &root, image_create_info_t &v );
 }

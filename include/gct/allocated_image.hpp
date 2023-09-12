@@ -35,6 +35,7 @@ namespace gct {
     std::shared_ptr< image_view_t > get_view(
       vk::ImageAspectFlags aspect
     );
+    std::shared_ptr< image_view_t > get_view();
     vk::Image &operator*() {
       return *handle;
     }

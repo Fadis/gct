@@ -33,6 +33,7 @@ namespace gct {
     const glm::mat4 &light_projection_matrix,
     const glm::mat4 &light_view_matrix
   );
+
 }
 
 #endif

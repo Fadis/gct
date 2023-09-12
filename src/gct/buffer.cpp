@@ -31,7 +31,13 @@ namespace gct {
     buffer_alloc_info.usage = usage;
     VkBuffer buffer_;
     const auto result = vmaCreateBuffer( **allocator, &raw_buffer_create_info, &buffer_alloc_info, &buffer_, allocation.get(), nullptr );
-    if( result != VK_SUCCESS ) vk::throwResultException( vk::Result( result ), "バッファを作成できない" );
+    if( result != VK_SUCCESS ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( vk::Result( result ), "バッファを作成できない" );
+#else
+      vk::throwResultException( vk::Result( result ), "バッファを作成できない" );
+#endif
+    }
     handle.reset(
       new vk::Buffer( buffer_ ),
       [allocator=allocator,allocation=allocation]( vk::Buffer *p ) {
@@ -130,7 +136,13 @@ namespace gct {
   void *buffer_t::map_raw() const {
     void* mapped_memory;
     const auto result = vmaMapMemory( **get_factory(), *allocation, &mapped_memory );
-    if( result != VK_SUCCESS ) vk::throwResultException( vk::Result( result ), "バッファをマップできない" );
+    if( result != VK_SUCCESS ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( vk::Result( result ), "バッファをマップできない" );
+#else
+      vk::throwResultException( vk::Result( result ), "バッファをマップできない" );
+#endif
+    }
     return mapped_memory;
   }
   void unmap_memory( const std::shared_ptr< allocator_t > &allocator, const std::shared_ptr< VmaAllocation > &allocation ) {

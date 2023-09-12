@@ -32,6 +32,8 @@ namespace gct {
     std::uint32_t rows = 0u;
     std::uint32_t cols = 0u;
   };
+  bool operator==( const numeric_type_t&, const numeric_type_t& );
+  bool operator!=( const numeric_type_t&, const numeric_type_t& );
   numeric_type_t spv2numeric_type( const SpvReflectTypeDescription& );
   const std::vector< vk::Format > &get_compatible_format( const numeric_type_t &v );
   std::uint64_t get_one( const numeric_type_t &v );

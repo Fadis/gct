@@ -5,7 +5,7 @@
 
 layout (location = 0) in vec4 input_position;
 
-layout (set=1, binding = 2, r32ui) uniform uimage3D dest_image;
+layout (set=1, binding = 3, r32ui) uniform uimage3D dest_image;
 
 void main()  {
   const ivec3 image_size = imageSize( dest_image );

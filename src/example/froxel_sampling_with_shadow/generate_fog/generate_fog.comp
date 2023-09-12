@@ -1,0 +1,28 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, r32f) writeonly uniform image3D fog_level;
+
+layout(push_constant) uniform PushConstants {
+  mat4 screen_to_world;
+  vec4 period;
+} push_constants;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
+
+#include "../../../../external/psrdnoise/src/psrdnoise3-min.glsl"
+
+void main()  {
+  const ivec3 screen_pos = ivec3( gl_GlobalInvocationID.xyz );
+  const vec3 screen_pos_f = vec3( screen_pos ) / vec3( imageSize( fog_level ).xyz ) * 2.0 - 1.0;
+  vec4 pos = push_constants.screen_to_world * vec4( screen_pos_f, 1.0 );
+  pos /= pos.w;
+
+  vec3 grad;
+  const float level = abs( psrdnoise( pos.xyz, push_constants.period.xyz, 0, grad ) );
+
+  imageStore( fog_level, screen_pos, vec4( level, 0.0, 0.0, 1.0 ) );
+}
+

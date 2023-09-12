@@ -55,6 +55,7 @@ add_library( gct SHARED
   gct/swapchain_image.cpp
   gct/buffer_create_info.cpp
   gct/buffer.cpp
+  gct/mappable_buffer.cpp
   gct/buffer_device_address_info.cpp
   gct/extension.cpp
   gct/swapchain_create_info.cpp
@@ -163,6 +164,8 @@ add_library( gct SHARED
   gct/async.cpp
   gct/spv2json.cpp
   gct/spv2vk.cpp
+  gct/alignment.cpp
+  gct/spv_member_pointer.cpp
   gct/image_layout.cpp
   gct/numeric_types.cpp
   gct/get_normalized_vertex_attribute_name.cpp
@@ -176,6 +179,7 @@ add_library( gct SHARED
   gct/format_to_component_type.cpp
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
+  gct/draw.cpp
   gct/dispatch.cpp
   gct/font.cpp
   gct/display_mode_create_info.cpp
@@ -187,7 +191,9 @@ add_library( gct SHARED
   gct/shadow_map.cpp
   gct/cubemap.cpp
   gct/gbuffer.cpp
+  gct/gbuffer_create_info.cpp
   gct/voxel_image.cpp
+  gct/distance_field.cpp
   gct/spectrum.cpp
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
@@ -209,6 +215,27 @@ add_library( gct SHARED
   gct/primitives/cursor.cpp
   gct/nnef_data.cpp
   gct/numeric_type_to_oiio_type.cpp
+  gct/cubemap_matrix_generator.cpp
+  gct/image_filter.cpp
+  gct/image_filter_create_info.cpp
+  gct/named_resource.cpp
+  gct/compute.cpp
+  gct/compute_create_info.cpp
+  gct/graphics.cpp
+  gct/graphics_create_info.cpp
+  gct/tone_mapping_create_info.cpp
+  gct/tone_mapping.cpp
+  gct/hbao_create_info.cpp
+  gct/hbao.cpp
+  gct/epipolar_mesh_create_info.cpp
+  gct/epipolar_mesh.cpp
+  gct/epipolar_light_scattering_create_info.cpp
+  gct/epipolar_light_scattering.cpp
+  gct/generate_projection_matrix.cpp
+  gct/particle_buffer.cpp
+  gct/draw_particle.cpp
+  gct/draw_particle_create_info.cpp
+  gct/load_obj_particle.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -232,6 +259,7 @@ target_link_libraries(
 
 add_library( gct_glfw SHARED
   gct/glfw.cpp
+  gct/common_sample_setup.cpp
 )
 
 set_target_properties(
@@ -296,6 +324,22 @@ set_target_properties(
 install( TARGETS gct_dnn )
 
 endif()
+
+add_executable( gen_cube_mat gen_cube_mat.cpp )
+target_link_libraries( gen_cube_mat
+  gct
+  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+)
+
+add_executable( dump_spirv dump_spirv.cpp )
+target_link_libraries( dump_spirv
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
 
 
 if( ENABLE_EXAMPLES )

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/queue.hpp>
@@ -33,6 +34,7 @@ namespace gct {
   class render_pass_t;
   class shader_module_create_info_t;
   class shader_module_t;
+  class shader_module_reflection_t;
   class sampler_create_info_t;
   class sampler_t;
   class semaphore_create_info_t;
@@ -74,6 +76,8 @@ namespace gct {
     std::shared_ptr< swapchain_t > get_swapchain( const std::shared_ptr< surface_t > &surface );
     std::shared_ptr< descriptor_pool_t > get_descriptor_pool( const descriptor_pool_create_info_t& );
     std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const descriptor_set_layout_create_info_t& );
+    std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const shader_module_reflection_t &reflection, std::uint32_t set_id = 0u );
+    std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const std::vector< std::filesystem::path > &path, std::uint32_t set_id = 0u );
     std::shared_ptr< pipeline_cache_t > get_pipeline_cache( const pipeline_cache_create_info_t& );
     std::shared_ptr< pipeline_cache_t > get_pipeline_cache();
     std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );

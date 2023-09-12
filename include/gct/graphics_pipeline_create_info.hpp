@@ -19,6 +19,7 @@ namespace gct {
   class pipeline_layout_t;
   class render_pass_t;
   class descriptor_set_layout_t;
+  class gbuffer;
   class graphics_pipeline_create_info_t : public chained_t {
     friend void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
   public:
@@ -73,24 +74,39 @@ namespace gct {
   public:
     graphics_pipeline_create_info_t &add_stage( const pipeline_shader_stage_create_info_t& );
     graphics_pipeline_create_info_t &add_stage( const std::shared_ptr< shader_module_t >& );
+    graphics_pipeline_create_info_t &add_stage( const std::vector< std::shared_ptr< shader_module_t > >& );
     graphics_pipeline_create_info_t &clear_stage();
+    const std::vector< pipeline_shader_stage_create_info_t > &get_stage() const {
+      return stage;
+    }
     graphics_pipeline_create_info_t &set_vertex_input( const pipeline_vertex_input_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_vertex_input();
     graphics_pipeline_create_info_t &clear_vertex_input();
     graphics_pipeline_create_info_t &set_input_assembly( const pipeline_input_assembly_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_input_assembly();
     graphics_pipeline_create_info_t &clear_input_assembly();
     graphics_pipeline_create_info_t &set_tessellation( const pipeline_tessellation_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_tessellation();
     graphics_pipeline_create_info_t &clear_tessellation();
     graphics_pipeline_create_info_t &set_viewport( const pipeline_viewport_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_viewport();
     graphics_pipeline_create_info_t &clear_viewport();
+    const pipeline_viewport_state_create_info_t &get_viewport() const;
     graphics_pipeline_create_info_t &set_rasterization( const pipeline_rasterization_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_rasterization();
     graphics_pipeline_create_info_t &clear_rasterization();
     graphics_pipeline_create_info_t &set_multisample( const pipeline_multisample_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_multisample();
     graphics_pipeline_create_info_t &clear_multisample();
     graphics_pipeline_create_info_t &set_depth_stencil( const pipeline_depth_stencil_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_depth_stencil();
     graphics_pipeline_create_info_t &clear_depth_stencil();
     graphics_pipeline_create_info_t &set_color_blend( const pipeline_color_blend_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_color_blend();
+    const pipeline_color_blend_state_create_info_t &get_color_blend() const;
     graphics_pipeline_create_info_t &clear_color_blend();
     graphics_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
+    graphics_pipeline_create_info_t &set_dynamic();
     graphics_pipeline_create_info_t &clear_dynamic();
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
@@ -100,6 +116,8 @@ namespace gct {
     }
     graphics_pipeline_create_info_t &set_render_pass( const std::shared_ptr< render_pass_t >&, std::uint32_t );
     graphics_pipeline_create_info_t &clear_render_pass();
+    graphics_pipeline_create_info_t &fill_untouched();
+    graphics_pipeline_create_info_t &set_gbuffer( const gbuffer& );
     void to_json( nlohmann::json &root );
   };
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );

@@ -37,6 +37,7 @@
 #include <gct/wait_for_sync.hpp>
 #include <gct/present_info.hpp>
 #include <gct/gltf.hpp>
+#include <gct/image.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/primitive.hpp>
