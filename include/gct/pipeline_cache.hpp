@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <filesystem>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
@@ -58,6 +59,7 @@ namespace gct {
     get_pipeline(
       const std::string &path
     );
+    void dump( const std::filesystem::path &filename ) const;
   private:
     pipeline_cache_create_info_t props;
     vk::UniqueHandle< vk::PipelineCache, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

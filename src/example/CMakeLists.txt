@@ -50,4 +50,5 @@ subdirs(
   simple_particle
   osm
   fom
+  sky
 )

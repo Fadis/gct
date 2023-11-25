@@ -1,3 +1,4 @@
+#include <fstream>
 #include <gct/device.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/compute_pipeline.hpp>
@@ -71,5 +72,11 @@ namespace gct {
         .set_layout( descriptor_set_layout, shader )
     );
     return std::make_pair( descriptor_set_layout, pipeline );
+  }
+  void pipeline_cache_t::dump( const std::filesystem::path &filename ) const {
+    auto &device = get_device( *this );
+    auto data = device->getPipelineCacheData( *handle );
+    std::fstream fd( filename.c_str(), std::ios::out|std::ios::binary );
+    fd.write( reinterpret_cast< char* >( data.data() ), data.size() );
   }
 }
