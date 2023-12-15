@@ -68,7 +68,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 find_package(Threads REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost 1.68.0 COMPONENTS program_options context system REQUIRED )
-pkg_check_modules(GLFW REQUIRED glfw3)
+pkg_check_modules(GLFW glfw3)
 pkg_check_modules(Vulkan REQUIRED vulkan)
 find_package(JSON REQUIRED)
 find_package(FXGLTF REQUIRED)
@@ -76,16 +76,16 @@ find_package(OpenImageIO REQUIRED)
 pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
 find_package(GLSLC REQUIRED)
 find_package(ASTCEnc REQUIRED)
-pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
-pkg_check_modules(ICUUC REQUIRED icu-uc)
-pkg_check_modules(LIBINPUT REQUIRED libinput)
-pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
-pkg_check_modules(SDBUSCPP REQUIRED sdbus-c++)
+pkg_check_modules(HARFBUZZ harfbuzz)
+pkg_check_modules(ICUUC icu-uc)
+pkg_check_modules(LIBINPUT libinput)
+pkg_check_modules(XKBCOMMON xkbcommon)
+pkg_check_modules(SDBUSCPP sdbus-c++)
 if( LIBINPUT_VERSION VERSION_LESS "1.19" )
   add_definitions( -DGCT_LIBINPUT_NO_POINTER_WHEEL )
   add_definitions( -DGCT_LIBINPUT_NO_GESTURE_HOLD )
 endif()
-find_package(NNEF REQUIRED)
+find_package(NNEF)
 
 
 configure_file(
@@ -133,32 +133,67 @@ INSTALL(
   include/gct/
 )
 
+set( GCT_INCURE_DIRS "" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/include" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/minimp4" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/ttf2mesh" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/tqdm-cpp" )
+list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/hdmap/include" )
+list( APPEND GCT_INCURE_DIRS "${Boost_INCLUDE_DIRS}" )
+if( GLFW_FOUND )
+list( APPEND GCT_INCURE_DIRS "${GLFW_INCLUDE_DIR}" )
+endif()
+list( APPEND GCT_INCURE_DIRS "${JSON_INCLUDE_DIRS}" )
+list( APPEND GCT_INCURE_DIRS "${FXGLTF_INCLUDE_DIRS}" )
+list( APPEND GCT_INCURE_DIRS "${Vulkan_INCLUDE_DIRS}" )
+list( APPEND GCT_INCURE_DIRS "${OIIO_INCLUDE_DIR}" )
+list( APPEND GCT_INCURE_DIRS "${VULKAN2JSON_INCLUDE_DIR}" )
+if( HARFBUZZ_FOUND )
+list( APPEND GCT_INCURE_DIRS "${HARFBUZZ_INCLUDE_DIRS}" )
+endif()
+if( ICUUC_FOUND )
+list( APPEND GCT_INCURE_DIRS "${ICUUC_INCLUDE_DIRS}" )
+endif()
+if( XKBCOMMON_FOUND )
+list( APPEND GCT_INCURE_DIRS "${X11_xkbcommon_INCLUDE_PATH}" )
+endif()
+if( SDBUSCPP_FOUND )
+list( APPEND GCT_INCURE_DIRS "${SDBUSCPP_INCLUDE_DIRS}" )
+endif()
+if( NNEF_FOUND )
+list( APPEND GCT_INCURE_DIRS "${NNEF_INCLUDE_PATH}" )
+endif()
+
+set( GCT_LINK_DIRS "" )
+list( APPEND GCT_LINK_DIRS "${Boost_LIBRARY_DIRS}" )
+list( APPEND GCT_LINK_DIRS "${Vulkan_LIBRARY_DIRS}" )
+list( APPEND GCT_LINK_DIRS "${OIIO_LIBRARY_DIR}" )
+list( APPEND GCT_LINK_DIRS "${VULKAN2JSON_LIBRARY_DIR}" )
+if( HARFBUZZ_FOUND )
+list( APPEND GCT_LINK_DIRS "${HARFBUZZ_LIBRARY_DIR}" )
+endif()
+if( ICUUC_FOUND )
+  list( APPEND GCT_LINK_DIRS "${ICUUC_LIBRARY_DIR}" )
+endif()
+if( HARFBUZZ_FOUND )
+list( APPEND GCT_LINK_DIRS "${HARFBUZZ_LIBRARY_DIR}" )
+endif()
+if( XKBCOMMON_FOUND )
+list( APPEND GCT_LINK_DIRS "${X11_xkbcommon_LIBRARY_DIR}" )
+endif()
+if( SDBUSCPP_FOUND )
+list( APPEND GCT_LINK_DIRS "${SDBUSCPP_LIBRARY_DIR}" )
+endif()
+if( NNEF_FOUND )
+list( APPEND GCT_LINK_DIRS "${NNEF_LIBRARY_DIR}" )
+endif()
+
 INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_BINARY_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/minimp4
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/ttf2mesh
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/tqdm-cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/hdmap/include
-  ${Boost_INCLUDE_DIRS}
-  ${GLFW_INCLUDE_DIR}
-  ${JSON_INCLUDE_DIRS}
-  ${FXGLTF_INCLUDE_DIRS}
-  ${Vulkan_INCLUDE_DIRS}
-  ${OIIO_INCLUDE_DIR}
-  ${VULKAN2JSON_INCLUDE_DIR}
-  ${HARFBUZZ_INCLUDE_DIRS}
-  ${ICUUC_INCLUDE_DIRS}
-  ${X11_xkbcommon_INCLUDE_PATH}
-  ${NNEF_INCLUDE_DIRS}
+  ${GCT_INCURE_DIRS}
 )
 link_directories(
-  ${Boost_LIBRARY_DIRS}
-  ${Vulkan_LIBRARY_DIRS}
-  ${OIIO_LIBRARY_DIR}
-  ${VULKAN2JSON_LIBRARY_DIR}
-  ${HARFBUZZ_LIBRARY_DIR}
-  ${ICUUC_LIBRARY_DIR}
+  ${GCT_LINK_DIRS}
 )
 
 add_definitions( -DVK_ENABLE_BETA_EXTENSIONS -DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 )
@@ -174,6 +209,8 @@ install(
   GROUP_READ
   WORLD_READ
 )
+if( GLFW_FOUND )
+
 configure_file(libgct_glfw.pc.in libgct_glfw.pc @ONLY)
 install(
   FILES
@@ -185,6 +222,56 @@ install(
   GROUP_READ
   WORLD_READ
 )
+
+endif()
+
+if( HARFBUZZ_FOUND AND ICUUC_FOUND )
+
+configure_file(libgct_text.pc.in libgct_text.pc @ONLY)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/libgct_text.pc
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+
+endif()
+
+if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND )
+
+configure_file(libgct_input.pc.in libgct_input.pc @ONLY)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/libgct_input.pc
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+
+endif()
+
+if( NNEF_FOUND )
+
+configure_file(libgct_dnn.pc.in libgct_dnn.pc @ONLY)
+install(
+  FILES
+  ${CMAKE_BINARY_DIR}/libgct_dnn.pc
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+
+endif()
 
 if( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
   execute_process(

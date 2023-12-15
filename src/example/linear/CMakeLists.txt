@@ -1,3 +1,4 @@
+if( NNEF_FOUND )
 add_executable( linear
   linear.cpp
 )
@@ -22,3 +23,5 @@ add_shader( linear shaders/convolution_f32_f32_f32_f32.comp )
 add_shader( linear shaders/relu_f32_f32.comp )
 add_shader( linear shaders/softmax_f32_f32.comp )
 add_shader( linear shaders/max_pool_f32_f32.comp )
+endif()
+

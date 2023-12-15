@@ -1,3 +1,5 @@
+if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND )
+
 add_executable( text_input
   text_input.cpp
 )
@@ -5,6 +7,7 @@ add_executable( text_input
 target_link_libraries(
   text_input
   gct
+  gct_input
   Threads::Threads
   Boost::program_options
   Boost::system
@@ -22,10 +25,13 @@ add_executable( fcitx5_input
 target_link_libraries(
   fcitx5_input
   gct
+  gct_input
   Threads::Threads
   Boost::program_options
   Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
 )
+
+endif()
 

@@ -1,3 +1,4 @@
+if( NNEF_FOUND )
 add_executable( exec_nnef
   exec_nnef.cpp
 )
@@ -16,4 +17,5 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw}
   ${pkgcfg_lib_GLFW_glfw3}
 )
+endif()
 

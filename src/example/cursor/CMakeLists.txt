@@ -1,3 +1,5 @@
+if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND )
+
 add_executable( cursor
   cursor.cpp
 )
@@ -5,6 +7,7 @@ add_executable( cursor
 target_link_libraries(
   cursor
   gct
+  gct_input
   Threads::Threads
   Boost::program_options
   Boost::system
@@ -14,3 +17,6 @@ target_link_libraries(
 
 add_shader( cursor shader.vert )
 add_shader( cursor global.frag )
+
+endif()
+

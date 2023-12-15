@@ -1,3 +1,4 @@
+if( NNEF_FOUND )
 add_executable( dnn_eval
   dnn_eval.cpp
 )
@@ -22,3 +23,5 @@ add_shader( dnn_eval shaders/convolution_f32_f32_f32_f32.comp )
 add_shader( dnn_eval shaders/relu_f32_f32.comp )
 add_shader( dnn_eval shaders/softmax_f32_f32.comp )
 add_shader( dnn_eval shaders/max_pool_f32_f32.comp )
+endif()
+

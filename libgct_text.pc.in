@@ -1,0 +1,13 @@
+prefix="@CMAKE_INSTALL_PREFIX@"
+exec_prefix="${prefix}/@CMAKE_INSTALL_BINDIR@"
+libdir="${prefix}/@CMAKE_INSTALL_LIBDIR@"
+includedir="${prefix}/@CMAKE_INSTALL_INCLUDEDIR@"
+
+Name: @PROJECT_NAME@_input
+Description: @CMAKE_PROJECT_DESCRIPTION@
+URL: @CMAKE_PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Requires: vulkan, vulkan2json, libgct, xkbcommon, sdbus-c++
+Cflags: -I"${includedir}"
+Libs: -L"${libdir}" -licuuc -lharfbuzz -ldl -lgct -lgct_text -lvulkan2json -lvulkan
+

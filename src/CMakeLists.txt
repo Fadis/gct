@@ -198,16 +198,10 @@ add_library( gct SHARED
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
   gct/canvas/canvas.cpp
-  gct/text/layout_engine.cpp
   gct/sched/coroutine.cpp 
   gct/sched/thread_pool.cpp 
   gct/sched/wait.cpp
   gct/sched/epoll_notifier.cpp
-  gct/input/device_monitor.cpp
-  gct/input/get_system_keymap.cpp 
-  gct/input/libinput.cpp 
-  gct/input/xkbcommon.cpp 
-  gct/input/fcitx5.cpp 
   gct/primitives/triangle.cpp
   gct/primitives/plane.cpp
   gct/primitives/cube.cpp
@@ -248,19 +242,9 @@ target_link_libraries(
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_VULKAN2JSON_vulkan2json}
-  ${pkgcfg_lib_HARFBUZZ_harfbuzz}
-  ${pkgcfg_lib_ICUUC_icuuc}
-  ${pkgcfg_lib_ICUUC_icudata}
-  ${pkgcfg_lib_LIBINPUT_input}
-  ${pkgcfg_lib_XKBCOMMON_xkbcommon}
-  ${pkgcfg_lib_SDBUSCPP_sdbus-c++}
-  ${pkgcfg_lib_SDBUSCPP_systemd}
 )
 
-add_library( gct_glfw SHARED
-  gct/glfw.cpp
-  gct/common_sample_setup.cpp
-)
+install( TARGETS gct )
 
 set_target_properties(
   gct
@@ -269,7 +253,12 @@ set_target_properties(
   SOVERSION 0
 )
 
-install( TARGETS gct )
+if( GLFW_FOUND )
+
+add_library( gct_glfw SHARED
+  gct/glfw.cpp
+  gct/common_sample_setup.cpp
+)
 
 target_link_libraries(
   gct_glfw
@@ -289,6 +278,69 @@ set_target_properties(
 )
 
 install( TARGETS gct_glfw )
+
+endif()
+
+if( HARFBUZZ_FOUND AND ICUUC_FOUND )
+
+add_library( gct_text SHARED
+  gct/text/layout_engine.cpp
+)
+
+set_target_properties(
+  gct_text
+  PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
+)
+
+target_link_libraries(
+  gct_text
+  Threads::Threads
+  ${CMAKE_DL_LIBS}
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_HARFBUZZ_harfbuzz}
+  ${pkgcfg_lib_ICUUC_icuuc}
+  ${pkgcfg_lib_ICUUC_icudata}
+)
+
+install( TARGETS gct_text )
+
+endif()
+
+if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND )
+
+add_library( gct_input SHARED
+  gct/input/device_monitor.cpp
+  gct/input/get_system_keymap.cpp 
+  gct/input/libinput.cpp 
+  gct/input/xkbcommon.cpp 
+  gct/input/fcitx5.cpp 
+)
+
+set_target_properties(
+  gct_input
+  PROPERTIES
+  VERSION ${PROJECT_VERSION}
+  SOVERSION 0
+)
+
+target_link_libraries(
+  gct_input
+  Threads::Threads
+  ${CMAKE_DL_LIBS}
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_LIBINPUT_input}
+  ${pkgcfg_lib_XKBCOMMON_xkbcommon}
+  ${pkgcfg_lib_SDBUSCPP_sdbus-c++}
+  ${pkgcfg_lib_SDBUSCPP_systemd}
+)
+
+install( TARGETS gct_input )
+
+endif()
 
 if( NNEF_FOUND )
 add_library( gct_dnn SHARED
