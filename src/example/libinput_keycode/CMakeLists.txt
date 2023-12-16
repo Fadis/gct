@@ -20,6 +20,7 @@ add_executable( libinput_keysym
 target_link_libraries(
   libinput_keysym
   gct
+  gct_input
   Threads::Threads
   Boost::program_options
   Boost::system

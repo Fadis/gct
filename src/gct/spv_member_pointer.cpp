@@ -9,7 +9,7 @@ namespace gct {
     std::size_t b,
     const SpvReflectTypeDescription &type,
     memory_layout layout
-  ) : begin_( b ) {
+  ) : begin_( b ), impl( new spv_member_pointer_impl() ) {
     aligned_size = alignment::get_aligned_size( type, layout );
     if( alignment::is_array( type ) ) {
       count = alignment::get_array_count( type );
@@ -33,7 +33,7 @@ namespace gct {
           )
         );
       }
-      cur_child = child->end();
+      impl->cur_child = child->end();
     }
     else {
       numeric = spv2numeric_type( type );
@@ -80,7 +80,7 @@ namespace gct {
     }
     else if( child && !child->empty() ) {
       auto temp = *this;
-      temp.cur_child = temp.child->begin();
+      temp.impl->cur_child = temp.child->begin();
       return temp;
     }
     else {
@@ -96,7 +96,7 @@ namespace gct {
     }
     else if( child && !child->empty() ) {
       auto temp = *this;
-      temp.cur_child = temp.child->end();
+      temp.impl->cur_child = temp.child->end();
       return temp;
     }
     else {
@@ -111,8 +111,8 @@ namespace gct {
       --count;
       begin_ += stride;
     }
-    else if( child && !child->empty() && cur_child != child->end() ) {
-      ++cur_child;
+    else if( child && !child->empty() && impl->cur_child != child->end() ) {
+      ++impl->cur_child;
     }
     else {
       throw exception::invalid_argument( "spv_member_pointer::operator++ : Not an iterator.", __FILE__, __LINE__ );
@@ -128,8 +128,8 @@ namespace gct {
       --count;
       begin_ += stride;
     }
-    else if( child && !child->empty() && cur_child != child->end() ) {
-      ++cur_child;
+    else if( child && !child->empty() && impl->cur_child != child->end() ) {
+      ++impl->cur_child;
     }
     else {
       throw exception::invalid_argument( "spv_member_pointer::operator++ : Not an iterator.", __FILE__, __LINE__ );
@@ -143,7 +143,7 @@ namespace gct {
       count == r.count &&
       stride == r.stride &&
       child == r.child &&
-      cur_child == r.cur_child &&
+      impl->cur_child == r.impl->cur_child &&
       numeric == r.numeric;
   }
   bool spv_member_pointer::operator!=( const spv_member_pointer &r ) const {
@@ -153,7 +153,7 @@ namespace gct {
       count != r.count ||
       stride != r.stride ||
       child != r.child ||
-      cur_child != r.cur_child ||
+      impl->cur_child != r.impl->cur_child ||
       numeric != r.numeric;
   }
   spv_member_pointer spv_member_pointer::operator*() const {
@@ -165,8 +165,8 @@ namespace gct {
       temp.stride = 0u;
       return *this;
     }
-    else if( child && !child->empty() && cur_child != child->end() ) {
-      return cur_child->second;
+    else if( child && !child->empty() && impl->cur_child != child->end() ) {
+      return impl->cur_child->second;
     }
     else {
       throw exception::invalid_argument( "spv_member_pointer::operator* : Not an iterator.", __FILE__, __LINE__ );
@@ -185,8 +185,8 @@ namespace gct {
       for( const auto &c: *child ) {
         dest[ "child" ][ c.first ] = c.second;
       }
-      if( cur_child != child->cend() ) {
-        dest[ "cur_child" ] = std::distance( child->cbegin(), cur_child );
+      if( impl->cur_child != child->cend() ) {
+        dest[ "cur_child" ] = std::distance( child->cbegin(), impl->cur_child );
       }
     }
     else {

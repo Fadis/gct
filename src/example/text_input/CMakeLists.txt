@@ -1,4 +1,4 @@
-if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND )
+if( XKBCOMMON_FOUND AND SDBUSCPP_FOUND AND LIBINPUT_FOUND AND HARFBUZZ_FOUND AND ICUUC_FOUND )
 
 add_executable( text_input
   text_input.cpp
@@ -7,6 +7,7 @@ add_executable( text_input
 target_link_libraries(
   text_input
   gct
+  gct_text
   gct_input
   Threads::Threads
   Boost::program_options
@@ -25,6 +26,7 @@ add_executable( fcitx5_input
 target_link_libraries(
   fcitx5_input
   gct
+  gct_text
   gct_input
   Threads::Threads
   Boost::program_options

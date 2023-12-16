@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <variant>
 #include <unordered_map>
-#include <vector>
 #include <string>
 #include <memory>
 #include <glm/vec2.hpp>
@@ -23,9 +22,11 @@
 #include <gct/alignment.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/numeric_type_match.hpp>
+#include <gct/deep_copy.hpp>
 
 struct SpvReflectTypeDescription;
 namespace gct {
+class spv_member_pointer_impl;
 class spv_member_pointer {
   using child_type = std::unordered_map< std::string, spv_member_pointer >;
 public:
@@ -62,9 +63,15 @@ private:
   std::size_t count = 0u;
   std::size_t stride = 0u;
   std::shared_ptr< child_type > child;
-  child_type::const_iterator cur_child;
+  deep_copy_unique_ptr< spv_member_pointer_impl > impl;
   numeric_type_t numeric;
 };
+class spv_member_pointer_impl {
+  using child_type = std::unordered_map< std::string, spv_member_pointer >;
+public:
+  child_type::const_iterator cur_child;
+};
+
 void to_json( nlohmann::json&, const spv_member_pointer& );
 template< typename T >
 class spv_reference {
