@@ -9,5 +9,5 @@ URL: @CMAKE_PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: vulkan, vulkan2json
 Cflags: -I"${includedir}"
-Libs: -L"${libdir}" -ldl -lgct -lvulkan2json -lvulkan
+Libs: -L"${libdir}" -ldl -lgct -lvulkan2json -lvulkan -lboost_context -lboost_system
 

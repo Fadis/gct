@@ -75,7 +75,7 @@ find_package(FXGLTF REQUIRED)
 find_package(OpenImageIO REQUIRED)
 pkg_check_modules(VULKAN2JSON REQUIRED vulkan2json)
 find_package(GLSLC REQUIRED)
-find_package(ASTCEnc REQUIRED)
+find_package(ASTCENC)
 pkg_check_modules(HARFBUZZ harfbuzz)
 pkg_check_modules(ICUUC icu-uc)
 pkg_check_modules(LIBINPUT libinput)
@@ -290,7 +290,10 @@ set( EASYPACK_LICENSE_NAME "MIT" )
 include(EasyPack)
 
 include(AddShader)
+
+if( ASTCENC_FOUND )
 include(AddASTC)
+endif()
 
 subdirs( include src )
 

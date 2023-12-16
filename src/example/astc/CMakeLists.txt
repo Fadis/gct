@@ -1,3 +1,4 @@
+if( ASTCENC_FOUND )
 add_executable( astc
   astc.cpp
 )
@@ -23,4 +24,5 @@ add_shader( astc shader.frag )
 add_astc( astc globe_color.png TRUE )
 add_astc( astc globe_normal.png FALSE )
 add_astc( astc globe_roughness.png FALSE )
+endif()
 
