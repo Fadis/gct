@@ -39,7 +39,8 @@ namespace gct {
     physical_device_features_t &get_features() { return features; }
     physical_device_t with_extensions(
       const std::vector< const char* > &exts
-    );
+    ) const;
+    physical_device_t with_features( const physical_device_features_t& ) const;
     const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
       return vertex_buffer_formats;
     }
@@ -66,7 +67,8 @@ namespace gct {
   public:
     device_group_t with_extensions(
       const std::vector< const char* > &exts
-    );
+    ) const;
+    device_group_t with_features( const physical_device_features_t& ) const;
     std::shared_ptr< device_t > create_device(
       const std::vector< queue_requirement_t > &queue_requirements,
       const device_create_info_t &create_info

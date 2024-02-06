@@ -276,6 +276,7 @@ namespace gct {
       formats.insert( formats.end(), additional.begin(), additional.end() );
     }
 #endif
+/*
 #ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
     if( available_extensions.find( VK_NV_OPTICAL_FLOW_EXTENSION_NAME ) != available_extensions.end() ) {
       const static std::vector< vk::Format > additional{
@@ -284,6 +285,7 @@ namespace gct {
       formats.insert( formats.end(), additional.begin(), additional.end() );
     }
 #endif
+*/
 #ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
     if( available_extensions.find( VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME ) != available_extensions.end() ) {
       const static std::vector< vk::Format > additional{

@@ -6,6 +6,18 @@
 #include <gct/exception.hpp>
 
 #define LIBGCT_BASIC_SETTER_INDIRECT( member ) \
+  private: \
+    basic2_t &get_writable_basic2() { \
+      return basic ; \
+    } \
+    basic_t &get_writable_basic() { \
+      return basic. member ; \
+    } \
+  public: \
+    self_type &set_basic () { \
+      basic. member = basic_t(); \
+      return *this; \
+    } \
     self_type &set_basic ( const basic_t &v ) { \
       basic. member = v; \
       return *this; \
@@ -40,23 +52,39 @@
     } \
     constexpr bool has_basic() const { \
       return true; \
+    } \
+    constexpr bool has_basic2() const { \
+      return true; \
     }
 
 #define LIBGCT_BASIC_SETTER_DIRECT \
+  private: \
+    basic_t &get_writable_basic() { \
+      return basic; \
+    } \
+  public: \
+    self_type &set_basic () { \
+      basic = basic_t(); \
+      return *this; \
+    } \
     self_type &set_basic ( const basic_t &v ) { \
       basic = v; \
+      chained = false; \
       return *this; \
     } \
     self_type &set_basic ( basic_t &&v ) { \
       basic = std::move( v ); \
+      chained = false; \
       return *this; \
     } \
     self_type &operator=( const basic_t &v ) { \
       basic = v; \
+      chained = false; \
       return *this; \
     } \
     self_type &operator=( basic_t &&v ) { \
       basic = std::move( v ); \
+      chained = false; \
       return *this; \
     } \
     const basic_t &get_basic () const { \
@@ -77,7 +105,15 @@ public: \
 private: \
     using name ## _t = type; \
     deep_copy_unique_ptr< type > name ; \
+    type &get_writable_ ## name () { \
+      return * name ; \
+    } \
 public: \
+    self_type &set_ ## name () { \
+      name .reset( new type () ); \
+      chained = false; \
+      return *this; \
+    } \
     self_type &set_ ## name ( const type &v ) { \
       name .reset( new type ( v ) ); \
       chained = false; \
@@ -155,8 +191,16 @@ public: \
 #define LIBGCT_EXTENSION_REBUILD_CHAIN_DEF \
 public: \
     self_type &rebuild_chain(); \
+    self_type &rebuild_chain() const { \
+      return const_cast< self_type* >( this )->rebuild_chain(); \
+    } \
     self_type copy() const { \
       return *this; \
+    }
+
+#define LIBGCT_EXTENSION_CHECK_SUBSET( name ) \
+    if( sub. name && ! name ) { \
+        throw gct::exception::runtime_error( "physical_device_features_t::check_subset : " #name " is not available.", __FILE__, __LINE__ ); \
     }
 
 class chained_t {

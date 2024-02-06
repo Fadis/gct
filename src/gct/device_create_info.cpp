@@ -18,6 +18,9 @@
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
 #include <vulkan2json/DevicePrivateDataCreateInfoEXT.hpp>
 #endif
+#ifdef VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME
+#include <vulkan2json/DeviceQueueShaderCoreControlCreateInfoARM.hpp>
+#endif
 
 namespace gct {
   void to_json( nlohmann::json &root, const device_create_info_t &v ) {
@@ -38,6 +41,9 @@ namespace gct {
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( private_data ) 
 #endif
+#ifdef VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( queue_shader_core_control )
+#endif
   }
   void from_json( const nlohmann::json &root, device_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to device_create_info_t", __FILE__, __LINE__ );
@@ -57,6 +63,9 @@ namespace gct {
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( private_data ) 
 #endif
+#ifdef VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( queue_shader_core_control )
+#endif
   }
   device_create_info_t &device_create_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
@@ -74,6 +83,9 @@ namespace gct {
 #endif
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( private_data ) 
+#endif
+#ifdef VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( queue_shader_core_control )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
     return *this;

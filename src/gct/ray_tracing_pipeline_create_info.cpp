@@ -11,6 +11,20 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/get_device.hpp>
+#include <gct/pipeline_shader_stage_create_info.hpp>
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#include <vulkan2json/PipelineCreateFlags2CreateInfoKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PipelineCreationFeedbackCreateInfo.hpp>
+#include <vulkan2json/PipelineCreationFeedback.hpp>
+#elif defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+#include <vulkan2json/PipelineCreationFeedbackCreateInfoEXT.hpp>
+#include <vulkan2json/PipelineCreationFeedbackEXT.hpp>
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+#include <vulkan2json/PipelineRobustnessCreateInfoEXT.hpp>
+#endif
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
 #include <vulkan2json/RayTracingPipelineCreateInfoKHR.hpp>
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
@@ -19,8 +33,20 @@
 #include <gct/extension.hpp>
 namespace gct {
   void to_json( nlohmann::json &root, const ray_tracing_pipeline_create_info_t &v ) {
-     root = nlohmann::json::object();
-     root[ "basic" ] = v.get_basic();
+    root = nlohmann::json::object();
+    root[ "basic" ] = v.get_basic();
+    LIBGCT_ARRAY_OF_TO_JSON_WRAPPED( basic, pStage, stage )
+    LIBGCT_ARRAY_OF_TO_JSON_WRAPPED( basic, pGroup, group )
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( create_flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( creation_feedback )
+    LIBGCT_ARRAY_OF_TO_JSON( creation_feedback, pPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( robustness )
+#endif
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( creation_feedback )
 #endif
@@ -28,6 +54,29 @@ namespace gct {
   void from_json( const nlohmann::json &root, ray_tracing_pipeline_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to ray_tracing_pipeline_create_info_t", __FILE__, __LINE__ );
     LIBGCT_EXTENSION_FROM_JSON( basic )
+    if( root.find( "basic" ) != root.end() ) {
+      if( root[ "basic" ].find( "pStage" ) != root[ "basic" ].end() && root[ "basic" ].find( "pGroup" ) != root[ "basic" ].end() ) {
+        decltype(auto) stage = root[ "basic" ][ "pStage" ];
+        decltype(auto) group = root[ "basic" ][ "pGroup" ];
+        if( !stage.is_array() ) throw incompatible_json( "The JSON is incompatible", __FILE__, __LINE__ );
+        if( !group.is_array() ) throw incompatible_json( "The JSON is incompatible", __FILE__, __LINE__ );
+        if( stage.size() != group.size() ) throw incompatible_json( "The JSON is incompatible", __FILE__, __LINE__ );
+        v.clear_stage();
+        for( unsigned int i = 0u; i == stage.size(); ++i ) {
+          v.add_stage( pipeline_shader_stage_create_info_t( stage[ i ] ), ray_tracing_shader_group_create_info_t( group[ i ] ) );
+        }
+      }
+    }
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( create_flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_FROM_JSON( creation_feedback )
+    LIBGCT_ARRAY_OF_FROM_JSON( creation_feedback, pPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( robustness )
+#endif
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( creation_feedback )
 #endif
@@ -106,9 +155,26 @@ namespace gct {
 
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( create_flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN( creation_feedback, PipelineStageCreationFeedbackCount, PPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( robustness )
+#endif
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
 #endif
+  }
+  ray_tracing_pipeline_create_info_t &ray_tracing_pipeline_create_info_t::add_stage( const pipeline_shader_stage_create_info_t &v, const ray_tracing_shader_group_create_info_t &g ) {
+    stage.push_back( v );
+    stage.back().rebuild_chain();
+    group.push_back( g );
+    group.back().rebuild_chain();
+    return *this;
   }
   ray_tracing_pipeline_create_info_t &ray_tracing_pipeline_create_info_t::add_stage( const pipeline_shader_stage_create_info_t &v, vk::RayTracingShaderGroupTypeKHR type ) {
     stage.push_back( v );

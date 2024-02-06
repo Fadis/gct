@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <functional>
+#include <nlohmann/json.hpp>
 #include <gct/queue.hpp>
 #include <gct/surface.hpp>
 #include <gct/command_pool.hpp>

@@ -14,6 +14,8 @@
 #include <gct/pipeline_depth_stencil_state_create_info.hpp>
 #include <gct/pipeline_color_blend_state_create_info.hpp>
 #include <gct/pipeline_dynamic_state_create_info.hpp>
+#include <gct/array_of.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 namespace gct {
   class pipeline_layout_t;
@@ -26,8 +28,15 @@ namespace gct {
     using self_type = graphics_pipeline_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::GraphicsPipelineCreateInfo )
+    LIBGCT_ARRAY_OF_WRAPPED( pipeline_shader_stage_create_info_t, vk::PipelineShaderStageCreateInfo, stage )
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::AttachmentSampleCountInfoAMD , attachment_sample_count )
+#endif
+#ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ExternalFormatANDROID , external_format )
+#endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::GraphicsPipelineLibraryCreateInfoEXT , graphics_pipeline_library )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::GraphicsPipelineShaderGroupsCreateInfoNV , shader_group )
@@ -35,11 +44,18 @@ namespace gct {
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::MultiviewPerViewAttributesInfoNVX , multiview_per_view_attributes )
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT, creation_feedback )
-#endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineCompilerControlCreateInfoAMD , compiler_control )
+#endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreateFlags2CreateInfoKHR, create_flag2 )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfo, creation_feedback )
+    LIBGCT_ARRAY_OF( vk::PipelineCreationFeedback, stage_creation_feedback )
+#elif defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT, creation_feedback )
+    LIBGCT_ARRAY_OF( vk::PipelineCreationFeedbackEXT, stage_creation_feedback )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineDiscardRectangleStateCreateInfoEXT , discard_rectangle )
@@ -50,15 +66,23 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineFragmentShadingRateStateCreateInfoKHR, fragment_shading_rate )
 #endif
+#ifdef VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineLibraryCreateInfoKHR , library )
+#endif
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineRenderingCreateInfoKHR, rendering )
 #endif
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineRepresentativeFragmentTestStateCreateInfoNV, representative_fragment_test )
-#endif 
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineRobustnessCreateInfoEXT , robustness )
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::RenderingAttachmentLocationInfoKHR , rendering_attachment_location )
+    LIBGCT_EXTENSION_SETTER( vk::RenderingInputAttachmentIndexInfoKHR , rendering_input_attachment_index )
+#endif
   private:
-    std::vector< pipeline_shader_stage_create_info_t > stage;
-    std::vector< vk::PipelineShaderStageCreateInfo > raw_stage;
     deep_copy_unique_ptr< pipeline_vertex_input_state_create_info_t > vertex_input;
     deep_copy_unique_ptr< pipeline_input_assembly_state_create_info_t > input_assembly;
     deep_copy_unique_ptr< pipeline_tessellation_state_create_info_t > tessellation;
@@ -72,13 +96,8 @@ namespace gct {
     std::shared_ptr< render_pass_t > render_pass;
     std::uint32_t subpass = 0u;
   public:
-    graphics_pipeline_create_info_t &add_stage( const pipeline_shader_stage_create_info_t& );
     graphics_pipeline_create_info_t &add_stage( const std::shared_ptr< shader_module_t >& );
     graphics_pipeline_create_info_t &add_stage( const std::vector< std::shared_ptr< shader_module_t > >& );
-    graphics_pipeline_create_info_t &clear_stage();
-    const std::vector< pipeline_shader_stage_create_info_t > &get_stage() const {
-      return stage;
-    }
     graphics_pipeline_create_info_t &set_vertex_input( const pipeline_vertex_input_state_create_info_t& );
     graphics_pipeline_create_info_t &set_vertex_input();
     graphics_pipeline_create_info_t &clear_vertex_input();

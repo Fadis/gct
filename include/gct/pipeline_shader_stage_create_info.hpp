@@ -13,8 +13,25 @@ namespace gct {
     using self_type = pipeline_shader_stage_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::PipelineShaderStageCreateInfo )
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::DebugUtilsObjectNameInfoEXT , debug_utils_object_name )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineRobustnessCreateInfoEXT , robustness )
+#endif
+#ifdef VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineShaderStageModuleIdentifierCreateInfoEXT , module_identifier )
+#endif
+#ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineShaderStageNodeCreateInfoAMDX , node )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PipelineShaderStageRequiredSubgroupSizeCreateInfo , required_subgroup_size )
+#elif defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT , required_subgroup_size )
+#endif
+#ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ShaderModuleValidationCacheCreateInfoEXT , validation_cache )
 #endif
   private:
     std::shared_ptr< shader_module_t > shader_module;

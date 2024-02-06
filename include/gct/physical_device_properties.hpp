@@ -104,11 +104,23 @@ public:
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT , blend_operation )
 #endif
+#ifdef VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceClusterCullingShaderPropertiesHUAWEI , cluster_culling_shader )
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceConservativeRasterizationPropertiesEXT , conservative_rasterization )
 #endif
+#ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrixPropertiesKHR , cooperative_matrix )
+#endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrixPropertiesNV , cooperative_matrix )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrixPropertiesNV , cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCopyMemoryIndirectPropertiesNV , copy_memory_indirect )
+#endif
+#ifdef VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCudaKernelLaunchPropertiesNV , cuda_kernel_launch )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCustomBorderColorPropertiesEXT , custom_border_color )
@@ -118,16 +130,23 @@ public:
 #elif defined(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDepthStencilResolvePropertiesKHR , depth_stencil_resolve )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+   LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorBufferDensityMapPropertiesEXT , descriptor_buffer_density_map )
+   LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorBufferPropertiesEXT , descriptor_buffer )
+#endif
 #ifdef VK_VERSION_1_2
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorIndexingProperties , device_descriptor_indexing )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorIndexingProperties , descriptor_indexing )
 #elif defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorIndexingPropertiesEXT , device_descriptor_indexing )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorIndexingPropertiesEXT , descriptor_indexing )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsPropertiesNV , device_generated_commands )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsPropertiesNV , generated_commands )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDiscardRectanglePropertiesEXT , discard_rectangle )
+#endif
+#ifdef VK_NV_DISPLACEMENT_MICROMAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDisplacementMicromapPropertiesNV , displacement_micromap )
 #endif
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDriverProperties , driver )
@@ -136,6 +155,15 @@ public:
 #endif
 #ifdef VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDrmPropertiesEXT , drm )
+#endif
+#ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceExtendedDynamicState3PropertiesEXT , extended_dynamic_state3 )
+#endif
+#ifdef VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceExtendedSparseAddressSpacePropertiesNV , extended_sparse_address_space )
+#endif
+#ifdef VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceExternalFormatResolvePropertiesANDROID , external_format_resolve )
 #endif
 #ifdef VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceExternalMemoryHostPropertiesEXT , external_memory_host )
@@ -148,15 +176,21 @@ public:
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMap2PropertiesEXT , fragment_density_map2 )
 #endif
+#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM , fragment_density_map_offset )
+#endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapPropertiesEXT , fragment_density_map )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShaderBarycentricPropertiesKHR , fragment_shader_barycentric )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShadingRateEnumsPropertiesNV , fragment_shading_rate_enums )
 #endif
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShadingRatePropertiesKHR , fragment_shading_rate )
-#endif
+#endif ///////////
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceIDProperties , id )
 #elif defined(VK_KHR_external_memory_capabilities) || defined(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME) || defined(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)

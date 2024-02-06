@@ -12,6 +12,9 @@
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
 #include <vulkan2json/BufferOpaqueCaptureAddressCreateInfoKHR.hpp>
 #endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#include <vulkan2json/BufferUsageFlags2CreateInfoKHR.hpp>
+#endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
 #include <vulkan2json/DedicatedAllocationBufferCreateInfoNV.hpp>
 #endif
@@ -19,6 +22,9 @@
 #include <vulkan2json/ExternalMemoryBufferCreateInfo.hpp>
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
 #include <vulkan2json/ExternalMemoryBufferCreateInfoKHR.hpp>
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+#include <vulkan2json/OpaqueCaptureDescriptorDataCreateInfoEXT.hpp>
 #endif
 #ifdef VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME
 #include <vulkan2json/VideoDecodeH264ProfileInfoKHR.hpp>
@@ -63,13 +69,19 @@ namespace gct {
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( opaque_capture_address )
 #endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( usage_flags2 )
+#endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( dedicated_allocation )
 #endif
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_TO_JSON( external_memory )
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory )
+    LIBGCT_EXTENSION_TO_JSON( external_memory )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( opaque_capture_descriptor_data )
 #endif
 #ifdef VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( video_decode_h264_profile )
@@ -96,13 +108,19 @@ namespace gct {
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_FROM_JSON( opaque_capture_address )
 #endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( usage_flags2 )
+#endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( dedicated_allocation )
 #endif
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_FROM_JSON( external_memory )
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory )
+    LIBGCT_EXTENSION_FROM_JSON( external_memory )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( opaque_capture_descriptor_data )
 #endif
 #ifdef VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( video_decode_h264_profile )
@@ -128,6 +146,9 @@ namespace gct {
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( opaque_capture_address )
 #endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( usage_flags2 )
+#endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( dedicated_allocation )
 #endif
@@ -135,6 +156,9 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory )
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( opaque_capture_descriptor_data )
 #endif
 #ifdef VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( video_decode_h264_profile )

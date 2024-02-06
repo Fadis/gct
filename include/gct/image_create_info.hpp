@@ -5,6 +5,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
+#include <gct/array_of.hpp>
 
 namespace gct {
   class image_create_info_t : public chained_t {
@@ -12,11 +13,15 @@ namespace gct {
     using self_type = image_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::ImageCreateInfo )
+    LIBGCT_ARRAY_OF_SMALL( std::uint32_t, queue_family_index )
 #ifdef VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::BufferCollectionImageCreateInfoFUCHSIA , buffer_collection_image )
 #endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::DedicatedAllocationImageCreateInfoNV , dedicated_allocation_image )
+#endif
+#ifdef VK_EXT_METAL_OBJECTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ExportMetalObjectCreateInfoEXT, export_metal_object )
 #endif
 #ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ExternalFormatANDROID , external_format )
@@ -29,16 +34,25 @@ namespace gct {
 #ifdef VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ExternalMemoryImageCreateInfoNV , external_memory_image_nv )
 #endif
+#ifdef VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ImageCompressionControlEXT , image_compression_control )
+    LIBGCT_ARRAY_OF_SMALL( vk::ImageCompressionFixedRateFlagsEXT, fixed_rate_flag )
+#endif
 #ifdef VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ImageDrmFormatModifierExplicitCreateInfoEXT , drm_format_modifier_explicit )
+    LIBGCT_ARRAY_OF( vk::SubresourceLayout, plane_layout )
 #endif
 #ifdef VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ImageDrmFormatModifierListCreateInfoEXT , drm_format_modifier_list )
+    LIBGCT_ARRAY_OF_SMALL( std::uint64_t, drm_format_modifier )
 #endif
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::ImageFormatListCreateInfo , format_list )
 #elif defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::ImageFormatListCreateInfoKHR , format_list )
+#endif
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
+    LIBGCT_ARRAY_OF_SMALL( vk::Format, format )
 #endif
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::ImageStencilUsageCreateInfo , stencil_usage )
@@ -50,28 +64,26 @@ namespace gct {
 #elif defined(VK_KHR_SWAPCHAIN_EXTENSION_NAME) && defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::ImageSwapchainCreateInfoKHR , swapchain )
 #endif
+#ifdef VK_EXT_METAL_OBJECTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ImportMetalIOSurfaceInfoEXT , import_metal_os_surface )
+    LIBGCT_EXTENSION_SETTER( vk::ImportMetalTextureInfoEXT , import_metal_texture )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::OpaqueCaptureDescriptorDataCreateInfoEXT , opaque_capture_descriptor_data )
+#endif
+#ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::OpticalFlowImageFormatInfoNV , optical_flow_image_format )
+#endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
 #if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileKHR , video_profile )
     LIBGCT_EXTENSION_SETTER( vk::VideoProfilesKHR , video_profiles )
+    LIBGCT_ARRAY_OF( vk::VideoProfileKHR, profile )
 #else
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileInfoKHR , video_profile ) 
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileListInfoKHR , video_profiles )
+    LIBGCT_ARRAY_OF( vk::VideoProfileInfoKHR, profile )
 #endif
-#endif
-#if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
-  private:
-    std::vector< vk::Format > format_list_formats;
-  public:
-    image_create_info_t &add_format( vk::Format );
-    template< typename Iterator >
-    image_create_info_t &add_format( Iterator begin, Iterator end ) {
-      for( auto iter = begin; iter != end; ++iter )
-        add_format( *iter );
-      return *this;
-    }
-    image_create_info_t &clear_format();
-    const std::vector< vk::Format > &get_format_list_formats() const { return format_list_formats; }
 #endif
   };
   vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );

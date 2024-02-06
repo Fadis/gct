@@ -6,6 +6,9 @@
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
 #include <vulkan2json/AccelerationStructureMotionInfoNV.hpp>
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+#include <vulkan2json/OpaqueCaptureDescriptorDataCreateInfoEXT.hpp>
+#endif
 #endif
 namespace gct {
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
@@ -15,12 +18,18 @@ namespace gct {
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( motion )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( opaque_capture_descriptor_data )
+#endif
   }
   void from_json( const nlohmann::json &root, acceleration_structure_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to acceleration_structure_create_info_t", __FILE__, __LINE__ );
     LIBGCT_EXTENSION_FROM_JSON( basic )
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( motion )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( opaque_capture_descriptor_data )
 #endif
   }
 
@@ -45,6 +54,9 @@ namespace gct {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( motion ) 
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( opaque_capture_descriptor_data )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

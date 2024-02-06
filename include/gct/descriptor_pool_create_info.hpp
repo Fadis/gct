@@ -13,7 +13,9 @@ namespace gct {
     using self_type = descriptor_pool_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::DescriptorPoolCreateInfo )
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::DescriptorPoolInlineUniformBlockCreateInfo , inline_uniform_block )
+#elif defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::DescriptorPoolInlineUniformBlockCreateInfoEXT , inline_uniform_block )
 #endif
 #ifdef VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME

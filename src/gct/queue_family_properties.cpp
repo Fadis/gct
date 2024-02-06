@@ -72,7 +72,11 @@ namespace gct {
     LIBGCT_EXTENSION_CREATE_IF_EXT( video, "VK_KHR_video_queue" )
     if( video ) {
       // avoid invalid validation
+#ifdef VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME
+      video->videoCodecOperations = vk::VideoCodecOperationFlagBitsKHR::eEncodeH264;
+#elif defined(VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME)
       video->videoCodecOperations = vk::VideoCodecOperationFlagBitsKHR::eEncodeH264EXT;
+#endif
     }
 #endif
     rebuild_chain();

@@ -5,6 +5,7 @@
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/shader_module.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <gct/compute_pipeline.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/ray_tracing_pipeline.hpp>

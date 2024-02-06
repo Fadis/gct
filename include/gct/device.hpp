@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
-#include <unordered_map>
+#include <unordered_set>
 #include <filesystem>
 #include <vulkan/vulkan.hpp>
 #include <gct/physical_device.hpp>
@@ -32,9 +32,17 @@ namespace gct {
   class pipeline_layout_create_info_t;
   class render_pass_create_info_t;
   class render_pass_t;
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)
+  class render_pass_create_info2_t;
+  class render_pass2_t;
+#endif
   class shader_module_create_info_t;
   class shader_module_t;
   class shader_module_reflection_t;
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+  class shader_create_info_t;
+  class shader_t;
+#endif
   class sampler_create_info_t;
   class sampler_t;
   class semaphore_create_info_t;
@@ -48,6 +56,10 @@ namespace gct {
 #endif
 #ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
   class deferred_operation_t;
+#endif
+#ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
+  class validation_cache_t;
+  class validation_cache_create_info_t;
 #endif
   class device_t : public created_from< instance_t >, public std::enable_shared_from_this< device_t > {
   public:
@@ -82,12 +94,18 @@ namespace gct {
     std::shared_ptr< pipeline_cache_t > get_pipeline_cache();
     std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );
     std::shared_ptr< render_pass_t > get_render_pass( const render_pass_create_info_t& );
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)
+    std::shared_ptr< render_pass2_t > get_render_pass( const render_pass_create_info2_t& );
+#endif
     std::shared_ptr< render_pass_t > get_render_pass(
       vk::Format color_format,
       vk::Format depth_format
     );
     std::shared_ptr< shader_module_t > get_shader_module( const shader_module_create_info_t& );
     std::shared_ptr< shader_module_t > get_shader_module( const std::string& );
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+    std::shared_ptr< shader_t > get_shader( const shader_create_info_t &create_info );
+#endif
     std::shared_ptr< sampler_t > get_sampler( const sampler_create_info_t& );
     std::shared_ptr< semaphore_t > get_semaphore( const semaphore_create_info_t& );
     std::shared_ptr< semaphore_t > get_semaphore();
@@ -112,6 +130,11 @@ namespace gct {
     const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
       return group.devices[ 0 ]->get_vertex_buffer_formats();
     }
+#ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
+    std::shared_ptr< validation_cache_t > get_validation_cache(
+      const validation_cache_create_info_t &ci
+    );
+#endif
   private:
     void create_command_pools( std::uint32_t activated_queue_family_index );
     device_group_t group;

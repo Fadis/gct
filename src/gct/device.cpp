@@ -9,8 +9,16 @@
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/render_pass_create_info.hpp>
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)
+#include <gct/render_pass2.hpp>
+#include <gct/render_pass_create_info2.hpp>
+#endif
 #include <gct/shader_module.hpp>
 #include <gct/shader_module_create_info.hpp>
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+#include <gct/shader.hpp>
+#include <gct/shader_create_info.hpp>
+#endif
 #include <gct/sampler.hpp>
 #include <gct/sampler_create_info.hpp>
 #include <gct/semaphore.hpp>
@@ -28,6 +36,10 @@
 #endif
 #ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
 #include <gct/deferred_operation.hpp>
+#endif
+#ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
+#include <gct/validation_cache_create_info.hpp>
+#include <gct/validation_cache.hpp>
 #endif
 namespace gct {
 
@@ -275,6 +287,16 @@ namespace gct {
       )
     );
   }
+#if defined(VK_VERSION_1_2) || defined(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)
+  std::shared_ptr< render_pass2_t > device_t::get_render_pass( const render_pass_create_info2_t &create_info ) {
+    return std::shared_ptr< render_pass2_t >(
+      new render_pass2_t(
+        shared_from_this(),
+        create_info
+      )
+    );
+  }
+#endif
   std::shared_ptr< render_pass_t > device_t::get_render_pass(
     vk::Format color_format,
     vk::Format depth_format
@@ -326,6 +348,16 @@ namespace gct {
         .load( filename )
     );
   }
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+  std::shared_ptr< shader_t > device_t::get_shader( const shader_create_info_t &create_info ) {
+    return std::shared_ptr< shader_t >(
+      new shader_t(
+        shared_from_this(),
+        create_info
+      )
+    );
+  }
+#endif
   std::shared_ptr< sampler_t > device_t::get_sampler( const sampler_create_info_t &create_info ) {
     return std::shared_ptr< sampler_t >(
       new sampler_t(
@@ -395,5 +427,15 @@ namespace gct {
   std::uint32_t device_t::get_api_version() const {
     return get_physical_device_group().devices[ 0 ]->get_props().get_api_version();
   }
+#ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
+  std::shared_ptr< validation_cache_t > device_t::get_validation_cache(
+    const validation_cache_create_info_t &ci
+  ) {
+    return std::shared_ptr< validation_cache_t >( new validation_cache_t(
+      shared_from_this(),
+      ci
+    ) );
+  }
+#endif
 }
 

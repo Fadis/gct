@@ -6,6 +6,7 @@
 #include <gct/instance.hpp>
 #include <gct/format.hpp>
 #include <gct/display_surface_create_info.hpp>
+
 namespace gct {
   void to_json( nlohmann::json &root, const physical_device_t &v ) {
     root = nlohmann::json::object();
@@ -79,7 +80,7 @@ namespace gct {
   }
   physical_device_t physical_device_t::with_extensions(
     const std::vector< const char* > &exts
-  ) {
+  ) const {
     return physical_device_t(
       get_factory(),
       handle,
@@ -87,9 +88,15 @@ namespace gct {
       exts
     );
   }
+  physical_device_t physical_device_t::with_features( const physical_device_features_t &new_features ) const {
+    features.check_subset( new_features );
+    auto temp = *this;
+    temp.features = new_features;
+    return temp;
+  }
   device_group_t device_group_t::with_extensions(
     const std::vector< const char* > &exts
-  ) {
+  ) const {
     device_group_t group;
     group.subset_allocation = subset_allocation;
     std::transform(
@@ -100,6 +107,22 @@ namespace gct {
         return std::shared_ptr< physical_device_t >(
           new physical_device_t(
             d->with_extensions( exts )
+          )
+        );
+      }
+    );
+    return group;
+  }
+  device_group_t device_group_t::with_features( const physical_device_features_t &new_features ) const {
+    device_group_t group;
+    std::transform(
+      devices.begin(),
+      devices.end(),
+      std::back_inserter( group.devices ),
+      [&]( const auto &d ) {
+        return std::shared_ptr< physical_device_t >(
+          new physical_device_t(
+            d->with_features( new_features )
           )
         );
       }

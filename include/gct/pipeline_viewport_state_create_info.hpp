@@ -5,6 +5,8 @@
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
+#include <gct/array_of.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 namespace gct {
   class pipeline_viewport_state_create_info_t : public chained_t {
@@ -12,29 +14,29 @@ namespace gct {
     using self_type = pipeline_viewport_state_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::PipelineViewportStateCreateInfo )
+    LIBGCT_ARRAY_OF( vk::Viewport, viewport )
+    LIBGCT_ARRAY_OF( vk::Rect2D, scissor )
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportCoarseSampleOrderStateCreateInfoNV, coarse_sample_order )
-    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportShadingRateImageStateCreateInfoNV, shading_rate_image )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportCoarseSampleOrderStateCreateInfoNV, coarse_sample_order_state )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportShadingRateImageStateCreateInfoNV, shading_rate_image_state )
+    LIBGCT_ARRAY_OF( vk::CoarseSampleOrderCustomNV, coarse_sample_order )
+    LIBGCT_ARRAY_OF( vk::ShadingRatePaletteNV, shading_rate_palette )
+#endif
+#ifdef VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportDepthClipControlCreateInfoEXT , depth_clip_control )
 #endif
 #ifdef VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportExclusiveScissorStateCreateInfoNV , exclusive_scissor )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportExclusiveScissorStateCreateInfoNV , exclusive_scissor_state )
+    LIBGCT_ARRAY_OF( vk::Rect2D, exclusive_sissor )
 #endif
 #ifdef VK_NV_VIEWPORT_SWIZZLE_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportSwizzleStateCreateInfoNV, swizzle )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportSwizzleStateCreateInfoNV, swizzle_state )
+    LIBGCT_ARRAY_OF( vk::ViewportSwizzleNV, swizzle )
 #endif
 #ifdef VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportWScalingStateCreateInfoNV, w_scaling )
+    LIBGCT_EXTENSION_SETTER( vk::PipelineViewportWScalingStateCreateInfoNV, w_scaling_state )
+    LIBGCT_ARRAY_OF( vk::ViewportWScalingNV, w_scaling )
 #endif
-  private:
-    std::vector< vk::Viewport > viewport;
-    std::vector< vk::Rect2D > scissor;
-  public:
-    pipeline_viewport_state_create_info_t &add_viewport( const vk::Viewport &v );
-    pipeline_viewport_state_create_info_t &clear_viewport();
-    const std::vector< vk::Viewport > &get_viewport() const { return viewport; }
-    pipeline_viewport_state_create_info_t &add_scissor( const vk::Rect2D &v );
-    pipeline_viewport_state_create_info_t &clear_scissor();
-    const std::vector< vk::Rect2D > &get_scissor() const { return scissor; }
     pipeline_viewport_state_create_info_t &add_size(
       unsigned int width,
       unsigned int height

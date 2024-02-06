@@ -9,6 +9,7 @@
 #include <gct/instance.hpp>
 #include <gct/physical_device.hpp>
 #include <gct/shader_module.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <gct/descriptor_pool_create_info.hpp>
 #include <gct/spv2json.hpp>
 

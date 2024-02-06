@@ -11,8 +11,17 @@ namespace gct {
     using self_type = sampler_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::SamplerCreateInfo )
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::OpaqueCaptureDescriptorDataCreateInfoEXT , opaque_capture_descriptor_data )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::SamplerBlockMatchWindowCreateInfoQCOM, block_match_window )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::SamplerBorderColorComponentMappingCreateInfoEXT , border_color_component_mapping )
+#endif
+#ifdef VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::SamplerCubicWeightsCreateInfoQCOM , cubic_weights )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::SamplerCustomBorderColorCreateInfoEXT , custom_border_color )

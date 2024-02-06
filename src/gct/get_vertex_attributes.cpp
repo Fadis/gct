@@ -4,6 +4,7 @@
 #include <gct/vertex_attributes.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/spirv_reflect.h>
+#include <gct/shader_module_reflection.hpp>
 namespace gct {
   std::tuple<
     gct::pipeline_vertex_input_state_create_info_t,

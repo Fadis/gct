@@ -15,17 +15,30 @@
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #include <vulkan2json/AttachmentSampleCountInfoAMD.hpp>
 #endif
+#ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
+#include <vulkan2json/ExternalFormatANDROID.hpp>
+#endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+#include <vulkan2json/GraphicsPipelineLibraryCreateInfoEXT.hpp>
+#endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
 #include <vulkan2json/GraphicsPipelineShaderGroupsCreateInfoNV.hpp>
 #endif
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
 #include <vulkan2json/MultiviewPerViewAttributesInfoNVX.hpp>
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-#include <vulkan2json/PipelineCreationFeedbackCreateInfoEXT.hpp>
-#endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
 #include <vulkan2json/PipelineCompilerControlCreateInfoAMD.hpp>
+#endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#include <vulkan2json/PipelineCreateFlags2CreateInfoKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PipelineCreationFeedbackCreateInfo.hpp>
+#include <vulkan2json/PipelineCreationFeedback.hpp>
+#elif defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+#include <vulkan2json/PipelineCreationFeedbackCreateInfoEXT.hpp>
+#include <vulkan2json/PipelineCreationFeedbackEXT.hpp>
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
 #include <vulkan2json/PipelineDiscardRectangleStateCreateInfoEXT.hpp>
@@ -36,36 +49,26 @@
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
 #include <vulkan2json/PipelineFragmentShadingRateStateCreateInfoKHR.hpp>
 #endif
+#ifdef VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
+#include <vulkan2json/PipelineLibraryCreateInfoKHR.hpp>
+#endif
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #include <vulkan2json/PipelineRenderingCreateInfoKHR.hpp>
 #endif
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
 #include <vulkan2json/PipelineRepresentativeFragmentTestStateCreateInfoNV.hpp>
 #endif 
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+#include <vulkan2json/PipelineRobustnessCreateInfoEXT.hpp>
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#include <vulkan2json/RenderingAttachmentLocationInfoKHR.hpp>
+#include <vulkan2json/RenderingInputAttachmentIndexInfoKHR.hpp>
+#endif
 
 namespace gct {
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::rebuild_chain() {
     if( chained ) return *this;
-    for( auto &s: stage ) s.rebuild_chain();
-    raw_stage.clear();
-    raw_stage.reserve( stage.size() );
-    std::transform(
-      stage.begin(),
-      stage.end(),
-      std::back_inserter( raw_stage ),
-      []( const auto &v ) {
-        return v.get_basic();
-      }
-    );
-    if( !raw_stage.empty() )
-      basic
-        .setStageCount( raw_stage.size() )
-        .setPStages( raw_stage.data() );
-    else
-      basic
-        .setStageCount( 0u )
-        .setPStages( nullptr );
-
     if( vertex_input ) {
       vertex_input->rebuild_chain();
       basic
@@ -163,8 +166,15 @@ namespace gct {
         .setSubpass( 0u );
 
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN_WRAPPED( basic, StageCount, PStages, stage )
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( attachment_sample_count ) 
+#endif
+#ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( external_format )
+#endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( graphics_pipeline_library )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_group ) 
@@ -172,11 +182,15 @@ namespace gct {
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( multiview_per_view_attributes ) 
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
-#endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( compiler_control ) 
+#endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( create_flag2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN( creation_feedback, PipelineStageCreationFeedbackCount, PPipelineStageCreationFeedbacks, stage_creation_feedback )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( discard_rectangle ) 
@@ -187,19 +201,23 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shading_rate ) 
 #endif
+#ifdef VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( library )
+#endif
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( rendering ) 
 #endif
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( representative_fragment_test ) 
 #endif 
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( robustness )
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( rendering_attachment_location )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( rendering_input_attachment_index )
+#endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
-  }
-  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const pipeline_shader_stage_create_info_t &v ) {
-    stage.push_back( v );
-    stage.back().rebuild_chain();
-    chained = false;
-    return *this;
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::add_stage( const std::shared_ptr< shader_module_t > &v ) {
     if( v ) {
@@ -216,11 +234,6 @@ namespace gct {
     for( const auto &e: v ) {
       add_stage( e );
     }
-    return *this;
-  }
-  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::clear_stage() {
-    stage.clear();
-    chained = false;
     return *this;
   }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_layout( const std::shared_ptr< pipeline_layout_t > &v ) {
@@ -478,17 +491,27 @@ namespace gct {
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( attachment_sample_count ) 
 #endif
+#ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( external_format )
+#endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( graphics_pipeline_library )
+#endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shader_group ) 
 #endif
 #if defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && defined(VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( multiview_per_view_attributes ) 
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( creation_feedback )
-#endif
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( compiler_control ) 
+#endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( create_flag2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( creation_feedback )
+    LIBGCT_ARRAY_OF_TO_JSON( creation_feedback, pPipelineStageCreationFeedbacks, stage_creation_feedback )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( discard_rectangle ) 
@@ -499,12 +522,22 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_shading_rate ) 
 #endif
+#ifdef VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( library )
+#endif
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( rendering ) 
 #endif
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( representative_fragment_test ) 
 #endif 
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( robustness )
+#endif
+#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( rendering_attachment_location )
+    LIBGCT_EXTENSION_TO_JSON( rendering_input_attachment_index )
+#endif
   }
 }
 

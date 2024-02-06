@@ -79,7 +79,11 @@ void command_buffer_recorder_t::update_framebuffer_image_layout() {
   return;
   const auto rp = get_factory()->get_current_render_pass();
   if( !rp ) {
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+    return;
+#else
     throw -1;
+#endif
   }
   const auto &rp_attachment = rp->get_render_pass()->get_props().get_attachment();
   const auto &fb_attachment = rp->get_framebuffer()->get_props().get_attachment();

@@ -35,7 +35,6 @@ namespace gct {
     vk::UniqueHandle< vk::DescriptorSetLayout, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
   void to_json( nlohmann::json &root, const descriptor_set_layout_t &v );
-
 }
 
 #endif

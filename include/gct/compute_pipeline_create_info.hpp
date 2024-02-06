@@ -5,6 +5,9 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
+#include <gct/array_of.hpp>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 namespace gct {
   class pipeline_layout_t;
@@ -17,8 +20,18 @@ namespace gct {
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineCompilerControlCreateInfoAMD , compiler_control )
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT , creation_feedback )
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreateFlags2CreateInfoKHR , flags2 )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfo, creation_feedback )
+    LIBGCT_ARRAY_OF( vk::PipelineCreationFeedback, stage_creation_feedback )
+#elif defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PipelineCreationFeedbackCreateInfoEXT, creation_feedback )
+    LIBGCT_ARRAY_OF( vk::PipelineCreationFeedbackEXT, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineRobustnessCreateInfoEXT , robustness )
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::SubpassShadingPipelineCreateInfoHUAWEI , subpass_shading )

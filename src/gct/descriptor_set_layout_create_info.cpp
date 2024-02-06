@@ -1,6 +1,7 @@
 #include <nlohmann/json.hpp>
 #include <cstring>
 #include <gct/descriptor_set_layout_create_info.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <gct/spv2vk.hpp>
 #include <vulkan2json/DescriptorSetLayoutCreateInfo.hpp>
 #include <vulkan2json/DescriptorSetLayoutBinding.hpp>

@@ -27,6 +27,9 @@ namespace gct {
 #ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::DevicePrivateDataCreateInfoEXT , private_data )
 #endif
+#ifdef VK_ARM_SCHEDULING_CONTROLS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::DeviceQueueShaderCoreControlCreateInfoARM , queue_shader_core_control )
+#endif
   };
   void to_json( nlohmann::json &root, const device_create_info_t &v );
   void from_json( const nlohmann::json &root, device_create_info_t &v );

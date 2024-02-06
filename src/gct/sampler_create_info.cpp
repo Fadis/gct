@@ -3,8 +3,17 @@
 #include <nlohmann/json.hpp>
 #include <gct/sampler_create_info.hpp>
 #include <vulkan2json/SamplerCreateInfo.hpp>
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+#include <vulkan2json/OpaqueCaptureDescriptorDataCreateInfoEXT.hpp>
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+#include <vulkan2json/SamplerBlockMatchWindowCreateInfoQCOM.hpp>
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
 #include <vulkan2json/SamplerBorderColorComponentMappingCreateInfoEXT.hpp>
+#endif
+#ifdef VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME
+#include <vulkan2json/SamplerCubicWeightsCreateInfoQCOM.hpp>
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
 #include <vulkan2json/SamplerCustomBorderColorCreateInfoEXT.hpp>
@@ -24,8 +33,17 @@ namespace gct {
   void to_json( nlohmann::json &root, const sampler_create_info_t &v ) {
      root = nlohmann::json::object();
      root[ "basic" ] = v.get_basic();
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( opaque_capture_descriptor_data )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( block_match_window )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( border_color_component_mapping ) 
+#endif
+#ifdef VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cubic_weights )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( custom_border_color ) 
@@ -40,8 +58,17 @@ namespace gct {
   void from_json( const nlohmann::json &root, sampler_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to sampler_create_info_t", __FILE__, __LINE__ );
     LIBGCT_EXTENSION_FROM_JSON( basic )
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( opaque_capture_descriptor_data )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( block_match_window )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( border_color_component_mapping ) 
+#endif
+#ifdef VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( cubic_weights )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( custom_border_color ) 
@@ -55,8 +82,17 @@ namespace gct {
   }
   sampler_create_info_t &sampler_create_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( opaque_capture_descriptor_data )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( block_match_window )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( border_color_component_mapping ) 
+#endif
+#ifdef VK_QCOM_FILTER_CUBIC_WEIGHTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( cubic_weights )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( custom_border_color ) 

@@ -45,6 +45,12 @@ namespace gct {
   class acceleration_structure_build_region_info_t;
 #endif
   class render_pass_begin_info_t;
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+  class rendering_info_t;
+#endif
+#ifdef VK_EXT_SHADER_OBJECT_EXTENSION_NAME
+  class shader_t;
+#endif
   std::uint32_t get_pot( std::uint32_t v );
   bool is_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
@@ -452,6 +458,16 @@ namespace gct {
       const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
     );
 #endif
+#ifdef VK_EXT_SHADER_OBJECT_EXTENSION_NAME
+  void bind(
+     const std::vector< std::shared_ptr< shader_t > > &shader
+  );
+  void bind(
+    const std::vector< std::shared_ptr< shader_t > > &shader,
+    const std::shared_ptr< pipeline_layout_t > &pipeline_layout,
+    const std::vector< std::shared_ptr< descriptor_set_t > > &descriptor_set
+  );
+#endif
     void bind_vertex_buffer(
       std::shared_ptr< buffer_t > vertex_buffer
     );
@@ -468,6 +484,30 @@ namespace gct {
       vk::DeviceSize offset,
       vk::IndexType type
     );
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
+    void bind_vertex_buffer(
+      std::uint32_t,
+      const std::vector< std::shared_ptr< buffer_t > > &,
+      const std::vector< vk::DeviceSize > &offset,
+      const std::vector< vk::DeviceSize > &size,
+      const std::vector< vk::DeviceSize > &stride
+    );
+    void bind_vertex_buffer(
+      std::uint32_t,
+      const std::vector< std::shared_ptr< buffer_t > > &,
+      const std::vector< vk::DeviceSize > &size,
+      const std::vector< vk::DeviceSize > &stride
+    );
+    void bind_vertex_buffer(
+      std::uint32_t,
+      const std::vector< std::shared_ptr< buffer_t > > &,
+      const std::vector< vk::DeviceSize > &stride
+    );
+    void bind_vertex_buffer(
+      const std::vector< std::shared_ptr< buffer_t > > &,
+      const std::vector< vk::DeviceSize > &stride
+    );
+#endif
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
     void build_acceleration_structure(
       const std::vector< gct::acceleration_structure_build_geometry_info_t >&,
@@ -493,6 +533,11 @@ namespace gct {
       const render_pass_begin_info_t &begin_info,
       vk::SubpassContents subpass_contents
     );
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+    std::shared_ptr< void > begin_rendering(
+      const rendering_info_t&
+    );
+#endif
     std::tuple<
       std::shared_ptr< buffer_t >,
       pipeline_vertex_input_state_create_info_t,

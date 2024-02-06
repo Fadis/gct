@@ -4,7 +4,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
-
+#include <gct/array_of.hpp>
 namespace gct {
   class pipeline_color_blend_state_create_info_t : public chained_t {
   public:
@@ -16,16 +16,11 @@ namespace gct {
 #endif
 #ifdef VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineColorWriteCreateInfoEXT, write )
+    LIBGCT_ARRAY_OF_SMALL( VkBool32, color_write_enable )
 #endif
-  private:
-    std::vector< vk::PipelineColorBlendAttachmentState > attachment;
+    LIBGCT_ARRAY_OF( vk::PipelineColorBlendAttachmentState, attachment )
   public:
-    pipeline_color_blend_state_create_info_t &add_attachment( const vk::PipelineColorBlendAttachmentState& );
     pipeline_color_blend_state_create_info_t &add_attachment();
-    pipeline_color_blend_state_create_info_t &clear_attachment();
-    const std::vector< vk::PipelineColorBlendAttachmentState > &get_attachment() const {
-      return attachment;
-    }
   };
   void to_json( nlohmann::json &root, const pipeline_color_blend_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_color_blend_state_create_info_t &v );

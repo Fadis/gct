@@ -12,6 +12,7 @@
 #include <gct/spv2vk.hpp>
 #include <gct/graphics.hpp>
 #include <gct/graphics_create_info.hpp>
+#include <gct/shader_module_reflection.hpp>
 
 namespace gct {
   graphics::graphics(

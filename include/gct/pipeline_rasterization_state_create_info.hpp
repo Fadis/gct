@@ -11,6 +11,9 @@ namespace gct {
     using self_type = pipeline_rasterization_state_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::PipelineRasterizationStateCreateInfo )
+#ifdef VK_EXT_DEPTH_BIAS_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::DepthBiasRepresentationInfoEXT, depth_bias_representation )
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineRasterizationConservativeStateCreateInfoEXT, conservative )
 #endif

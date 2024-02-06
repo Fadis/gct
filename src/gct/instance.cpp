@@ -160,18 +160,20 @@ namespace gct {
     if( activated_layers.find( "VK_LAYER_KHRONOS_validation" ) != activated_layers.end() ) {
       if( activated_extensions.find( "VK_EXT_debug_utils" ) != activated_extensions.end() ) {
         set_debug_callback(
-          vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
-          vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
+          //vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
+          //vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
           vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning|
           vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
           [](
-            vk::DebugUtilsMessageSeverityFlagBitsEXT,
+            vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
             vk::DebugUtilsMessageTypeFlagsEXT,
             const vk::DebugUtilsMessengerCallbackDataEXT &data
           ) {
             std::cout << "validation : " << data.pMessage << std::endl;
-            std::abort();
+	    if( int( severity ) && int( vk::DebugUtilsMessageSeverityFlagBitsEXT::eError ) ) {
+              std::abort();
+	    }
           }
         );
       }

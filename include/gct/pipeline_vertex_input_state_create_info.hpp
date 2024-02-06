@@ -5,30 +5,22 @@
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
-
+#include <gct/array_of.hpp>
 namespace gct {
   class pipeline_vertex_input_state_create_info_t : public chained_t {
   public:
     using self_type = pipeline_vertex_input_state_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::PipelineVertexInputStateCreateInfo )
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+    LIBGCT_ARRAY_OF( vk::VertexInputBindingDescription, vertex_input_binding_description )
+    LIBGCT_ARRAY_OF( vk::VertexInputAttributeDescription, vertex_input_attribute_description )
+#ifdef VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PipelineVertexInputDivisorStateCreateInfoKHR , divisor )
+    LIBGCT_ARRAY_OF( vk::VertexInputBindingDivisorDescriptionKHR , divisor_description )
+#elif defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PipelineVertexInputDivisorStateCreateInfoEXT , divisor )
+    LIBGCT_ARRAY_OF( vk::VertexInputBindingDivisorDescriptionEXT , divisor_description )
 #endif
-  private:
-    std::vector< vk::VertexInputBindingDescription > vertex_input_binding_description;
-    std::vector< vk::VertexInputAttributeDescription > vertex_input_attribute_description;
-  public:
-    pipeline_vertex_input_state_create_info_t &add_vertex_input_binding_description( const vk::VertexInputBindingDescription& );
-    pipeline_vertex_input_state_create_info_t &clear_vertex_input_binding_description();
-    pipeline_vertex_input_state_create_info_t &add_vertex_input_attribute_description( const vk::VertexInputAttributeDescription& );
-    pipeline_vertex_input_state_create_info_t &clear_vertex_input_attribute_description();
-    const std::vector< vk::VertexInputBindingDescription > &get_vertex_input_binding_description() const {
-      return vertex_input_binding_description;
-    }
-    const std::vector< vk::VertexInputAttributeDescription > &get_vertex_input_attribute_description() const {
-      return vertex_input_attribute_description;
-    }
   };
   void to_json( nlohmann::json &root, const pipeline_vertex_input_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_vertex_input_state_create_info_t &v );

@@ -263,7 +263,7 @@ namespace gct::gltf {
                       .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
                   )
                   .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType, images.back().unorm->get_props().get_basic().arrayLayers ) )
-                  .setFormat( images.back().unorm->get_props().get_format_list_formats().front() )
+                  .setFormat( images.back().unorm->get_props().get_format().front() )
               )
               .rebuild_chain()
           )
@@ -282,7 +282,7 @@ namespace gct::gltf {
                       .setLayerCount( images.back().unorm->get_props().get_basic().arrayLayers )
                   )
                   .setViewType( to_image_view_type( images.back().unorm->get_props().get_basic().imageType, images.back().unorm->get_props().get_basic().arrayLayers ) )
-                  .setFormat( images.back().unorm->get_props().get_format_list_formats().back() )
+                  .setFormat( images.back().unorm->get_props().get_format().back() )
               )
               .rebuild_chain()
 

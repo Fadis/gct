@@ -1,3 +1,4 @@
+if( NNEF_FOUND )
 add_executable( convolution
   convolution.cpp
 )
@@ -19,4 +20,4 @@ target_link_libraries(
 
 #add_shader( convolution convolution_f16_f16.comp )
 add_shader( convolution shaders/convolution_f32_f32_f32_f32.comp )
-
+endif()

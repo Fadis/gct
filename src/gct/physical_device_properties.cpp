@@ -21,11 +21,23 @@
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceBlendOperationAdvancedPropertiesEXT.hpp>
 #endif
+#ifdef VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceClusterCullingShaderPropertiesHUAWEI.hpp>
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceConservativeRasterizationPropertiesEXT.hpp>
 #endif
+#ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceCooperativeMatrixPropertiesKHR.hpp>
+#endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceCooperativeMatrixPropertiesNV.hpp>
+#endif
+#ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceCopyMemoryIndirectPropertiesNV.hpp>
+#endif
+#ifdef VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceCudaKernelLaunchPropertiesNV.hpp>
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceCustomBorderColorPropertiesEXT.hpp>
@@ -34,6 +46,10 @@
 #include <vulkan2json/PhysicalDeviceDepthStencilResolveProperties.hpp>
 #elif defined(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceDepthStencilResolvePropertiesKHR.hpp>
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceDescriptorBufferDensityMapPropertiesEXT.hpp>
+#include <vulkan2json/PhysicalDeviceDescriptorBufferPropertiesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_2
 #include <vulkan2json/PhysicalDeviceDescriptorIndexingProperties.hpp>
@@ -46,6 +62,9 @@
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceDiscardRectanglePropertiesEXT.hpp>
 #endif
+#ifdef VK_NV_DISPLACEMENT_MICROMAP_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceDisplacementMicromapPropertiesNV.hpp>
+#endif
 #ifdef VK_VERSION_1_2
 #include <vulkan2json/PhysicalDeviceDriverProperties.hpp>
 #elif defined(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)
@@ -53,6 +72,15 @@
 #endif
 #ifdef VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceDrmPropertiesEXT.hpp>
+#endif
+#ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceExtendedDynamicState3PropertiesEXT.hpp>
+#endif
+#ifdef VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceExtendedSparseAddressSpacePropertiesNV.hpp>
+#endif
+#ifdef VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceExternalFormatResolvePropertiesANDROID.hpp>
 #endif
 #ifdef VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceExternalMemoryHostPropertiesEXT.hpp>
@@ -65,8 +93,14 @@
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceFragmentDensityMap2PropertiesEXT.hpp>
 #endif
+#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM.hpp>
+#endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceFragmentDensityMapPropertiesEXT.hpp>
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFragmentShaderBarycentricPropertiesKHR.hpp>
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceFragmentShadingRateEnumsPropertiesNV.hpp>
@@ -230,11 +264,23 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( blend_operation )
 #endif
+#ifdef VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cluster_culling_shader )
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( conservative_rasterization )
 #endif
-#ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
+#ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( cooperative_matrix )
+#endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( copy_memory_indirect )
+#endif
+#ifdef VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cuda_kernel_launch )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( custom_border_color )
@@ -242,20 +288,36 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( depth_stencil_resolve )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+   LIBGCT_EXTENSION_TO_JSON( descriptor_buffer_density_map )
+   LIBGCT_EXTENSION_TO_JSON( descriptor_buffer )
+#endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
-    LIBGCT_EXTENSION_TO_JSON( device_descriptor_indexing )
+    LIBGCT_EXTENSION_TO_JSON( descriptor_indexing )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( device_generated_commands )
+    LIBGCT_EXTENSION_TO_JSON( generated_commands )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( discard_rectangle )
+#endif
+#ifdef VK_NV_DISPLACEMENT_MICROMAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( displacement_micromap )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( driver )
 #endif
 #ifdef VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( drm )
+#endif
+#ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( extended_dynamic_state3 )
+#endif
+#ifdef VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( extended_sparse_address_space )
+#endif
+#ifdef VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( external_format_resolve )
 #endif
 #ifdef VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( external_memory_host )
@@ -266,8 +328,14 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_density_map2 )
 #endif
+#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_density_map_offset )
+#endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_density_map )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_shader_barycentric )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_shading_rate_enums )
@@ -451,11 +519,23 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( blend_operation, "VK_EXT_blend_operation_advanced" )
 #endif
+#ifdef VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cluster_culling_shader, "VK_HUAWEI_cluster_culling_shader" )
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( conservative_rasterization, "VK_EXT_conservative_rasterization" )
 #endif
+#ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix, "VK_KHR_cooperative_matrix" )
+#endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix, "VK_NV_cooperative_matrix" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix_nv, "VK_NV_cooperative_matrix" )
+#endif
+#ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( copy_memory_indirect, "VK_NV_copy_memory_indirect" )
+#endif
+#ifdef VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cuda_kernel_launch, "VK_NV_cuda_kernel_launch" )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( custom_border_color, "VK_EXT_custom_border_color" )
@@ -463,20 +543,36 @@ namespace gct {
 #if defined(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME) || defined(VK_VERSION_1_2)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( depth_stencil_resolve, 1, 2, 0, "VK_KHR_depth_stencil_resolve" )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+     LIBGCT_EXTENSION_CREATE_IF_EXT( descriptor_buffer_density_map, "VK_EXT_descriptor_buffer" )
+     LIBGCT_EXTENSION_CREATE_IF_EXT( descriptor_buffer, "VK_EXT_descriptor_buffer" )
+#endif
 #if defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) || defined(VK_VERSION_1_2)
-      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( device_descriptor_indexing, 1, 2, 0, "VK_EXT_descriptor_indexing" )
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( descriptor_indexing, 1, 2, 0, "VK_EXT_descriptor_indexing" )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( device_generated_commands, "VK_NV_device_generated_commands" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( generated_commands, "VK_NV_device_generated_commands" )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( discard_rectangle, "VK_EXT_discard_rectangles" )
+#endif
+#ifdef VK_NV_DISPLACEMENT_MICROMAP_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( displacement_micromap, "VK_NV_displacement_micromap" )
 #endif
 #if defined(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME) || defined(VK_VERSION_1_2)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( driver, 1, 2, 0, "VK_KHR_driver_properties" )
 #endif
 #ifdef VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( drm, "VK_EXT_physical_device_drm" )
+#endif
+#ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( extended_dynamic_state3, "VK_EXT_extended_dynamic_state3" )
+#endif
+#ifdef VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( extended_sparse_address_space, "VK_NV_extended_sparse_address_space" )
+#endif
+#ifdef VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( external_format_resolve, "VK_ANDROID_external_format_resolve" )
 #endif
 #ifdef VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( external_memory_host, "VK_EXT_external_memory_host" )
@@ -487,8 +583,14 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map2, "VK_EXT_fragment_density_map2" )
 #endif
+#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, "VK_QCOM_fragment_density_map_offset" )
+#endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map, "VK_EXT_fragment_density_map" )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shader_barycentric, "VK_KHR_fragment_shader_barycentric" )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shading_rate_enums, "VK_NV_fragment_shading_rate_enums" )
@@ -714,11 +816,23 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( blend_operation )
 #endif
+#ifdef VK_HUAWEI_CLUSTER_CULLING_SHADER_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( cluster_culling_shader )
+#endif
 #ifdef VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( conservative_rasterization )
 #endif
-#ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
+#ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_matrix )
+#endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( copy_memory_indirect )
+#endif
+#ifdef VK_NV_CUDA_KERNEL_LAUNCH_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( cuda_kernel_launch )
 #endif
 #ifdef VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( custom_border_color )
@@ -726,20 +840,36 @@ namespace gct {
 #if defined(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME) || defined(VK_VERSION_1_2)
       LIBGCT_EXTENSION_REBUILD_CHAIN( depth_stencil_resolve )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+     LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_buffer_density_map )
+     LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_buffer )
+#endif
 #if defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) || defined(VK_VERSION_1_2)
-      LIBGCT_EXTENSION_REBUILD_CHAIN( device_descriptor_indexing )
+      LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_indexing )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-      LIBGCT_EXTENSION_REBUILD_CHAIN( device_generated_commands )
+      LIBGCT_EXTENSION_REBUILD_CHAIN( generated_commands )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( discard_rectangle )
+#endif
+#ifdef VK_NV_DISPLACEMENT_MICROMAP_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( displacement_micromap )
 #endif
 #if defined(VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME) || defined(VK_VERSION_1_2)
       LIBGCT_EXTENSION_REBUILD_CHAIN( driver )
 #endif
 #ifdef VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( drm )
+#endif
+#ifdef VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( extended_dynamic_state3 )
+#endif
+#ifdef VK_NV_EXTENDED_SPARSE_ADDRESS_SPACE_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( extended_sparse_address_space )
+#endif
+#ifdef VK_ANDROID_EXTERNAL_FORMAT_RESOLVE_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( external_format_resolve )
 #endif
 #ifdef VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory_host )
@@ -750,8 +880,14 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map2 )
 #endif
+#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map_offset )
+#endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shader_barycentric )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shading_rate_enums )

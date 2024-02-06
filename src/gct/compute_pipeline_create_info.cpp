@@ -12,8 +12,18 @@
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
 #include <vulkan2json/PipelineCompilerControlCreateInfoAMD.hpp>
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#include <vulkan2json/PipelineCreateFlags2CreateInfoKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PipelineCreationFeedbackCreateInfo.hpp>
+#include <vulkan2json/PipelineCreationFeedback.hpp>
+#elif defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
 #include <vulkan2json/PipelineCreationFeedbackCreateInfoEXT.hpp>
+#include <vulkan2json/PipelineCreationFeedbackEXT.hpp>
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+#include <vulkan2json/PipelineRobustnessCreateInfoEXT.hpp>
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
 #include <vulkan2json/SubpassShadingPipelineCreateInfoHUAWEI.hpp>
@@ -27,8 +37,15 @@ namespace gct {
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( compiler_control ) 
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( creation_feedback ) 
+    LIBGCT_ARRAY_OF_TO_JSON( creation_feedback, pPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( robustness )
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( subpass_shading ) 
@@ -40,8 +57,15 @@ namespace gct {
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( compiler_control ) 
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
     LIBGCT_EXTENSION_FROM_JSON( creation_feedback ) 
+    LIBGCT_ARRAY_OF_FROM_JSON( creation_feedback, pPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_FROM_JSON( robustness )
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( subpass_shading ) 
@@ -58,8 +82,15 @@ namespace gct {
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( compiler_control ) 
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( flags2 )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback ) 
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN( creation_feedback, PipelineStageCreationFeedbackCount, PPipelineStageCreationFeedbacks, stage_creation_feedback )
+#endif
+#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( robustness )
 #endif
 #ifdef VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( subpass_shading ) 

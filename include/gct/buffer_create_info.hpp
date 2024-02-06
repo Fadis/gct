@@ -21,6 +21,9 @@ namespace gct {
 #elif defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::BufferOpaqueCaptureAddressCreateInfoKHR , opaque_capture_address )
 #endif
+#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::BufferUsageFlags2CreateInfoKHR , usage_flags2 )
+#endif
 #ifdef VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::DedicatedAllocationBufferCreateInfoNV , dedicated_allocation )
 #endif
@@ -28,6 +31,9 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::ExternalMemoryBufferCreateInfo , external_memory )
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::ExternalMemoryBufferCreateInfoKHR , external_memory )
+#endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::OpaqueCaptureDescriptorDataCreateInfoEXT, opaque_capture_descriptor_data )
 #endif
 #ifdef VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::VideoDecodeH264ProfileInfoKHR , video_decode_h264_profile )

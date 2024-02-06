@@ -11,6 +11,9 @@ namespace gct {
     using self_type = semaphore_create_info_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::SemaphoreCreateInfo )
+#ifdef VK_EXT_METAL_OBJECTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ExportMetalObjectCreateInfoEXT , export_metal_object )
+#endif
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_SETTER( vk::ExportSemaphoreCreateInfo, export_semaphore )
 #elif defined(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME)
@@ -18,6 +21,12 @@ namespace gct {
 #endif
 #ifdef VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ExportSemaphoreWin32HandleInfoKHR, export_semaphore_win32_handle )
+#endif
+#ifdef VK_EXT_METAL_OBJECTS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ImportMetalSharedEventInfoEXT, import_metal_shared_event )
+#endif
+#ifdef VK_NV_LOW_LATENCY_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::QueryLowLatencySupportNV, query_low_latency_support )
 #endif
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::SemaphoreTypeCreateInfo, type )

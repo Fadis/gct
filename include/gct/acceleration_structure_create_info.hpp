@@ -16,6 +16,9 @@ namespace gct {
 #ifdef VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::AccelerationStructureMotionInfoNV , motion )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::OpaqueCaptureDescriptorDataCreateInfoEXT, opaque_capture_descriptor_data )
+#endif
   public:
     acceleration_structure_create_info_t &set_buffer( const std::shared_ptr< buffer_t >& );
     const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }

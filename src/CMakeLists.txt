@@ -90,9 +90,17 @@ add_library( gct SHARED
   gct/write_descriptor_set.cpp
   gct/subpass_description.cpp
   gct/render_pass_create_info.cpp
+  gct/attachment_reference2.cpp
+  gct/attachment_description2.cpp
+  gct/subpass_description2.cpp
+  gct/subpass_dependency2.cpp
+  gct/render_pass_create_info2.cpp
   gct/render_pass_begin_info.cpp
   gct/render_pass.cpp
+  gct/render_pass2.cpp
+  gct/rendering_info.cpp
   gct/begin_render_pass.cpp
+  gct/begin_rendering.cpp
   gct/image_view_create_info.cpp
   gct/image_view.cpp
   gct/framebuffer_create_info.cpp
@@ -100,7 +108,10 @@ add_library( gct SHARED
   gct/buffer_view_create_info.cpp
   gct/buffer_view.cpp
   gct/shader_module_create_info.cpp
+  gct/shader_module_reflection.cpp
   gct/shader_module.cpp
+  gct/shader.cpp
+  gct/shader_create_info.cpp
   gct/sampler_create_info.cpp
   gct/sampler.cpp
   gct/semaphore_create_info.cpp
@@ -179,6 +190,8 @@ add_library( gct SHARED
   gct/format_to_component_type.cpp
   gct/format2numeric_type.cpp
   gct/vertex_attribute.cpp
+  gct/validation_cache_create_info.cpp
+  gct/validation_cache.cpp
   gct/draw.cpp
   gct/dispatch.cpp
   gct/font.cpp
@@ -230,6 +243,7 @@ add_library( gct SHARED
   gct/draw_particle.cpp
   gct/draw_particle_create_info.cpp
   gct/load_obj_particle.cpp
+  gct/remove_chain.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -395,6 +409,15 @@ target_link_libraries( dump_spirv
   Boost::system
 )
 
+add_executable( dump_gpuinfo dump_gpuinfo.cpp )
+target_link_libraries( dump_gpuinfo
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
 
 if( ENABLE_EXAMPLES )
 

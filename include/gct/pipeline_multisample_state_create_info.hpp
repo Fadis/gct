@@ -4,6 +4,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
+#include <gct/array_of.hpp>
 
 namespace gct {
   class pipeline_multisample_state_create_info_t : public chained_t {
@@ -13,6 +14,7 @@ namespace gct {
     LIBGCT_BASIC_SETTER( vk::PipelineMultisampleStateCreateInfo )
 #ifdef VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineCoverageModulationStateCreateInfoNV, coverage_modulation )
+    LIBGCT_ARRAY_OF_SMALL( float, coverage_modulation_table )
 #endif
 #ifdef VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineCoverageReductionStateCreateInfoNV, coverage_reduction )
@@ -23,6 +25,8 @@ namespace gct {
 #ifdef VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PipelineSampleLocationsStateCreateInfoEXT, sample_locations )
 #endif
+    LIBGCT_ARRAY_OF_SMALL( vk::SampleMask, sample_mask )
+  public:
     pipeline_multisample_state_create_info_t();
   };
   void to_json( nlohmann::json &root, const pipeline_multisample_state_create_info_t &v );
