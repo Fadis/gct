@@ -244,6 +244,7 @@ add_library( gct SHARED
   gct/draw_particle_create_info.cpp
   gct/load_obj_particle.cpp
   gct/remove_chain.cpp
+  gct/matrix_pool.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
