@@ -1,0 +1,88 @@
+#ifndef GCT_SCENE_GRAPH_HPP
+#define GCT_SCENE_GRAPH_HPP
+
+#include <gct/matrix_pool.hpp>
+
+namespace gct {
+
+struct scene_graph_create_info {
+  std::shared_ptr< matrix_pool > matrix_pool;
+};
+
+class primitive {
+};
+
+class node {
+public:
+  node(
+    const std::shared_ptr< matrix_pool > &mp,
+    const glm::mat4 &local_matrix
+  ) : matrix_pool( mp ) {
+    matrix = matrix_pool->allocate( local_matrix );
+  }
+  node(
+    const std::shared_ptr< matrix_pool > &mp,
+    const matrix_descriptor &parent,
+    const glm::mat4 &local_matrix
+  ) : matrix_pool( mp ) {
+    matrix = matrix_pool->allocate( parent, local_matrix );
+  }
+  const std::vector< std::shared_ptr< node > > &get_child() const { return child; }
+  const std::vector< std::shared_ptr< primitive > > &get_primitive() const { return prim; }
+  std::shared_ptr< node > add_child( const glm::mat4 &local_matrix ) {
+    child.push_back( std::make_shared< node >(
+      matrix_pool,
+      matrix,
+      local_matrix
+    ) );
+    return child.back();
+  }
+  std::shared_ptr< primitive > add_primitive() {
+    prim.push_back( std::make_shared< primitive >() );
+    return prim.back();
+  }
+  node &set_name( const std::string n ) {
+    name = n;
+    return *this;
+  }
+  const std::string get_name() const {
+    return name;
+  }
+private:
+  std::string name;
+  std::vector< std::shared_ptr< node > > child;
+  std::vector< std::shared_ptr< primitive > > prim;
+  std::shared_ptr< matrix_pool > matrix_pool;
+  matrix_descriptor matrix;
+};
+
+class scene_graph {
+public:
+  scene_graph(
+    const scene_graph_create_info &ci
+  ) : props( ci ) {
+    root_node.reset( new node(
+      props.matrix_pool,
+      glm::mat4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+      )
+    ) );
+  }
+  const scene_graph_create_info &get_props() const {
+    return props;
+  }
+  std::shared_ptr< node > get_root_node() const {
+    return root_node;
+  }
+private:
+  scene_graph_create_info props;
+  std::shared_ptr< node > root_node;
+};
+
+}
+
+#endif
+

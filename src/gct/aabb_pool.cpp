@@ -7,50 +7,50 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/exception.hpp>
-#include <gct/matrix_pool.hpp>
+#include <gct/aabb_pool.hpp>
 namespace gct {
 
-matrix_pool::matrix_index_t matrix_pool::state_type::allocate_index() {
+aabb_pool::aabb_index_t aabb_pool::state_type::allocate_index() {
   const auto index = index_allocator.allocate();
-  if( index >= matrix_state.size() ) {
-    matrix_state.resize( index + 1u );
+  if( index >= aabb_state.size() ) {
+    aabb_state.resize( index + 1u );
   }
   return index; 
 }
 
-matrix_pool::matrix_index_t matrix_pool::state_type::allocate_staging_index() {
-  matrix_index_t staging_index = staging_tail;
+aabb_pool::aabb_index_t aabb_pool::state_type::allocate_staging_index() {
+  aabb_index_t staging_index = staging_tail;
   ++staging_tail;
   return staging_index;
 }
 
-matrix_pool::request_index_t matrix_pool::state_type::allocate_write_request_index() {
+aabb_pool::request_index_t aabb_pool::state_type::allocate_write_request_index() {
   request_index_t write_request_index = write_request_tail;
   ++write_request_tail;
   return write_request_index;
 }
 
-matrix_pool::request_index_t matrix_pool::state_type::allocate_read_request_index() {
+aabb_pool::request_index_t aabb_pool::state_type::allocate_read_request_index() {
   request_index_t read_request_index = read_request_tail;
   ++read_request_tail;
   return read_request_index;
 }
 
-void matrix_pool::state_type::release_index( matrix_pool::matrix_index_t index ) {
-  if( index >= matrix_state.size() || !matrix_state[ index ].valid ) {
+void aabb_pool::state_type::release_index( aabb_pool::aabb_index_t index ) {
+  if( index >= aabb_state.size() || !aabb_state[ index ].valid ) {
     return;
   }
-  matrix_state[ index ].valid = false;
+  aabb_state[ index ].valid = false;
   index_allocator.release( index );
 }
 
-matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat4 &value ) {
+aabb_pool::aabb_descriptor aabb_pool::state_type::allocate( const aabb4 &value ) {
   if( execution_pending ) {
-    throw exception::runtime_error( "matrix_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+    throw exception::runtime_error( "aabb_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
-  const matrix_index_t index = allocate_index();
+  const aabb_index_t index = allocate_index();
 
-  const matrix_index_t staging_index = allocate_staging_index();
+  const aabb_index_t staging_index = allocate_staging_index();
 
   const request_index_t write_request_index = allocate_write_request_index();
 
@@ -59,26 +59,28 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
       .set_staging( staging_index )
       .set_destination( index );
 
-  staging_matrix->map< glm::mat4 >()[ staging_index ] = value;
+  staging_aabb->map< aabb4 >()[ staging_index ] = value;
 
-  matrix_state[ index ] =
-    matrix_state_type()
+  aabb_state[ index ] =
+    aabb_state_type()
       .set_valid( true )
       .set_staging_index( staging_index )
       .set_write_request_index( write_request_index );
-  matrix_descriptor desc(
-    new matrix_index_t( index ),
-    [self=shared_from_this()]( const matrix_index_t *p ) {
+  aabb_descriptor desc(
+    new aabb_index_t( index ),
+    [self=shared_from_this()]( const aabb_index_t *p ) {
       if( p ) {
         self->release( *p );
         delete p;
       }
     }
   );
-  matrix_state[ index ].set_self( desc.get_weak() );
+  aabb_state[ index ].set_self( desc.get_weak() );
   used_on_gpu.push_back( desc );
   return desc;
 }
+////
+/*
 matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_descriptor &parent, const glm::mat4 &value ) {
   if( execution_pending ) {
     throw exception::runtime_error( "matrix_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
@@ -305,7 +307,7 @@ void matrix_pool::state_type::get( const matrix_descriptor &desc, const std::fun
 }
 
 matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
-  props( ci ), index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ) {
+  props( ci ) {
   matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
   staging_matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
@@ -462,8 +464,8 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
           }
         }
       }
-      self->write_request_tail = 0u;
-      self->read_request_tail = 0u;
+      self->write_request_buffer = 0u;
+      self->read_request_buffer = 0u;
       self->staging_tail = 0u;
       self->update_requested.clear();
       self->update_request_list.clear();
@@ -509,6 +511,6 @@ void matrix_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->flush( rec );
 }
-
+*/
 }
 

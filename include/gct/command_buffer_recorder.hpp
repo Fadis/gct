@@ -604,6 +604,9 @@ namespace gct {
       std::uint32_t raw_count,
       std::uint32_t stride
     );
+    void on_executed(
+      const std::function< void( vk::Result ) >&
+   );
   private:
     void update_framebuffer_image_layout();
     command_buffer_begin_info_t props;

@@ -12,89 +12,33 @@
 #include <mutex>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/handler.hpp>
+#include <gct/matrix_pool_create_info.hpp>
+#include <gct/linear_allocator.hpp>
 
 namespace gct {
 
-using matrix_level_t = std::uint32_t;
-using matrix_index_t = std::uint32_t;
-using request_index_t = std::uint32_t;
-
-class matrix_descriptor;
-
-
-using weak_matrix_descriptor = std::weak_ptr< matrix_index_t >;
-
-class matrix_descriptor {
-public:
-  template< typename ... Args >
-  matrix_descriptor(
-    Args&& ... v
-  ) : value( std::forward< Args >( v )... ) {}
-  matrix_index_t operator*() const {
-    return *value;
-  }
-  weak_matrix_descriptor get_weak() const {
-    return value;
-  }
-  operator bool() const {
-    return bool( value );
-  }
-private:
-  std::shared_ptr< matrix_index_t > value;
-};
-
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
-class compute;
-class command_buffer_recorder_t;
-struct matrix_pool_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
-  LIBGCT_SETTER( write_shader )
-  LIBGCT_SETTER( read_shader )
-  LIBGCT_SETTER( update_shader )
-  LIBGCT_SETTER( max_matrix_count )
-  LIBGCT_SETTER( staging_matrix_buffer_name )
-  LIBGCT_SETTER( matrix_buffer_name )
-  LIBGCT_SETTER( write_request_buffer_name )
-  LIBGCT_SETTER( read_request_buffer_name )
-  LIBGCT_SETTER( update_request_buffer_name )
-  LIBGCT_SETTER( resources )
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
-  std::filesystem::path write_shader;
-  std::filesystem::path read_shader;
-  std::filesystem::path update_shader;
-  std::uint32_t max_matrix_count = 65536u;
-  std::string staging_matrix_buffer_name = "staging";
-  std::string matrix_buffer_name = "matrix";
-  std::string write_request_buffer_name = "request";
-  std::string read_request_buffer_name = "request";
-  std::string update_request_buffer_name = "request";
-  std::vector< named_resource > resources;
-};
-
 class matrix_pool : public std::enable_shared_from_this< matrix_pool > {
+public:
+  using matrix_level_t = std::uint32_t;
+  using matrix_index_t = std::uint32_t;
+  using request_index_t = std::uint32_t;
+  using matrix_descriptor = handler< matrix_index_t >;
+  using weak_matrix_descriptor = matrix_descriptor::weak_type;
+private:
   struct matrix_state_type {
     LIBGCT_SETTER( valid )
-    LIBGCT_SETTER( auto_touch )
     LIBGCT_SETTER( staging_index )
     LIBGCT_SETTER( write_request_index )
     LIBGCT_SETTER( read_request_index )
-    LIBGCT_SETTER( update_request_index )
     LIBGCT_SETTER( level )
     LIBGCT_SETTER( local )
     LIBGCT_SETTER( parent )
     LIBGCT_SETTER( self )
     bool valid = false;
-    bool auto_touch = false;
     std::optional< matrix_index_t > staging_index;
     std::optional< request_index_t > write_request_index;
     std::optional< request_index_t > read_request_index;
-    std::optional< request_index_t > update_request_index;
     matrix_level_t level = 0u;
     matrix_descriptor local;
     matrix_descriptor parent;
@@ -129,13 +73,12 @@ class matrix_pool : public std::enable_shared_from_this< matrix_pool > {
   };
 public:
   matrix_pool( const matrix_pool_create_info & );
-  const matrix_descriptor &root();
-  matrix_descriptor allocate( const glm::mat4&, bool ); // standalone matrix
-  matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4&, bool ); // chained matrix
+  matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
+  matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
   matrix_descriptor get_local( const matrix_descriptor& );
   void touch( const matrix_descriptor& );
   void set( const matrix_descriptor&, const glm::mat4& );
-  void get( const matrix_descriptor&, const std::function< void( const glm::mat4& ) >& );
+  void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
   const matrix_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
 private:
@@ -146,19 +89,19 @@ private:
     request_index_t allocate_write_request_index();
     request_index_t allocate_read_request_index();
     void release_index( matrix_index_t );
-    matrix_descriptor allocate( const glm::mat4&, bool ); // standalone matrix
-    matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4&, bool ); // chained matrix
+    matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
+    matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
     void release( matrix_index_t );
     void touch( const matrix_descriptor& );
     void touch( matrix_index_t );
     void set( const matrix_descriptor&, const glm::mat4& );
-    void get( const matrix_descriptor&, const std::function< void( const glm::mat4& ) >& );
+    void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
     void flush( command_buffer_recorder_t& );
     matrix_descriptor get_local( const matrix_descriptor& );
     std::vector< request_range > build_update_request_range();
     matrix_pool_create_info props;
     std::vector< matrix_state_type > matrix_state;
-    std::vector< matrix_index_t > deallocated;
+    linear_allocator index_allocator;
     std::unordered_multimap< matrix_index_t, matrix_index_t > edge; // p -> c
     std::shared_ptr< buffer_t > staging_matrix; // mat4[]
     std::shared_ptr< buffer_t > matrix; // mat4[]
@@ -172,10 +115,11 @@ private:
     request_index_t read_request_tail = 0u;
     std::vector< matrix_descriptor > used_on_gpu;
     std::unordered_set< matrix_index_t > modified;
-    std::unordered_multimap< matrix_index_t, std::function< void( const glm::mat4& ) > > cbs;
+    std::unordered_multimap< matrix_index_t, std::function< void( vk::Result, const glm::mat4& ) > > cbs;
     std::shared_ptr< compute > write;
     std::shared_ptr< compute > read;
     std::shared_ptr< compute > update;
+    bool execution_pending = false;
     std::mutex guard;
   };
   std::shared_ptr< state_type > state;

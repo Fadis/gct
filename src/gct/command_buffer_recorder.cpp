@@ -34,4 +34,9 @@ namespace gct {
   const vk::CommandBuffer *command_buffer_recorder_t::operator->() const {
     return &**get_factory();
   }
+  void command_buffer_recorder_t::on_executed(
+    const std::function< void( vk::Result ) > &cb
+  ) {
+    get_factory()->unbound()->cbs.push_back( cb );
+  }
 }
