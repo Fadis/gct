@@ -6,6 +6,7 @@
 #include <utility>
 #include <filesystem>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/created_from.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
 
@@ -64,7 +65,7 @@ namespace gct {
     pipeline_cache_create_info_t props;
     vk::UniqueHandle< vk::PipelineCache, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
-
+  void to_json( nlohmann::json &dest, const pipeline_cache_t &src );
 }
 
 #endif

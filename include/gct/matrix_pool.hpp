@@ -10,11 +10,13 @@
 #include <optional>
 #include <functional>
 #include <mutex>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/handler.hpp>
 #include <gct/matrix_pool_create_info.hpp>
 #include <gct/linear_allocator.hpp>
+#include <gct/index_range.hpp>
 
 namespace gct {
 
@@ -65,12 +67,7 @@ private:
     matrix_index_t world = 0u;
     matrix_index_t reserved = 0u;
   };
-  struct request_range {
-    LIBGCT_SETTER( offset )
-    LIBGCT_SETTER( count )
-    request_index_t offset = 0u;
-    request_index_t count = 0u;
-  };
+  using request_range = index_range;
 public:
   matrix_pool( const matrix_pool_create_info & );
   matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
@@ -79,15 +76,17 @@ public:
   void touch( const matrix_descriptor& );
   void set( const matrix_descriptor&, const glm::mat4& );
   void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
+  bool is_valid( const matrix_descriptor& ) const;
   const matrix_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
+  void to_json( nlohmann::json& ) const;
+  std::shared_ptr< buffer_t > get_buffer() const {
+    return state->matrix;
+  }
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const matrix_pool_create_info & );
     matrix_index_t allocate_index();
-    matrix_index_t allocate_staging_index();
-    request_index_t allocate_write_request_index();
-    request_index_t allocate_read_request_index();
     void release_index( matrix_index_t );
     matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
     matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
@@ -96,6 +95,7 @@ private:
     void touch( matrix_index_t );
     void set( const matrix_descriptor&, const glm::mat4& );
     void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
+    bool is_valid( const matrix_descriptor& ) const;
     void flush( command_buffer_recorder_t& );
     matrix_descriptor get_local( const matrix_descriptor& );
     std::vector< request_range > build_update_request_range();
@@ -110,9 +110,9 @@ private:
     std::shared_ptr< buffer_t > update_request_buffer; // update_request_buffer[] target
     std::vector< std::vector< update_request > > update_request_list;
     std::unordered_set< matrix_index_t > update_requested;
-    matrix_index_t staging_tail = 0u;
-    request_index_t write_request_tail = 0u;
-    request_index_t read_request_tail = 0u;
+    reduced_linear_allocator staging_index_allocator;
+    reduced_linear_allocator write_request_index_allocator;
+    reduced_linear_allocator read_request_index_allocator;
     std::vector< matrix_descriptor > used_on_gpu;
     std::unordered_set< matrix_index_t > modified;
     std::unordered_multimap< matrix_index_t, std::function< void( vk::Result, const glm::mat4& ) > > cbs;
@@ -124,6 +124,7 @@ private:
   };
   std::shared_ptr< state_type > state;
 };
+void to_json( nlohmann::json&, const matrix_pool& );
 }
 
 #endif

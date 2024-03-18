@@ -300,6 +300,10 @@ namespace gct {
     image.set_format( image_create_info.format );
     return image;
   }*/
+  void to_json( nlohmann::json &dest, const allocator_t &src ) {
+    dest = nlohmann::json::object();
+    dest[ "props" ] = src.get_props();
+  }
 }
 
 void to_json( nlohmann::json &dest, const VmaAllocatorCreateInfo &src ) {

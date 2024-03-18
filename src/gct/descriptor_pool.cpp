@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/descriptor_pool.hpp>
 
@@ -31,6 +32,10 @@ namespace gct {
         .add_layout( layout )
         .rebuild_chain()
     );
+  }
+  void to_json( nlohmann::json &dest, const descriptor_pool_t &src ) {
+    dest = nlohmann::json::object();
+    dest[ "props" ] = src.get_props();
   }
 }
 

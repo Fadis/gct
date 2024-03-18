@@ -244,9 +244,15 @@ add_library( gct SHARED
   gct/draw_particle_create_info.cpp
   gct/load_obj_particle.cpp
   gct/remove_chain.cpp
+  gct/index_range.cpp
   gct/matrix_pool.cpp
+  gct/matrix_pool_create_info.cpp
   gct/aabb_pool.cpp
+  gct/aabb_pool_create_info.cpp
   gct/linear_allocator.cpp
+  gct/linear_allocator_create_info.cpp
+  gct/texture_pool_create_info.cpp
+  gct/texture_pool.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

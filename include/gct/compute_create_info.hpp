@@ -34,6 +34,8 @@ struct compute_create_info {
   unsigned int swapchain_image_count = 1u;
 };
 
+void to_json( nlohmann::json&, const compute_create_info& );
+
 }
 
 #endif

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/created_from.hpp>
 #include <gct/descriptor_pool_create_info.hpp>
 #include <gct/descriptor_set.hpp>
@@ -41,7 +42,7 @@ namespace gct {
     descriptor_pool_create_info_t props;
     vk::UniqueHandle< vk::DescriptorPool, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
-
+  void to_json( nlohmann::json &dest, const descriptor_pool_t &src );
 }
 
 #endif

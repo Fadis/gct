@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
 #include <gct/image_view_create_info.hpp>
@@ -31,6 +32,10 @@ namespace gct {
     handle = (*image->get_device())->createImageViewUnique(
       props.get_basic()
     );
+  }
+  void to_json( nlohmann::json &root, const image_view_t &v ) {
+    root = nlohmann::json::object();
+    root[ "props" ] = v.get_props();
   }
 }
 

@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -40,5 +41,9 @@ namespace gct {
       { descriptor_set[ image_index ] }
     );
     rec.dispatch_threads( x, y, z );
+  }
+  void to_json( nlohmann::json &dest, const compute &src ) {
+    dest = nlohmann::json::object();
+    dest[ "props" ] = src.get_props();
   }
 }

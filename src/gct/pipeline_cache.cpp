@@ -1,4 +1,5 @@
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/compute_pipeline.hpp>
@@ -78,5 +79,7 @@ namespace gct {
     auto data = device->getPipelineCacheData( *handle );
     std::fstream fd( filename.c_str(), std::ios::out|std::ios::binary );
     fd.write( reinterpret_cast< char* >( data.data() ), data.size() );
+  }
+  void to_json( nlohmann::json &dest, const pipeline_cache_t &src ) {
   }
 }

@@ -6,6 +6,7 @@
 #include <string>
 #include <variant>
 #include <filesystem>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 
 namespace gct {
@@ -246,6 +247,7 @@ namespace gct {
     const std::tuple< std::shared_ptr< sampler_t >, std::shared_ptr< image_view_t >, vk::ImageLayout > &get_uniform_combined_image_with_layout() const {
       return std::get< std::vector< std::tuple< std::shared_ptr< sampler_t >, std::shared_ptr< image_view_t >, vk::ImageLayout > > >( resource )[ 0 ];
     }
+    void to_json( nlohmann::json& ) const;
   private:
     std::string name;
     std::uint32_t index = 0u;
@@ -257,6 +259,7 @@ namespace gct {
       std::vector< std::tuple< std::shared_ptr< sampler_t >, std::shared_ptr< image_view_t >, vk::ImageLayout > >
     > resource;
   };
+  void to_json( nlohmann::json&, const named_resource& );
 }
 
 #endif

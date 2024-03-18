@@ -9,11 +9,13 @@
 #include <optional>
 #include <functional>
 #include <mutex>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/matrix_pool.hpp>
 #include <gct/aabb.hpp>
 #include <gct/aabb_pool_create_info.hpp>
 #include <gct/linear_allocator.hpp>
+#include <gct/index_range.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/handler.hpp>
 
@@ -32,16 +34,16 @@ private:
     LIBGCT_SETTER( staging_index )
     LIBGCT_SETTER( write_request_index )
     LIBGCT_SETTER( read_request_index )
+    LIBGCT_SETTER( update_request_index )
     LIBGCT_SETTER( local )
-    LIBGCT_SETTER( parent )
     LIBGCT_SETTER( self )
     bool valid = false;
     std::optional< aabb_index_t > staging_index;
     std::optional< request_index_t > write_request_index;
     std::optional< request_index_t > read_request_index;
-    matrix_pool::matrix_index_t matrix;
+    std::optional< request_index_t > update_request_index;
+    matrix_pool::matrix_descriptor matrix;
     aabb_descriptor local;
-    aabb_descriptor parent;
     weak_aabb_descriptor self;
   };
   using aabb_type = aabb4;
@@ -66,41 +68,33 @@ private:
     aabb_index_t world = 0u;
     aabb_index_t reserved = 0u;
   };
-  struct request_range {
-    LIBGCT_SETTER( offset )
-    LIBGCT_SETTER( count )
-    request_index_t offset = 0u;
-    request_index_t count = 0u;
-  };
+  using request_range = index_range;
 public:
   aabb_pool( const aabb_pool_create_info & );
-  aabb_descriptor allocate( const aabb_type& ); // standalone matrix
-  aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const glm::mat4& ); // chained matrix
+  aabb_descriptor allocate( const aabb_type& );
+  aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const aabb_type& );
   aabb_descriptor get_local( const aabb_descriptor& );
   void touch( const aabb_descriptor& );
-  void set( const aabb_descriptor&, const glm::mat4& );
-  void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb4& ) >& );
+  void set( const aabb_descriptor&, const aabb_type& );
+  void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb_type& ) >& );
   const aabb_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
+  void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const aabb_pool_create_info & );
     aabb_index_t allocate_index();
-    aabb_index_t allocate_staging_index();
-    request_index_t allocate_write_request_index();
-    request_index_t allocate_read_request_index();
     void release_index( aabb_index_t );
-    aabb_descriptor allocate( const aabb4& ); // standalone aabb
-    aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const aabb4& ); // chained aabb
+    aabb_descriptor allocate( const aabb_type& ); // standalone aabb
+    aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const aabb_type& ); // chained aabb
     //////aabb_descriptor allocate( const aabb_descriptor&, const aabb4& ); // chained aabb
     void release( aabb_index_t );
     void touch( const aabb_descriptor& );
     void touch( aabb_index_t );
-    void set( const aabb_descriptor&, const glm::mat4& );
-    void get( const aabb_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
+    void set( const aabb_descriptor&, const aabb_type& );
+    void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb_type& ) >& );
     void flush( command_buffer_recorder_t& );
     aabb_descriptor get_local( const aabb_descriptor& );
-    std::vector< request_range > build_update_request_range();
     aabb_pool_create_info props;
     std::vector< aabb_state_type > aabb_state;
     linear_allocator index_allocator;
@@ -110,14 +104,12 @@ private:
     std::shared_ptr< buffer_t > write_request_buffer; // write_request[] destination
     std::shared_ptr< buffer_t > read_request_buffer; // read_request[] source
     std::shared_ptr< buffer_t > update_request_buffer; // update_request_buffer[] target
-    std::vector< std::vector< update_request > > update_request_list;
-    std::unordered_set< aabb_index_t > update_requested;
-    aabb_index_t staging_tail = 0u;
-    request_index_t write_request_tail = 0u;
-    request_index_t read_request_tail = 0u;
+    reduced_linear_allocator staging_index_allocator;
+    reduced_linear_allocator write_request_index_allocator;
+    reduced_linear_allocator read_request_index_allocator;
+    reduced_linear_allocator update_request_index_allocator;
     std::vector< aabb_descriptor > used_on_gpu;
-    std::unordered_set< aabb_index_t > modified;
-    std::unordered_multimap< aabb_index_t, std::function< void( vk::Result, const glm::mat4& ) > > cbs;
+    std::unordered_multimap< aabb_index_t, std::function< void( vk::Result, const aabb_type& ) > > cbs;
     std::shared_ptr< compute > write;
     std::shared_ptr< compute > read;
     std::shared_ptr< compute > update;
@@ -126,6 +118,7 @@ private:
   };
   std::shared_ptr< state_type > state;
 };
+void to_json( nlohmann::json&, const aabb_pool& );
 }
 
 #endif

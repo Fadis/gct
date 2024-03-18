@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <vector>
 #include <string>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/matrix_pool.hpp>
 #include <gct/named_resource.hpp>
@@ -26,6 +27,7 @@ struct aabb_pool_create_info {
   LIBGCT_SETTER( max_aabb_count )
   LIBGCT_SETTER( staging_aabb_buffer_name )
   LIBGCT_SETTER( aabb_buffer_name )
+  LIBGCT_SETTER( matrix_buffer_name )
   LIBGCT_SETTER( write_request_buffer_name )
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( update_request_buffer_name )
@@ -39,12 +41,14 @@ struct aabb_pool_create_info {
   std::filesystem::path update_shader;
   std::uint32_t max_aabb_count = 65536u;
   std::string staging_aabb_buffer_name = "staging";
-  std::string aabb_buffer_name = "matrix";
+  std::string aabb_buffer_name = "aabb";
+  std::string matrix_buffer_name = "matrix";
   std::string write_request_buffer_name = "request";
   std::string read_request_buffer_name = "request";
   std::string update_request_buffer_name = "request";
   std::vector< named_resource > resources;
 };
+void to_json( nlohmann::json &dest, const aabb_pool_create_info &src );
 
 }
 

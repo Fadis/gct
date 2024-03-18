@@ -2,6 +2,7 @@
 #define GCT_IMAGE_VIEW_HPP
 #include <memory>
 #include <vulkan/vulkan.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/created_from.hpp>
 #include <gct/image_view_create_info.hpp>
 
@@ -35,6 +36,7 @@ namespace gct {
     image_view_create_info_t props;
     vk::UniqueHandle< vk::ImageView, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
+  void to_json( nlohmann::json&, const image_view_t& );
 }
 
 #endif

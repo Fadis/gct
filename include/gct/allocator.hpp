@@ -104,6 +104,7 @@ namespace gct {
     VmaAllocatorCreateInfo props;
     std::shared_ptr< VmaAllocator > handle;
   };
+  void to_json( nlohmann::json &dest, const allocator_t &src );
 }
 
 void to_json( nlohmann::json &dest, const VmaAllocatorCreateInfo &src );

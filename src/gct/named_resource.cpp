@@ -1,3 +1,5 @@
+#include <nlohmann/json.hpp>
+#include <vulkan2json/ImageLayout.hpp>
 #include <gct/buffer.hpp>
 #include <gct/mappable_buffer.hpp>
 #include <gct/image_view.hpp>
@@ -402,6 +404,70 @@ bool named_resource::is_uniform() const {
     },
     resource
   );
+}
+
+void named_resource::to_json( nlohmann::json &dest ) const {
+  dest = nlohmann::json::object();
+  dest[ "name" ] = name;
+  dest[ "index" ] = index;
+  if( resource.index() == 0u ) {
+    const auto &r = std::get< std::vector< std::shared_ptr< buffer_t > > >( resource );
+    dest[ "type" ] = "buffer";
+    dest[ "resource" ] = nlohmann::json::array();
+    for( const auto &e: r ) {
+      dest[ "resource" ].push_back( *e );
+    }
+  }
+  else if( resource.index() == 1u ) {
+    const auto &r = std::get< std::vector< std::shared_ptr< image_view_t > > >( resource );
+    dest[ "type" ] = "image_view";
+    dest[ "resource" ] = nlohmann::json::array();
+    for( const auto &e: r ) {
+      auto temp = nlohmann::json::object();
+      temp[ "image_view" ] = *e;
+      dest[ "resource" ].push_back( temp );
+    }
+  }
+  else if( resource.index() == 2u ) {
+    const auto &r = std::get< std::vector< std::tuple< std::shared_ptr< sampler_t >, std::shared_ptr< image_view_t > > > >( resource );
+    dest[ "type" ] = "image_view";
+    dest[ "resource" ] = nlohmann::json::array();
+    for( const auto &e: r ) {
+      auto temp = nlohmann::json::object();
+      temp[ "sampler" ] = *std::get< 0 >( e );
+      temp[ "image_view" ] = *std::get< 1 >( e );
+      dest[ "resource" ].push_back( temp );
+    }
+  }
+  else if( resource.index() == 3u ) {
+    const auto &r = std::get< std::vector< std::tuple< std::shared_ptr< image_view_t >, vk::ImageLayout > > >( resource );
+    dest[ "type" ] = "image_view";
+    dest[ "resource" ] = nlohmann::json::array();
+    for( const auto &e: r ) {
+      auto temp = nlohmann::json::object();
+      temp[ "image_view" ] = *std::get< 0 >( e );
+      temp[ "image_layout" ] = std::get< 1 >( e );
+      dest[ "resource" ].push_back( temp );
+    }
+  }
+  else if( resource.index() == 4u ) {
+    const auto &r = std::get<
+      std::vector< std::tuple< std::shared_ptr< sampler_t >, std::shared_ptr< image_view_t >, vk::ImageLayout > >
+    >( resource );
+    dest[ "type" ] = "image_view";
+    dest[ "resource" ] = nlohmann::json::array();
+    for( const auto &e: r ) {
+      auto temp = nlohmann::json::object();
+      temp[ "sampler" ] = *std::get< 0 >( e );
+      temp[ "image_view" ] = *std::get< 1 >( e );
+      temp[ "image_layout" ] = std::get< 2 >( e );
+      dest[ "resource" ].push_back( temp );
+    }
+  }
+}
+  
+void to_json( nlohmann::json &dest, const named_resource &src ) {
+  src.to_json( dest );
 }
 
 }

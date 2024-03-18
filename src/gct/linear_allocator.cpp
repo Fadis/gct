@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/exception.hpp>
 #include <gct/linear_allocator.hpp>
 
@@ -35,6 +36,43 @@ void linear_allocator::release( std::uint32_t i ) {
   else if( i < tail - 1u ) {
     deallocated.insert( i );
   }
+}
+void linear_allocator::reset() {
+  deallocated.clear();
+  tail = 0u;
+}
+void linear_allocator::to_json( nlohmann::json &dest ) const {
+  dest = nlohmann::json::object();
+  dest[ "props" ] = get_props();
+  dest[ "tail" ] = tail;
+  dest[ "deallocated" ] = nlohmann::json::array();
+  for( auto e: deallocated ) {
+    dest[ "deallocated" ].push_back( e );
+  }
+}
+void to_json( nlohmann::json &dest, const linear_allocator &src ) {
+  src.to_json( dest );
+}
+
+reduced_linear_allocator::reduced_linear_allocator(
+  const linear_allocator_create_info &ci
+) : props( ci ) {}
+std::uint32_t reduced_linear_allocator::allocate() {
+  if( tail == props.max ) {
+    throw exception::out_of_range( "reduced_linear_allocator::allocate : no space left", __FILE__, __LINE__ );
+  }
+  return tail++;
+}
+void reduced_linear_allocator::reset() {
+  tail = 0u;
+}
+void reduced_linear_allocator::to_json( nlohmann::json &dest ) const {
+  dest = nlohmann::json::object();
+  dest[ "props" ] = get_props();
+  dest[ "tail" ] = tail;
+}
+void to_json( nlohmann::json &dest, const reduced_linear_allocator &src ) {
+  src.to_json( dest );
 }
 
 }

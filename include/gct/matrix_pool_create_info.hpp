@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <vector>
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
 
@@ -44,6 +45,8 @@ struct matrix_pool_create_info {
   std::string update_request_buffer_name = "request";
   std::vector< named_resource > resources;
 };
+
+void to_json( nlohmann::json &dest, const matrix_pool_create_info& );
 
 }
 

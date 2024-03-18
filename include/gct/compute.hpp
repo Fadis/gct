@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <filesystem>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/compute_create_info.hpp>
 
 namespace gct {
@@ -37,6 +38,7 @@ namespace gct {
     std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
     std::shared_ptr< compute_pipeline_t > pipeline;
   };
+  void to_json( nlohmann::json&, const compute& );
 }
 
 #endif
