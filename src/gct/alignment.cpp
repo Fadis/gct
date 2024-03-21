@@ -1,7 +1,21 @@
 #include <algorithm>
+#include <nlohmann/json.hpp>
 #include <gct/spirv_reflect.h>
 #include <gct/exception.hpp>
 #include <gct/alignment.hpp>
+
+namespace gct {
+void to_json( nlohmann::json &dest, const memory_layout &src ) {
+  if( src == memory_layout::std140 ) dest = "std140";
+  else if( src == memory_layout::std430 ) dest = "std430";
+  else dest == "Unknown";
+}
+void from_json( const nlohmann::json &src, memory_layout &dest ) {
+  if( src == "std140" ) dest = memory_layout::std140;
+  else if( src == "std430" ) dest = memory_layout::std430;
+}
+
+}
 
 namespace gct::alignment {
 

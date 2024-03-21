@@ -400,6 +400,7 @@ void aabb_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
       {
+        std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->staging_aabb->map< aabb_type >();
         for( const auto &desc: self->used_on_gpu ) {
           if( self->aabb_state.size() > *desc && self->aabb_state[ *desc ].valid ) {
@@ -425,13 +426,13 @@ void aabb_pool::state_type::flush( command_buffer_recorder_t &rec ) {
             s.staging_index = std::nullopt;
           }
         }
+        self->write_request_index_allocator.reset();
+        self->read_request_index_allocator.reset();
+        self->update_request_index_allocator.reset();
+        self->staging_index_allocator.reset();
+        self->cbs.clear();
+        self->execution_pending = false;
       }
-      self->write_request_index_allocator.reset();
-      self->read_request_index_allocator.reset();
-      self->update_request_index_allocator.reset();
-      self->staging_index_allocator.reset();
-      self->cbs.clear();
-      self->execution_pending = false;
       for( auto &cb: cbs ) {
         cb();
       }

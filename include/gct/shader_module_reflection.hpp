@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
@@ -12,6 +13,9 @@
 namespace gct {
   class shader_module_reflection_t {
   public:
+    shader_module_reflection_t(
+      const std::filesystem::path &
+    );
     shader_module_reflection_t(
       const std::vector< std::uint8_t > &
     );

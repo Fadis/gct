@@ -45,6 +45,9 @@ public:
   std::size_t get_offset() const {
     return begin_;
   }
+  std::size_t get_stride() const {
+    return stride;
+  }
   const numeric_type_t &get_numeric() const;
   const spv_member_pointer &operator[]( const std::string &name ) const;
   spv_member_pointer operator[]( int ) const;

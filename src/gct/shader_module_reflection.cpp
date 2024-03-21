@@ -1,7 +1,25 @@
+#include <fstream>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/spirv_reflect.h>
 
 namespace gct {
+  shader_module_reflection_t::shader_module_reflection_t(
+    const std::filesystem::path &filename
+  ) {
+    std::fstream file( filename.string(), std::ios::in|std::ios::binary );
+    if( !file.good() ) {
+      throw exception::invalid_argument( "shader_module_reflection_t : Unable to open shader", __FILE__, __LINE__ );
+    }
+    std::vector< std::uint8_t > code( ( std::istreambuf_iterator< char >( file ) ), std::istreambuf_iterator<char>() );
+    const SpvReflectResult reflect_result = spvReflectCreateShaderModule(
+      code.size(),
+      code.data(),
+      &reflect
+    );
+    if( reflect_result != SPV_REFLECT_RESULT_SUCCESS ) {
+      throw exception::invalid_argument( "spvReflectCreateShaderModule failed", __FILE__, __LINE__ );
+    }
+  }
   shader_module_reflection_t::shader_module_reflection_t(
     const std::vector< std::uint8_t > &code
   ) {

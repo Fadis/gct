@@ -1,12 +1,14 @@
 #ifndef GCT_ALIGNMENT_HPP
 #define GCT_ALIGNMENT_HPP
 #include <cstddef>
-
+#include <nlohmann/json_fwd.hpp>
 namespace gct {
 enum class memory_layout {
   std140,
   std430
 };
+void to_json( nlohmann::json &dest, const memory_layout &src );
+void from_json( const nlohmann::json &src, memory_layout &dest );
 }
 
 struct SpvReflectTypeDescription;

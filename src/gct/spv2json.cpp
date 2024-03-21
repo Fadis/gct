@@ -410,26 +410,37 @@ void to_json( nlohmann::json &root, const SpvBuiltIn &v ) {
 
 void to_json( nlohmann::json &root, const SpvReflectNumericTraits &v )  {
   root = nlohmann::json::object();
-  root[ "scalar" ] = nlohmann::json::object();
-  root[ "scalar" ][ "width" ] = v.scalar.width;
-  root[ "scalar" ][ "signedness" ] = v.scalar.signedness;
-  root[ "vector" ] = nlohmann::json::object();
-  root[ "vector"][ "component_count" ] = v.vector.component_count;
-  root[ "matrix" ] = nlohmann::json::object();
-  root[ "matrix" ][ "column_count" ] = v.matrix.column_count;
-  root[ "matrix" ][ "row_count" ] = v.matrix.row_count;
-  root[ "matrix" ][ "stride" ] = v.matrix.stride;
+  if( v.scalar.width != 0u ) {
+    root[ "scalar" ] = nlohmann::json::object();
+    root[ "scalar" ][ "width" ] = v.scalar.width;
+    root[ "scalar" ][ "signedness" ] = v.scalar.signedness;
+  }
+  if( v.vector.component_count != 0u ) {
+    root[ "vector" ] = nlohmann::json::object();
+    root[ "vector"][ "component_count" ] = v.vector.component_count;
+  }
+  if( v.matrix.column_count != 0u && v.matrix.row_count != 0u ) {
+    root[ "matrix" ] = nlohmann::json::object();
+    root[ "matrix" ][ "column_count" ] = v.matrix.column_count;
+    root[ "matrix" ][ "row_count" ] = v.matrix.row_count;
+    root[ "matrix" ][ "stride" ] = v.matrix.stride;
+  }
 }
 
 void to_json( nlohmann::json &root, const SpvReflectArrayTraits &v ) {
-  root = nlohmann::json::object();
-  root[ "dims_count" ] = v.dims_count;
-  root[ "dims" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != SPV_REFLECT_MAX_ARRAY_DIMS; ++i ) {
-    if( !v.dims[ i ] ) break;
-    root[ "dims" ].push_back( nlohmann::json( v.dims[ i ] ) );
+  if( v.dims_count == 0u && v.stride == 0u ) {
+    root = nullptr;
   }
-  root[ "stride" ] = v.stride;
+  else {
+    root = nlohmann::json::object();
+    root[ "dims_count" ] = v.dims_count;
+    root[ "dims" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != SPV_REFLECT_MAX_ARRAY_DIMS; ++i ) {
+      if( !v.dims[ i ] ) break;
+      root[ "dims" ].push_back( nlohmann::json( v.dims[ i ] ) );
+    }
+    root[ "stride" ] = v.stride;
+  }
 }
 
 void to_json( nlohmann::json &root, const SpvReflectFormat &v ) {
@@ -496,11 +507,19 @@ void to_json( nlohmann::json &root, const SpvReflectInterfaceVariable &v ) {
     root[ "semantic" ] = v.semantic;
   root[ "decoration_flags" ] = v.decoration_flags;
   root[ "numeric" ] = v.numeric;
+  if( root[ "numeric" ].empty() || root[ "numeric" ].empty() ) {
+    root.erase( "numeric" );
+  }
   root[ "array" ] = v.array;
-  root[ "member_count" ] = v.member_count;
-  root[ "members" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.member_count; ++i )
-    root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  if( root[ "array" ].is_null() ) {
+    root.erase( "array" );
+  }
+  if( v.member_count != 0u ) {
+    root[ "member_count" ] = v.member_count;
+    root[ "members" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.member_count; ++i )
+      root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  }
   root[ "format" ] = v.format;
   if( v.type_description )
     root[ "type_description" ] = *v.type_description;
@@ -511,10 +530,12 @@ void to_json( nlohmann::json &root, const SpvReflectInterfaceVariable &v ) {
 void to_json( nlohmann::json &root, const SpvReflectDescriptorSet &v ) {
   root = nlohmann::json::object();
   root[ "set" ] = v.set;
-  root[ "binding_count" ] = v.binding_count;
-  root[ "bindings" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.binding_count; ++i )
-    root[ "bindings" ].push_back( nlohmann::json( *v.bindings[ i ] ) );
+  if( v.binding_count != 0u ) {
+    root[ "binding_count" ] = v.binding_count;
+    root[ "bindings" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.binding_count; ++i )
+      root[ "bindings" ].push_back( nlohmann::json( *v.bindings[ i ] ) );
+   }
 }
 
 void to_json( nlohmann::json &root, const SpvReflectEntryPoint &v ) {
@@ -523,30 +544,42 @@ void to_json( nlohmann::json &root, const SpvReflectEntryPoint &v ) {
   root[ "id" ] = v.id;
   root[ "spirv_execution_model" ] = v.spirv_execution_model;
   root[ "shader_stage" ] = v.shader_stage;
-  root[ "input_variable_count" ] = v.input_variable_count;
-  root[ "input_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.input_variable_count; ++i )
-    root[ "input_variables" ].push_back( nlohmann::json( *v.input_variables[ i ] ) );
-  root[ "output_variable_count" ] = v.output_variable_count;
-  root[ "output_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.output_variable_count; ++i )
-    root[ "output_variables" ].push_back( nlohmann::json( *v.output_variables[ i ] ) );
-  root[ "interface_variable_count" ] = v.interface_variable_count;
-  root[ "interface_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.interface_variable_count; ++i )
-    root[ "interface_variables" ].push_back( nlohmann::json( v.interface_variables[ i ] ) );
-  root[ "descriptor_set_count" ] = v.descriptor_set_count;
-  root[ "descriptor_sets" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.descriptor_set_count; ++i )
-    root[ "descriptor_sets" ].push_back( nlohmann::json( v.descriptor_sets[ i ] ) );
-  root[ "used_uniform_count" ] = v.used_uniform_count;
-  root[ "used_uniforms" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.used_uniform_count; ++i )
-    root[ "used_uniforms" ].push_back( nlohmann::json( v.used_uniforms[ i ] ) );
-  root[ "used_push_constant_count" ] = v.used_push_constant_count;
-  root[ "used_push_constants" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.used_push_constant_count; ++i )
-    root[ "used_push_constants" ].push_back( nlohmann::json( v.used_push_constants[ i ] ) );
+  if( v.input_variable_count != 0u ) {
+    root[ "input_variable_count" ] = v.input_variable_count;
+    root[ "input_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.input_variable_count; ++i )
+      root[ "input_variables" ].push_back( nlohmann::json( *v.input_variables[ i ] ) );
+  }
+  if( v.output_variable_count != 0u ) {
+    root[ "output_variable_count" ] = v.output_variable_count;
+    root[ "output_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.output_variable_count; ++i )
+      root[ "output_variables" ].push_back( nlohmann::json( *v.output_variables[ i ] ) );
+  }
+  if( v.interface_variable_count != 0u ) {
+    root[ "interface_variable_count" ] = v.interface_variable_count;
+    root[ "interface_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.interface_variable_count; ++i )
+      root[ "interface_variables" ].push_back( nlohmann::json( v.interface_variables[ i ] ) );
+  }
+  if( v.descriptor_set_count != 0u ) {
+    root[ "descriptor_set_count" ] = v.descriptor_set_count;
+    root[ "descriptor_sets" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.descriptor_set_count; ++i )
+      root[ "descriptor_sets" ].push_back( nlohmann::json( v.descriptor_sets[ i ] ) );
+  }
+  if( v.used_uniform_count != 0u ) {
+    root[ "used_uniform_count" ] = v.used_uniform_count;
+    root[ "used_uniforms" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.used_uniform_count; ++i )
+      root[ "used_uniforms" ].push_back( nlohmann::json( v.used_uniforms[ i ] ) );
+  }
+  if( v.used_push_constant_count != 0u ) {
+    root[ "used_push_constant_count" ] = v.used_push_constant_count;
+    root[ "used_push_constants" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.used_push_constant_count; ++i )
+      root[ "used_push_constants" ].push_back( nlohmann::json( v.used_push_constants[ i ] ) );
+  }
   root[ "local_size" ] = nlohmann::json::object();
   root[ "local_size" ][ "x" ] = v.local_size.x;
   root[ "local_size" ][ "y" ] = v.local_size.y;
@@ -706,13 +739,18 @@ void to_json( nlohmann::json &root, const SpvImageFormat &v ) {
 }
 
 void to_json( nlohmann::json &root, const SpvReflectImageTraits &v ) {
-  root = nlohmann::json::object();
-  root[ "dim" ] = v.dim;
-  root[ "depth" ] = v.depth;
-  root[ "arrayed" ] = v.arrayed;
-  root[ "ms" ] = v.ms;
-  root[ "sampled" ] = v.sampled;
-  root[ "image_format" ] = v.image_format;
+  if( v.dim == 0u && v.depth == 0u ) {
+    root = nullptr;
+  }
+  else {
+    root = nlohmann::json::object();
+    root[ "dim" ] = v.dim;
+    root[ "depth" ] = v.depth;
+    root[ "arrayed" ] = v.arrayed;
+    root[ "ms" ] = v.ms;
+    root[ "sampled" ] = v.sampled;
+    root[ "image_format" ] = v.image_format;
+  }
 }
 
 void to_json( nlohmann::json &root, const SpvOp &v ) {
@@ -2069,12 +2107,26 @@ void to_json( nlohmann::json &root, const SpvReflectTypeDescription &v ) {
   root[ "decoration_flags" ] = v.decoration_flags;
   root[ "traits" ] = nlohmann::json::object();
   root[ "traits" ][ "numeric" ] = v.traits.numeric;
+  if( root[ "traits" ][ "numeric" ].empty() || root[ "traits" ][ "numeric" ].empty() ) {
+    root[ "traits" ].erase( "numeric" );
+  }
   root[ "traits" ][ "image" ] = v.traits.image;
+  if( root[ "traits" ][ "image" ].is_null() ) {
+    root[ "traits" ].erase( "image" );
+  }
   root[ "traits" ][ "array" ] = v.traits.array;
-  root[ "member_count" ] = v.member_count;
-  root[ "members" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.member_count; ++i )
-    root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  if( root[ "traits" ][ "array" ].is_null() ) {
+    root[ "traits" ].erase( "array" );
+  }
+  if( root[ "traits" ].empty() ) {
+     root.erase( "traits" );
+  }
+  if( v.member_count != 0u ) {
+    root[ "member_count" ] = v.member_count;
+    root[ "members" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.member_count; ++i )
+      root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  }
 }
 
 void to_json( nlohmann::json &root, const SpvReflectBlockVariable &v ) {
@@ -2088,12 +2140,20 @@ void to_json( nlohmann::json &root, const SpvReflectBlockVariable &v ) {
   root[ "padded_size" ] = v.padded_size;
   root[ "decoration_flags" ] = v.decoration_flags;
   root[ "numeric" ] = v.numeric;
+  if( root[ "numeric" ].is_null() || root[ "numeric" ].empty() ) {
+    root.erase( "numeric" );
+  }
   root[ "array" ] = v.array;
+  if( root[ "array" ].is_null() ) {
+    root.erase( "array" );
+  }
   root[ "flags" ] = v.flags;
-  root[ "member_count" ] = v.member_count;
-  root[ "members" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.member_count; ++i )
-    root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  if( v.member_count != 0u ) {
+    root[ "member_count" ] = v.member_count;
+    root[ "members" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.member_count; ++i )
+      root[ "members" ].push_back( nlohmann::json( v.members[ i ] ) );
+  }
   if( v.type_description )
     root[ "type_description" ] = *v.type_description;
 }
@@ -2109,6 +2169,9 @@ void to_json( nlohmann::json &root, const SpvReflectDescriptorBinding &v ) {
   root[ "descriptor_type" ] = v.descriptor_type;
   root[ "resource_type" ] = v.resource_type;
   root[ "image" ] = v.image;
+  if( root[ "image" ].is_null() ) {
+    root.erase( "image" );
+  }
   if( v.type_description )
     root[ "type_description" ] = *v.type_description;
 }
@@ -2119,10 +2182,12 @@ void to_json( nlohmann::json &root, const SpvReflectShaderModule &v ) {
   if( v.entry_point_name )
     root[ "entry_point_name" ] = v.entry_point_name;
   root[ "entry_point_id" ] = v.entry_point_id;
-  root[ "entry_point_count" ] = v.entry_point_count;
-  root[ "entry_points" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.entry_point_count; ++i )
-    root[ "entry_points" ].push_back( nlohmann::json( v.entry_points[ i ] ) );
+  if( v.entry_point_count != 0u ) {
+    root[ "entry_point_count" ] = v.entry_point_count;
+    root[ "entry_points" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.entry_point_count; ++i )
+      root[ "entry_points" ].push_back( nlohmann::json( v.entry_points[ i ] ) );
+  }
   root[ "source_language" ] = v.source_language;
   root[ "source_language_version" ] = v.source_language_version;
   if( v.source_file )
@@ -2130,29 +2195,41 @@ void to_json( nlohmann::json &root, const SpvReflectShaderModule &v ) {
   //root[ "source_source" ] = v.source_source;
   root[ "spirv_execution_model" ] = v.spirv_execution_model;
   root[ "shader_stage" ] = v.shader_stage;
-  root[ "descriptor_binding_count" ] = v.descriptor_binding_count;
-  root[ "descriptor_bindings" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.descriptor_binding_count; ++i )
-    root[ "descriptor_bindings" ].push_back( nlohmann::json( v.descriptor_bindings[ i ] ) );
-  root[ "descriptor_set_count" ] = v.descriptor_set_count;
-  root[ "descriptor_sets" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.descriptor_set_count; ++i )
-    root[ "descriptor_sets" ].push_back( nlohmann::json( v.descriptor_sets[ i ] ) );
-  root[ "input_variable_count" ] = v.input_variable_count;
-  root[ "input_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.input_variable_count; ++i )
-    root[ "input_variables" ].push_back( nlohmann::json( *v.input_variables[ i ] ) );
-  root[ "output_variable_count" ] = v.output_variable_count;
-  root[ "output_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.output_variable_count; ++i )
-    root[ "output_variables" ].push_back( nlohmann::json( *v.output_variables[ i ] ) );
-  root[ "interface_variable_count" ] = v.interface_variable_count;
-  root[ "interface_variables" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.interface_variable_count; ++i )
-    root[ "interface_variables" ].push_back( nlohmann::json( v.interface_variables[ i ] ) );
-  root[ "push_constant_block_count" ] = v.push_constant_block_count;
-  root[ "push_constant_blocks" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != v.push_constant_block_count; ++i )
-    root[ "push_constant_blocks" ].push_back( nlohmann::json( v.push_constant_blocks[ i ] ) );
+  if( v.descriptor_binding_count != 0u ) {
+    root[ "descriptor_binding_count" ] = v.descriptor_binding_count;
+    root[ "descriptor_bindings" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.descriptor_binding_count; ++i )
+      root[ "descriptor_bindings" ].push_back( nlohmann::json( v.descriptor_bindings[ i ] ) );
+  }
+  if( v.descriptor_set_count != 0u ) {
+    root[ "descriptor_set_count" ] = v.descriptor_set_count;
+    root[ "descriptor_sets" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.descriptor_set_count; ++i )
+      root[ "descriptor_sets" ].push_back( nlohmann::json( v.descriptor_sets[ i ] ) );
+  }
+  if( v.input_variable_count != 0u ) {
+    root[ "input_variable_count" ] = v.input_variable_count;
+    root[ "input_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.input_variable_count; ++i )
+      root[ "input_variables" ].push_back( nlohmann::json( *v.input_variables[ i ] ) );
+  }
+  if( v.output_variable_count != 0u ) {
+    root[ "output_variable_count" ] = v.output_variable_count;
+    root[ "output_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.output_variable_count; ++i )
+      root[ "output_variables" ].push_back( nlohmann::json( *v.output_variables[ i ] ) );
+  }
+  if( v.interface_variable_count != 0u ) {
+    root[ "interface_variable_count" ] = v.interface_variable_count;
+    root[ "interface_variables" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.interface_variable_count; ++i )
+      root[ "interface_variables" ].push_back( nlohmann::json( v.interface_variables[ i ] ) );
+  }
+  if( v.push_constant_block_count ) {
+    root[ "push_constant_block_count" ] = v.push_constant_block_count;
+    root[ "push_constant_blocks" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.push_constant_block_count; ++i )
+      root[ "push_constant_blocks" ].push_back( nlohmann::json( v.push_constant_blocks[ i ] ) );
+  }
 }
 

@@ -253,6 +253,8 @@ add_library( gct SHARED
   gct/linear_allocator_create_info.cpp
   gct/texture_pool_create_info.cpp
   gct/texture_pool.cpp
+  gct/buffer_pool_create_info.cpp
+  gct/buffer_pool.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

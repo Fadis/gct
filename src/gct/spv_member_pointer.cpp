@@ -65,7 +65,7 @@ namespace gct {
     if( stride == 0u ) {
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not an array.", __FILE__, __LINE__ );
     }
-    if( i >= count ) {
+    if( count && i >= count ) {
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Out of range.", __FILE__, __LINE__ );
     }
     auto temp = *this;
