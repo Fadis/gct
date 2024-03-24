@@ -255,6 +255,12 @@ add_library( gct SHARED
   gct/texture_pool.cpp
   gct/buffer_pool_create_info.cpp
   gct/buffer_pool.cpp
+  gct/sampler_pool_create_info.cpp
+  gct/sampler_pool.cpp
+  gct/vertex_buffer_pool_create_info.cpp
+  gct/vertex_buffer_pool.cpp
+  gct/scene_graph.cpp
+  gct/gltf2.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

@@ -18,15 +18,24 @@ namespace gct {
     props( ci ) {
     std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline( ci.shader );
 
-    for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-      descriptor_set.push_back( props.descriptor_pool->allocate(
-        descriptor_set_layout
-      ) );
+    if( props.external_descriptor_set ) {
       std::vector< write_descriptor_set_t > temp;
       for( const auto &r: props.resources ) {
-        temp.push_back( { r, i } );
+        temp.push_back( { r, 0 } );
       }
-      descriptor_set.back()->update( temp );
+      props.external_descriptor_set->update( temp );
+    }
+    else {
+      for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+        descriptor_set.push_back( props.descriptor_pool->allocate(
+          descriptor_set_layout
+        ) );
+        std::vector< write_descriptor_set_t > temp;
+        for( const auto &r: props.resources ) {
+          temp.push_back( { r, i } );
+        }
+        descriptor_set.back()->update( temp );
+      }
     }
   }
   void compute::operator()(
@@ -36,10 +45,18 @@ namespace gct {
     unsigned int y,
     unsigned int z
   ) const {
-    rec.bind(
-      pipeline,
-      { descriptor_set[ image_index ] }
-    );
+    if( props.external_descriptor_set ) {
+      rec.bind(
+        pipeline,
+        { props.external_descriptor_set }
+      );
+    }
+    else {
+      rec.bind(
+        pipeline,
+        { descriptor_set[ image_index ] }
+      );
+    }
     rec.dispatch_threads( x, y, z );
   }
   void to_json( nlohmann::json &dest, const compute &src ) {

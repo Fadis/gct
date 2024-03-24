@@ -200,6 +200,17 @@ namespace gct {
         .set_image_view( image_view )
     );
   }
+  write_descriptor_set_t &write_descriptor_set_t::add_sampler(
+    const std::shared_ptr< sampler_t > &sampler
+  ) {
+    return add_image(
+      gct::descriptor_image_info_t()
+        .set_basic(
+          vk::DescriptorImageInfo()
+        )
+        .set_sampler( sampler )
+    );
+  }
   write_descriptor_set_t &write_descriptor_set_t::clear_image() {
     image.clear();
     chained = false;

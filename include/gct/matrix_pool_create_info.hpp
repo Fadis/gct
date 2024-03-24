@@ -17,6 +17,7 @@ class descriptor_pool_t;
 class pipeline_cache_t;
 class compute;
 class command_buffer_recorder_t;
+class descriptor_set_t;
 struct matrix_pool_create_info {
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( descriptor_pool )
@@ -30,6 +31,7 @@ struct matrix_pool_create_info {
   LIBGCT_SETTER( write_request_buffer_name )
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( update_request_buffer_name )
+  LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( resources )
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
@@ -43,6 +45,7 @@ struct matrix_pool_create_info {
   std::string write_request_buffer_name = "request";
   std::string read_request_buffer_name = "request";
   std::string update_request_buffer_name = "request";
+  std::shared_ptr< descriptor_set_t > external_descriptor_set;
   std::vector< named_resource > resources;
 };
 

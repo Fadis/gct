@@ -21,6 +21,7 @@ void to_json( nlohmann::json &dest, const matrix_pool_create_info &src ) {
   dest[ "write_request_buffer_name" ] = src.write_request_buffer_name;
   dest[ "read_request_buffer_name" ] = src.read_request_buffer_name;
   dest[ "update_request_buffer_name" ] = src.update_request_buffer_name;
+  dest[ "external_descriptor_set" ] = *src.external_descriptor_set;
   dest[ "resources" ] = src.resources;
 }
 

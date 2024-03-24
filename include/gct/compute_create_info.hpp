@@ -13,11 +13,13 @@ namespace gct {
 class allocator_t;
 class descriptor_pool_t;
 class pipeline_cache_t;
+class descriptor_set_t;
 struct compute_create_info {
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( descriptor_pool )
   LIBGCT_SETTER( pipeline_cache )
   LIBGCT_SETTER( shader )
+  LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   compute_create_info &add_resource(
@@ -30,6 +32,7 @@ struct compute_create_info {
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
   std::filesystem::path shader;
+  std::shared_ptr< descriptor_set_t > external_descriptor_set;
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
 };

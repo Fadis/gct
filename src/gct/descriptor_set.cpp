@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set.hpp>
+#include <gct/descriptor_set_allocate_info.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/descriptor_set_layout_create_info.hpp>
 
@@ -91,6 +93,10 @@ namespace gct {
     return vk::WriteDescriptorSet()
       .setDstBinding( existing->binding )
       .setDescriptorType( existing->descriptorType );
+  }
+  void to_json( nlohmann::json &dest, const descriptor_set_t &src ) {
+    dest = nlohmann::json::object();
+    dest[ "props" ] = src.get_props();
   }
 }
 

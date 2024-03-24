@@ -183,6 +183,7 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
+      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.buffer_name, buffer } )
       .add_resource( { props.staging_buffer_name, staging_buffer } )
@@ -195,6 +196,7 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
+      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.buffer_name, buffer } )
       .add_resource( { props.staging_buffer_name, staging_buffer } )
@@ -237,6 +239,7 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
+      std::vector< buffer_descriptor > used_on_gpu;
       {
         std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->staging_buffer->map< std::uint8_t >();
@@ -271,6 +274,8 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         self->read_request_index_allocator.reset();
         self->staging_index_allocator.reset();
         self->cbs.clear();
+        used_on_gpu = std::move( self->used_on_gpu );
+        self->used_on_gpu.clear();
         self->execution_pending = false;
       }
       for( auto &cb: cbs ) {
@@ -354,6 +359,7 @@ void buffer_pool::to_json( nlohmann::json &dest ) const {
   dest[ "write" ] = *state->write;
   dest[ "read" ] = *state->read;
   dest[ "aligned_size" ] = state->aligned_size;
+  dest[ "member_pointer" ] = get_member_pointer();
   dest[ "execution_pending" ] = state->execution_pending;
 }
 spv_member_pointer buffer_pool::get_member_pointer() const {

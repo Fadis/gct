@@ -329,6 +329,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
+      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
       .add_resource( { props.staging_matrix_buffer_name, staging_matrix } )
@@ -341,6 +342,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
+      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
       .add_resource( { props.staging_matrix_buffer_name, staging_matrix } )
@@ -353,6 +355,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.update_shader )
       .set_swapchain_image_count( 1u )
+      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
       .add_resource( { props.update_request_buffer_name, update_request_buffer } )
@@ -447,6 +450,7 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
+      std::vector< matrix_descriptor > used_on_gpu;
       {
         std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->staging_matrix->map< glm::mat4 >();
@@ -480,6 +484,8 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         self->update_requested.clear();
         self->update_request_list.clear();
         self->cbs.clear();
+        used_on_gpu = std::move( self->used_on_gpu );
+        self->used_on_gpu.clear();
         self->execution_pending = false;
       }
       for( auto &cb: cbs ) {

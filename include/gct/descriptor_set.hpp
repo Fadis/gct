@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/descriptor_set_allocate_info.hpp>
@@ -43,7 +44,7 @@ namespace gct {
     descriptor_set_allocate_info_t props;
     vk::UniqueHandle< vk::DescriptorSet, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
-
+  void to_json( nlohmann::json&, const descriptor_set_t& );
 }
 
 #endif
