@@ -7,11 +7,11 @@
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
-#include <gct/matrix_pool.hpp>
 #include <gct/named_resource.hpp>
 
 namespace gct {
 
+class buffer_t;
 class allocator_t;
 class descriptor_pool_t;
 class pipeline_cache_t;
@@ -21,6 +21,7 @@ struct aabb_pool_create_info {
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( descriptor_pool )
   LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( matrix_pool )
   LIBGCT_SETTER( write_shader )
   LIBGCT_SETTER( read_shader )
   LIBGCT_SETTER( update_shader )
@@ -31,12 +32,11 @@ struct aabb_pool_create_info {
   LIBGCT_SETTER( write_request_buffer_name )
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( update_request_buffer_name )
-  LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( resources )
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
-  matrix_pool matrix_pool_;
+  std::shared_ptr< buffer_t > matrix_pool;
   std::filesystem::path write_shader;
   std::filesystem::path read_shader;
   std::filesystem::path update_shader;
@@ -47,7 +47,6 @@ struct aabb_pool_create_info {
   std::string write_request_buffer_name = "request";
   std::string read_request_buffer_name = "request";
   std::string update_request_buffer_name = "request";
-  std::shared_ptr< descriptor_set_t > external_descriptor_set;
   std::vector< named_resource > resources;
 };
 void to_json( nlohmann::json &dest, const aabb_pool_create_info &src );

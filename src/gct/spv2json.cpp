@@ -2158,12 +2158,32 @@ void to_json( nlohmann::json &root, const SpvReflectBlockVariable &v ) {
     root[ "type_description" ] = *v.type_description;
 }
 
+void to_json( nlohmann::json &root, const SpvReflectBindingArrayTraits &v ) {
+  if( v.dims_count == 0u ) {
+    root = nullptr;
+  }
+  else {
+    root = nlohmann::json::object();
+    root[ "dims_count" ] = v.dims_count;
+    root[ "dims" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != SPV_REFLECT_MAX_ARRAY_DIMS; ++i ) {
+      if( !v.dims[ i ] ) break;
+      root[ "dims" ].push_back( nlohmann::json( v.dims[ i ] ) );
+    }
+  }
+}
+
 void to_json( nlohmann::json &root, const SpvReflectDescriptorBinding &v ) {
   root = nlohmann::json::object();
   root[ "spirv_id" ] = v.spirv_id;
   if( v.name )
     root[ "name" ] = v.name;
   root[ "binding" ] = v.binding;
+  root[ "array" ] = v.array;
+  if( root[ "array" ].is_null() ) {
+    root.erase( "array" );
+  }
+  root[ "count" ] = v.count;
   root[ "input_attachment_index" ] = v.input_attachment_index;
   root[ "set" ] = v.set;
   root[ "descriptor_type" ] = v.descriptor_type;

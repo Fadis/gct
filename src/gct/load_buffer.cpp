@@ -1,5 +1,5 @@
-#include <iostream>
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <gct/exception.hpp>
 #include <gct/buffer.hpp>
 #include <gct/mappable_buffer.hpp>
@@ -78,6 +78,7 @@ namespace gct {
       }
     );
     get_factory()->unbound()->keep.push_back( std::move( temporary_buffer ) );
+    get_factory()->unbound()->keep.push_back( final_buffer );
     return final_buffer;
   }
   std::shared_ptr< buffer_t > command_buffer_recorder_t::load_buffer_from_file(
@@ -115,7 +116,6 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( staging_buffer );
     get_factory()->unbound()->cbs.push_back(
       [staging_buffer,p=std::move(p)]( vk::Result result ) mutable {
-        std::cout << __FILE__ << " " << __LINE__ << std::endl;
         std::vector< std::uint8_t > host_buffer(
           staging_buffer->get_props().get_basic().size
         );

@@ -23,7 +23,8 @@ struct common_sample_setup {
     int argc,
     const char *argv[],
     const std::vector< const char* > &device_extensions,
-    const descriptor_pool_create_info_t &dpci
+    const descriptor_pool_create_info_t &dpci,
+    bool enable_glfw = true
   );
   std::string walk_state_filename;
   std::string model_filename;

@@ -33,6 +33,16 @@ namespace gct {
         .rebuild_chain()
     );
   }
+  std::shared_ptr< descriptor_set_t > descriptor_pool_t::allocate(
+    const std::shared_ptr< descriptor_set_layout_t > &layout,
+    std::uint32_t count
+  ) {
+    return allocate(
+      gct::descriptor_set_allocate_info_t()
+        .add_layout( layout, count )
+        .rebuild_chain()
+    );
+  }
   void to_json( nlohmann::json &dest, const descriptor_pool_t &src ) {
     dest = nlohmann::json::object();
     dest[ "props" ] = src.get_props();

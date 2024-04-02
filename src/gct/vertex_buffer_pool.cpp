@@ -1,8 +1,10 @@
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/buffer.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/format.hpp>
 #include <gct/image.hpp>
+#include <gct/allocator.hpp>
 #include <gct/compute_create_info.hpp>
 #include <gct/write_descriptor_set.hpp>
 #include <gct/descriptor_set.hpp>
@@ -29,22 +31,41 @@ void vertex_buffer_pool::state_type::release_index( vertex_buffer_pool::vertex_b
   index_allocator.release( index );
 }
 
-vertex_buffer_pool::vertex_buffer_index_t vertex_buffer_pool::state_type::allocate(
+vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::allocate(
   const std::string &filename
 ) {
   if( execution_pending ) {
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
+
+  std::ifstream file( filename, std::ios::in | std::ios::binary );
+  std::vector< std::uint8_t > data(
+    ( std::istreambuf_iterator< char >( file ) ),
+    std::istreambuf_iterator< char >()
+  );
+    
+  auto b = props.allocator->create_mappable_buffer(
+    data.size(),
+    vk::BufferUsageFlagBits::eVertexBuffer|
+    vk::BufferUsageFlagBits::eIndexBuffer|
+    vk::BufferUsageFlagBits::eStorageBuffer
+  );
+  {
+    auto mapped = b->map< std::uint8_t >();
+    std::copy( data.begin(), data.end(), mapped.begin() );
+  }
+
   const vertex_buffer_index_t index = allocate_index();
 
   write_request_list.push_back(
     write_request()
       .set_index( index )
-      .set_filename( filename )
+      .set_buffer( b )
   );
   vertex_buffer_state[ index ] =
     vertex_buffer_state_type()
       .set_valid( true )
+      .set_buffer( b )
       .set_write_request_index( write_request_list.size() - 1u );
 
   vertex_buffer_descriptor desc(
@@ -59,80 +80,20 @@ vertex_buffer_pool::vertex_buffer_index_t vertex_buffer_pool::state_type::alloca
   used_on_gpu.push_back( desc );
   return desc;
 }
-/*
+
 void vertex_buffer_pool::state_type::release( vertex_buffer_index_t index ) {
-  texture_state_type removed;
+  vertex_buffer_state_type removed;
   {
     std::lock_guard< std::mutex > lock( guard );
-    if( texture_state.size() <= index || !texture_state[ index ].valid ) {
+    if( vertex_buffer_state.size() <= index || !vertex_buffer_state[ index ].valid ) {
       return;
     }
-    removed = texture_state[ index ];
+    removed = std::move( vertex_buffer_state[ index ] );
+    vertex_buffer_state[ index ] = vertex_buffer_state_type();
     release_index( index );
-    const auto target = (*props.descriptor_set)[ props.descriptor_name ];
-    std::vector< write_descriptor_set_t > updates;
-    updates.push_back(
-      write_descriptor_set_t()
-        .set_basic(
-          vk::WriteDescriptorSet( target )
-            .setDstArrayElement( index )
-            .setDescriptorCount( 1u )
-        )
-        .add_image( null_view )
-    );
-    props.descriptor_set->update(
-      std::move( updates )
-    );
-  }
-}
-
-vertex_buffer_pool::state_type::state_type( const vertex_buffer_pool_create_info &ci ) :
-  props( ci ),
-  index_allocator( linear_allocator_create_info().set_max( ci.max_texture_count ) ) {
-}
-
-void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
-  if( execution_pending ) {
-    return;
-  }
-  std::vector< write_descriptor_set_t > updates;
-  const auto target = (*props.descriptor_set)[ props.descriptor_name ];
-  for( const auto &req: write_request_list ) {
-    auto image = rec.load_image(
-      props.allocator,
-      req.filename,
-      vk::ImageUsageFlagBits::eSampled,
-      req.mipmap,
-      req.attr,
-      req.max_channels_per_layer
-    );
-    for( auto f: image->get_props().get_format() ) {
-      auto view = image->get_view(
-        image_view_create_info_t()
-          .set_basic(
-            vk::ImageViewCreateInfo()
-              .setSubresourceRange(
-                vk::ImageSubresourceRange()
-                  .setAspectMask( vk::ImageAspectFlagBits::eColor )
-                  .setBaseMipLevel( 0 )
-                  .setLevelCount( image->get_props().get_basic().mipLevels )
-                  .setBaseArrayLayer( 0 )
-                  .setLayerCount( image->get_props().get_basic().arrayLayers )
-              )
-              .setViewType( to_image_view_type( image->get_props().get_basic().imageType, image->get_props().get_basic().arrayLayers ) )
-              .setFormat( f )
-          )
-          .rebuild_chain()
-      );
-      const auto index =
-        is_normalized( f ) ?
-        req.normalized_index :
-        (
-          is_scaled( f ) ?
-          req.scaled_index :
-          req.srgb_index
-        );
-      texture_state[ index ].set_view( view );
+    if( props.descriptor_set ) {
+      const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+      std::vector< write_descriptor_set_t > updates;
       updates.push_back(
         write_descriptor_set_t()
           .set_basic(
@@ -140,21 +101,70 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
               .setDstArrayElement( index )
               .setDescriptorCount( 1u )
           )
-          .add_image( view )
+          .add_buffer( null_buffer )
+      );
+      props.descriptor_set->update(
+        std::move( updates )
       );
     }
   }
-  props.descriptor_set->update(
-    std::move( updates )
-  );
+}
+
+
+std::shared_ptr< buffer_t > vertex_buffer_pool::state_type::get( const vertex_buffer_descriptor &desc ) {
+  if( vertex_buffer_state.size() <= *desc || !vertex_buffer_state[ *desc ].valid ) {
+    throw exception::invalid_argument( "vertex_buffer_pool::get : No such sampler" );
+  }
+  return vertex_buffer_state[ *desc ].buffer->get_buffer();
+}
+
+std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::state_type::get() {
+  std::vector< std::shared_ptr< buffer_t > > temp;
+  temp.reserve( vertex_buffer_state.size() );
+  for( auto &e: vertex_buffer_state ) {
+    temp.push_back( e.buffer->get_buffer() );
+  }
+  return temp;
+}
+
+vertex_buffer_pool::state_type::state_type( const vertex_buffer_pool_create_info &ci ) :
+  props( ci ),
+  index_allocator( linear_allocator_create_info().set_max( ci.max_vertex_buffer_count ) ) {
+}
+
+void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
+  if( execution_pending ) {
+    return;
+  }
+  std::vector< write_descriptor_set_t > updates;
+  for( const auto &req: write_request_list ) {
+    rec.sync_to_device( req.buffer );
+    if( props.descriptor_set ) {
+      const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+      updates.push_back(
+        write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet( target )
+              .setDstArrayElement( req.index )
+              .setDescriptorCount( 1u )
+          )
+          .add_buffer( req.buffer->get_buffer() )
+      );
+    }
+  }
+  if( props.descriptor_set ) {
+    props.descriptor_set->update(
+      std::move( updates )
+    );
+  }
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
-      std::vector< texture_descriptor > used_on_gpu;
+      std::vector< vertex_buffer_descriptor > used_on_gpu;
       {
         std::lock_guard< std::mutex > lock( self->guard );
         for( const auto &desc: self->used_on_gpu ) {
-          if( self->texture_state.size() > *desc && self->texture_state[ *desc ].valid ) {
-            auto &s = self->texture_state[ *desc ];
+          if( self->vertex_buffer_state.size() > *desc && self->vertex_buffer_state[ *desc ].valid ) {
+            auto &s = self->vertex_buffer_state[ *desc ];
             s.write_request_index = std::nullopt;
           }
         }
@@ -172,54 +182,58 @@ vertex_buffer_pool::vertex_buffer_pool( const vertex_buffer_pool_create_info &ci
   state( new state_type( ci ) ) {
 }
 
-vertex_buffer_pool::views vertex_buffer_pool::allocate(
-  const std::string &filename,
-  bool mipmap,
-  integer_attribute_t attr,
-  unsigned int max_channels_per_layer
+vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::allocate(
+  const std::string &filename
 ) {
   std::lock_guard< std::mutex > lock( state->guard );
-  return state->allocate( filename, mipmap, attr, max_channels_per_layer );
+  return state->allocate( filename );
+}
+
+std::shared_ptr< buffer_t > vertex_buffer_pool::get( const vertex_buffer_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get( desc );
+}
+
+std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::get() {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get();
 }
 
 void vertex_buffer_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->flush( rec );
 }
+
 void vertex_buffer_pool::to_json( nlohmann::json &dest ) const {
   std::lock_guard< std::mutex > lock( state->guard );
   dest = nlohmann::json::object();
   dest[ "props" ] = get_props();
-  dest[ "texture_state" ] = nlohmann::json::object();
+  dest[ "vertex_buffer_state" ] = nlohmann::json::object();
   for( std::uint32_t i = 0u; i != state->index_allocator.get_tail(); ++i ) {
-    if( state->texture_state[ i ].valid ) {
+    if( state->vertex_buffer_state[ i ].valid ) {
       auto temp = nlohmann::json::object();
-      if( state->texture_state[ i ].write_request_index ) {
-        temp[ "write_request_index" ] = *state->texture_state[ i ].write_request_index;
+      if( state->vertex_buffer_state[ i ].write_request_index ) {
+        temp[ "write_request_index" ] = *state->vertex_buffer_state[ i ].write_request_index;
       }
-      if( state->texture_state[ i ].view ) {
-        temp[ "view" ] = *state->texture_state[ i ].view;
+      if( state->vertex_buffer_state[ i ].buffer ) {
+        temp[ "buffer" ] = *state->vertex_buffer_state[ i ].buffer;
       }
-      dest[ "texture_state" ][ std::to_string( i ) ] = temp;
+      dest[ "vertex_buffer_state" ][ std::to_string( i ) ] = temp;
     }
   }
   dest[ "write_request_buffer" ] = nlohmann::json::array();
   for( const auto &w: state->write_request_list ) {
     auto temp = nlohmann::json::object();
-    temp[ "normalized_index" ] = w.normalized_index;
-    temp[ "scaled_index" ] = w.scaled_index;
-    temp[ "srgb_index" ] = w.srgb_index;
-    temp[ "filename" ] = w.filename;
-    temp[ "mipmap" ] = w.mipmap;
-    temp[ "attr" ] = w.attr;
-    temp[ "max_channels_per_layer" ] = w.max_channels_per_layer;
+    temp[ "index" ] = w.index;
+    temp[ "buffer" ] = *w.buffer;
     dest[ "write_request_buffer" ].push_back( temp );
   }
   dest[ "execution_pending" ] = state->execution_pending;
 }
+
 void to_json( nlohmann::json &dest, const vertex_buffer_pool &src ) {
   src.to_json( dest );
 }
-*/
+
 }
 

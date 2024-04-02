@@ -32,8 +32,15 @@ graphics_create_info &graphics_create_info::add_shader(
   }
   return *this;
 }
+graphics_create_info &graphics_create_info::add_shader(
+  const std::shared_ptr< shader_module_t > &p
+) {
+  shader_module.push_back( p );
+  return *this;
+}
 graphics_create_info &graphics_create_info::clear_shader() {
   shaders.clear();
+  shader_module.clear();
   return *this;
 }
 

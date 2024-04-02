@@ -1,5 +1,7 @@
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
+#include <vulkan2json/DescriptorBufferInfo.hpp>
 #include <gct/buffer.hpp>
 #include <gct/descriptor_buffer_info.hpp>
 
@@ -23,6 +25,15 @@ namespace gct {
     chained = false;
     return *this;
   }
+
+void to_json( nlohmann::json &root, const descriptor_buffer_info_t &v ) {
+  root = nlohmann::json::object();
+  root[ "basic" ] = v.get_basic();
+  if( v.get_buffer() ) {
+    root[ "basic" ][ "buffer" ] = *v.get_buffer();
+  }
+}
+
 }
 
 

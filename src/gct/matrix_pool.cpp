@@ -1,14 +1,23 @@
+#include <iostream>
+#include <random>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/buffer.hpp>
 #include <gct/compute_create_info.hpp>
 #include <gct/compute_pipeline.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/compute.hpp>
+#include <gct/queue.hpp>
+#include <gct/command_pool.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/exception.hpp>
 #include <gct/matrix_pool.hpp>
+#include <gct/similar_matrix.hpp>
+#include <gct/generate_random_matrix.hpp>
+#include <random>
+
 namespace gct {
 
 matrix_pool::matrix_index_t matrix_pool::state_type::allocate_index() {
@@ -319,7 +328,21 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
 {
   matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
   staging_matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  {
+    auto mapped = staging_matrix->map< float >();
+    std::fill( mapped.begin(), mapped.end(), 1.8f );
+  }
+  receive_matrix = props.allocator->create_mappable_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer );
+  {
+    auto mapped = receive_matrix->map< float >();
+    std::fill( mapped.begin(), mapped.end(), 1.5f );
+  }
+  write_request_buffer = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  {
+    auto mapped = write_request_buffer->map< std::uint8_t >();
+    std::fill( mapped.begin(), mapped.end(), 0u );
+  }
+  //write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   update_request_buffer = props.allocator->create_buffer( sizeof( update_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   write.reset( new gct::compute(
@@ -329,7 +352,6 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
       .add_resource( { props.staging_matrix_buffer_name, staging_matrix } )
@@ -342,10 +364,9 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
-      .add_resource( { props.staging_matrix_buffer_name, staging_matrix } )
+      .add_resource( { props.staging_matrix_buffer_name, receive_matrix } )
       .add_resource( { props.read_request_buffer_name, read_request_buffer } )
   ) );
   update.reset( new gct::compute(
@@ -355,7 +376,6 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.update_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.matrix_buffer_name, matrix } )
       .add_resource( { props.update_request_buffer_name, update_request_buffer } )
@@ -405,6 +425,15 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
   }
+  //rec.sync_to_device( staging_matrix );
+  rec.sync_to_device( receive_matrix );
+  /*rec.sync_to_device( write_request_buffer );
+  rec.sync_to_device( read_request_buffer );
+  rec.sync_to_device( update_request_buffer );*/
+  rec.barrier( {
+    //staging_matrix->get_buffer(),
+    receive_matrix->get_buffer()
+  }, {} );
   {
     request_range range =
       request_range()
@@ -418,10 +447,10 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     (*write)( rec, 0u, write_request_index_allocator.get_tail(), 1u, 1u );
   }
-  rec.compute_barrier( { matrix }, {} );
+  rec.barrier( { matrix }, {} );
   auto update_range = build_update_request_range();
   for( unsigned int level = 0u; level != update_range.size(); ++level ) {
-    if( !update_range[ level ].count ) {
+    if( update_range[ level ].count ) {
       rec->pushConstants(
         **update->get_pipeline()->get_props().get_layout(),
         vk::ShaderStageFlagBits::eCompute,
@@ -430,7 +459,7 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         reinterpret_cast< void* >( &update_range[ level ] )
       );
       (*update)( rec, 0u, update_range[ level ].count, 1u, 1u );
-      rec.compute_barrier( { matrix }, {} );
+      rec.barrier( { matrix }, {} );
     }
   }
   {
@@ -447,13 +476,15 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     (*read)( rec, 0u, read_request_index_allocator.get_tail(), 1u, 1u );
   }
   rec.compute_barrier( { matrix }, {} );
+  rec.barrier( { receive_matrix->get_buffer() }, {} );
+  rec.sync_to_host( receive_matrix );
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
       std::vector< matrix_descriptor > used_on_gpu;
       {
         std::lock_guard< std::mutex > lock( self->guard );
-        auto staging = self->staging_matrix->map< glm::mat4 >();
+        auto staging = self->receive_matrix->map< glm::mat4 >();
         for( const auto &desc: self->used_on_gpu ) {
           if( self->matrix_state.size() > *desc && self->matrix_state[ *desc ].valid ) {
             auto &s = self->matrix_state[ *desc ];
@@ -596,39 +627,11 @@ void matrix_pool::to_json( nlohmann::json &dest ) const {
       dest[ "staging_matrix" ].push_back( temp );
     }
   }
-  dest[ "matrix" ] = nlohmann::json::object();
-  {
-    auto m = state->matrix->map< glm::mat4 >();
-    for( std::uint32_t i = 0u; i != state->index_allocator.get_tail(); ++i ) {
-      if( state->matrix_state[ i ].valid ) {
-        auto e = m[ i ];
-        auto temp = nlohmann::json::array();
-        {
-          temp.push_back( e[ 0 ][ 0 ] );
-          temp.push_back( e[ 0 ][ 1 ] );
-          temp.push_back( e[ 0 ][ 2 ] );
-          temp.push_back( e[ 0 ][ 3 ] );
-          temp.push_back( e[ 1 ][ 0 ] );
-          temp.push_back( e[ 1 ][ 1 ] );
-          temp.push_back( e[ 1 ][ 2 ] );
-          temp.push_back( e[ 1 ][ 3 ] );
-          temp.push_back( e[ 2 ][ 0 ] );
-          temp.push_back( e[ 2 ][ 1 ] );
-          temp.push_back( e[ 2 ][ 2 ] );
-          temp.push_back( e[ 2 ][ 3 ] );
-          temp.push_back( e[ 3 ][ 0 ] );
-          temp.push_back( e[ 3 ][ 1 ] );
-          temp.push_back( e[ 3 ][ 2 ] );
-          temp.push_back( e[ 3 ][ 3 ] );
-        }
-        dest[ "matrix" ][ std::to_string( i ) ] = temp;
-      }
-    }
-  }
+  dest[ "matrix" ] = *state->matrix;
   dest[ "write_request_buffer" ] = nlohmann::json::array();
   {
     auto m = state->write_request_buffer->map< write_request >();
-    for( std::uint32_t i = 0u; i != state->write_request_index_allocator.get_tail(); ++i ) {
+    for( std::uint32_t i = 0u; i != 65536/*state->write_request_index_allocator.get_tail()*/; ++i ) {
       auto e = m[ i ];
       auto temp = nlohmann::json::object();
       temp[ "staging" ] = e.staging;
@@ -681,6 +684,136 @@ void matrix_pool::to_json( nlohmann::json &dest ) const {
 }
 void to_json( nlohmann::json &dest, const matrix_pool &src ) {
   src.to_json( dest );
+}
+
+void test_matrix_pool(
+  matrix_pool &pool,
+  queue_t &queue
+) {
+  std::uniform_real_distribution<float> dist( -5.0f, 5.0f );
+  std::mt19937 engine( std::random_device{}() );
+  std::vector< glm::mat4 > l0;
+  std::vector< matrix_pool::matrix_descriptor > l0desc;
+  std::vector< glm::mat4 > l1;
+  std::vector< matrix_pool::matrix_descriptor > l1desc;
+  std::vector< glm::mat4 > l2;
+  std::vector< matrix_pool::matrix_descriptor > l2desc;
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    const auto m = generate_random_matrix( dist, engine );
+    l0.push_back( m );
+    l0desc.push_back( pool.allocate( m ) );
+    pool.get(
+      l0desc.back(),
+      [expected=l0.back(),s=*l0desc.back()]( vk::Result result, const glm::mat4 &v ) {
+        if( result != vk::Result::eSuccess ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : failed" << std::endl;
+        }
+        else if( !similar_matrix( expected, v ) ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << v[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+        }
+      }
+    );
+  }
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    const auto m = generate_random_matrix( dist, engine );
+    l1.push_back( l0[ 3 ] * m );
+    l1desc.push_back( pool.allocate( l0desc[ 3 ], m ) );
+    pool.get(
+      l1desc.back(),
+      [expected=l1.back(),s=*l1desc.back()]( vk::Result result, const glm::mat4 &v ) {
+        if( result != vk::Result::eSuccess ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : failed" << std::endl;
+        }
+        else if( !similar_matrix( expected, v ) ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << v[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+        }
+      }
+    );
+  }
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    const auto m = generate_random_matrix( dist, engine );
+    l2.push_back( l1[ 1 ] * m );
+    l2desc.push_back( pool.allocate( l1desc[ 1 ], m ) );
+    pool.get(
+      l2desc.back(),
+      [expected=l2.back(),s=i]( vk::Result result, const glm::mat4 &v ) {
+        if( result != vk::Result::eSuccess ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : failed" << std::endl;
+        }
+        else if( !similar_matrix( expected, v ) ) {
+          std::cout << "expected : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << expected[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+          std::cout << "result[" << s << "] : ";
+          for( unsigned int i = 0u; i != 4u; ++i ) {
+            for( unsigned int j = 0u; j != 4u; ++j ) {
+              std::cout << v[ i ][ j ] << " ";
+            }
+          }
+          std::cout << std::endl;
+        }
+      }
+    );
+  }
+  {
+    auto command_buffer = queue.get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      pool( rec );
+    }
+    command_buffer->execute_and_wait();
+  }
 }
 
 }

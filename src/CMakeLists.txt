@@ -22,6 +22,7 @@ add_library( gct SHARED
   gct/get_device_layers.cpp
   gct/get_device_extensions.cpp
   gct/to_json.cpp
+  gct/to_matrix.cpp
   gct/queue_family_properties.cpp
   gct/physical_device_properties.cpp
   gct/physical_device_memory_properties.cpp
@@ -147,6 +148,7 @@ add_library( gct SHARED
   gct/pixel_per_element_y.cpp
   gct/is_rgba.cpp
   gct/is_bgra.cpp
+  gct/is_pot.cpp
   gct/submit_info.cpp
   gct/gltf.cpp
   gct/shader_flag.cpp
@@ -257,9 +259,19 @@ add_library( gct SHARED
   gct/buffer_pool.cpp
   gct/sampler_pool_create_info.cpp
   gct/sampler_pool.cpp
+  gct/image_pool_create_info.cpp
+  gct/image_pool.cpp
   gct/vertex_buffer_pool_create_info.cpp
   gct/vertex_buffer_pool.cpp
+  gct/buffer_window.cpp
+  gct/aabb.cpp
+  gct/create_image_from_file.cpp
   gct/scene_graph.cpp
+  gct/get_shader.cpp
+  gct/compiled_scene_graph.cpp
+  gct/instance_list.cpp
+  gct/similar_matrix.cpp
+  gct/generate_random_matrix.cpp
   gct/gltf2.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )

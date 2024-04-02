@@ -49,6 +49,7 @@ public:
   sampler_pool( const sampler_pool_create_info & );
   sampler_descriptor allocate( const sampler_create_info_t& );
   const sampler_pool_create_info &get_props() const { return state->props; }
+  std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
   void operator()();
   void to_json( nlohmann::json& ) const;
 private:
@@ -57,6 +58,7 @@ private:
     sampler_index_t allocate_index();
     void release_index( sampler_index_t );
     sampler_descriptor allocate( const sampler_create_info_t& );
+    std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
     void release( sampler_index_t );
     void flush();
     sampler_pool_create_info props;
@@ -64,7 +66,6 @@ private:
     linear_allocator index_allocator;
     std::vector< write_request > write_request_list;
     std::vector< sampler_descriptor > used_on_gpu;
-    std::shared_ptr< sampler_t > null_sampler; //////
     bool execution_pending = false;
     std::mutex guard;
   };

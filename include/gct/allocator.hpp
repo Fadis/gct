@@ -47,6 +47,10 @@ namespace gct {
       VmaMemoryUsage usage,
       unsigned int count
     );
+    std::shared_ptr< image_view_t > create_image_view(
+      const image_create_info_t&,
+      VmaMemoryUsage usage
+    );
     std::shared_ptr< buffer_t > create_buffer(
       const buffer_create_info_t&,
       VmaMemoryUsage usage

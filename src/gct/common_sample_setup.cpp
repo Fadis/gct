@@ -18,43 +18,54 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/image.hpp>
 #include <gct/image_view.hpp>
+#include <gct/vulkanhpp.hpp>
+#include <gct/io_context.hpp>
 
 namespace gct {
 common_sample_setup::common_sample_setup(
   int argc,
   const char *argv[],
   const std::vector< const char* > &device_extensions,
-  const descriptor_pool_create_info_t &dpci
+  const descriptor_pool_create_info_t &dpci,
+  bool enable_glfw
 ) {
   namespace po = boost::program_options;
   po::options_description desc( "Options" );
   desc.add_options()
     ( "help,h", "show this message" )
-    ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
-    ( "fullscreen,f", po::bool_switch(), "fullscreen" )
-    ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
-    ( "model,m", po::value< std::string >(), "glTF filename" )
-    ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
+    ( "debug,d", po::bool_switch(), "enable debug log" )
     ( "validation,v", po::bool_switch(), "enable validation layer" );
+  if( enable_glfw ) {
+    desc.add_options()
+      ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
+      ( "fullscreen,f", po::bool_switch(), "fullscreen" )
+      ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
+      ( "model,m", po::value< std::string >(), "glTF filename" )
+      ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" );
+  }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
   po::notify( vm );
-  if( vm.count( "help" ) || !vm.count( "model" ) ) {
+  if( vm.count( "help" ) || ( enable_glfw && !vm.count( "model" ) ) ) {
     std::cout << desc << std::endl;
     exit( 0 );
   }
-  walk_state_filename = vm[ "walk" ].as< std::string >();
-  model_filename = vm[ "model" ].as< std::string >();
-  ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
-  const std::string window_size = vm[ "size" ].as< std::string >();
-  const bool fullscreen = vm[ "fullscreen" ].as< bool >();
-
-  glfw::get();
-  uint32_t iext_count = 0u;
-  auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
+  
   std::vector< const char* > iext{};
-  for( uint32_t i = 0u; i != iext_count; ++i )
-    iext.push_back( exts[ i ] );
+  if( enable_glfw ) {
+    walk_state_filename = vm[ "walk" ].as< std::string >();
+    model_filename = vm[ "model" ].as< std::string >();
+    ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
+    glfw::get();
+    uint32_t iext_count = 0u;
+    auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
+    for( uint32_t i = 0u; i != iext_count; ++i )
+      iext.push_back( exts[ i ] );
+  }
+  else {
+    vulkanhpp::init();
+    thread_pool::init();
+  }
   iext.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
   const auto ilayers = get_instance_layers();
   const auto iexts = get_instance_extensions( std::vector< const char* >() );
@@ -74,55 +85,77 @@ common_sample_setup::common_sample_setup(
     );
   }
   instance.reset( new instance_t( ici ) );
-  instance->abort_on_validation_failure();
+  instance->abort_on_validation_failure( vm[ "debug" ].as< bool >() );
 
   auto groups = instance->get_physical_devices( {} );
   auto selected = groups[ 0 ].with_extensions( device_extensions );
 
-  if( window_size != "native" ) { 
-    boost::fusion::vector< unsigned int, unsigned int > parsed_window_size;
-    {
-      auto iter = window_size.begin();
-      const auto end = window_size.end();
-      namespace qi = boost::spirit::qi;
-      if( !qi::parse( iter, end, qi::uint_ >> 'x' >> qi::uint_, parsed_window_size ) ) {
-        std::cerr << "Invalid window size: " << window_size << std::endl;
-        exit( 1 );
+  if( enable_glfw ) {
+    const bool fullscreen = vm[ "fullscreen" ].as< bool >();
+    const std::string window_size = vm[ "size" ].as< std::string >();
+    if( window_size != "native" ) { 
+      boost::fusion::vector< unsigned int, unsigned int > parsed_window_size;
+      {
+        auto iter = window_size.begin();
+        const auto end = window_size.end();
+        namespace qi = boost::spirit::qi;
+        if( !qi::parse( iter, end, qi::uint_ >> 'x' >> qi::uint_, parsed_window_size ) ) {
+          std::cerr << "Invalid window size: " << window_size << std::endl;
+          exit( 1 );
+        }
       }
+      width = boost::fusion::at_c< 0 >( parsed_window_size );
+      height = boost::fusion::at_c< 1 >( parsed_window_size );
     }
-    width = boost::fusion::at_c< 0 >( parsed_window_size );
-    height = boost::fusion::at_c< 1 >( parsed_window_size );
+    else {
+      width = 1920;
+      height = 1080;
+    }
+    window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
+    gct::glfw::get().poll();
+    surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );
+ 
+    std::vector< gct::queue_requirement_t > queue_requirements{
+      gct::queue_requirement_t{
+        vk::QueueFlagBits::eGraphics,
+        0u,
+        vk::Extent3D(),
+#ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
+        vk::QueueGlobalPriorityEXT(),
+#endif
+        { **surface },
+        vk::CommandPoolCreateFlagBits::eResetCommandBuffer
+      }
+    };
+    device = selected.create_device(
+      queue_requirements,
+      gct::device_create_info_t()
+    );
+    queue = device->get_queue( 0u );
+ 
+    swapchain = device->get_swapchain( surface );
+    swapchain_images = swapchain->get_images();
+    swapchain_image_views = gct::get_views( swapchain_images );
   }
   else {
-    width = 1920;
-    height = 1080;
-  }
-
-  window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
-  gct::glfw::get().poll();
-  surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );
- 
-  std::vector< gct::queue_requirement_t > queue_requirements{
-    gct::queue_requirement_t{
-      vk::QueueFlagBits::eGraphics,
-      0u,
-      vk::Extent3D(),
+    std::vector< gct::queue_requirement_t > queue_requirements{
+      gct::queue_requirement_t{
+        vk::QueueFlagBits::eGraphics,
+        0u,
+        vk::Extent3D(),
 #ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-      vk::QueueGlobalPriorityEXT(),
+        vk::QueueGlobalPriorityEXT(),
 #endif
-      { **surface },
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer
-    }
-  };
-  device = selected.create_device(
-    queue_requirements,
-    gct::device_create_info_t()
-  );
-  queue = device->get_queue( 0u );
-
-  swapchain = device->get_swapchain( surface );
-  swapchain_images = swapchain->get_images();
-  swapchain_image_views = gct::get_views( swapchain_images );
+        {},
+        vk::CommandPoolCreateFlagBits::eResetCommandBuffer
+      }
+    };
+    device = selected.create_device(
+      queue_requirements,
+      gct::device_create_info_t()
+    );
+    queue = device->get_queue( 0u );
+  }
 
   descriptor_pool = device->get_descriptor_pool( dpci );
 

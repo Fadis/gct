@@ -10,6 +10,7 @@
 namespace gct {
   class descriptor_set_layout_t;
   class shader_module_t;
+  class shader_module_reflection_t;
   class pipeline_layout_create_info_t : public chained_t {
   public:
     using self_type = pipeline_layout_create_info_t;
@@ -20,6 +21,9 @@ namespace gct {
   public:
     pipeline_layout_create_info_t &add_push_constant_range(
       const std::shared_ptr< shader_module_t > &v
+    );
+    pipeline_layout_create_info_t &add_push_constant_range(
+      const shader_module_reflection_t &v
     );
   };
   void to_json( nlohmann::json &root, const pipeline_layout_create_info_t &v );

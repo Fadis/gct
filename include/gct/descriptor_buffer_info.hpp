@@ -1,6 +1,7 @@
 #ifndef GCT_DESCRIPTOR_BUFFER_INFO_HPP
 #define GCT_DESCRIPTOR_BUFFER_INFO_HPP
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -20,6 +21,9 @@ namespace gct {
     descriptor_buffer_info_t &set_buffer( const std::shared_ptr< buffer_t > & );
     descriptor_buffer_info_t &clear_buffer();
   };
+
+void to_json( nlohmann::json&, const descriptor_buffer_info_t& );
+
 }
 #endif
 

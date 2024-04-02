@@ -44,7 +44,10 @@ tone_mapping::tone_mapping(
       .add_resource( { props.input_name, props.input } )
       .add_resource( { props.output_name, tone } )
   ) );
-
+  for( unsigned int i = 0u; i != props.input.size(); ++i ) {
+    auto mapped = tone_staging[ i ]->map< tone_state_t >();
+    mapped.begin()->max = 0u;
+  }
 }
 
 void tone_mapping::set(

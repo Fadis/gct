@@ -9,9 +9,15 @@ namespace gct {
 
 void to_json( nlohmann::json &dest, const buffer_pool_create_info &src ) {
   dest = nlohmann::json::object();
-  dest[ "allocator" ] = *src.allocator;
-  dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  dest[ "pipeline_cache" ] = *src.pipeline_cache;
+  if( src.allocator ) {
+    dest[ "allocator" ] = *src.allocator;
+  }
+  if( src.descriptor_pool ) {
+    dest[ "descriptor_pool" ] = *src.descriptor_pool;
+  }
+  if( src.pipeline_cache ) {
+    dest[ "pipeline_cache" ] = *src.pipeline_cache;
+  }
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "max_buffer_count" ] = src.max_buffer_count;

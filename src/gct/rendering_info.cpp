@@ -101,11 +101,11 @@ namespace gct {
   rendering_info_t &rendering_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #ifdef VK_VERSION_1_1
-    LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( device_group, DeviceRenderAreaCount, PDeviceRenderAreas, device_render_area )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )
 #elif defined(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( device_group, DeviceRenderAreaCount, PDeviceRenderAreas, device_render_area )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )
 #endif
 #ifdef VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( multisampled_render_to_single_sampled )
@@ -114,12 +114,12 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( multiview_per_view_attributes )
 #endif
 #ifdef VK_QCOM_MULTIVIEW_PER_VIEW_RENDER_AREAS_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( multiview_per_view_render_areas )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( multiview_per_view_render_areas, PerViewRenderAreaCount, PPerViewRenderAreas, per_view_render_area )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( multiview_per_view_render_areas )
 #endif
 #ifdef VK_ARM_RENDER_PASS_STRIPED_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( stripe )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( stripe, StripeInfoCount, PStripeInfos, stripe_info )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( stripe )
 #endif
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map_attachment )

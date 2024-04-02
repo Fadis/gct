@@ -3,8 +3,6 @@
 #include <boost/program_options.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/transform.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/setter.hpp>

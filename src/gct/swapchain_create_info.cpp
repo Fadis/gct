@@ -130,12 +130,12 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )
 #endif
 #ifdef VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( compression_control )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( compression_control, CompressionControlPlaneCount, PFixedRateFlags, fixed_rate_flag )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( compression_control )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( format_list )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( format_list, ViewFormatCount, PViewFormats, format )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( format_list )
 #endif
 #ifdef VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( full_screen_exclusive )
@@ -156,8 +156,8 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( present_barrier )
 #endif
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( present_modes )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( present_modes, PresentModeCount, PPresentModes, present_mode )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( present_modes )
     LIBGCT_EXTENSION_REBUILD_CHAIN( present_scaling )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN

@@ -127,6 +127,7 @@ namespace gct {
     graphics_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
     graphics_pipeline_create_info_t &set_dynamic();
     graphics_pipeline_create_info_t &clear_dynamic();
+    const pipeline_dynamic_state_create_info_t &get_dynamic() const;
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     graphics_pipeline_create_info_t &clear_layout();

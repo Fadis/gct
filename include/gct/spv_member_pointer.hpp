@@ -63,6 +63,7 @@ private:
   std::size_t begin_;
   const SpvReflectTypeDescription *type;
   std::size_t aligned_size = 0u;
+  bool runtime_array = false;
   std::size_t count = 0u;
   std::size_t stride = 0u;
   std::shared_ptr< child_type > child;
@@ -85,7 +86,7 @@ public:
   spv_reference &operator=( U &&v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
     if( numeryc_type_match< U >()( mp.get_numeric() ) ) {
-      *reinterpret_cast< U* >( cur ) = std::move( v );
+      *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = std::move( v );
     }
     else {
       throw exception::invalid_argument( "spv_reference::operator= : Incompatible value.", __FILE__, __LINE__ );
@@ -95,8 +96,8 @@ public:
   template< typename U >
   spv_reference &operator=( const U &v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeryc_type_match< U >()( mp.get_numeric() ) ) {
-      *reinterpret_cast< U* >( cur ) = v;
+    if( numeryc_type_match< std::remove_cvref_t< U > >()( mp.get_numeric() ) ) {
+      *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = v;
     }
     else {
       throw exception::invalid_argument( "spv_reference::operator= : Incompatible value.", __FILE__, __LINE__ );
@@ -107,7 +108,7 @@ public:
   operator U& () const {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
     if( numeryc_type_match< U >()( mp.get_numeric() ) ) {
-      return *reinterpret_cast< U* >( cur );
+      return *reinterpret_cast< std::remove_cvref_t< U >* >( cur );
     }
     else {
       throw exception::invalid_argument( "spv_reference::operator U& : Incompatible value.", __FILE__, __LINE__ );

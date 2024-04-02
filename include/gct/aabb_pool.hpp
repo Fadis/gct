@@ -35,6 +35,7 @@ private:
     LIBGCT_SETTER( write_request_index )
     LIBGCT_SETTER( read_request_index )
     LIBGCT_SETTER( update_request_index )
+    LIBGCT_SETTER( matrix )
     LIBGCT_SETTER( local )
     LIBGCT_SETTER( self )
     bool valid = false;
@@ -72,13 +73,16 @@ private:
 public:
   aabb_pool( const aabb_pool_create_info & );
   aabb_descriptor allocate( const aabb_type& );
-  aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const aabb_type& );
+  aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
   aabb_descriptor get_local( const aabb_descriptor& );
   void touch( const aabb_descriptor& );
   void set( const aabb_descriptor&, const aabb_type& );
   void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb_type& ) >& );
   const aabb_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
+  std::shared_ptr< buffer_t > get_buffer() const {
+    return state->aabb;
+  }
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
@@ -86,7 +90,7 @@ private:
     aabb_index_t allocate_index();
     void release_index( aabb_index_t );
     aabb_descriptor allocate( const aabb_type& ); // standalone aabb
-    aabb_descriptor allocate( const matrix_pool::matrix_descriptor&, const aabb_type& ); // chained aabb
+    aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
     //////aabb_descriptor allocate( const aabb_descriptor&, const aabb4& ); // chained aabb
     void release( aabb_index_t );
     void touch( const aabb_descriptor& );
@@ -119,6 +123,11 @@ private:
   std::shared_ptr< state_type > state;
 };
 void to_json( nlohmann::json&, const aabb_pool& );
+void test_aabb_pool(
+  matrix_pool &matrix,
+  aabb_pool &aabb,
+  queue_t &queue
+);
 }
 
 #endif

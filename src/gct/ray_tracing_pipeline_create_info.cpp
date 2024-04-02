@@ -159,8 +159,8 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( create_flags2 )
 #endif
 #if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( creation_feedback, PipelineStageCreationFeedbackCount, PPipelineStageCreationFeedbacks, stage_creation_feedback )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
 #endif
 #ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( robustness )

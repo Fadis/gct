@@ -15,12 +15,18 @@ class allocator_t;
 class descriptor_pool_t;
 class pipeline_cache_t;
 class render_pass_t;
+class shader_module_t;
+class descriptor_set_t;
+class pipeline_layout_t;
 struct graphics_create_info {
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( descriptor_pool )
   LIBGCT_SETTER( pipeline_cache )
   LIBGCT_SETTER( shaders )
+  LIBGCT_SETTER( shader_module )
   LIBGCT_SETTER( pipeline_create_info )
+  LIBGCT_SETTER( external_descriptor_set )
+  LIBGCT_SETTER( external_pipeline_layout )
   LIBGCT_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   graphics_create_info &add_resource(
@@ -35,12 +41,18 @@ struct graphics_create_info {
   graphics_create_info &add_shader(
     const std::vector< std::filesystem::path >&
   );
+  graphics_create_info &add_shader(
+    const std::shared_ptr< shader_module_t >&
+  );
   graphics_create_info &clear_shader();
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
   std::vector< std::filesystem::path > shaders;
+  std::vector< std::shared_ptr< shader_module_t > > shader_module;
   graphics_pipeline_create_info_t pipeline_create_info;
+  std::shared_ptr< descriptor_set_t > external_descriptor_set;
+  std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
 };

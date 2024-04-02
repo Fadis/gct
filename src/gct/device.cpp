@@ -128,6 +128,7 @@ namespace gct {
     auto tail = get_chain_tail( create_info.get_head() );
     if( use_extra_features )
       *tail = const_cast< void* >( static_cast< const void* >( &features.get_basic2() ) );
+    features.rebuild_chain();
     handle = (*group_.devices[ 0 ])->createDeviceUnique(
       create_info.get_basic(),
       nullptr

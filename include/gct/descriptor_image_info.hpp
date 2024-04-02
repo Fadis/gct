@@ -1,6 +1,7 @@
 #ifndef GCT_DESCRIPTOR_IMAGE_INFO_HPP
 #define GCT_DESCRIPTOR_IMAGE_INFO_HPP
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 
@@ -20,7 +21,12 @@ namespace gct {
     descriptor_image_info_t &clear_image_view();
     descriptor_image_info_t &set_sampler( const std::shared_ptr< sampler_t > &v );
     descriptor_image_info_t &clear_sampler();
+    const std::shared_ptr< image_view_t > &get_image_view() const { return image_view;  }
+    const std::shared_ptr< sampler_t > &get_sampler() const { return sampler;  }
   };
+
+void to_json( nlohmann::json&, const descriptor_image_info_t& );
+
 }
 #endif
 

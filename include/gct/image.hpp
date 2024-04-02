@@ -2,6 +2,7 @@
 #define GCT_IMAGE_HPP
 #include <cstdint>
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/image_view.hpp>
@@ -45,6 +46,9 @@ namespace gct {
   get_views(
     const std::vector< std::shared_ptr< image_t > > &
   );
+
+void to_json( nlohmann::json&, const image_t& );
+
 }
 
 #endif

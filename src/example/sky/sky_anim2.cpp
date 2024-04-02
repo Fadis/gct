@@ -1,11 +1,9 @@
 #include <iostream>
-#include <glm/gtx/string_cast.hpp>
 #include <unordered_set>
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/glfw.hpp>

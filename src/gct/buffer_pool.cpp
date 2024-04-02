@@ -29,6 +29,47 @@ void buffer_pool::state_type::release_index( buffer_pool::buffer_index_t index )
   index_allocator.release( index );
 }
 
+buffer_pool::buffer_descriptor buffer_pool::state_type::allocate() {
+  if( execution_pending ) {
+    throw exception::runtime_error( "buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+
+  auto write_requests = write_request_buffer->map< write_request >();
+  auto staging = staging_buffer->map< std::uint8_t >();
+
+  const buffer_index_t index = allocate_index();
+
+  const buffer_index_t staging_index = staging_index_allocator.allocate();
+
+  const request_index_t write_request_index = write_request_index_allocator.allocate();
+
+  write_requests[ write_request_index ] =
+    write_request()
+      .set_staging( staging_index )
+      .set_destination( index );
+
+  std::fill( std::next( staging.begin(), index * aligned_size ), std::next( staging.begin(), ( index + 1u ) * aligned_size ), 0u );
+
+  buffer_state[ index ] =
+    buffer_state_type()
+      .set_valid( true )
+      .set_staging_index( staging_index )
+      .set_write_request_index( write_request_index );
+
+  buffer_descriptor desc(
+    new buffer_index_t( index ),
+    [self=shared_from_this()]( const buffer_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  buffer_state[ index ].set_self( desc.get_weak() );
+  used_on_gpu.push_back( desc );
+  return desc;
+}
+
 buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( const std::uint8_t *begin, const std::uint8_t *end ) {
   if( execution_pending ) {
     throw exception::runtime_error( "buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
@@ -65,6 +106,7 @@ buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( const std::uin
       }
     }
   );
+  buffer_state[ index ].set_self( desc.get_weak() );
   used_on_gpu.push_back( desc );
   return desc;
 }
@@ -112,6 +154,55 @@ void buffer_pool::state_type::set( const buffer_descriptor &desc, const std::uin
       s.set_write_request_index( write_request_index );
       s.set_staging_index( staging_index );
       used_on_gpu.push_back( desc );
+    }
+  }
+}
+
+void buffer_pool::state_type::clear( const buffer_descriptor &desc ) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "buffer_pool::state_type::set : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  if( buffer_state.size() <= *desc || !buffer_state[ *desc ].valid ) {
+    return;
+  }
+  {
+    auto write_requests = write_request_buffer->map< write_request >();
+    auto staging = staging_buffer->map< std::uint8_t >();
+    auto &s = buffer_state[ *desc ];
+    if( s.staging_index && s.write_request_index ) {
+      std::fill( std::next( staging.begin(), *s.staging_index * aligned_size ), std::next( staging.begin(), ( *s.staging_index + 1u ) * aligned_size ), 0u );
+    }
+    else if( s.staging_index ) {
+      std::fill( std::next( staging.begin(), *s.staging_index * aligned_size ), std::next( staging.begin(), ( *s.staging_index + 1u ) * aligned_size ), 0u );
+      const request_index_t write_request_index = write_request_index_allocator.allocate();
+      write_requests[ write_request_index ] =
+        write_request()
+          .set_staging( *s.staging_index )
+          .set_destination( *desc );
+      s.set_write_request_index( write_request_index );
+    }
+    else {
+      const buffer_index_t staging_index = staging_index_allocator.allocate();
+      std::fill( std::next( staging.begin(), staging_index * aligned_size ), std::next( staging.begin(), ( staging_index + 1u ) * aligned_size ), 0u );
+      const request_index_t write_request_index = write_request_index_allocator.allocate();
+      write_requests[ write_request_index ] =
+        write_request()
+          .set_staging( staging_index )
+          .set_destination( *desc );
+      s.set_write_request_index( write_request_index );
+      s.set_staging_index( staging_index );
+      used_on_gpu.push_back( desc );
+    }
+  }
+}
+
+void buffer_pool::state_type::clear() {
+  if( execution_pending ) {
+    throw exception::runtime_error( "buffer_pool::state_type::set : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  for( auto &v: buffer_state ) {
+    if( v.valid ) {
+      clear( buffer_descriptor( v.self.lock() ) );
     }
   }
 }
@@ -183,7 +274,6 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.buffer_name, buffer } )
       .add_resource( { props.staging_buffer_name, staging_buffer } )
@@ -196,7 +286,6 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.buffer_name, buffer } )
       .add_resource( { props.staging_buffer_name, staging_buffer } )
@@ -208,7 +297,7 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
   }
-  {
+  if( write_request_index_allocator.get_tail() ) {
     request_range range =
       request_range()
         .set_count( write_request_index_allocator.get_tail() );
@@ -221,8 +310,8 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     (*write)( rec, 0u, write_request_index_allocator.get_tail(), 1u, 1u );
   }
-  rec.compute_barrier( { buffer }, {} );
-  {
+  rec.barrier( { buffer }, {} );
+  if( read_request_index_allocator.get_tail() ) {
     request_range range =
       request_range()
         .set_count( read_request_index_allocator.get_tail() );
@@ -235,7 +324,7 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     (*read)( rec, 0u, read_request_index_allocator.get_tail(), 1u, 1u );
   }
-  rec.compute_barrier( { buffer }, {} );
+  rec.barrier( { buffer }, {} );
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
@@ -294,10 +383,27 @@ buffer_pool::buffer_descriptor buffer_pool::allocate( const std::uint8_t *begin,
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( begin, end );
 }
+
+buffer_pool::buffer_descriptor buffer_pool::allocate() {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate();
+}
+
 void buffer_pool::set( const buffer_descriptor &desc, const std::uint8_t *begin, const std::uint8_t *end ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->set( desc, begin, end );
 }
+
+void buffer_pool::clear( const buffer_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  state->clear( desc );
+}
+
+void buffer_pool::clear() {
+  std::lock_guard< std::mutex > lock( state->guard );
+  state->clear();
+}
+
 void buffer_pool::get( const buffer_descriptor &desc, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) > &cb ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->get( desc, cb );

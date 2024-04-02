@@ -1,6 +1,7 @@
 #ifndef GCT_SHADER_MODULE_REFLECTION_HPP
 #define GCT_SHADER_MODULE_REFLECTION_HPP
 #include <string>
+#include <optional>
 #include <memory>
 #include <vector>
 #include <filesystem>
@@ -28,6 +29,8 @@ namespace gct {
     const SpvReflectShaderModule *operator->() const { return &reflect; }
     spv_member_pointer get_member_pointer( const std::string &name, memory_layout layout ) const;
     spv_member_pointer get_push_constant_member_pointer( const std::string &name ) const;
+    std::optional< spv_member_pointer > get_push_constant_member_pointer_maybe( const std::string &name ) const;
+    std::vector< std::uint32_t > get_descriptor_set_id() const;
   private:
     SpvReflectShaderModule reflect;
   };

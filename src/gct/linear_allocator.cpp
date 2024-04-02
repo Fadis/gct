@@ -28,6 +28,7 @@ void linear_allocator::release( std::uint32_t i ) {
       auto back = std::prev( deallocated.end() );
       while( *back == tail - 1u ) {
         --tail;
+        if( back == deallocated.begin() ) break;
         --back;
       }
       deallocated.erase( std::next( back ), deallocated.end() );

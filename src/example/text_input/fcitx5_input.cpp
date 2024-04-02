@@ -5,7 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <boost/program_options.hpp>
 #include <sdbus-c++/sdbus-c++.h>
 #include <gct/get_extensions.hpp>

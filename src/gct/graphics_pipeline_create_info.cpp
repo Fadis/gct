@@ -189,8 +189,8 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( create_flag2 )
 #endif
 #if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( creation_feedback, PipelineStageCreationFeedbackCount, PPipelineStageCreationFeedbacks, stage_creation_feedback )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( creation_feedback )
 #endif
 #ifdef VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( discard_rectangle ) 
@@ -430,6 +430,15 @@ namespace gct {
     }
     else {
       static const pipeline_color_blend_state_create_info_t dummy;
+      return dummy;
+    }
+  }
+  const pipeline_dynamic_state_create_info_t &graphics_pipeline_create_info_t::get_dynamic() const {
+    if( dynamic ) {
+      return *dynamic;
+    }
+    else {
+      static const pipeline_dynamic_state_create_info_t dummy;
       return dummy;
     }
   }

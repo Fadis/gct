@@ -9,15 +9,17 @@
 #include <gct/render_pass.hpp>
 #include <gct/scene_graph.hpp>
 
-namespace gct {
+namespace gct::gltf {
 
 struct gltf2_create_info {
   LIBGCT_SETTER( filename )
   LIBGCT_SETTER( graph )
   LIBGCT_SETTER( root )
+  LIBGCT_SETTER( aspect_ratio )
   std::filesystem::path filename;
-  std::shared_ptr< scene_graph > graph;
-  std::shared_ptr< node > root;
+  std::shared_ptr< scene_graph::scene_graph > graph;
+  std::shared_ptr< scene_graph::node > root;
+  float aspect_ratio = 1920.f/1080.f;
 };
 
 }

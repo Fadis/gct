@@ -2,7 +2,6 @@
 #include <unordered_set>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/buffer.hpp>

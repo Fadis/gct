@@ -95,8 +95,8 @@ namespace gct {
     }
     LIBGCT_ARRAY_OF_REBUILD_CHAIN_PARTIAL( basic, PSampleMask, sample_mask )
 #ifdef VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( coverage_modulation )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( coverage_modulation, CoverageModulationTableCount, PCoverageModulationTable, coverage_modulation_table )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( coverage_modulation )
 #endif
 #ifdef VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( coverage_reduction )

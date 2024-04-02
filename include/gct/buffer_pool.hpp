@@ -34,10 +34,12 @@ private:
     LIBGCT_SETTER( staging_index )
     LIBGCT_SETTER( write_request_index )
     LIBGCT_SETTER( read_request_index )
+    LIBGCT_SETTER( self )
     bool valid = false;
     std::optional< buffer_index_t > staging_index;
     std::optional< request_index_t > write_request_index;
     std::optional< request_index_t > read_request_index;
+    weak_buffer_descriptor self;
   };
   struct write_request {
     LIBGCT_SETTER( staging )
@@ -55,7 +57,10 @@ private:
 public:
   buffer_pool( const buffer_pool_create_info & );
   buffer_descriptor allocate( const std::uint8_t *begin, const std::uint8_t *end ); // standalone
+  buffer_descriptor allocate();
   void set( const buffer_descriptor&, const std::uint8_t *begin, const std::uint8_t *end );
+  void clear( const buffer_descriptor& );
+  void clear();
   void get( const buffer_descriptor&, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) >& );
   bool is_valid( const buffer_descriptor& ) const;
   const buffer_pool_create_info &get_props() const { return state->props; }
@@ -71,8 +76,11 @@ private:
     buffer_index_t allocate_index();
     void release_index( buffer_index_t );
     buffer_descriptor allocate( const std::uint8_t *begin, const std::uint8_t *end ); // standalone
+    buffer_descriptor allocate();
     void release( buffer_index_t );
     void set( const buffer_descriptor&, const std::uint8_t *begin, const std::uint8_t *end );
+    void clear( const buffer_descriptor& );
+    void clear();
     void get( const buffer_descriptor&, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) >& );
     bool is_valid( const buffer_descriptor& ) const;
     void flush( command_buffer_recorder_t& );

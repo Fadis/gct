@@ -218,20 +218,20 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( external_memory_image_nv ) 
 #endif
 #ifdef VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( image_compression_control )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( image_compression_control, CompressionControlPlaneCount, PFixedRateFlags, fixed_rate_flag )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( image_compression_control )
 #endif
 #ifdef VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( drm_format_modifier_explicit ) 
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( drm_format_modifier_explicit, DrmFormatModifierPlaneCount, PPlaneLayouts, plane_layout )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( drm_format_modifier_explicit ) 
 #endif
 #ifdef VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( drm_format_modifier_list ) 
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( drm_format_modifier_list, DrmFormatModifierCount, PDrmFormatModifiers, drm_format_modifier )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( drm_format_modifier_list ) 
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( format_list ) 
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( format_list, ViewFormatCount, PViewFormats, format )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( format_list ) 
     if( !format.empty() ) {
       basic.flags |= vk::ImageCreateFlagBits::eMutableFormat;
     }
@@ -256,8 +256,8 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( video_profile )
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( video_profiles )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( video_profiles, ProfileCount, PProfiles, profile )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( video_profiles )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

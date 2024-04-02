@@ -14,6 +14,7 @@ namespace gct {
   class descriptor_set_t;
   class compute_pipeline_t;
   class command_buffer_recorder_t;
+  class shader_module_reflection_t;
   class compute : std::enable_shared_from_this< compute > {
   public:
     compute(
@@ -32,6 +33,7 @@ namespace gct {
     const std::shared_ptr< compute_pipeline_t > &get_pipeline() const {
       return pipeline;
     }
+    const shader_module_reflection_t &get_reflection() const;
   private:
     compute_create_info props;
     std::shared_ptr< descriptor_set_layout_t > descriptor_set_layout;

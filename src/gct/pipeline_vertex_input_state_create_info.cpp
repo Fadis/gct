@@ -39,8 +39,8 @@ namespace gct {
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, VertexBindingDescriptionCount, PVertexBindingDescriptions, vertex_input_binding_description )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, VertexAttributeDescriptionCount, PVertexAttributeDescriptions, vertex_input_attribute_description )
 #if defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME) || defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( divisor ) 
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( divisor, VertexBindingDivisorCount, PVertexBindingDivisors, divisor_description )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( divisor ) 
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

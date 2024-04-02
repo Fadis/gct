@@ -77,10 +77,10 @@ namespace gct {
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, ViewportCount, PViewports, viewport )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, ScissorCount, PScissors, scissor )
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( coarse_sample_order_state ) 
-    LIBGCT_EXTENSION_REBUILD_CHAIN( shading_rate_image_state )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( coarse_sample_order_state, CustomSampleOrderCount, PCustomSampleOrders, coarse_sample_order )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( coarse_sample_order_state ) 
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( shading_rate_image_state, ViewportCount, PShadingRatePalettes, shading_rate_palette )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( shading_rate_image_state )
 #endif
 #ifdef VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( exclusive_scissor_state ) 

@@ -35,7 +35,6 @@ load_obj_particle(
     if( position == vamap.end() ) {
       throw -1;
     }
-    std::cout << std::string( iter, end ) << std::endl;
     if( qi::parse(
       iter, end,
       qi::skip( qi::standard::space )[ qi::lit( 'v' ) >> qi::float_ >> qi::float_ >> qi::float_ ],

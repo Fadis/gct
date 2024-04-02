@@ -9,6 +9,10 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/compute.hpp>
+#include <gct/pipeline_shader_stage_create_info.hpp>
+#include <gct/shader_module.hpp>
+#include <gct/shader_module_create_info.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <gct/compute_create_info.hpp>
 
 namespace gct {
@@ -58,6 +62,9 @@ namespace gct {
       );
     }
     rec.dispatch_threads( x, y, z );
+  }
+  const shader_module_reflection_t &compute::get_reflection() const {
+    return pipeline->get_props().get_stage().get_shader_module()->get_props().get_reflection(); 
   }
   void to_json( nlohmann::json &dest, const compute &src ) {
     dest = nlohmann::json::object();

@@ -1,5 +1,14 @@
-#include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
+#include <vulkan2json/WriteDescriptorSet.hpp>
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <vulkan2json/WriteDescriptorSetAccelerationStructureKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/WriteDescriptorSetInlineUniformBlock.hpp>
+#elif defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
+#include <vulkan2json/WriteDescriptorSetInlineUniformBlockEXT.hpp>
+#endif
 #include <gct/write_descriptor_set.hpp>
 #include <gct/acceleration_structure.hpp>
 #include <gct/buffer.hpp>
@@ -55,6 +64,64 @@ namespace gct {
   ) {
     set_name( name );
     add_buffer( buffer );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< image_view_t > &image_view
+  ) {
+    set_name( name );
+    add_image( image_view );
+    set_index( offset );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< sampler_t > &sampler,
+    const std::shared_ptr< image_view_t > &image_view
+  ) {
+    set_name( name );
+    add_image( sampler, image_view );
+    set_index( offset );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< image_view_t > &image_view,
+    vk::ImageLayout layout
+  ) {
+    set_name( name );
+    add_image( image_view, layout );
+    set_index( offset );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< sampler_t > &sampler,
+    const std::shared_ptr< image_view_t > &image_view,
+    vk::ImageLayout layout
+  ) {
+    set_name( name );
+    add_image( sampler, image_view, layout );
+    set_index( offset );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< buffer_t > &buffer
+  ) {
+    set_name( name );
+    add_buffer( buffer );
+    set_index( offset );
+  }
+  write_descriptor_set_t::write_descriptor_set_t(
+    const std::string &name,
+    std::uint32_t offset,
+    const std::shared_ptr< mappable_buffer_t > &buffer
+  ) {
+    set_name( name );
+    add_buffer( buffer );
+    set_index( offset );
   }
   write_descriptor_set_t::write_descriptor_set_t(
     const named_resource &r,
@@ -133,16 +200,10 @@ namespace gct {
 #ifdef VK_NV_RAY_TRACING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( acceleration_structure_nv )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( inline_uniform_block )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
-  }
-  write_descriptor_set_t &write_descriptor_set_t::add_image( const descriptor_image_info_t &v ) {
-    image.push_back( v );
-    buffer.clear();
-    chained = false;
-    return *this;
   }
   write_descriptor_set_t &write_descriptor_set_t::add_image( const std::shared_ptr< image_view_t > &v ) {
     return add_image(
@@ -211,17 +272,6 @@ namespace gct {
         .set_sampler( sampler )
     );
   }
-  write_descriptor_set_t &write_descriptor_set_t::clear_image() {
-    image.clear();
-    chained = false;
-    return *this;
-  }
-  write_descriptor_set_t &write_descriptor_set_t::add_buffer( const descriptor_buffer_info_t &v ) {
-    buffer.push_back( v );
-    image.clear();
-    chained = false;
-    return *this;
-  }
   write_descriptor_set_t &write_descriptor_set_t::add_buffer( const std::shared_ptr< buffer_t > &v ) {
     return add_buffer(
       gct::descriptor_buffer_info_t()
@@ -235,11 +285,6 @@ namespace gct {
   }
   write_descriptor_set_t &write_descriptor_set_t::add_buffer( const std::shared_ptr< mappable_buffer_t > &v ) {
     return add_buffer( v->get_buffer() );
-  }
-  write_descriptor_set_t &write_descriptor_set_t::clear_buffer() {
-    buffer.clear();
-    chained = false;
-    return *this;
   }
   write_descriptor_set_t &write_descriptor_set_t::add(
     const named_resource &r,
@@ -307,5 +352,20 @@ namespace gct {
     return *this;
   }
 #endif
+
+void to_json( nlohmann::json &root, const write_descriptor_set_t &v ) {
+  root = nlohmann::json::object();
+  root[ "basic" ] = v.get_basic();
+  LIBGCT_ARRAY_OF_TO_JSON( basic, pImageInfo, image )
+  LIBGCT_ARRAY_OF_TO_JSON( basic, pBufferInfo, buffer )
+#ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( acceleration_structure )
+#endif
+#if defined(VK_VERSION_1_3) ||  defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( inline_uniform_block )
+#endif
+
+}
+
 }
 

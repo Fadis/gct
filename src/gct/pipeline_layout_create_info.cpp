@@ -31,26 +31,31 @@ namespace gct {
   ) {
     if( !v->get_props().has_reflection() )
       throw exception::invalid_argument( "Reflection is required to set shader directly to pipeline", __FILE__, __LINE__ );
-    if( v->get_props().get_reflection()->push_constant_block_count == 1u ) {
+    return add_push_constant_range( v->get_props().get_reflection() );
+  }
+  pipeline_layout_create_info_t &pipeline_layout_create_info_t::add_push_constant_range(
+    const shader_module_reflection_t &v
+  ) {
+    if( v->push_constant_block_count == 1u ) {
       const auto existing = std::find_if(
         push_constant_range.begin(),
         push_constant_range.end(),
         [&]( const auto e ) {
           return
-            e.offset == v->get_props().get_reflection()->push_constant_blocks[ 0 ].offset &&
-            e.size == v->get_props().get_reflection()->push_constant_blocks[ 0 ].size;
+            e.offset == v->push_constant_blocks[ 0 ].offset &&
+            e.size == v->push_constant_blocks[ 0 ].size;
         }
       );
       if( existing != push_constant_range.end() ) {
-        existing->stageFlags |= spv2vk( v->get_props().get_reflection()->shader_stage );
+        existing->stageFlags |= spv2vk( v->shader_stage );
         return *this;
       }
       else {
         return add_push_constant_range(
           vk::PushConstantRange()
-            .setStageFlags( spv2vk( v->get_props().get_reflection()->shader_stage ) )
-            .setOffset( v->get_props().get_reflection()->push_constant_blocks[ 0 ].offset )
-            .setSize( v->get_props().get_reflection()->push_constant_blocks[ 0 ].size )
+            .setStageFlags( spv2vk( v->shader_stage ) )
+            .setOffset( v->push_constant_blocks[ 0 ].offset )
+            .setSize( v->push_constant_blocks[ 0 ].size )
         );
       }
     }

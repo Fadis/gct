@@ -1,8 +1,7 @@
+#include "gct/exception.hpp"
 #include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/shader_module_reflection.hpp>
-#include <gct/descriptor_pool_create_info.hpp>
-#include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout_create_info.hpp>
 #include <gct/descriptor_set.hpp>
 #include <gct/command_buffer_recorder.hpp>
@@ -52,6 +51,7 @@ sampler_pool::sampler_descriptor sampler_pool::state_type::allocate(
   sampler_state[ index ] =
     sampler_state_type()
       .set_valid( true )
+      .set_sampler( s )
       .set_write_request_index( write_request_list.size() - 1u );
 
   sampler_descriptor desc(
@@ -76,21 +76,23 @@ void sampler_pool::state_type::release( sampler_index_t index ) {
       return;
     }
     removed = sampler_state[ index ];
+    sampler_state[ index ] = sampler_state_type();
     release_index( index );
-    const auto target = (*props.descriptor_set)[ props.descriptor_name ];
-    std::vector< write_descriptor_set_t > updates;
-    updates.push_back(
-      write_descriptor_set_t()
-        .set_basic(
-          vk::WriteDescriptorSet( target )
-            .setDstArrayElement( index )
-            .setDescriptorCount( 1u )
-        )
-        .add_sampler( null_sampler )
-    );
-    props.descriptor_set->update(
-      std::move( updates )
-    );
+    /*if( props.descriptor_set ) {
+      const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+      std::vector< write_descriptor_set_t > updates;
+      updates.push_back(
+        write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet( target )
+              .setDstArrayElement( index )
+              .setDescriptorCount( 1u )
+          )
+      );
+      props.descriptor_set->update(
+        std::move( updates )
+      );
+    }*/
   }
 }
 
@@ -98,22 +100,24 @@ void sampler_pool::state_type::flush() {
   std::vector< sampler_descriptor > used_on_gpu_;
   {
     std::lock_guard< std::mutex > lock( guard );
-    std::vector< write_descriptor_set_t > updates;
-    const auto target = (*props.descriptor_set)[ props.descriptor_name ];
-    for( const auto &req: write_request_list ) {
-      updates.push_back(
-        write_descriptor_set_t()
-          .set_basic(
-            vk::WriteDescriptorSet( target )
-              .setDstArrayElement( req.index )
-              .setDescriptorCount( 1u )
-          )
-          .add_sampler( req.sampler )
+    if( props.descriptor_set ) {
+      std::vector< write_descriptor_set_t > updates;
+      const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+      for( const auto &req: write_request_list ) {
+        updates.push_back(
+          write_descriptor_set_t()
+            .set_basic(
+              vk::WriteDescriptorSet( target )
+                .setDstArrayElement( req.index )
+                .setDescriptorCount( 1u )
+            )
+            .add_sampler( req.sampler )
+        );
+      }
+      props.descriptor_set->update(
+        std::move( updates )
       );
     }
-    props.descriptor_set->update(
-      std::move( updates )
-    );
     for( const auto &desc: used_on_gpu ) {
       if( sampler_state.size() > *desc && sampler_state[ *desc ].valid ) {
         auto &s = sampler_state[ *desc ];
@@ -124,6 +128,15 @@ void sampler_pool::state_type::flush() {
     used_on_gpu_ = std::move( used_on_gpu );
     used_on_gpu.clear();
   }
+}
+
+std::shared_ptr< sampler_t > sampler_pool::state_type::get(
+  const sampler_descriptor &desc
+) const {
+  if( sampler_state.size() <= *desc || !sampler_state[ *desc ].valid ) {
+    throw exception::invalid_argument( "sampler_pool::get : No such sampler" );
+  }
+  return sampler_state[ *desc ].sampler;
 }
 
 sampler_pool::state_type::state_type( const sampler_pool_create_info &ci ) :
@@ -140,6 +153,13 @@ sampler_pool::sampler_descriptor sampler_pool::allocate(
 ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( ci );
+}
+
+std::shared_ptr< sampler_t > sampler_pool::get(
+  const sampler_descriptor &desc
+) const {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get( desc );
 }
 
 void sampler_pool::operator()() {

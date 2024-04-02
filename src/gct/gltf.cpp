@@ -31,6 +31,7 @@
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/get_device.hpp>
+#include <gct/to_matrix.hpp>
 
 namespace gct::gltf {
   vk::Filter to_vulkan_mag_filter( fx::gltf::Sampler::MagFilter v ) {

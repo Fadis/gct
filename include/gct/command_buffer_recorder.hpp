@@ -52,7 +52,6 @@ namespace gct {
   class shader_t;
 #endif
   std::uint32_t get_pot( std::uint32_t v );
-  bool is_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
   public:
     command_buffer_recorder_t(
@@ -234,6 +233,12 @@ namespace gct {
       const std::shared_ptr< buffer_t >&,
       const std::shared_ptr< buffer_t >&
     );
+    void sync_to_device(
+      const std::shared_ptr< mappable_buffer_t > &dest
+    );
+    void sync_to_host(
+      const std::shared_ptr< mappable_buffer_t > &dest
+    );
     void copy(
       const std::shared_ptr< image_t >&,
       const std::shared_ptr< image_t >&,
@@ -332,7 +337,19 @@ namespace gct {
       const std::vector< std::shared_ptr< buffer_t > >&,
       const std::vector< std::shared_ptr< image_t > >&
     );
+    std::vector< vk::ImageMemoryBarrier > barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
     std::vector< vk::ImageMemoryBarrier > compute_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > compute_write_barrier(
+      const std::vector< std::shared_ptr< buffer_t > > &buffer,
+      const std::vector< std::shared_ptr< image_t > > &image
+    );
+    std::vector< vk::ImageMemoryBarrier > transfer_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );

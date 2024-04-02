@@ -3,15 +3,25 @@
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set.hpp>
 #include <gct/pipeline_cache.hpp>
+#include <gct/buffer.hpp>
 #include <gct/aabb_pool_create_info.hpp>
 
 namespace gct {
 
 void to_json( nlohmann::json &dest, const aabb_pool_create_info &src ) {
   dest = nlohmann::json::object();
-  dest[ "allocator" ] = *src.allocator;
-  dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  dest[ "pipeline_cache" ] = *src.pipeline_cache;
+  if( src.allocator ) {
+    dest[ "allocator" ] = *src.allocator;
+  }
+  if( src.descriptor_pool ) {
+    dest[ "descriptor_pool" ] = *src.descriptor_pool;
+  }
+  if( src.pipeline_cache ) {
+    dest[ "pipeline_cache" ] = *src.pipeline_cache;
+  }
+  if( src.matrix_pool ) {
+    dest[ "matrix_pool" ] = *src.matrix_pool;
+  }
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "update_shader" ] = src.update_shader.string();

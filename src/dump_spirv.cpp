@@ -3,7 +3,6 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <gct/device_create_info.hpp>
 #include <gct/device.hpp>
 #include <gct/instance.hpp>

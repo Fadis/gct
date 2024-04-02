@@ -1,6 +1,7 @@
 #include <nlohmann/json.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/descriptor_set_allocate_info.hpp>
+#include <vulkan/vulkan_structs.hpp>
 #include <vulkan2json/DescriptorSetAllocateInfo.hpp>
 #ifdef VK_VERSION_1_2
 #include <vulkan2json/DescriptorSetVariableDescriptorCountAllocateInfo.hpp>
@@ -14,6 +15,7 @@ namespace gct {
     root[ "basic" ] = v.get_basic();
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( variable_descriptor_count ) 
+    LIBGCT_ARRAY_OF_TO_JSON( variable_descriptor_count, pDescriptorCounts, descriptor_count )
 #endif
     root[ "layout" ] = nlohmann::json::array();
     for( const auto &v: v.get_layout() ) {
@@ -25,6 +27,7 @@ namespace gct {
     LIBGCT_EXTENSION_FROM_JSON( basic )
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     LIBGCT_EXTENSION_FROM_JSON( variable_descriptor_count )
+    LIBGCT_ARRAY_OF_FROM_JSON( variable_descriptor_count, pDescriptorCounts, descriptor_count )
 #endif
   }
 
@@ -45,12 +48,50 @@ namespace gct {
       .setPSetLayouts( raw_layout.data() );
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN( variable_descriptor_count, DescriptorSetCount, PDescriptorCounts, descriptor_count )
     LIBGCT_EXTENSION_REBUILD_CHAIN( variable_descriptor_count )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
   descriptor_set_allocate_info_t &descriptor_set_allocate_info_t::add_layout( const std::shared_ptr< descriptor_set_layout_t > &v ) {
     layout.push_back( v );
+#if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
+#ifdef VK_VERSION_1_2
+    if( v->get_props().get_basic().flags & vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool ) {
+#else 
+    if( v->get_props().get_basic().flags & vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT ) {
+#endif
+      const auto b = v->get_props().get_binding_flag().back();
+#ifdef VK_VERSION_1_2
+      if( b & vk::DescriptorBindingFlagBits::eVariableDescriptorCount ) {
+#else 
+      if( b & vk::DescriptorBindingFlagBits::eVariableDescriptorCountEXT ) {
+#endif
+        add_descriptor_count( v->get_props().get_binding().back().descriptorCount );
+      }
+    } 
+#endif
+    chained = false;
+    return *this;
+  }
+  descriptor_set_allocate_info_t &descriptor_set_allocate_info_t::add_layout( const std::shared_ptr< descriptor_set_layout_t > &v, std::uint32_t count ) {
+    layout.push_back( v );
+#if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
+#ifdef VK_VERSION_1_2
+    if( v->get_props().get_basic().flags & vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool ) {
+#else 
+    if( v->get_props().get_basic().flags & vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT ) {
+#endif
+      const auto b = v->get_props().get_binding_flag().back();
+#ifdef VK_VERSION_1_2
+      if( b & vk::DescriptorBindingFlagBits::eVariableDescriptorCount ) {
+#else 
+      if( b & vk::DescriptorBindingFlagBits::eVariableDescriptorCountEXT ) {
+#endif
+        add_descriptor_count( count );
+      }
+    } 
+#endif
     chained = false;
     return *this;
   }

@@ -31,7 +31,6 @@
 #include <vulkan/vulkan.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <gct/setter.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/font.hpp>

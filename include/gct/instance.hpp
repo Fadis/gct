@@ -52,7 +52,7 @@ namespace gct {
       debug_callback_t &&cb
     );
 #endif
-    void abort_on_validation_failure();
+    void abort_on_validation_failure( bool debug = false );
   private:
     instance_create_info_t props;
     layer_map_t activated_layers;

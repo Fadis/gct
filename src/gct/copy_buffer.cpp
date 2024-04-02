@@ -65,4 +65,20 @@ namespace gct {
       dest->get_buffer()
     );
   }
+  void command_buffer_recorder_t::sync_to_device(
+    const std::shared_ptr< mappable_buffer_t > &dest
+  ) {
+    copy(
+      dest->get_staging_buffer(),
+      dest->get_buffer()
+    );
+  }
+  void command_buffer_recorder_t::sync_to_host(
+    const std::shared_ptr< mappable_buffer_t > &dest
+  ) {
+    copy(
+      dest->get_buffer(),
+      dest->get_staging_buffer()
+    );
+  }
 }

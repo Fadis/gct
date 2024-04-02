@@ -8,10 +8,18 @@ template< typename T >
 class handler {
 public:
   using weak_type = std::weak_ptr< T >;
-  template< typename ... Args >
+  handler() {}
+  template< typename F >
   handler(
-    Args&& ... v
-  ) : value( std::forward< Args >( v )... ) {}
+    T *v,
+    F &&f
+  ) : value( v, std::forward< F >( f ) ) {}
+  handler( const std::weak_ptr< T > &w ) :
+    value( w ) {}
+  handler( const handler& ) = default;
+  handler( handler&& ) = default;
+  handler &operator=( const handler& ) = default;
+  handler &operator=( handler&& ) = default;
   const T &operator*() const {
     return *value;
   }
@@ -24,7 +32,20 @@ public:
 private:
   std::shared_ptr< T > value;
 };
+
 }
+
+namespace std {
+
+template< typename T >
+struct hash< gct::handler< T > > {
+  auto operator()( const gct::handler< T > &v ) const -> std::size_t {
+    return std::hash< T >{}( T( *v ) );
+  }
+};
+
+}
+
 
 #endif
 

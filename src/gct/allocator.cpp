@@ -54,6 +54,12 @@ namespace gct {
       )
     );
   }
+  std::shared_ptr< image_view_t > allocator_t::create_image_view(
+    const image_create_info_t &create_info,
+    VmaMemoryUsage usage
+  ) {
+    return create_image( create_info, usage )->get_view();
+  }
   std::vector< std::shared_ptr< image_view_t > > allocator_t::create_image_views(
     const image_create_info_t &create_info,
     VmaMemoryUsage usage,

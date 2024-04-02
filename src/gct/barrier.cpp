@@ -95,6 +95,20 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( image );
     return raw_image;
   }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eMemoryRead,
+      vk::AccessFlagBits::eMemoryWrite,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -104,6 +118,34 @@ namespace gct {
       vk::AccessFlagBits::eShaderRead,
       vk::PipelineStageFlagBits::eComputeShader,
       vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_write_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eShaderRead,
+      vk::AccessFlagBits::eShaderWrite,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      buffer,
+      image
+    );
+  }
+  std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_barrier(
+    const std::vector< std::shared_ptr< buffer_t > > &buffer,
+    const std::vector< std::shared_ptr< image_t > > &image
+  ) {
+    return barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eTransfer,
       vk::DependencyFlagBits( 0 ),
       buffer,
       image

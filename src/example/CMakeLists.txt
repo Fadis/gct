@@ -51,4 +51,6 @@ subdirs(
   osm
   fom
   sky
+  gltf2
+  radix_sort
 )

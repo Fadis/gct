@@ -38,6 +38,10 @@ namespace gct {
     std::shared_ptr< descriptor_set_t > allocate(
       const std::shared_ptr< descriptor_set_layout_t >&
     );
+    std::shared_ptr< descriptor_set_t > allocate(
+      const std::shared_ptr< descriptor_set_layout_t >&,
+      std::uint32_t
+    );
   private:
     descriptor_pool_create_info_t props;
     vk::UniqueHandle< vk::DescriptorPool, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

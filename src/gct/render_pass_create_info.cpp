@@ -70,14 +70,14 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map )
 #endif
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_MAINTENANCE2_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( input_attachment_aspect )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( input_attachment_aspect, AspectReferenceCount, PAspectReferences, aspect_reference )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( input_attachment_aspect )
 #endif
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_MULTIVIEW_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( multiview )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( multiview, SubpassCount, PViewMasks, view_mask )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( multiview, DependencyCount, PViewOffsets, view_offset )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( multiview, CorrelationMaskCount, PCorrelationMasks, correlation_mask )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( multiview )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

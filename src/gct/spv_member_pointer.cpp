@@ -12,10 +12,18 @@ namespace gct {
   ) : begin_( b ), impl( new spv_member_pointer_impl() ) {
     aligned_size = alignment::get_aligned_size( type, layout );
     if( alignment::is_array( type ) ) {
-      count = alignment::get_array_count( type );
-      stride = alignment::get_aligned_elem_size( type, layout );
+      if( type.op == SpvOpTypeRuntimeArray ) {
+        runtime_array = true;
+        count = 1u;
+        aligned_size = type.traits.array.stride;
+        stride = type.traits.array.stride;
+      }
+      else {
+        count = alignment::get_array_count( type );
+        stride = alignment::get_aligned_elem_size( type, layout );
+      }
     }
-    else if( alignment::is_struct( type ) ) {
+    if( alignment::is_struct( type ) ) {
       child.reset( new std::unordered_map< std::string, spv_member_pointer >() );
       std::size_t cur = begin_;
       for( std::uint32_t i = 0u; i != type.member_count; ++i ) {
@@ -65,11 +73,11 @@ namespace gct {
     if( stride == 0u ) {
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not an array.", __FILE__, __LINE__ );
     }
-    if( count && i >= count ) {
+    if( count && i >= count && !runtime_array ) {
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Out of range.", __FILE__, __LINE__ );
     }
     auto temp = *this;
-    temp.count -= i;
+    temp.count = 1u;
     temp.begin_ += temp.stride * i;
     temp.stride = 0u;
     return temp;
@@ -88,6 +96,9 @@ namespace gct {
     }
   }
   spv_member_pointer spv_member_pointer::end() const {
+    if( runtime_array ) {
+      throw exception::invalid_argument( "spv_member_pointer::operator[] : runtime array", __FILE__, __LINE__ );
+    }
     if( stride != 0u ) {
       auto temp = *this;
       temp.begin_ += temp.stride * temp.count;
@@ -108,7 +119,9 @@ namespace gct {
       if( count == 0u ) {
         throw exception::invalid_argument( "spv_member_pointer::operator++ : Out of range.", __FILE__, __LINE__ );
       }
-      --count;
+      if( !runtime_array ) {
+        --count;
+      }
       begin_ += stride;
     }
     else if( child && !child->empty() && impl->cur_child != child->end() ) {
@@ -125,7 +138,9 @@ namespace gct {
       if( count == 0u ) {
         throw exception::invalid_argument( "spv_member_pointer::operator++ : Out of range.", __FILE__, __LINE__ );
       }
-      --count;
+      if( !runtime_array ) {
+        --count;
+      }
       begin_ += stride;
     }
     else if( child && !child->empty() && impl->cur_child != child->end() ) {
@@ -140,6 +155,7 @@ namespace gct {
     return
       begin_ == r.begin_ &&
       aligned_size == r.aligned_size &&
+      runtime_array == r.runtime_array &&
       count == r.count &&
       stride == r.stride &&
       child == r.child &&
@@ -150,6 +166,7 @@ namespace gct {
     return
       begin_ != r.begin_ ||
       aligned_size != r.aligned_size ||
+      runtime_array != r.runtime_array ||
       count != r.count ||
       stride != r.stride ||
       child != r.child ||

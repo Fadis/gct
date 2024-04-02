@@ -42,8 +42,8 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( advanced )
 #endif
 #ifdef VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( write )
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( write, AttachmentCount, PColorWriteEnables, color_write_enable )
+    LIBGCT_EXTENSION_REBUILD_CHAIN( write )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

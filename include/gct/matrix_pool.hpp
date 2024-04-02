@@ -104,6 +104,7 @@ private:
     linear_allocator index_allocator;
     std::unordered_multimap< matrix_index_t, matrix_index_t > edge; // p -> c
     std::shared_ptr< buffer_t > staging_matrix; // mat4[]
+    std::shared_ptr< mappable_buffer_t > receive_matrix; // mat4[]
     std::shared_ptr< buffer_t > matrix; // mat4[]
     std::shared_ptr< buffer_t > write_request_buffer; // write_request[] destination
     std::shared_ptr< buffer_t > read_request_buffer; // read_request[] source
@@ -125,6 +126,11 @@ private:
   std::shared_ptr< state_type > state;
 };
 void to_json( nlohmann::json&, const matrix_pool& );
+class queue_t;
+void test_matrix_pool(
+  matrix_pool &pool,
+  queue_t &queue
+);
 }
 
 #endif

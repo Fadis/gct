@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/buffer.hpp>
@@ -8,6 +9,11 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/exception.hpp>
+#include <gct/similar_matrix.hpp>
+#include <gct/queue.hpp>
+#include <gct/command_pool.hpp>
+#include <gct/command_buffer_recorder.hpp>
+#include <gct/generate_random_matrix.hpp>
 #include <gct/aabb_pool.hpp>
 namespace gct {
 
@@ -67,65 +73,29 @@ aabb_pool::aabb_descriptor aabb_pool::state_type::allocate( const aabb_type &val
   return desc;
 }
 
-aabb_pool::aabb_descriptor aabb_pool::state_type::allocate( const matrix_pool::matrix_descriptor &matrix, const aabb_type &value ) {
+aabb_pool::aabb_descriptor aabb_pool::state_type::allocate( const aabb_descriptor &local, const matrix_pool::matrix_descriptor &matrix ) {
   if( execution_pending ) {
     throw exception::runtime_error( "aabb_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
-  if( !props.matrix_pool_.is_valid( matrix ) ) {
-    throw -1;
-  }
-  
-  auto write_requests = write_request_buffer->map< write_request >();
+
   auto update_requests = update_request_buffer->map< update_request >();
-  auto staging = staging_aabb->map< aabb_type >();
 
   const aabb_index_t index = allocate_index();
-  const aabb_index_t local_index = allocate_index();
 
-  const aabb_index_t staging_index = staging_index_allocator.allocate();
-
-  const request_index_t write_request_index = write_request_index_allocator.allocate();
-  
   const request_index_t update_request_index = update_request_index_allocator.allocate();
   
-
-  write_requests[ write_request_index ] =
-    write_request()
-      .set_staging( staging_index )
-      .set_destination( local_index );
-
-  staging[ staging_index ] = value;
-
-  aabb_state[ local_index ] =
-    aabb_state_type()
-      .set_valid( true )
-      .set_staging_index( staging_index )
-      .set_write_request_index( write_request_index );
-
-  aabb_descriptor local_desc(
-    new aabb_index_t( local_index ),
-    [self=shared_from_this()]( const aabb_index_t *p ) {
-      if( p ) {
-        self->release( *p );
-        delete p;
-      }
-    }
-  );
-  used_on_gpu.push_back( local_desc );
-  aabb_state[ local_index ].set_self( local_desc.get_weak() );
-
   aabb_state[ index ] =
     aabb_state_type()
       .set_valid( true )
-      .set_local( local_desc )
+      .set_matrix( matrix )
+      .set_local( local )
       .set_update_request_index( update_request_index );
   
   update_requests[ update_request_index ] =
     update_request()
       .set_matrix( *matrix )
-      .set_local( local_index )
+      .set_local( *local )
       .set_world( index );
-
   aabb_descriptor desc(
     new aabb_index_t( index ),
     [self=shared_from_this()]( const aabb_index_t *p ) {
@@ -198,58 +168,29 @@ void aabb_pool::state_type::set( const aabb_descriptor &desc, const aabb_type &v
   auto staging = staging_aabb->map< aabb_type >();
   auto write_requests = write_request_buffer->map< write_request >();
   auto &s = aabb_state[ *desc ];
-  if( s.local ) {
-    auto &l = aabb_state[ *s.local ];
-    if( l.staging_index && l.write_request_index ) {
-      staging[ *l.staging_index ] = value;
-    }
-    else if( l.staging_index ) {
-      staging[ *l.staging_index ] = value;
-      const request_index_t write_request_index = write_request_index_allocator.allocate();
-      write_requests[ write_request_index ] =
-        write_request()
-          .set_staging( *l.staging_index )
-          .set_destination( *s.local );
-      l.set_write_request_index( write_request_index );
-    }
-    else {
-      const aabb_index_t staging_index = staging_index_allocator.allocate();
-      staging[ staging_index ] = value;
-      const request_index_t write_request_index = write_request_index_allocator.allocate();
-      write_requests[ write_request_index ] =
-        write_request()
-          .set_staging( staging_index )
-          .set_destination( *s.local );
-      l.set_write_request_index( write_request_index );
-      l.set_staging_index( staging_index );
-      used_on_gpu.push_back( s.local );
-    }
+  if( s.staging_index && s.write_request_index ) {
+    staging[ *s.staging_index ] = value;
+  }
+  else if( s.staging_index ) {
+    staging[ *s.staging_index ] = value;
+    const request_index_t write_request_index = write_request_index_allocator.allocate();
+    write_requests[ write_request_index ] =
+      write_request()
+        .set_staging( *s.staging_index )
+        .set_destination( *desc );
+    s.set_write_request_index( write_request_index );
   }
   else {
-    if( s.staging_index && s.write_request_index ) {
-      staging[ *s.staging_index ] = value;
-    }
-    else if( s.staging_index ) {
-      staging[ *s.staging_index ] = value;
-      const request_index_t write_request_index = write_request_index_allocator.allocate();
-      write_requests[ write_request_index ] =
-        write_request()
-          .set_staging( *s.staging_index )
-          .set_destination( *desc );
-      s.set_write_request_index( write_request_index );
-    }
-    else {
-      const aabb_index_t staging_index = staging_index_allocator.allocate();
-      staging[ staging_index ] = value;
-      const request_index_t write_request_index = write_request_index_allocator.allocate();
-      write_requests[ write_request_index ] =
-        write_request()
-          .set_staging( staging_index )
-          .set_destination( *desc );
-      s.set_write_request_index( write_request_index );
-      s.set_staging_index( staging_index );
-      used_on_gpu.push_back( desc );
-    }
+    const aabb_index_t staging_index = staging_index_allocator.allocate();
+    staging[ staging_index ] = value;
+    const request_index_t write_request_index = write_request_index_allocator.allocate();
+    write_requests[ write_request_index ] =
+      write_request()
+        .set_staging( staging_index )
+        .set_destination( *desc );
+    s.set_write_request_index( write_request_index );
+    s.set_staging_index( staging_index );
+    used_on_gpu.push_back( desc );
   }
 }
 
@@ -298,9 +239,17 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
 {
   aabb = props.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
   staging_aabb = props.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  {
+    auto mapped = staging_aabb->map< float >();
+    std::fill( mapped.begin(), mapped.end(), 1.8f );
+  }
   write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   update_request_buffer = props.allocator->create_buffer( sizeof( update_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  {
+    auto mapped = update_request_buffer->map< std::uint32_t >();
+    std::fill( mapped.begin(), mapped.end(), 2u );
+  }
   write.reset( new gct::compute(
     gct::compute_create_info()
       .set_allocator( props.allocator )
@@ -308,7 +257,6 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_resources( props.resources )
       .add_resource( { props.aabb_buffer_name, aabb } )
       .add_resource( { props.staging_aabb_buffer_name, staging_aabb } )
@@ -320,7 +268,6 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
       .set_descriptor_pool( props.descriptor_pool )
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.read_shader )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
       .add_resource( { props.aabb_buffer_name, aabb } )
@@ -333,12 +280,11 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
       .set_descriptor_pool( props.descriptor_pool )
       .set_pipeline_cache( props.pipeline_cache )
       .set_shader( props.update_shader )
-      .set_external_descriptor_set( props.external_descriptor_set )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
       .add_resource( { props.aabb_buffer_name, aabb } )
       .add_resource( { props.update_request_buffer_name, update_request_buffer } )
-      .add_resource( { props.matrix_buffer_name, props.matrix_pool_.get_buffer() } )
+      .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
   ) );
 }
 
@@ -370,13 +316,13 @@ void aabb_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     (*write)( rec, 0u, write_request_index_allocator.get_tail(), 1u, 1u );
   }
-  rec.compute_barrier( { aabb }, {} );
+  rec.barrier( { aabb }, {} );
   if( update_request_index_allocator.get_tail() ) {
     request_range range =
       request_range()
         .set_count( update_request_index_allocator.get_tail() );
     rec->pushConstants(
-        **write->get_pipeline()->get_props().get_layout(),
+        **update->get_pipeline()->get_props().get_layout(),
         vk::ShaderStageFlagBits::eCompute,
         0u,
         sizeof( request_range ),
@@ -384,7 +330,7 @@ void aabb_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     (*update)( rec, 0u, update_request_index_allocator.get_tail(), 1u, 1u );
   }
-  rec.compute_barrier( { aabb }, {} );
+  rec.barrier( { aabb }, {} );
   if( read_request_index_allocator.get_tail() ) {
     request_range range =
       request_range()
@@ -455,9 +401,9 @@ aabb_pool::aabb_descriptor aabb_pool::allocate( const aabb_type &value ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( value );
 }
-aabb_pool::aabb_descriptor aabb_pool::allocate( const matrix_pool::matrix_descriptor &parent, const aabb_type &value ) {
+aabb_pool::aabb_descriptor aabb_pool::allocate( const aabb_descriptor &local, const matrix_pool::matrix_descriptor &matrix ) {
   std::lock_guard< std::mutex > lock( state->guard );
-  return state->allocate( parent, value );
+  return state->allocate( local, matrix );
 }
 void aabb_pool::touch( const aabb_descriptor &desc ) {
   std::lock_guard< std::mutex > lock( state->guard );
@@ -534,27 +480,7 @@ void aabb_pool::to_json( nlohmann::json &dest ) const {
       dest[ "staging_aabb" ].push_back( temp );
     }
   }
-  dest[ "aabb" ] = nlohmann::json::object();
-  {
-    auto m = state->aabb->map< aabb_type >();
-    for( std::uint32_t i = 0u; i != state->index_allocator.get_tail(); ++i ) {
-      if( state->aabb_state[ i ].valid ) {
-        auto e = m[ i ];
-        auto temp = nlohmann::json::object();
-        temp[ "min" ] = nlohmann::json::array();
-        temp[ "min" ].push_back( e.min[ 0 ] );
-        temp[ "min" ].push_back( e.min[ 1 ] );
-        temp[ "min" ].push_back( e.min[ 2 ] );
-        temp[ "min" ].push_back( e.min[ 3 ] );
-        temp[ "max" ] = nlohmann::json::array();
-        temp[ "max" ].push_back( e.max[ 0 ] );
-        temp[ "max" ].push_back( e.max[ 1 ] );
-        temp[ "max" ].push_back( e.max[ 2 ] );
-        temp[ "max" ].push_back( e.max[ 3 ] );
-        dest[ "aabb" ][ std::to_string( i ) ] = temp;
-      }
-    }
-  }
+  dest[ "aabb" ] = *state->aabb;
   dest[ "write_request_buffer" ] = nlohmann::json::array();
   {
     auto m = state->write_request_buffer->map< write_request >();
@@ -577,15 +503,12 @@ void aabb_pool::to_json( nlohmann::json &dest ) const {
       dest[ "read_request_buffer" ].push_back( temp );
     }
   }
-  dest[ "update_request_list" ] = nlohmann::json::array();
+  dest[ "update_request_buffer" ] = nlohmann::json::array();
   {
-    auto m = state->read_request_buffer->map< update_request >();
+    auto m = state->update_request_buffer->map< update_request >();
     for( std::uint32_t i = 0u; i != state->update_request_index_allocator.get_tail(); ++i ) {
       auto e = m[ i ];
       auto temp = nlohmann::json::object();
-    matrix_pool::matrix_index_t matrix = 0u;
-    aabb_index_t local = 0u;
-    aabb_index_t world = 0u;
       temp[ "matrix" ] = e.matrix;
       temp[ "local" ] = e.local;
       temp[ "world" ] = e.world;
@@ -607,6 +530,69 @@ void aabb_pool::to_json( nlohmann::json &dest ) const {
 }
 void to_json( nlohmann::json &dest, const aabb_pool &src ) {
   src.to_json( dest );
+}
+
+void test_aabb_pool(
+  matrix_pool &matrix,
+  aabb_pool &aabb,
+  queue_t &queue
+) {
+  std::uniform_real_distribution<float> dist( -5.0f, 5.0f );
+  std::mt19937 engine( std::random_device{}() );
+  std::vector< glm::mat4 > l0m;
+  std::vector< matrix_pool::matrix_descriptor > l0mdesc;
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    const auto m = generate_random_matrix( dist, engine );
+    l0m.push_back( m );
+    l0mdesc.push_back( matrix.allocate( m ) );
+  }
+  std::vector< aabb4 > l0a;
+  std::vector< matrix_pool::matrix_descriptor > l0adesc;
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    const auto a = generate_random_aabb( dist, engine );
+    l0a.push_back( a );
+    l0adesc.push_back( aabb.allocate( a ) );
+    aabb.get(
+      l0adesc.back(),
+      [expected=l0a.back(),s=i]( vk::Result result, const aabb4 &v ) {
+        if( result != vk::Result::eSuccess ) {
+          std::cout << "expected : " << nlohmann::json( expected ).dump() << std::endl;
+          std::cout << "result[" << s << "] : failed" << std::endl;
+        }
+        else if( !similar_aabb( expected, v ) ) {
+          std::cout << "expected : " << nlohmann::json( expected ).dump() << std::endl;
+          std::cout << "result[" << s << "] : " << nlohmann::json( v ).dump() << std::endl;
+        }
+      }
+    );
+  }
+  std::vector< aabb4 > l1a;
+  std::vector< matrix_pool::matrix_descriptor > l1adesc;
+  for( unsigned int i = 0u; i != 5u; ++i ) {
+    l1adesc.push_back( aabb.allocate( l0adesc[ i ], l0mdesc[ 2 ] ) );
+    aabb.get(
+      l1adesc.back(),
+      [expected= l0m[ 2 ] * l0a[ i ],s=i]( vk::Result result, const aabb4 &v ) {
+        if( result != vk::Result::eSuccess ) {
+          std::cout << "expected : " << nlohmann::json( expected ).dump() << std::endl;
+          std::cout << "result[" << s << "] : failed" << std::endl;
+        }
+        else if( !similar_aabb( expected, v ) ) {
+          std::cout << "expected : " << nlohmann::json( expected ).dump() << std::endl;
+          std::cout << "result[" << s << "] : " << nlohmann::json( v ).dump() << std::endl;
+        }
+      }
+    );
+  }
+  {
+    auto command_buffer = queue.get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      matrix( rec );
+      aabb( rec );
+    }
+    command_buffer->execute_and_wait();
+  }
 }
 
 }

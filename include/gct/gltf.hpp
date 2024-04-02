@@ -17,6 +17,7 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/descriptor_image_info.hpp>
+#include <gct/buffer_window.hpp>
 namespace gct {
   class image_t;
   class image_view_t;
@@ -102,13 +103,6 @@ namespace gct::gltf {
   point_lights_t create_point_light(
     const fx::gltf::Document &doc
   );
-  struct buffer_window_t {
-    buffer_window_t() : index( 0 ), offset( 0 ) {}
-    LIBGCT_SETTER( index )
-    LIBGCT_SETTER( offset )
-    std::uint32_t index;
-    std::uint32_t offset;
-  };
   std::shared_ptr< sampler_t > create_sampler(
     const fx::gltf::Document &doc,
     int32_t index,
