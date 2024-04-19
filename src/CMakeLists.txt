@@ -130,6 +130,7 @@ add_library( gct SHARED
   gct/copy_image.cpp
   gct/copy_buffer_to_image.cpp
   gct/copy_image_to_buffer.cpp
+  gct/fill.cpp
   gct/blit.cpp
   gct/barrier.cpp
   gct/build_acceleration_structure.cpp
