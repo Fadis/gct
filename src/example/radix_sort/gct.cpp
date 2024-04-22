@@ -57,38 +57,7 @@ int main( int argc, const char *argv[] ) {
     false
   );
 
-  const std::uint32_t size = 100001u;
-
-  const auto input_data =
-    res.allocator->create_mappable_buffer(
-      sizeof( key_value_t ) * size,
-      vk::BufferUsageFlagBits::eStorageBuffer
-    );
-
-  const auto workgroup_offset =
-    res.allocator->create_mappable_buffer(
-      sizeof( std::uint32_t ) * ( size / 1024u + 1u ),
-      vk::BufferUsageFlagBits::eStorageBuffer|
-      vk::BufferUsageFlagBits::eTransferDst
-    );
-  
-  const auto output_data =
-    res.allocator->create_mappable_buffer(
-      sizeof( key_value_t ) * size,
-      vk::BufferUsageFlagBits::eStorageBuffer
-    );
-
-  const auto prefix_sum = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/prefix_sum.comp.spv" )
-      .set_swapchain_image_count( 2u )
-      .add_resource( { "input_data", { input_data, output_data } } )
-      .add_resource( { "workgroup_offset", workgroup_offset } )
-      .add_resource( { "output_data", { output_data, input_data } } )
-  );
+  const std::uint32_t size = 230u;
 
   std::uniform_int_distribution< std::uint32_t > dist( 0, 0x80000000 );
   std::mt19937 engine;
@@ -100,12 +69,85 @@ int main( int argc, const char *argv[] ) {
       dist( engine )
     });
   }
+
+  const auto input_data =
+    res.allocator->create_mappable_buffer(
+      sizeof( key_value_t ) * size,
+      vk::BufferUsageFlagBits::eStorageBuffer
+    );
+
+  const auto local_offset =
+    res.allocator->create_mappable_buffer(
+      sizeof( std::uint32_t ) * size,
+      vk::BufferUsageFlagBits::eStorageBuffer
+    );
+
+  const auto workgroup_offset =
+    res.allocator->create_mappable_buffer(
+      sizeof( std::uint32_t ) * 1024u,
+      vk::BufferUsageFlagBits::eStorageBuffer|
+      vk::BufferUsageFlagBits::eTransferDst
+    );
+  
+  const auto output_data =
+    res.allocator->create_mappable_buffer(
+      sizeof( key_value_t ) * size,
+      vk::BufferUsageFlagBits::eStorageBuffer
+    );
+
+  const auto local_sum = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/local_sum.comp.spv" )
+      .set_swapchain_image_count( 2u )
+      .add_resource( { "input_data", { input_data, output_data } } )
+      .add_resource( { "local_offset", local_offset } )
+      .add_resource( { "workgroup_offset", workgroup_offset } )
+      .add_resource( { "output_data", { output_data, input_data } } )
+  );
+
+  const auto global_sum = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/global_sum.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .add_resource( { "workgroup_offset", workgroup_offset } )
+  );
+
+  const auto sort = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/sort.comp.spv" )
+      .set_swapchain_image_count( 2u )
+      .add_resource( { "input_data", { input_data, output_data } } )
+      .add_resource( { "local_offset", local_offset } )
+      .add_resource( { "workgroup_offset", workgroup_offset } )
+      .add_resource( { "output_data", { output_data, input_data } } )
+  );
+
+  const auto small_sort = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/small_sort.comp.spv" )
+      .set_swapchain_image_count( 2u )
+      .add_resource( { "input_data", { input_data, output_data } } )
+      .add_resource( { "output_data", { output_data, input_data } } )
+  );
+
   {
     auto mapped = input_data->map< key_value_t >();
     std::copy( host_input_data.begin(), host_input_data.end(), mapped.begin() );
   }
   auto command_buffer = res.queue->get_command_pool()->allocate();
-  const auto &pc_mp = prefix_sum.get_reflection().get_push_constant_member_pointer( "PushConstants" );
+  const auto &pc_mp = local_sum.get_reflection().get_push_constant_member_pointer( "PushConstants" );
   std::vector< std::uint8_t > pc( pc_mp.get_aligned_size() );
   pc.data()->*pc_mp[ "n" ] = size;
   {
@@ -116,16 +158,23 @@ int main( int argc, const char *argv[] ) {
       for( std::uint32_t i = 0u; i != 31u; ++i ) {
         pc.data()->*pc_mp[ "digit" ] = i;
         rec->pushConstants(
-          **prefix_sum.get_pipeline()->get_props().get_layout(),
-          prefix_sum.get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+          **local_sum.get_pipeline()->get_props().get_layout(),
+          local_sum.get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
           pc_mp.get_offset(),
           pc_mp.get_aligned_size(),
           pc.data()
         );
-        rec.fill( workgroup_offset, 0u );
-        rec.barrier( { workgroup_offset->get_buffer() }, {} );
-        prefix_sum( rec, i & 0x1u, size, 1u, 1u );
-        rec.barrier( { input_data->get_buffer(), output_data->get_buffer() }, {} );
+        if( size <= 1024u ) {
+          small_sort( rec, i & 0x1u, size, 1u, 1u );
+        }
+        else {
+          local_sum( rec, i & 0x1u, size, 1u, 1u );
+          rec.barrier( { workgroup_offset->get_buffer() }, {} );
+          global_sum( rec, 0u, 1024u, 1u, 1u );
+          rec.barrier( { workgroup_offset->get_buffer(), local_offset->get_buffer() }, {} );
+          sort( rec, i & 0x1u, size, 1u, 1u );
+        }
+        rec.barrier( { input_data->get_buffer(), output_data->get_buffer(), local_offset->get_buffer() }, {} );
       }
       rec.sync_to_host( output_data );
     }

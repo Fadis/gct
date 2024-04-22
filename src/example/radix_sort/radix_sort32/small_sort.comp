@@ -20,12 +20,7 @@ layout(std430, binding = 0) buffer Input {
   key_value input_data[];
 };
 
-layout(std430, binding = 1) buffer PrefixSum {
-  uint workgroup_offset[];
-};
-
-
-layout(std430, binding = 2) buffer Output {
+layout(std430, binding = 3) buffer Output {
   key_value output_data[];
 };
 
@@ -52,68 +47,30 @@ void main() {
   if( gl_SubgroupID != 0 ) {
     subgroup_offset_ = subgroup_offset[ gl_SubgroupID - 1 ];
   }
-  uint workgroup_offset_ = 0;
-  if( gl_WorkGroupID.x != 0 ) {
-    uint orig = atomicAdd( workgroup_offset[ gl_WorkGroupID.x - 1 ], 0 );
-    while( orig < 0x80000000 ) {
-      orig = atomicAdd( workgroup_offset[ gl_WorkGroupID.x - 1 ], 0 );
-    }
-    workgroup_offset_ = orig - 0x80000000;
-  }
 
   uint offset =
-    workgroup_offset_ +
     subgroup_offset_ +
     subgroup_pos;
 
-  if( gl_LocalInvocationID.x == gl_WorkGroupSize.x - 1 ) {
-    workgroup_offset[ gl_WorkGroupID.x ] = offset + 0x80000000;
-    //atomicCompSwap( workgroup_offset[ gl_WorkGroupID.x ], 0, offset + 0x80000000 );
-  }
-
-  uint sep = atomicAdd( workgroup_offset[ gl_NumWorkGroups.x - 1 ], 0 );
-  while( sep < 0x80000000 ) {
-    sep = atomicAdd( workgroup_offset[ gl_NumWorkGroups.x - 1 ], 0 );
-  }
-  sep -= 0x80000000;
+  uint sep = subgroup_offset[ gl_SubgroupSize - 1u ];
   barrier();
-
-/*
-  if( index < push_constants.n ) {
-    output_data[ index ].key = workgroup_offset[ 1 ] - 0x80000000;
-    if( value == 0 ) {
-      output_data[ index ].value = index + 1 - offset + sep;
-    }
-    else {
-      output_data[ index ].value = offset;
-    }
-  }
-*/
 
   if( index < push_constants.n - 1 ) {
     value = 1 - ( ( input_data[ index + 1 ].key >> digit ) & 0x1 );
     if( value == 0 ) {
       output_data[ index + 1 - offset + sep ] = input_data[ index + 1 ];
-      //output_data[ index + 1 - offset + sep ].key = ( input_data[ index + 1 ].key >> digit ) & 0xF;
-      //output_data[ index + 1 - offset + sep ].value = value;
     }
     else {
       output_data[ offset ] = input_data[ index + 1 ];
-      //output_data[ offset ].key = ( input_data[ index + 1 ].key >> digit ) & 0xF;
-      //output_data[ offset ].value = value;
     }
   }
   else if( index == push_constants.n - 1 ) {
     value = 1 - ( ( input_data[ 0 ].key >> digit ) & 0x1 );
     if( value == 0 ) {
       output_data[ sep ] = input_data[ 0 ];
-      //output_data[ sep ].key = ( input_data[ 0 ].key >> digit ) & 0xF;
-      //output_data[ sep ].value = value;
     }
     else {
       output_data[ 0 ] = input_data[ 0 ];
-      //output_data[ 0 ].key = ( input_data[ 0 ].key >> digit ) & 0xF;
-      //output_data[ 0 ].value = value;
     }
   }
 

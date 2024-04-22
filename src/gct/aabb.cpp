@@ -4,6 +4,34 @@
 
 namespace gct {
 
+aabb::aabb( const aabb4 &a ) {
+  min[ 0 ] = a.min[ 0 ]/a.min[ 3 ];
+  min[ 1 ] = a.min[ 1 ]/a.min[ 3 ];
+  min[ 2 ] = a.min[ 2 ]/a.min[ 3 ];
+  max[ 0 ] = a.max[ 0 ]/a.max[ 3 ];
+  max[ 1 ] = a.max[ 1 ]/a.max[ 3 ];
+  max[ 2 ] = a.max[ 2 ]/a.max[ 3 ];
+}
+
+aabb4::aabb4( const aabb &a ) {
+  min[ 0 ] = a.min[ 0 ];
+  min[ 1 ] = a.min[ 1 ];
+  min[ 2 ] = a.min[ 2 ];
+  min[ 3 ] = 1.0f;
+  max[ 0 ] = a.max[ 0 ];
+  max[ 1 ] = a.max[ 1 ];
+  max[ 2 ] = a.max[ 2 ];
+  max[ 3 ] = 1.0f;
+}
+
+aabb::aabb( const glm::vec3 &min_, const glm::vec3 &max_ ) :
+  min( min_ ),
+  max( max_ ) {}
+
+aabb4::aabb4( const glm::vec4 &min_, const glm::vec4 &max_ ) :
+  min( min_ ),
+  max( max_ ) {}
+
 aabb3 operator&( const aabb3 &l, const aabb3 &r ) {
   aabb3 result;
   result.min[ 0 ] = std::max( l.min[ 0 ], r.min[ 0 ] );
@@ -18,20 +46,7 @@ aabb3 operator&( const aabb3 &l, const aabb3 &r ) {
   return result;
 }
 aabb4 operator&( const aabb4 &l, const aabb4 &r ) {
-  aabb4 result;
-  result.min[ 0 ] = std::max( l.min[ 0 ], r.min[ 0 ] );
-  result.min[ 1 ] = std::max( l.min[ 1 ], r.min[ 1 ] );
-  result.min[ 2 ] = std::max( l.min[ 2 ], r.min[ 2 ] );
-  result.min[ 3 ] = std::max( l.min[ 3 ], r.min[ 3 ] );
-  result.max[ 0 ] = std::min( l.max[ 0 ], r.max[ 0 ] );
-  result.max[ 1 ] = std::min( l.max[ 1 ], r.max[ 1 ] );
-  result.max[ 2 ] = std::min( l.max[ 2 ], r.max[ 2 ] );
-  result.max[ 3 ] = std::min( l.max[ 3 ], r.max[ 3 ] );
-  result.min[ 0 ] = std::min( result.min[ 0 ], result.max[ 0 ] );
-  result.min[ 1 ] = std::min( result.min[ 1 ], result.max[ 1 ] );
-  result.min[ 2 ] = std::min( result.min[ 2 ], result.max[ 2 ] );
-  result.min[ 3 ] = std::min( result.min[ 3 ], result.max[ 3 ] );
-  return result;
+  return aabb( l ) & aabb( r );
 }
 aabb3 operator|( const aabb3 &l, const aabb3 &r ) {
   aabb3 result;
@@ -44,16 +59,7 @@ aabb3 operator|( const aabb3 &l, const aabb3 &r ) {
   return result;
 }
 aabb4 operator|( const aabb4 &l, const aabb4 &r ) {
-  aabb4 result;
-  result.min[ 0 ] = std::min( l.min[ 0 ], r.min[ 0 ] );
-  result.min[ 1 ] = std::min( l.min[ 1 ], r.min[ 1 ] );
-  result.min[ 2 ] = std::min( l.min[ 2 ], r.min[ 2 ] );
-  result.min[ 3 ] = std::min( l.min[ 3 ], r.min[ 3 ] );
-  result.max[ 0 ] = std::max( l.max[ 0 ], r.max[ 0 ] );
-  result.max[ 1 ] = std::max( l.max[ 1 ], r.max[ 1 ] );
-  result.max[ 2 ] = std::max( l.max[ 2 ], r.max[ 2 ] );
-  result.max[ 3 ] = std::max( l.max[ 3 ], r.max[ 3 ] );
-  return result;
+  return aabb( l ) | aabb( r );
 }
 
 aabb3 operator*( const glm::mat4 &l, const aabb3 &r ) {
@@ -92,24 +98,8 @@ aabb3 operator*( const glm::mat4 &l, const aabb3 &r ) {
 }
 
 aabb4 operator*( const glm::mat4 &l, const aabb4 &r ) {
+  return l * aabb( r );
   aabb3 temp;
-  temp.min[ 0 ] = r.min[ 0 ]/r.min[ 3 ];
-  temp.min[ 1 ] = r.min[ 1 ]/r.min[ 3 ];
-  temp.min[ 2 ] = r.min[ 2 ]/r.min[ 3 ];
-  temp.max[ 0 ] = r.max[ 0 ]/r.max[ 3 ];
-  temp.max[ 1 ] = r.max[ 1 ]/r.max[ 3 ];
-  temp.max[ 2 ] = r.max[ 2 ]/r.max[ 3 ];
-  temp = l * temp;
-  aabb4 result;
-  result.min[ 0 ] = temp.min[ 0 ];
-  result.min[ 1 ] = temp.min[ 1 ];
-  result.min[ 2 ] = temp.min[ 2 ];
-  result.min[ 3 ] = 1.0f;
-  result.max[ 0 ] = temp.max[ 0 ];
-  result.max[ 1 ] = temp.max[ 1 ];
-  result.max[ 2 ] = temp.max[ 2 ];
-  result.max[ 3 ] = 1.0f;
-  return result;
 }
 
 void to_json( nlohmann::json &dest, const aabb &src ) {
@@ -156,6 +146,71 @@ aabb4 generate_random_aabb(
   if( temp.min[ 2 ] > temp.max[ 2 ] ) std::swap( temp.min[ 2 ], temp.max[ 2 ] );
   if( temp.min[ 3 ] > temp.max[ 3 ] ) std::swap( temp.min[ 3 ], temp.max[ 3 ] );
   return temp;
+}
+float area( const aabb3 &a ) {
+  return
+    ( a.max[ 0 ] - a.min[ 0 ] ) *
+    ( a.max[ 1 ] - a.min[ 1 ] ) *
+    ( a.max[ 2 ] - a.min[ 2 ] );
+}
+float area( const aabb4 &a ) {
+  return area( aabb( a ) );
+}
+bool operator&&( const aabb3 &l, const aabb3 &r ) {
+  return area( l & r ) != 0.0f;
+}
+bool operator&&( const aabb4 &l, const aabb4 &r ) {
+  return area( l & r ) != 0.0f;
+}
+
+bool operator==( const aabb3 &l, const aabb3 &r ) {
+  return l.min == r.min && l.max == r.max;
+}
+bool operator==( const aabb4 &l, const aabb4 &r ) {
+  return l.min == r.min && l.max == r.max;
+}
+bool operator!=( const aabb3 &l, const aabb3 &r ) {
+  return l.min != r.min || l.max != r.max;
+}
+bool operator!=( const aabb4 &l, const aabb4 &r ) {
+  return l.min != r.min || l.max != r.max;
+}
+
+std::string to_string( const aabb3 &v ) {
+  std::string dest = "(";
+  dest += std::to_string( v.min.x );
+  dest += ",";
+  dest += std::to_string( v.min.y );
+  dest += ",";
+  dest += std::to_string( v.min.z );
+  dest += ")-(";
+  dest += std::to_string( v.max.x );
+  dest += ",";
+  dest += std::to_string( v.max.y );
+  dest += ",";
+  dest += std::to_string( v.max.z );
+  dest += ")";
+  return dest;
+}
+std::string to_string( const aabb4 &v ) {
+  std::string dest = "(";
+  dest += std::to_string( v.min.x );
+  dest += ",";
+  dest += std::to_string( v.min.y );
+  dest += ",";
+  dest += std::to_string( v.min.z );
+  dest += ",";
+  dest += std::to_string( v.min.w );
+  dest += ")-(";
+  dest += std::to_string( v.max.x );
+  dest += ",";
+  dest += std::to_string( v.max.y );
+  dest += ",";
+  dest += std::to_string( v.max.z );
+  dest += ",";
+  dest += std::to_string( v.max.w );
+  dest += ")";
+  return dest;
 }
 
 bool similar_aabb( const aabb4 &l, const aabb4 &r ) {

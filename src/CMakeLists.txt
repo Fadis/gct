@@ -266,6 +266,7 @@ add_library( gct SHARED
   gct/vertex_buffer_pool.cpp
   gct/buffer_window.cpp
   gct/aabb.cpp
+  gct/kdtree.cpp
   gct/create_image_from_file.cpp
   gct/scene_graph.cpp
   gct/get_shader.cpp
@@ -541,6 +542,23 @@ add_executable( ball
 
 target_link_libraries(
   ball
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::system
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
+  ${pkgcfg_lib_GLFW_glfw3}
+)
+
+add_executable( test_kdtree
+  example/test_kdtree.cpp
+)
+
+target_link_libraries(
+  test_kdtree
   gct
   gct_glfw
   Threads::Threads
