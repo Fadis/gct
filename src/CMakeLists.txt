@@ -267,6 +267,11 @@ add_library( gct SHARED
   gct/buffer_window.cpp
   gct/aabb.cpp
   gct/kdtree.cpp
+  gct/key_value.cpp
+  gct/radix_sort_create_info.cpp
+  gct/radix_sort.cpp
+  gct/onesweep_create_info.cpp
+  gct/onesweep.cpp
   gct/create_image_from_file.cpp
   gct/scene_graph.cpp
   gct/get_shader.cpp

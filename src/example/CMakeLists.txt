@@ -53,4 +53,5 @@ subdirs(
   sky
   gltf2
   radix_sort
+  onesweep
 )

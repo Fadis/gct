@@ -1,0 +1,56 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+layout(local_size_x = 1024, local_size_y = 1 ) in;
+
+layout(push_constant) uniform PushConstants {
+  uint n;
+  uint digit;
+} push_constants;
+
+struct key_value {
+  uint key;
+  uint value;
+};
+
+layout(std430, binding = 0) buffer Input {
+  key_value input_data[];
+};
+
+layout(std430, binding = 1) buffer LocalOffset {
+  uint local_offset[];
+};
+
+layout(std430, binding = 2) buffer WorkGroupOffset {
+  uint workgroup_offset[];
+};
+
+layout(std430, binding = 3) buffer Output {
+  key_value output_data[];
+};
+
+layout(std430, binding = 4) buffer Histgram {
+  uint histgram[ 4 * 256 ];
+};
+
+void main() {
+  const uint index = gl_GlobalInvocationID.x;
+  uint value = 0;
+  uint digit = push_constants.digit;
+  if( index < push_constants.n ) {
+    value = ( input_data[ index ].key >> ( digit * 8 ) ) & 0xFF;
+  }
+
+  const uint offset =
+    ( ( value == 0 ) ? 0 : histgram[ value - 1 + 256 * digit ] ) +
+    ( ( gl_WorkGroupID.x == 0 ) ? 0 : workgroup_offset[ value + 256 * ( gl_WorkGroupID.x - 1 ) ] ) +
+    local_offset[ index ];
+
+  if( index < push_constants.n ) {
+    output_data[ offset ] = input_data[ index ];
+  }
+}
+

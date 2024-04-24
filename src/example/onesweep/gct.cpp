@@ -30,7 +30,7 @@
 #include <gct/shader_module_reflection.hpp>
 #include <gct/spv_member_pointer.hpp>
 #include <gct/key_value.hpp>
-#include <gct/radix_sort.hpp>
+#include <gct/onesweep.hpp>
 
 int main( int argc, const char *argv[] ) {
   const gct::common_sample_setup res(
@@ -67,7 +67,6 @@ int main( int argc, const char *argv[] ) {
       dist( engine )
     });
   }
-
   const auto input_data =
     res.allocator->create_mappable_buffer(
       sizeof( gct::key_value_t ) * size,
@@ -80,14 +79,14 @@ int main( int argc, const char *argv[] ) {
       vk::BufferUsageFlagBits::eStorageBuffer
     );
 
-  gct::radix_sort sort(
-    gct::radix_sort_create_info()
+  gct::onesweep sort(
+    gct::onesweep_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_input( input_data->get_buffer() )
       .set_output( output_data->get_buffer() )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/radix_sort32/" )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/onesweep32/" )
   );
   {
     auto mapped = input_data->map< gct::key_value_t >();
@@ -99,7 +98,7 @@ int main( int argc, const char *argv[] ) {
     {
       auto rec = command_buffer->begin();
       rec.sync_to_device( input_data );
-      rec.transfer_to_compute_barrier( { input_data->get_buffer() }, {} );
+      rec.barrier( { input_data->get_buffer() }, {} );
       sort( rec, size );
       rec.sync_to_host( output_data );
     }
