@@ -1,8 +1,9 @@
 #ifndef GCT_AABB_HPP
 #define GCT_AABB_HPP
 
-#include <glm/ext/vector_float4.hpp>
+#include <vector>
 #include <random>
+#include <glm/ext/vector_float4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
@@ -53,6 +54,11 @@ bool operator==( const aabb4&, const aabb4& );
 bool operator!=( const aabb3&, const aabb3& );
 bool operator!=( const aabb4&, const aabb4& );
 
+bool contain( const aabb3&, const glm::vec3& );
+bool contain( const aabb3&, const glm::vec4& );
+bool contain( const aabb4&, const glm::vec3& );
+bool contain( const aabb4&, const glm::vec4& );
+
 std::string to_string( const aabb3& );
 std::string to_string( const aabb4& );
 
@@ -64,6 +70,18 @@ aabb4 generate_random_aabb(
   std::mt19937 &engine
 );
 bool similar_aabb( const aabb4 &l, const aabb4 &r );
+
+std::vector< glm::vec4 > to_vertices( const aabb& );
+std::vector< glm::vec4 > to_vertices( const aabb4& );
+aabb from_vertices( const std::vector< glm::vec4 >& );
+
+aabb get_unit_aabb();
+aabb4 get_unit_aabb4();
+
+float area( const aabb3 &a );
+float area( const aabb4 &a );
+bool operator&&( const aabb3 &l, const aabb3 &r );
+bool operator&&( const aabb4 &l, const aabb4 &r );
 
 }
 

@@ -76,7 +76,7 @@ aabb3 operator*( const glm::mat4 &l, const aabb3 &r ) {
   aabb3 result;
   {
     auto v = l * vertex[ 0 ];
-    v /= v[ 3 ];
+    v /= std::abs( v[ 3 ] );
     result.min[ 0 ] = v[ 0 ];
     result.min[ 1 ] = v[ 1 ];
     result.min[ 2 ] = v[ 2 ];
@@ -86,7 +86,7 @@ aabb3 operator*( const glm::mat4 &l, const aabb3 &r ) {
   }
   for( unsigned int i = 1u; i != 8u; ++i ) {
     auto v = l * vertex[ i ];
-    v /= v[ 3 ];
+    v /= std::abs( v[ 3 ] );
     result.min[ 0 ] = std::min( result.min[ 0 ], v[ 0 ] );
     result.min[ 1 ] = std::min( result.min[ 1 ], v[ 1 ] );
     result.min[ 2 ] = std::min( result.min[ 2 ], v[ 2 ] );
@@ -176,6 +176,26 @@ bool operator!=( const aabb4 &l, const aabb4 &r ) {
   return l.min != r.min || l.max != r.max;
 }
 
+bool contain( const aabb3 &range, const glm::vec3 &p ) {
+  if( range.min.x > p.x ) return false;
+  if( range.min.y > p.y ) return false;
+  if( range.min.z > p.z ) return false;
+  if( range.max.x < p.x ) return false;
+  if( range.max.x < p.y ) return false;
+  if( range.max.x < p.z ) return false;
+  return true;
+}
+bool contain( const aabb3 &range, const glm::vec4 &p ) {
+  return contain( range, glm::vec3( p.x/p.w, p.y/p.w, p.z/p.w ) );
+}
+bool contain( const aabb4 &range, const glm::vec3 &p ) {
+  return contain( aabb3( range ), p );
+}
+bool contain( const aabb4 &range, const glm::vec4 &p ) {
+  return contain( aabb3( range ), glm::vec3( p.x/p.w, p.y/p.w, p.z/p.w ) );
+}
+
+
 std::string to_string( const aabb3 &v ) {
   std::string dest = "(";
   dest += std::to_string( v.min.x );
@@ -221,6 +241,61 @@ bool similar_aabb( const aabb4 &l, const aabb4 &r ) {
     if( std::abs( l.max[ i ] - r.max[ i ] ) > 0.0001f ) return false;
   }
   return true;
+}
+
+std::vector< glm::vec4 > to_vertices( const aabb &box ) {
+  return std::vector< glm::vec4 >{
+    glm::vec4( box.min.x, box.min.y, box.min.z, 1.f ),
+    glm::vec4( box.min.x, box.min.y, box.max.z, 1.f ),
+    glm::vec4( box.min.x, box.max.y, box.min.z, 1.f ),
+    glm::vec4( box.min.x, box.max.y, box.max.z, 1.f ),
+    glm::vec4( box.max.x, box.min.y, box.min.z, 1.f ),
+    glm::vec4( box.max.x, box.min.y, box.max.z, 1.f ),
+    glm::vec4( box.max.x, box.max.y, box.min.z, 1.f ),
+    glm::vec4( box.max.x, box.max.y, box.max.z, 1.f )
+  };
+}
+
+std::vector< glm::vec4 > to_vertices( const aabb4 &box ) {
+  return to_vertices( aabb( box ) );
+}
+
+aabb from_vertices( const std::vector< glm::vec4 > &points ) {
+  if( points.empty() ) {
+    return aabb()
+      .set_min( glm::vec3( 0.f, 0.f, 0.f ) )
+      .set_max( glm::vec3( 0.f, 0.f, 0.f ) );
+  }
+  aabb temp;
+  temp.min.x = points[ 0 ].x/points[ 0 ].w;
+  temp.min.y = points[ 0 ].y/points[ 0 ].w;
+  temp.min.z = points[ 0 ].z/points[ 0 ].w;
+  temp.max.x = points[ 0 ].x/points[ 0 ].w;
+  temp.max.y = points[ 0 ].y/points[ 0 ].w;
+  temp.max.z = points[ 0 ].z/points[ 0 ].w;
+  for( unsigned int i = 1u; i != points.size(); ++i ) {
+    temp.min.x = std::min( temp.min.x, points[ i ].x/points[ i ].w );
+    temp.min.y = std::min( temp.min.y, points[ i ].y/points[ i ].w );
+    temp.min.z = std::min( temp.min.z, points[ i ].z/points[ i ].w );
+    temp.max.x = std::max( temp.max.x, points[ i ].x/points[ i ].w );
+    temp.max.y = std::max( temp.max.y, points[ i ].y/points[ i ].w );
+    temp.max.z = std::max( temp.max.z, points[ i ].z/points[ i ].w );
+  }
+  return temp;
+}
+
+aabb get_unit_aabb() {
+  aabb temp;
+  temp.min = glm::vec3( -1.f, -1.f, -1.f );
+  temp.max = glm::vec3(  1.f,  1.f,  1.f );
+  return temp;
+}
+
+aabb4 get_unit_aabb4() {
+  aabb4 temp;
+  temp.min = glm::vec4( -1.f, -1.f, -1.f,  1.f );
+  temp.max = glm::vec4(  1.f,  1.f,  1.f,  1.f );
+  return temp;
 }
 
 }

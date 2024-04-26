@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <unordered_set>
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
@@ -53,6 +54,7 @@
 #include <gct/image_pool.hpp>
 #include <gct/compiled_scene_graph.hpp>
 #include <gct/instance_list.hpp>
+#include <gct/kdtree.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -208,6 +210,16 @@ int main( int argc, const char *argv[] ) {
     gct::scene_graph::instance_list_create_info(),
     *sg
   );
+
+  gct::kdtree< gct::scene_graph::resource_pair > full_kd;
+  gct::scene_graph::append(
+    *il->get_resource(),
+    il->get_draw_list(),
+    full_kd
+  );
+  auto view_il = std::make_shared< gct::scene_graph::instance_list >(
+    *il
+  );
   
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
@@ -224,8 +236,6 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-  const auto [test_image_view,test_sampler] = sg->get_resource()->texture->get( doc.get_texture()[ 7 ].normalized );
-
   const auto global_descriptor_set_layout = res.device->get_descriptor_set_layout(
     {
       CMAKE_CURRENT_BINARY_DIR "/geometry",
@@ -408,102 +418,120 @@ int main( int argc, const char *argv[] ) {
   while( !walk.end() ) {
     gct::blocking_timer frame_rate;
     ++walk;
+    if( walk.camera_moved() ) {
+      std::vector< gct::scene_graph::resource_pair > visible;
+      gct::frustum_culling(
+        projection,
+        walk.get_lookat(),
+        walk.get_camera_pos(),
+        full_kd,
+        visible,
+        8u
+      );
+      view_il->get_draw_list() = visible;
+    }
     {
       {
         auto rec = command_buffer->begin();
         tone.set( rec, 0 );
-        shadow_mat( rec, walk.get_light_pos(), std::min( 0.1f*scale, 0.5f ), 2.f*scale, 0 );
-        {
-          auto global_data = gct::gltf::dynamic_uniforms_t()
-            .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-            .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
-            .set_light_energy( walk.get_light_energy() )
-            .set_light_size( light_size )
-            .set_ambient( res.ambient_level );
-          rec.copy(
-            global_data,
-            shadow_uniform
-          );
-        }
-     
-        rec.transfer_to_graphics_barrier( { shadow_uniform->get_buffer() }, {} );
-        {
-          auto render_pass_token = rec.begin_render_pass(
-            shadow_gbuffer.get_render_pass_begin_info( 0 ),
-            vk::SubpassContents::eInline
-          );
-          rec->setViewport( 0, 1, &shadow_gbuffer.get_viewport() );
-          rec->setScissor( 0, 1, &shadow_gbuffer.get_scissor() );
-          rec->setCullMode( vk::CullModeFlagBits::eBack );
-          rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
-          rec.bind_descriptor_set(
-            vk::PipelineBindPoint::eGraphics,
-            1u,
-            sg->get_resource()->pipeline_layout,
-            shadow_descriptor_set
-          );
-          (*il)( rec, *shadow_csg );
-        }
-        rec.convert_image(
-          shadow_gbuffer.get_image( 0 ),
-          vk::ImageLayout::eShaderReadOnlyOptimal
-        );
-        rec.barrier(
-          vk::AccessFlagBits::eColorAttachmentWrite,
-          vk::AccessFlagBits::eShaderRead,
-          vk::PipelineStageFlagBits::eColorAttachmentOutput,
-          vk::PipelineStageFlagBits::eFragmentShader,
-          vk::DependencyFlagBits( 0 ),
-          {},
+        if( walk.light_moved() ) {
+          shadow_mat( rec, walk.get_light_pos(), std::min( 0.1f*scale, 0.5f ), 2.f*scale, 0 );
           {
-            shadow_gbuffer.get_image( 0 )
+            auto global_data = gct::gltf::dynamic_uniforms_t()
+              .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+              .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+              .set_light_energy( walk.get_light_energy() )
+              .set_light_size( light_size )
+              .set_ambient( res.ambient_level );
+            rec.copy(
+              global_data,
+              shadow_uniform
+            );
           }
-        );
-        {
-          auto global_data = gct::gltf::dynamic_uniforms_t()
-            .set_projection_matrix( projection )
-            .set_camera_matrix( walk.get_lookat() )
-            .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-            .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
-            .set_light_energy( walk.get_light_energy() )
-            .set_light_size( light_size )
-            .set_ambient( res.ambient_level );
-          rec.copy(
-            global_data,
-            global_uniform
-          );
-        }
-        rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
-        {
-          auto render_pass_token = rec.begin_render_pass(
-            gbuffer.get_render_pass_begin_info( 0 ),
-            vk::SubpassContents::eInline
-          );
-          rec->setViewport( 0, 1, &gbuffer.get_viewport() );
-          rec->setScissor( 0, 1, &gbuffer.get_scissor() );
-          rec->setCullMode( vk::CullModeFlagBits::eBack );
-          rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
-          rec.bind_descriptor_set(
-            vk::PipelineBindPoint::eGraphics,
-            1u,
-            sg->get_resource()->pipeline_layout,
-            global_descriptor_set
-          );
-          (*il)( rec, *geometry_csg );
-        }
-        rec.convert_image(
-          gbuffer.get_image( 0 ),
-          vk::ImageLayout::eGeneral
-        );
-        lighting( rec, 0, res.width, res.height, 1u );
-       
-        rec.compute_barrier(
-          {},
+         
+          rec.transfer_to_graphics_barrier( { shadow_uniform->get_buffer() }, {} );
           {
-            diffuse->get_factory(),
-            specular->get_factory()
+            auto render_pass_token = rec.begin_render_pass(
+              shadow_gbuffer.get_render_pass_begin_info( 0 ),
+              vk::SubpassContents::eInline
+            );
+            rec->setViewport( 0, 1, &shadow_gbuffer.get_viewport() );
+            rec->setScissor( 0, 1, &shadow_gbuffer.get_scissor() );
+            rec->setCullMode( vk::CullModeFlagBits::eBack );
+            rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
+            rec.bind_descriptor_set(
+              vk::PipelineBindPoint::eGraphics,
+              1u,
+              sg->get_resource()->pipeline_layout,
+              shadow_descriptor_set
+            );
+            (*il)( rec, *shadow_csg );
           }
-        );
+          rec.convert_image(
+            shadow_gbuffer.get_image( 0 ),
+            vk::ImageLayout::eShaderReadOnlyOptimal
+          );
+          rec.barrier(
+            vk::AccessFlagBits::eColorAttachmentWrite,
+            vk::AccessFlagBits::eShaderRead,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::DependencyFlagBits( 0 ),
+            {},
+            {
+              shadow_gbuffer.get_image( 0 )
+            }
+          );
+        }
+        if( walk.light_moved() || walk.camera_moved() ) {
+          {
+            auto global_data = gct::gltf::dynamic_uniforms_t()
+              .set_projection_matrix( projection )
+              .set_camera_matrix( walk.get_lookat() )
+              .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+              .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+              .set_light_energy( walk.get_light_energy() )
+              .set_light_size( light_size )
+              .set_ambient( res.ambient_level );
+            rec.copy(
+              global_data,
+              global_uniform
+            );
+          }
+          rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
+          {
+            auto render_pass_token = rec.begin_render_pass(
+              gbuffer.get_render_pass_begin_info( 0 ),
+              vk::SubpassContents::eInline
+            );
+            rec->setViewport( 0, 1, &gbuffer.get_viewport() );
+            rec->setScissor( 0, 1, &gbuffer.get_scissor() );
+            rec->setCullMode( vk::CullModeFlagBits::eBack );
+            rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
+            rec.bind_descriptor_set(
+              vk::PipelineBindPoint::eGraphics,
+              1u,
+              sg->get_resource()->pipeline_layout,
+              global_descriptor_set
+            );
+            (*view_il)( rec, *geometry_csg );
+          }
+          rec.convert_image(
+            gbuffer.get_image( 0 ),
+            vk::ImageLayout::eGeneral
+          );
+        }
+        if( walk.light_moved() || walk.camera_moved() ) {
+          lighting( rec, 0, res.width, res.height, 1u );
+        
+          rec.compute_barrier(
+            {},
+            {
+              diffuse->get_factory(),
+              specular->get_factory()
+            }
+          );
+        }
         bloom_gauss( rec, 0 );
         rec.compute_barrier( {}, { mixed_out->get_factory() } );
         tone.get( rec, 0 );
@@ -538,6 +566,7 @@ int main( int argc, const char *argv[] ) {
 
     glfwPollEvents();
     ++current_frame;
+    walk.reset_flags();
     current_frame %= framebuffers.size();
   }
   (*res.queue)->waitIdle();

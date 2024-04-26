@@ -1,0 +1,71 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+layout(local_size_x = 1024, local_size_y = 1 ) in;
+
+layout(push_constant) uniform PushConstants {
+  uint n;
+  uint digit;
+} push_constants;
+
+struct key_value {
+  uint key;
+  uint value;
+};
+
+layout(std430, binding = 0) buffer Input {
+  key_value input_data[];
+};
+
+layout(std430, binding = 1) buffer LocalOffset {
+  uint local_offset[];
+};
+
+layout(std430, binding = 2) buffer WorkGroupOffset {
+  uint workgroup_offset[];
+};
+
+
+layout(std430, binding = 3) buffer Output {
+  key_value output_data[];
+};
+
+shared uint[32] subgroup_offset;
+
+void main() {
+  const uint index = gl_GlobalInvocationID.x;
+  uint value = 256;
+  uint digit = push_constants.digit;
+  local_offset[ 0 ] = 0;
+  if( index < push_constants.n ) {
+    value = ( input_data[ index ].key >> ( digit * 8 ) ) & 0xFF;
+  }
+  for( uint i = 0; i != 256; i++ ) {
+    uint subgroup_pos = subgroupInclusiveAdd( value == i ? 1 : 0 );
+    if( gl_SubgroupInvocationID == gl_SubgroupSize - 1 ) {
+      subgroup_offset[ gl_SubgroupID ] = subgroup_pos;
+    }
+    barrier();
+    if( gl_SubgroupID == 0 ) {
+      subgroup_offset[ gl_SubgroupInvocationID ] = subgroupInclusiveAdd( subgroup_offset[ gl_SubgroupInvocationID ] );
+    }
+    barrier();
+    uint subgroup_offset_ = 0;
+    if( gl_SubgroupID != 0 ) {
+      subgroup_offset_ = subgroup_offset[ gl_SubgroupID - 1 ];
+    }
+    const uint next_offset =
+      subgroup_offset_ +
+      subgroup_pos;
+    if( gl_LocalInvocationID.x == gl_WorkGroupSize.x - 1 ) {
+      workgroup_offset[ gl_WorkGroupID.x * 256 + i ] = subgroup_offset[ gl_SubgroupSize - 1 ];
+    }
+    if( value == i ) {
+      local_offset[ index ] = next_offset - 1;
+    }
+  }
+}
+

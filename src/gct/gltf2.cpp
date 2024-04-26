@@ -270,6 +270,10 @@ scene_graph::primitive gltf2::create_primitive(
       vertex_buffer.insert( std::make_pair( binding->second, scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) ) );
     }
   }
+  constexpr static const float eps = 0.0001f;
+  if( min[ 0 ] == max[ 0 ] ) max[ 0 ] += eps;
+  if( min[ 1 ] == max[ 1 ] ) max[ 1 ] += eps;
+  if( min[ 2 ] == max[ 2 ] ) max[ 2 ] += eps;
   if( vertex_count == std::numeric_limits< uint32_t >::max() )
     throw invalid_gltf( "頂点属性がない", __FILE__, __LINE__ );
   if( vertex_count == 0 )

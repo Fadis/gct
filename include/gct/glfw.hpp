@@ -131,6 +131,9 @@ namespace gct {
     void to_json( nlohmann::json& );
     void from_json( const nlohmann::json& );
     void save( const std::string &filename_ );
+    bool light_moved() const { return light_pos_changed; }
+    bool camera_moved() const { return camera_pos_changed; }
+    void reset_flags();
   private:
     glm::vec3 center;
     float scale;
@@ -144,6 +147,8 @@ namespace gct {
     glm::vec3 camera_direction;
     glm::mat4 lookat;
     std::unordered_set< int > pressed_keys;
+    bool light_pos_changed = true;
+    bool camera_pos_changed = true;
   };
 }
 

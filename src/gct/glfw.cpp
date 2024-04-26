@@ -272,43 +272,80 @@ namespace gct {
     else if( action == GLFW_PRESS )
       pressed_keys.insert( key );
   }
+  void glfw_walk::reset_flags() {
+    camera_pos_changed = false;
+    light_pos_changed = false;
+  }
   void glfw_walk::operator++() {
-    if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() )
+    if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() ) {
       camera_angle_h -= 0.02 * M_PI/2;
-    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_D ) != pressed_keys.end() ) {
       camera_angle_h += 0.02 * M_PI/2;
-    if( pressed_keys.find( GLFW_KEY_Q ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_Q ) != pressed_keys.end() ) {
       camera_angle_v = std::max( camera_angle_v - 0.02 * M_PI/2, -M_PI/2 * 0.95 );
-    if( pressed_keys.find( GLFW_KEY_Z ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_Z ) != pressed_keys.end() ) {
       camera_angle_v = std::min( camera_angle_v + 0.02 * M_PI/2, M_PI/2 * 0.95 );
+      camera_pos_changed = true;
+    }
     if( pressed_keys.find( GLFW_KEY_X ) != pressed_keys.end() ) {
       camera_angle_v = 0.0;
+      camera_pos_changed = true;
     }
     camera_direction = glm::vec3{ std::sin( camera_angle_h ) * std::cos( camera_angle_v ), std::sin( camera_angle_v ), -std::cos( camera_angle_h ) * std::cos( camera_angle_v ) };
-    if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() )
+    if( pressed_keys.find( GLFW_KEY_W ) != pressed_keys.end() ) {
       camera_pos += camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_S ) != pressed_keys.end() ) {
       camera_pos -= camera_direction * glm::vec3( speed );
-    if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_E ) != pressed_keys.end() ) {
       camera_pos[ 1 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_C ) != pressed_keys.end() ) {
       camera_pos[ 1 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() )
+      camera_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() ) {
       light_pos[ 0 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_K ) != pressed_keys.end() ) {
       light_pos[ 2 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_L ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_L ) != pressed_keys.end() ) {
       light_pos[ 0 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_I ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_I ) != pressed_keys.end() ) {
       light_pos[ 2 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_U ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_U ) != pressed_keys.end() ) {
       light_pos[ 1 ] -= speed;
-    if( pressed_keys.find( GLFW_KEY_M ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_M ) != pressed_keys.end() ) {
       light_pos[ 1 ] += speed;
-    if( pressed_keys.find( GLFW_KEY_UP ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_UP ) != pressed_keys.end() ) {
       light_energy += 0.05f;
-    if( pressed_keys.find( GLFW_KEY_DOWN ) != pressed_keys.end() )
+      light_pos_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_DOWN ) != pressed_keys.end() ) {
       light_energy -= 0.05f;
+      light_pos_changed = true;
+    }
     if( pressed_keys.find( GLFW_KEY_ESCAPE ) != pressed_keys.end() )
       end_ = true;
     lookat = glm::lookAt(

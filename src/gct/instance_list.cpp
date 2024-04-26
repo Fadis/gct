@@ -5,6 +5,15 @@
 #include <gct/instance_list.hpp>
 
 namespace gct::scene_graph {
+
+bool operator==( const resource_pair &l, const resource_pair &r ) {
+  return l.inst == r.inst && l.prim == r.prim;
+}
+
+bool operator!=( const resource_pair &l, const resource_pair &r ) {
+  return l.inst != r.inst || l.prim != r.prim;
+}
+
 instance_list::instance_list(
   const instance_list_create_info &ci,
   const scene_graph &graph
@@ -20,13 +29,12 @@ instance_list::instance_list(
   if( !resource->push_constant_mp ) {
     throw -1;
   }
-  push_constant.resize( resource->push_constant_mp->get_aligned_size(), 0u );
-
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
   const compiled_scene_graph &compiled
 ) const {
+  std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
   const auto &prim = compiled.get_primitive();
   rec.bind_descriptor_set(
     vk::PipelineBindPoint::eGraphics,
@@ -56,6 +64,18 @@ void instance_list::operator()(
         push_constant.data()
       );
       (p->second)( rec );
+    }
+  }
+}
+void append(
+  const scene_graph_resource &resource,
+  const std::vector< resource_pair > &l,
+  kdtree< resource_pair > &kd
+) {
+  for( const auto &v: l ) {
+    const auto inst = resource.inst.get( v.inst );
+    if( inst ) {
+      kd.insert( inst->initial_world_aabb, v );
     }
   }
 }

@@ -78,7 +78,6 @@ onesweep::onesweep(
       .add_resource( { props.input_name, { props.input, props.output } } )
       .add_resource( { props.local_offset_name, local_offset } )
       .add_resource( { props.workgroup_offset_name, workgroup_offset } )
-      .add_resource( { props.output_name, { props.output, props.input } } )
   ) );
 
   global_sum.reset( new gct::compute(
@@ -148,7 +147,6 @@ void onesweep::operator()(
       pc.data()
     );
     rec.fill( histgram_buffer, 0u );
-    rec.fill( workgroup_offset, 0u );
     rec.barrier( { histgram_buffer }, {} );
     (*histgram)( rec, 0u, size, 1u, 1u );
     rec.barrier( { histgram_buffer }, {} );

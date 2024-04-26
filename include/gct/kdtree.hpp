@@ -1,8 +1,12 @@
 #ifndef GCT_KDTREE_HPP
 #define GCT_KDTREE_HPP
-#include <iostream>
 #include <memory>
+#include <algorithm>
+#include <functional>
+#include <unordered_set>
 #include <gct/aabb.hpp>
+#include <gct/matrix.hpp>
+#include <gct/projection_matrix.hpp>
 
 namespace gct {
 
@@ -21,29 +25,64 @@ public:
     aabb range;
     std::vector< T > value;
   };
-private:
   struct node_type {
     axis_type axis = axis_type::x_begin;
     float threshold = 0.0;
+    aabb range;
     std::shared_ptr< node_type > less_than;
     std::shared_ptr< node_type > greater_equal;
     std::shared_ptr< leaf_type > leaf;
   };
-public:
   void insert( const aabb &r, const T &v ) {
     insert( root, axis_type::x_begin, r, v );
   }
+  void insert( const aabb &r, const std::vector< T > &v ) {
+    insert( root, axis_type::x_begin, r, v );
+  }
   std::vector< std::shared_ptr< leaf_type > > find( const aabb &r ) const {
-    return find( root, r );
+    std::vector< std::shared_ptr< leaf_type > > temp;
+    find( root, r, temp );
+    return temp;
+  }
+  void find(
+    const aabb &r,
+    std::vector< std::shared_ptr< leaf_type > > &dest
+  ) const {
+    find( root, r, dest );
+  }
+  std::vector< std::shared_ptr< leaf_type > > find( const std::vector< aabb > &r ) const {
+    std::vector< std::shared_ptr< leaf_type > > temp;
+    for( const auto &v: r ) {
+      find( root, v, temp );
+    }
+    std::sort( temp.begin(), temp.end() );
+    temp.erase( std::unique( temp.begin(), temp.end() ), temp.end() );
+    temp.shrink_to_fit();
+    return temp;
+  }
+  void find(
+    const std::vector< aabb > &r,
+    std::vector< std::shared_ptr< leaf_type > > &dest
+  ) const {
+    for( const auto &v: r ) {
+      find( root, v, dest );
+    }
+    std::sort( dest.begin(), dest.end() );
+    dest.erase( std::unique( dest.begin(), dest.end() ), dest.end() );
   }
   std::string to_string() const {
     return to_string( root );
+  }
+  std::vector< std::shared_ptr< leaf_type > > get() const {
+    std::vector< std::shared_ptr< leaf_type > > temp;
+    get( root, temp );
+    return temp;
   }
 private:
   std::string to_string( const std::shared_ptr< node_type > &node ) const {
     if( !node ) return "null";
     else if( node->leaf ) {
-      return "{\"range\":\"" + gct::to_string( node->leaf->range ) + "}";
+      return "{\"range\":\"" + gct::to_string( node->leaf->range ) + "\"}";
     }
     else {
       std::string temp = "{\"axis\":";
@@ -96,6 +135,7 @@ private:
       new_leaf->value = { v };
       auto new_node = std::make_shared< node_type >();
       new_node->axis = axis;
+      new_node->range = r;
       new_node->leaf = new_leaf;
       node = new_node;
     }
@@ -111,6 +151,7 @@ private:
           auto new_node = std::make_shared< node_type >();
           new_node->axis = axis;
           new_node->threshold = threshold;
+          new_node->range = node->range | r;
           new_node->greater_equal = node;
           new_node->greater_equal->axis = next( axis );
           insert( new_node->greater_equal, next( axis ), r, v );
@@ -122,19 +163,23 @@ private:
         auto new_node = std::make_shared< node_type >();
         new_node->axis = axis;
         new_node->threshold = threshold;
+        new_node->range = node->range | r;
         if( existing_axis_value < threshold ) {
           new_node->less_than = node;
+          new_node->less_than->axis = next( new_node->less_than->axis );
           insert( new_node->greater_equal, next( axis ), r, v );
         }
         else {
           insert( new_node->less_than, next( axis ), r, v );
           new_node->greater_equal = node;
+          new_node->greater_equal->axis = next( new_node->greater_equal->axis );
         }
         node = new_node;
       }
     }
     else {
       const auto axis_value = get_axis_value( node->axis, r );
+      node->range = node->range | r;
       if( axis_value < node->threshold ) {
         insert( node->less_than, next( axis ), r, v );
       }
@@ -143,75 +188,335 @@ private:
       }
     }
   }
-  static std::vector< std::shared_ptr< leaf_type > > find( const std::shared_ptr< node_type > &node, const aabb &r ) {
+  void insert( std::shared_ptr< node_type > &node, axis_type axis, const aabb &r, const std::vector< T > &v ) {
     if( !node ) {
-      return {};
+      auto new_leaf = std::make_shared< leaf_type >();
+      new_leaf->range = r;
+      new_leaf->value = v;
+      auto new_node = std::make_shared< node_type >();
+      new_node->axis = axis;
+      new_node->range = r;
+      new_node->leaf = new_leaf;
+      node = new_node;
+    }
+    else if( node->leaf ) {
+      const auto existing_axis_value = get_axis_value( node->axis, node->leaf->range );
+      const auto new_axis_value = get_axis_value( node->axis, r );
+      if( existing_axis_value == new_axis_value ) {
+        if( node->leaf->range == r ) {
+          node->leaf->value.insert( node->leaf->value.end(), v.begin(), v.end() );
+        }
+        else {
+          const float threshold = existing_axis_value;
+          auto new_node = std::make_shared< node_type >();
+          new_node->axis = axis;
+          new_node->threshold = threshold;
+          new_node->range = node->range | r;
+          new_node->greater_equal = node;
+          new_node->greater_equal->axis = next( axis );
+          insert( new_node->greater_equal, next( axis ), r, v );
+          node = new_node;
+        }
+      }
+      else {
+        const float threshold = ( existing_axis_value + new_axis_value ) / 2.0f;
+        auto new_node = std::make_shared< node_type >();
+        new_node->axis = axis;
+        new_node->threshold = threshold;
+        new_node->range = node->range | r;
+        if( existing_axis_value < threshold ) {
+          new_node->less_than = node;
+          new_node->less_than->axis = next( new_node->less_than->axis );
+          insert( new_node->greater_equal, next( axis ), r, v );
+        }
+        else {
+          insert( new_node->less_than, next( axis ), r, v );
+          new_node->greater_equal = node;
+          new_node->greater_equal->axis = next( new_node->greater_equal->axis );
+        }
+        node = new_node;
+      }
+    }
+    else {
+      const auto axis_value = get_axis_value( node->axis, r );
+      node->range = node->range | r;
+      if( axis_value < node->threshold ) {
+        insert( node->less_than, next( axis ), r, v );
+      }
+      else {
+        insert( node->greater_equal, next( axis ), r, v );
+      }
+    }
+  }
+  static void find(
+    const std::shared_ptr< node_type > &node,
+    const aabb &r,
+    std::vector< std::shared_ptr< leaf_type > > &dest
+  ) {
+    if( !node ) {
+      return;
     }
     else if( node->leaf ) {
       if( node->leaf->range && r ) {
-        return { node->leaf };
+        dest.push_back( node->leaf );
+        return;
       }
       else {
-        return {};
+        return;
       }
     }
     else {
       if( node->axis == axis_type::x_begin ) {
-        auto lt = find( node->less_than, r );
+        find( node->less_than, r, dest );
         if( r.max.x >= node->threshold ) {
-          auto ge = find( node->greater_equal, r );
-          lt.insert( lt.end(), ge.begin(), ge.end() );
+          find( node->greater_equal, r, dest );
         }
-        return lt;
+        return;
       }
       else if( node->axis == axis_type::y_begin ) {
-        auto lt = find( node->less_than, r );
+        find( node->less_than, r, dest );
         if( r.max.y >= node->threshold ) {
-          auto ge = find( node->greater_equal, r );
-          lt.insert( lt.end(), ge.begin(), ge.end() );
+          find( node->greater_equal, r, dest );
         }
-        return lt;
+        return;
       }
       else if( node->axis == axis_type::z_begin ) {
-        auto lt = find( node->less_than, r );
+        find( node->less_than, r, dest );
         if( r.max.z >= node->threshold ) {
-          auto ge = find( node->greater_equal, r );
-          lt.insert( lt.end(), ge.begin(), ge.end() );
+          find( node->greater_equal, r, dest );
         }
-        return lt;
+        return;
       }
       else if( node->axis == axis_type::x_end ) {
-        auto ge = find( node->greater_equal, r );
+        find( node->greater_equal, r, dest );
         if( r.min.x < node->threshold ) {
-          auto lt = find( node->less_than, r );
-          ge.insert( ge.end(), lt.begin(), lt.end() );
+          find( node->less_than, r, dest );
         }
-        return ge;
+        return;
       }
       else if( node->axis == axis_type::y_end ) {
-        auto ge = find( node->greater_equal, r );
+        find( node->greater_equal, r, dest );
         if( r.min.y < node->threshold ) {
-          auto lt = find( node->less_than, r );
-          ge.insert( ge.end(), lt.begin(), lt.end() );
+          find( node->less_than, r, dest );
         }
-        return ge;
+        return;
       }
       else if( node->axis == axis_type::z_end ) {
-        auto ge = find( node->greater_equal, r );
+        find( node->greater_equal, r, dest );
         if( r.min.z < node->threshold ) {
-          auto lt = find( node->less_than, r );
-          ge.insert( ge.end(), lt.begin(), lt.end() );
+          find( node->less_than, r, dest );
         }
-        return ge;
+        return;
       }
       else {
-        return {};
+        std::abort();
       }
     }
-    return {};
+    std::abort();
+  }
+  static bool judge(
+    const std::shared_ptr< node_type > &node,
+    std::vector< std::shared_ptr< node_type > > &dest,
+    const std::function< bool( const node_type& ) > &cont
+  ) {
+    if( !node ) {
+      return false;
+    }
+    if( node->leaf ) {
+      dest.push_back( node );
+      return false;
+    }
+    if( cont( *node ) ) {
+      return true;
+    }
+    else {
+      dest.push_back( node );
+      return false;
+    }
+  }
+  static void find(
+    const std::shared_ptr< node_type > &node,
+    const aabb &r,
+    std::vector< std::shared_ptr< node_type > > &dest,
+    const std::function< bool( const node_type& ) > &cont
+  ) {
+    if( !node ) {
+      return;
+    }
+    else if( node->leaf ) {
+      if( node->leaf->range && r ) {
+        dest.push_back( node );
+        return;
+      }
+      else {
+        return;
+      }
+    }
+    else {
+      if( node->axis == axis_type::x_begin ) {
+        if( r.max.x >= node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->less_than, r, dest, cont );
+          }
+          if( cont_ge ) {
+            find( node->greater_equal, r, dest, cont );
+          }
+        }
+        else {
+          find( node->less_than, r, dest, cont );
+        }
+        return;
+      }
+      else if( node->axis == axis_type::y_begin ) {
+        if( r.max.y >= node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->less_than, r, dest, cont );
+          }
+          if( cont_ge ) {
+            find( node->greater_equal, r, dest, cont );
+          }
+        }
+        else {
+          find( node->less_than, r, dest, cont );
+        }
+        return;
+      }
+      else if( node->axis == axis_type::z_begin ) {
+        if( r.max.z >= node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->less_than, r, dest, cont );
+          }
+          if( cont_ge ) {
+            find( node->greater_equal, r, dest, cont );
+          }
+        }
+        else {
+          find( node->less_than, r, dest, cont );
+        }
+        return;
+      }
+      else if( node->axis == axis_type::x_end ) {
+        if( r.min.x < node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->greater_equal, r, dest, cont );
+          }
+          if( cont_ge ) {
+            find( node->less_than, r, dest, cont );
+          }
+        }
+        else {
+          find( node->greater_equal, r, dest, cont );
+        }
+        return;
+      }
+      else if( node->axis == axis_type::y_end ) {
+        if( r.min.y < node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->greater_equal, r, dest, cont );
+          }
+          if( cont_ge ) {
+            find( node->less_than, r, dest, cont );
+          }
+        }
+        else {
+          find( node->greater_equal, r, dest, cont );
+        }
+        return;
+      }
+      else if( node->axis == axis_type::z_end ) {
+        if( r.min.z < node->threshold ) {
+          const bool cont_lt = judge( node->less_than, dest, cont );
+          const bool cont_ge = judge( node->greater_equal, dest, cont );
+          if( cont_lt ) {
+            find( node->greater_equal, r, dest );
+          }
+          if( cont_ge ) {
+            find( node->less_than, r, dest );
+          }
+        }
+        else {
+          find( node->greater_equal, r, dest );
+        }
+        return;
+      }
+      else {
+        return;
+      }
+    }
+    return;  
+  }
+  static void get(
+    const std::shared_ptr< node_type > &node,
+    std::vector< std::shared_ptr< leaf_type > > &dest
+  ) {
+    if( !node ) {
+    }
+    else if( node->leaf ) {
+      dest.push_back( node->leaf );
+    }
+    else {
+      if( node->less_than ) {
+        get( node->less_than, dest );
+      }
+      if( node->greater_equal ) {
+        get( node->greater_equal, dest );
+      }
+    }
   }
   std::shared_ptr< node_type > root;
 };
+
+template< typename T >
+void frustum_culling(
+  const glm::mat4 &projection,
+  const glm::mat4 &camera,
+  const kdtree< T > &src,
+  kdtree< T > &dest,
+  std::uint32_t m
+) {
+  const auto proj_cam = projection * camera;  
+  for( const auto &view: get_clipping_aabb( projection, camera, m ) ) {
+    for( const auto box: src.find( view ) ) {
+      if( is_visible( proj_cam, box->range ) ) {
+        dest.insert( box->range, box->value );
+      }
+    }
+  }
+}
+template< typename T >
+void frustum_culling(
+  const glm::mat4 &projection,
+  const glm::mat4 &camera,
+  const glm::vec3 &camera_pos,
+  const kdtree< T > &src,
+  std::vector< T > &dest,
+  std::uint32_t m
+) {
+  const auto proj_cam = projection * camera;
+  std::unordered_set< typename kdtree< T >::leaf_type* > known;
+  for( const auto &view: get_clipping_aabb( projection, camera, m ) ) {
+    for( const auto box: src.find( view ) ) {
+      if( known.find( box.get() ) == known.end() ) {
+        if( is_visible( proj_cam, box->range ) ) {
+          dest.insert( dest.end(), box->value.begin(), box->value.end() );
+          known.insert( box.get() );
+        }
+      }
+    }
+  }
+}
+
+
 
 bool test_kdtree();
 

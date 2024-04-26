@@ -242,12 +242,14 @@ add_library( gct SHARED
   gct/epipolar_light_scattering_create_info.cpp
   gct/epipolar_light_scattering.cpp
   gct/generate_projection_matrix.cpp
+  gct/projection_matrix.cpp
   gct/particle_buffer.cpp
   gct/draw_particle.cpp
   gct/draw_particle_create_info.cpp
   gct/load_obj_particle.cpp
   gct/remove_chain.cpp
   gct/index_range.cpp
+  gct/matrix.cpp
   gct/matrix_pool.cpp
   gct/matrix_pool_create_info.cpp
   gct/aabb_pool.cpp
