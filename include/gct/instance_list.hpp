@@ -10,10 +10,12 @@
 #include <gct/render_pass.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/compiled_scene_graph.hpp>
+#include <gct/compiled_aabb_scene_graph.hpp>
 #include <gct/kdtree.hpp>
 
 namespace gct {
   class command_buffer_recorder_t;
+  class query_pool_t;
 }
 
 namespace gct::scene_graph {
@@ -42,6 +44,11 @@ public:
   void operator()(
     command_buffer_recorder_t&,
     const compiled_scene_graph &compiled
+  ) const;
+  void operator()(
+    command_buffer_recorder_t&,
+    const compiled_aabb_scene_graph &compiled,
+    const std::shared_ptr< query_pool_t > &query_pool
   ) const;
   void to_json( nlohmann::json& ) const;
   std::vector< resource_pair > &get_draw_list() {

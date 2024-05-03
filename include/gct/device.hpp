@@ -26,6 +26,8 @@ namespace gct {
   class descriptor_pool_t;
   class descriptor_set_layout_create_info_t;
   class descriptor_set_layout_t;
+  class query_pool_create_info_t;
+  class query_pool_t;
   class pipeline_cache_t;
   class pipeline_cache_create_info_t;
   class pipeline_layout_t;
@@ -90,6 +92,7 @@ namespace gct {
     std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const descriptor_set_layout_create_info_t& );
     std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const shader_module_reflection_t &reflection, std::uint32_t set_id = 0u );
     std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const std::vector< std::filesystem::path > &path, std::uint32_t set_id = 0u );
+    std::shared_ptr< query_pool_t > get_query_pool( const query_pool_create_info_t& );
     std::shared_ptr< pipeline_cache_t > get_pipeline_cache( const pipeline_cache_create_info_t& );
     std::shared_ptr< pipeline_cache_t > get_pipeline_cache();
     std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );

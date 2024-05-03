@@ -102,6 +102,7 @@ add_library( gct SHARED
   gct/rendering_info.cpp
   gct/begin_render_pass.cpp
   gct/begin_rendering.cpp
+  gct/begin_query.cpp
   gct/image_view_create_info.cpp
   gct/image_view.cpp
   gct/framebuffer_create_info.cpp
@@ -195,6 +196,8 @@ add_library( gct SHARED
   gct/vertex_attribute.cpp
   gct/validation_cache_create_info.cpp
   gct/validation_cache.cpp
+  gct/query_pool_create_info.cpp
+  gct/query_pool.cpp
   gct/draw.cpp
   gct/dispatch.cpp
   gct/font.cpp
@@ -278,6 +281,7 @@ add_library( gct SHARED
   gct/scene_graph.cpp
   gct/get_shader.cpp
   gct/compiled_scene_graph.cpp
+  gct/compiled_aabb_scene_graph.cpp
   gct/instance_list.cpp
   gct/similar_matrix.cpp
   gct/generate_random_matrix.cpp

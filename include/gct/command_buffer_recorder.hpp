@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <any>
 #include <array>
 #include <tuple>
 #include <memory>
@@ -33,6 +32,7 @@ namespace gct {
   class image_view_t;
   class bound_command_buffer_t;
   class descriptor_set_t;
+  class query_pool_t;
   class pipeline_layout_t;
   class compute_pipeline_t;
   class graphics_pipeline_t;
@@ -531,6 +531,19 @@ namespace gct {
     void bind_vertex_buffer(
       const std::vector< std::shared_ptr< buffer_t > > &,
       const std::vector< vk::DeviceSize > &stride
+    );
+#endif
+    std::shared_ptr< void > begin(
+      const std::shared_ptr< query_pool_t > &query_pool,
+      std::uint32_t query,
+      vk::QueryControlFlags flags
+    );
+#ifdef VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME
+    std::shared_ptr< void > begin(
+      const std::shared_ptr< query_pool_t > &query_pool,
+      std::uint32_t query,
+      vk::QueryControlFlags flags,
+      std::uint32_t index
     );
 #endif
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME

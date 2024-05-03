@@ -60,6 +60,12 @@ add_shader( gltf2 gauss/v12_32.comp )
 add_shader( gltf2 lighting/lighting.comp )
 add_shader( gltf2 gamma/gamma.comp )
 
+add_shader( gltf2 ao/hbao_0.comp )
+add_shader( gltf2 ao/hbao_45.comp )
+add_shader( gltf2 ao/hbao_90.comp )
+add_shader( gltf2 ao/hbao_135.comp )
+add_shader( gltf2 ao/hbao.comp )
+
 add_shader( gltf2 mix_ao/mix_ao.comp )
 
 add_shader( gltf2 tone/tone.comp )

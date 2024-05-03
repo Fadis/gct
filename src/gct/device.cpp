@@ -29,6 +29,7 @@
 #include <gct/command_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/descriptor_pool.hpp>
+#include <gct/query_pool.hpp>
 #include <gct/device.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <gct/acceleration_structure_build_geometry_info.hpp>
@@ -218,6 +219,14 @@ namespace gct {
   std::shared_ptr< descriptor_pool_t > device_t::get_descriptor_pool( const descriptor_pool_create_info_t &create_info ) {
     return std::shared_ptr< descriptor_pool_t >(
       new descriptor_pool_t(
+        shared_from_this(),
+        create_info
+      )
+    );
+  }
+  std::shared_ptr< query_pool_t > device_t::get_query_pool( const query_pool_create_info_t &create_info ) {
+    return std::shared_ptr< query_pool_t >(
+      new query_pool_t(
         shared_from_this(),
         create_info
       )

@@ -154,13 +154,6 @@ compiled_primitive compiled_scene_graph::load_primitive(
         resource->vertex
       )
       .set_prim( p )
-      //.set_matrix( n->get_matrix() )
-      //.set_aabb(
-      //  resource->aabb->allocate( p->descriptor.aabb, n->get_matrix() )
-      //)
-      .set_visibility(
-        resource->visibility->allocate()
-      )
       .set_pipeline(
         graph.get_props().pipeline_cache->get_pipeline( ci )
       );
@@ -174,11 +167,8 @@ void to_json( nlohmann::json &dest, const compiled_primitive &src ) {
   if( src.prim ) {
     dest[ "prim" ] = *src.prim;
   }
-  if( src.visibility ) {
-    dest[ "visibility" ] = *src.visibility;
-  }
   if( src.pipeline ) {
-    dest[ "visibility" ] = *src.pipeline;
+    dest[ "pipeline" ] = *src.pipeline;
   }
 }
 

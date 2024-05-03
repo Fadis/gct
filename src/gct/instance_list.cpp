@@ -3,6 +3,7 @@
 #include <gct/pipeline_layout.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/instance_list.hpp>
+#include <gct/query_pool.hpp>
 
 namespace gct::scene_graph {
 
@@ -48,12 +49,51 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->texture_descriptor_set
   );
-  //std::cout << "instance_list::operator()" << std::endl;
   for( const auto &i: draw_list ) {
-    //std::cout << "prim " << *i.prim << std::endl;
     auto p = prim.find( i.prim );
     if( p != prim.end() ) {
-      //std::cout << "found " << *p->first << " " << nlohmann::json( p->second ) << std::endl;
+      push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *i.inst;
+      push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = *i.prim;
+      rec->pushConstants(
+        **resource->pipeline_layout,
+        resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
+        resource->push_constant_mp->get_offset(),
+        push_constant.size(),
+        push_constant.data()
+      );
+      (p->second)( rec );
+    }
+  }
+}
+void instance_list::operator()(
+  command_buffer_recorder_t &rec,
+  const compiled_aabb_scene_graph &compiled,
+  const std::shared_ptr< query_pool_t > &query_pool
+) const {
+  std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
+  const auto &prim = compiled.get_primitive();
+  rec.bind_descriptor_set(
+    vk::PipelineBindPoint::eGraphics,
+    resource->descriptor_set_id,
+    resource->pipeline_layout,
+    resource->descriptor_set
+  );
+  rec.bind_descriptor_set(
+    vk::PipelineBindPoint::eGraphics,
+    resource->texture_descriptor_set_id,
+    resource->pipeline_layout,
+    resource->texture_descriptor_set
+  );
+  compiled( rec );
+  for( const auto &i: draw_list ) {
+    const auto inst = resource->inst.get( i.inst );
+    auto p = prim.find( i.prim );
+    if( inst && p != prim.end() ) {
+      const auto query_token = rec.begin(
+        query_pool,
+        *inst->descriptor.visibility,
+        vk::QueryControlFlags( 0 )
+      );
       push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *i.inst;
       push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = *i.prim;
       rec->pushConstants(

@@ -48,6 +48,7 @@
 #include <gct/compute.hpp>
 #include <gct/common_sample_setup.hpp>
 #include <gct/tone_mapping.hpp>
+#include <gct/hbao.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/gltf2.hpp>
 #include <gct/gltf2_create_info.hpp>
@@ -310,6 +311,17 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "dynamic_uniforms", global_uniform } )
   );
 
+  gct::hbao hbao(
+    gct::hbao_create_info()
+      .set_allocator( res.allocator )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/ao/" )
+      .set_input_name( "gbuffer" )
+      .set_input( gbuffer.get_image_views() )
+      .add_resource( { "dynamic_uniforms", global_uniform } ) 
+  );
+
   const auto mixed_out = res.allocator->create_image_view(
     rgba32ici,
     VMA_MEMORY_USAGE_GPU_ONLY
@@ -343,6 +355,7 @@ int main( int argc, const char *argv[] ) {
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ diffuse } )
       .set_output_name( "bloom_image" )
       .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "occlusion", hbao.get_output(), vk::ImageLayout::eGeneral } )
       .add_resource( { "specular_image", specular } )
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
@@ -523,10 +536,13 @@ int main( int argc, const char *argv[] ) {
         }
         if( walk.light_moved() || walk.camera_moved() ) {
           lighting( rec, 0, res.width, res.height, 1u );
+      
+          hbao( rec, 0 );
         
           rec.compute_barrier(
             {},
             {
+              hbao.get_output()[ 0 ]->get_factory(),
               diffuse->get_factory(),
               specular->get_factory()
             }

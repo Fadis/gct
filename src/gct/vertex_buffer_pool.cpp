@@ -81,6 +81,53 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
   return desc;
 }
 
+vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::allocate(
+  const std::vector< glm::vec4 > &data
+) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+
+  auto b = props.allocator->create_mappable_buffer(
+    data.size() * sizeof( glm::vec4 ),
+    vk::BufferUsageFlagBits::eVertexBuffer|
+    vk::BufferUsageFlagBits::eIndexBuffer|
+    vk::BufferUsageFlagBits::eStorageBuffer
+  );
+  {
+    auto mapped = b->map< std::uint8_t >();
+    std::copy(
+      reinterpret_cast< const std::uint8_t* >( data.data() ),
+      reinterpret_cast< const std::uint8_t* >( std::next( data.data(), data.size() ) ),
+      mapped.begin()
+    );
+  }
+  const vertex_buffer_index_t index = allocate_index();
+
+  write_request_list.push_back(
+    write_request()
+      .set_index( index )
+      .set_buffer( b )
+  );
+  vertex_buffer_state[ index ] =
+    vertex_buffer_state_type()
+      .set_valid( true )
+      .set_buffer( b )
+      .set_write_request_index( write_request_list.size() - 1u );
+
+  vertex_buffer_descriptor desc(
+    new vertex_buffer_index_t( index ),
+    [self=shared_from_this()]( const vertex_buffer_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  used_on_gpu.push_back( desc );
+  return desc;
+}
+
 void vertex_buffer_pool::state_type::release( vertex_buffer_index_t index ) {
   vertex_buffer_state_type removed;
   {
@@ -187,6 +234,13 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::allocate(
 ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( filename );
+}
+
+vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::allocate(
+  const std::vector< glm::vec4 > &data
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( data );
 }
 
 std::shared_ptr< buffer_t > vertex_buffer_pool::get( const vertex_buffer_descriptor &desc ) {
