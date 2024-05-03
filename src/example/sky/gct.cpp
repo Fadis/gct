@@ -1,3 +1,4 @@
+#include "gct/skyview_froxel_create_info.hpp"
 #include <iostream>
 #include <unordered_set>
 #include <boost/program_options.hpp>
@@ -58,6 +59,8 @@
 #include <gct/pipeline_color_blend_state_create_info.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/voxel_image.hpp>
+#include <gct/skyview.hpp>
+#include <gct/skyview_froxel.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -104,63 +107,6 @@ struct froxel_state_t {
   float light_energy;
 };
 
-struct transmittance_parameters_t {
-  LIBGCT_SETTER( sigma_ma )
-  LIBGCT_SETTER( sigma_oa )
-  LIBGCT_SETTER( sigma_rs )
-  LIBGCT_SETTER( sigma_ms )
-  LIBGCT_SETTER( ground_radius )
-  LIBGCT_SETTER( top_radius )
-  glm::vec4 sigma_ma;
-  glm::vec4 sigma_oa;
-  glm::vec4 sigma_rs;
-  glm::vec4 sigma_ms;
-  float ground_radius;
-  float top_radius;
-};
-
-struct multiscat_parameters_t {
-  LIBGCT_SETTER( sigma_ma )
-  LIBGCT_SETTER( sigma_oa )
-  LIBGCT_SETTER( sigma_rs )
-  LIBGCT_SETTER( sigma_ms )
-  LIBGCT_SETTER( g )
-  LIBGCT_SETTER( ground_radius )
-  LIBGCT_SETTER( top_radius )
-  LIBGCT_SETTER( light_energy )
-  glm::vec4 sigma_ma;
-  glm::vec4 sigma_oa;
-  glm::vec4 sigma_rs;
-  glm::vec4 sigma_ms;
-  float g;
-  float ground_radius;
-  float top_radius;
-  float light_energy;
-};
-
-struct skyview_parameters_t {
-  LIBGCT_SETTER( sigma_ma )
-  LIBGCT_SETTER( sigma_oa )
-  LIBGCT_SETTER( sigma_rs )
-  LIBGCT_SETTER( sigma_ms )
-  LIBGCT_SETTER( light_pos )
-  LIBGCT_SETTER( g )
-  LIBGCT_SETTER( ground_radius )
-  LIBGCT_SETTER( top_radius )
-  LIBGCT_SETTER( altitude )
-  LIBGCT_SETTER( light_energy )
-  glm::vec4 sigma_ma;
-  glm::vec4 sigma_oa;
-  glm::vec4 sigma_rs;
-  glm::vec4 sigma_ms;
-  glm::vec4 light_pos;
-  float g;
-  float ground_radius;
-  float top_radius;
-  float altitude;
-  float light_energy;
-};
-
 int main( int argc, const char *argv[] ) {
   const gct::common_sample_setup res(
     argc, argv,
@@ -184,97 +130,18 @@ int main( int argc, const char *argv[] ) {
       .rebuild_chain()
   );
 
-  const unsigned int transmittance_width = 256u;
-  const unsigned int transmittance_height = 64u;
-  const auto transmittance = res.allocator->create_image_views(
-    gct::image_create_info_t()
-      .set_basic(
-        gct::basic_2d_image( transmittance_width, transmittance_height )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage|
-            vk::ImageUsageFlagBits::eSampled|
-            vk::ImageUsageFlagBits::eTransferSrc
-          )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY,
-    1u
+  gct::skyview skyview(
+    gct::skyview_create_info()
+      .set_allocator( res.allocator )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
   );
-  const unsigned int multiscat_size = 32u;
-  const auto multiscat = res.allocator->create_image_views(
-    gct::image_create_info_t()
-      .set_basic(
-        gct::basic_2d_image( multiscat_size, multiscat_size )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage|
-            vk::ImageUsageFlagBits::eSampled|
-            vk::ImageUsageFlagBits::eTransferSrc
-          )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY,
-    1u
-  );
-  const unsigned int skyview_width = 256u;
-  const unsigned int skyview_height = 128u;
-  const auto skyview = res.allocator->create_image_views(
-    gct::image_create_info_t()
-      .set_basic(
-        gct::basic_2d_image( skyview_width, skyview_height )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage|
-            vk::ImageUsageFlagBits::eSampled|
-            vk::ImageUsageFlagBits::eTransferSrc
-          )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY,
-    1u
-  );
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( transmittance, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( multiscat, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( skyview, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
+  const auto skyview_param = gct::skyview_parameter();
   auto linear_sampler = res.device->get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
-  
-  const auto generate_transmittance = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/generate_transmittance.comp.spv" )
-      .set_swapchain_image_count( 1 )
-      .add_resource( { "dest_image", transmittance } )
-  );
-  const auto generate_multiscat = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/generate_multiscat.comp.spv" )
-      .set_swapchain_image_count( 1 )
-      .add_resource( { "transmittance", linear_sampler, transmittance, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", multiscat } )
-  );
-  const auto generate_skyview = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/generate_skyview.comp.spv" )
-      .set_swapchain_image_count( 1 )
-      .add_resource( { "transmittance", linear_sampler, transmittance, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "multiscattering", linear_sampler, multiscat, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", skyview } )
-  );
+
   const glm::vec4 sigma_ma( 4.40e-6, 4.40e-6, 4.40e-6, 0.0 );
   const glm::vec4 sigma_oa( 0.650e-6, 1.881e-6, 0.085e-6, 0.0 );
   const glm::vec4 sigma_rs( 5.802e-6, 13.558e-6, 33.1e-6, 0.0 );
@@ -290,118 +157,13 @@ int main( int argc, const char *argv[] ) {
     auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto rec = command_buffer->begin();
-      {
-        auto params = transmittance_parameters_t()
-          .set_sigma_ma( sigma_ma )
-          .set_sigma_oa( sigma_oa )
-          .set_sigma_rs( sigma_rs )
-          .set_sigma_ms( sigma_ms )
-          .set_ground_radius( ground_radius )
-          .set_top_radius( top_radius );
-        rec->pushConstants(
-          **generate_transmittance.get_pipeline()->get_props().get_layout(),
-          vk::ShaderStageFlagBits::eCompute,
-          0u,
-          sizeof( transmittance_parameters_t ),
-          reinterpret_cast< void* >( &params )
-        );
-      }
-      generate_transmittance( rec, 0u, transmittance_width, transmittance_height, 1u );
-      rec.convert_image(
-        transmittance[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-      {
-        auto params = multiscat_parameters_t()
-          .set_sigma_ma( sigma_ma )
-          .set_sigma_oa( sigma_oa )
-          .set_sigma_rs( sigma_rs )
-          .set_sigma_ms( sigma_ms )
-          .set_ground_radius( ground_radius )
-          .set_top_radius( top_radius )
-          .set_g( 0.8f )
-          .set_light_energy( light_energy );
-        rec->pushConstants(
-          **generate_multiscat.get_pipeline()->get_props().get_layout(),
-          vk::ShaderStageFlagBits::eCompute,
-          0u,
-          sizeof( multiscat_parameters_t ),
-          reinterpret_cast< void* >( &params )
-        );
-      }
-      generate_multiscat( rec, 0u, multiscat_size, multiscat_size, 1u );
-      rec.convert_image(
-        multiscat[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-      {
-        auto params = skyview_parameters_t()
-          .set_sigma_ma( sigma_ma )
-          .set_sigma_oa( sigma_oa )
-          .set_sigma_rs( sigma_rs )
-          .set_sigma_ms( sigma_ms )
-          .set_light_pos( light_pos )
-          .set_ground_radius( ground_radius )
-          .set_top_radius( top_radius )
-          .set_g( 0.8f )
-          .set_altitude( 6360100.f )
-          .set_light_energy( light_energy );
-        rec->pushConstants(
-          **generate_skyview.get_pipeline()->get_props().get_layout(),
-          vk::ShaderStageFlagBits::eCompute,
-          0u,
-          sizeof( skyview_parameters_t ),
-          reinterpret_cast< void* >( &params )
-        );
-      }
-      generate_skyview( rec, 0u, skyview_width, skyview_height, 1u );
-      rec.convert_image(
-        skyview[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-      rec.dump_image(
-        res.allocator,
-        transmittance[ 0 ]->get_factory(),
-        "transmittance.jpg",
-        0
-      );
-      rec.dump_image(
-        res.allocator,
-        multiscat[ 0 ]->get_factory(),
-        "multiscat.jpg",
-        0
-      );
-      rec.dump_image(
-        res.allocator,
-        skyview[ 0 ]->get_factory(),
-        "skyview.jpg",
-        0
+      skyview(
+        rec,
+        skyview_param
       );
     }
     command_buffer->execute_and_wait();
   }
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto rec = command_buffer->begin();
-      rec.convert_image(
-        transmittance[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-      rec.convert_image(
-        multiscat[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-      rec.convert_image(
-        skyview[ 0 ]->get_factory(),
-        vk::ImageLayout::eShaderReadOnlyOptimal
-      );
-    }
-    command_buffer->execute_and_wait();
-  }
-
-
-
 
   gct::cubemap_matrix_generator shadow_mat(
     res.allocator,
@@ -496,8 +258,8 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/froxel.comp.spv" )
       .set_swapchain_image_count( res.swapchain_images.size() )
       .add_resource( { "froxel_state", froxel_state } )
-      .add_resource( { "transmittance", linear_sampler, transmittance, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "multiscattering", linear_sampler, multiscat, vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "transmittance", linear_sampler, skyview.get_transmittance(), vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "multiscattering", linear_sampler, skyview.get_multiscat(), vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "scattering", froxel, vk::ImageLayout::eGeneral } )
   );
 
@@ -644,7 +406,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } ) 
       .add_resource( { "specular_image", specular } ) 
       .add_resource( { "occlusion", hbao.get_output(), vk::ImageLayout::eGeneral } )
-      .add_resource( { "skyview", linear_sampler, skyview, vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "scattering", rendered_froxel, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", mixed_out } ) 
       .add_resource( { "tone", tone.get_buffer() } ) 
@@ -896,7 +658,7 @@ int main( int argc, const char *argv[] ) {
           .set_light_pos( light_pos_near )
           .set_ground_radius( ground_radius )
           .set_top_radius( top_radius )
-          .set_g( 0.8f )
+          .set_g( g )
           .set_altitude( 6360100.f )
           .set_light_energy( light_energy );
         rec.copy(
@@ -909,7 +671,7 @@ int main( int argc, const char *argv[] ) {
         froxel[ image_index ]->get_factory(),
         vk::ImageLayout::eGeneral
       );
-      
+     
       calc_scattering( rec, image_index, froxel_xy_resolution, froxel_xy_resolution, froxel_z_resolution );
 
       rec.convert_image(

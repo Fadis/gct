@@ -56,6 +56,8 @@
 #include <gct/compiled_scene_graph.hpp>
 #include <gct/instance_list.hpp>
 #include <gct/kdtree.hpp>
+#include <gct/skyview.hpp>
+#include <gct/skyview_froxel.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -322,6 +324,40 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "dynamic_uniforms", global_uniform } ) 
   );
 
+  gct::skyview skyview(
+    gct::skyview_create_info()
+      .set_allocator( res.allocator )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
+  );
+  const auto skyview_param = gct::skyview_parameter();
+  
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      skyview(
+        rec,
+        skyview_param
+      );
+    }
+    command_buffer->execute_and_wait();
+  }
+  
+  const auto skyview_froxel = gct::skyview_froxel(
+    gct::skyview_froxel_create_info()
+      .set_allocator( res.allocator )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_width( res.width )
+      .set_height( res.height )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
+      .set_gbuffer( gbuffer.get_image_view( 0 ) )
+      .set_transmittance( skyview.get_transmittance() )
+      .set_multiscat( skyview.get_multiscat() )
+  );
+
   const auto mixed_out = res.allocator->create_image_view(
     rgba32ici,
     VMA_MEMORY_USAGE_GPU_ONLY
@@ -344,6 +380,10 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out } )
   );
+  
+  auto linear_sampler = res.device->get_sampler(
+    gct::get_basic_linear_sampler_create_info()
+  );
 
   const auto bloom_gauss = gct::image_filter(
     gct::image_filter_create_info()
@@ -356,6 +396,8 @@ int main( int argc, const char *argv[] ) {
       .set_output_name( "bloom_image" )
       .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
       .add_resource( { "occlusion", hbao.get_output(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "scattering", skyview_froxel.get_output(), vk::ImageLayout::eGeneral } )
       .add_resource( { "specular_image", specular } )
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
@@ -427,7 +469,8 @@ int main( int argc, const char *argv[] ) {
     { "matrices", shadow_mat.get_buffer()[ 0 ] }
   });
 
-  uint32_t current_frame = 0u;
+  std::uint32_t current_frame = 0u;
+  std::uint32_t frame_counter = 0u;
   while( !walk.end() ) {
     gct::blocking_timer frame_rate;
     ++walk;
@@ -505,7 +548,8 @@ int main( int argc, const char *argv[] ) {
               .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
               .set_light_energy( walk.get_light_energy() )
               .set_light_size( light_size )
-              .set_ambient( res.ambient_level );
+              .set_ambient( res.ambient_level )
+              .set_inversed_voxel( glm::inverse( projection * walk.get_lookat() ) );
             rec.copy(
               global_data,
               global_uniform
@@ -534,8 +578,13 @@ int main( int argc, const char *argv[] ) {
             vk::ImageLayout::eGeneral
           );
         }
-        if( walk.light_moved() || walk.camera_moved() ) {
+        if( walk.light_moved() || walk.camera_moved() || frame_counter <= 2u ) {
           lighting( rec, 0, res.width, res.height, 1u );
+      
+          rec.compute_barrier(
+            {},
+            { diffuse->get_factory() }
+          );
       
           hbao( rec, 0 );
         
@@ -545,6 +594,32 @@ int main( int argc, const char *argv[] ) {
               hbao.get_output()[ 0 ]->get_factory(),
               diffuse->get_factory(),
               specular->get_factory()
+            }
+          );
+
+          const glm::mat4 world_to_screen = projection * walk.get_lookat();
+          const glm::mat4 screen_to_world = glm::inverse( world_to_screen );
+          skyview_froxel(
+            rec,
+            gct::skyview_froxel_param()
+              .set_world_to_screen( world_to_screen )
+              .set_screen_to_world( screen_to_world )
+              .set_sigma_ma( skyview_param.sigma_ma )
+              .set_sigma_oa( skyview_param.sigma_oa )
+              .set_sigma_rs( skyview_param.sigma_rs )
+              .set_sigma_ms( skyview_param.sigma_ms )
+              .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+              .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+              .set_ground_radius( skyview_param.ground_radius )
+              .set_top_radius( skyview_param.top_radius )
+              .set_g( skyview_param.g )
+              .set_altitude( skyview_param.ground_radius + skyview_param.altitude )
+              .set_light_energy( walk.get_light_energy() )
+          );
+          rec.compute_barrier(
+            {},
+            {
+              skyview_froxel.get_output()->get_factory()
             }
           );
         }
@@ -582,6 +657,7 @@ int main( int argc, const char *argv[] ) {
 
     glfwPollEvents();
     ++current_frame;
+    ++frame_counter;
     walk.reset_flags();
     current_frame %= framebuffers.size();
   }

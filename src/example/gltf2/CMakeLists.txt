@@ -25,6 +25,12 @@ add_shader( gltf2 shadow/world.frag )
 add_shader( gltf2 shadow/world.geom )
 add_shader( gltf2 shadow/world.vert )
 
+add_shader( gltf2 skyview/generate_transmittance.comp )
+add_shader( gltf2 skyview/generate_skyview.comp )
+add_shader( gltf2 skyview/generate_multiscat.comp )
+add_shader( gltf2 skyview/froxel.comp )
+add_shader( gltf2 skyview/render_froxel.comp )
+
 add_shader( gltf2 geometry/tangent.frag )
 add_shader( gltf2 geometry/tangent.vert )
 add_shader( gltf2 geometry/world.frag )

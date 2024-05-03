@@ -244,6 +244,10 @@ add_library( gct SHARED
   gct/epipolar_mesh.cpp
   gct/epipolar_light_scattering_create_info.cpp
   gct/epipolar_light_scattering.cpp
+  gct/skyview_create_info.cpp
+  gct/skyview.cpp
+  gct/skyview_froxel_create_info.cpp
+  gct/skyview_froxel.cpp
   gct/generate_projection_matrix.cpp
   gct/projection_matrix.cpp
   gct/particle_buffer.cpp

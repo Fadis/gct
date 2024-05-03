@@ -41,7 +41,6 @@ void main()  {
   const vec2 latitude_longitude = world_to_llar( eye_dir );
   const vec2 skyview_texcoord = vec2(
     ( latitude_longitude.y + pi ) / ( 2.0 * pi ),
-    //( latitude_longitude.x + pi/2.0 ) / pi
     1.0 - skyview_latitude_to_texcoord( latitude_longitude.x )
   );
   const vec3 skyview_color = /*vec3( skyview_texcoord, 0.0 );*/ texture( skyview, skyview_texcoord ).rgb;
@@ -53,8 +52,7 @@ void main()  {
   const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
   const vec3 total = (
     has_surface ?
-    //( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb ) :
-    scat.rgb :
+    ( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb ) :
     skyview_color
   ) / tone.scale;
   const vec3 bloom = max( total - vec3( 1.0, 1.0, 1.0 ), vec3( 0.0, 0.0, 0.0 ) );
