@@ -248,6 +248,8 @@ add_library( gct SHARED
   gct/skyview.cpp
   gct/skyview_froxel_create_info.cpp
   gct/skyview_froxel.cpp
+  gct/occlusion_query_create_info.cpp
+  gct/occlusion_query.cpp
   gct/generate_projection_matrix.cpp
   gct/projection_matrix.cpp
   gct/particle_buffer.cpp

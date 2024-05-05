@@ -50,10 +50,12 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( inst_pool_size )
   LIBGCT_SETTER( descriptor_set_id )
   LIBGCT_SETTER( texture_descriptor_set_id )
+  scene_graph_create_info();
   scene_graph_create_info &add_master_shader( const std::filesystem::path &p ) {
     master_shader.push_back( p );
     return *this;
   }
+  scene_graph_create_info &set_shader( const std::filesystem::path &p );
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
@@ -90,6 +92,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( primitive_resource_index )
   LIBGCT_SETTER( instance_resource_index )
   LIBGCT_SETTER( visibility )
+  LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
@@ -108,6 +111,7 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > primitive_resource_index;
   std::shared_ptr< buffer_pool > instance_resource_index;
   std::shared_ptr< buffer_pool > visibility;
+  std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::shared_ptr< descriptor_set_t > descriptor_set;
@@ -292,10 +296,13 @@ public:
   }
   void to_json( nlohmann::json& ) const;
   void operator()( command_buffer_recorder_t& ) const;
+  void rotate_visibility( command_buffer_recorder_t &rec ) const;
 private:
   std::shared_ptr< scene_graph_create_info > props;
   std::shared_ptr< node > root_node;
   std::shared_ptr< scene_graph_resource > resource;
+  mutable bool clear_visibility = true;
+  bool use_conditional = false;
 };
 
 void to_json( nlohmann::json &, const scene_graph& );

@@ -42,7 +42,7 @@ namespace gct {
       std::uint32_t count,
       vk::QueryResultFlags flags
     ) const {
-      std::vector< T > temp( count );
+      std::vector< T > temp( count, 1 );
       get_result(
         offset,
         count,
@@ -53,6 +53,8 @@ namespace gct {
       );
       return temp;
     }
+    void reset() const;
+    void reset( std::uint32_t, std::uint32_t ) const;
     template< typename T >
     std::vector< T > get_result(
       vk::QueryResultFlags flags
@@ -66,7 +68,7 @@ namespace gct {
     template< typename T >
     std::vector< T > get_result() const {
       return get_result< T >(
-        vk::QueryResultFlags( 0 )
+        vk::QueryResultFlags( vk::QueryResultFlagBits::eWait | vk::QueryResultFlagBits::ePartial )
       );
     }
   private:

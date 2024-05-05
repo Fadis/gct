@@ -83,6 +83,11 @@ float area( const aabb4 &a );
 bool operator&&( const aabb3 &l, const aabb3 &r );
 bool operator&&( const aabb4 &l, const aabb4 &r );
 
+aabb4 create_cube_area(
+  glm::vec3 pos,
+  float size
+);
+
 }
 
 #endif

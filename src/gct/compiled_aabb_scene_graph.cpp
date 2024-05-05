@@ -15,6 +15,7 @@
 #include <gct/graphics_pipeline.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/get_device.hpp>
+#include <gct/shader_flag.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/compiled_aabb_scene_graph.hpp>
 namespace gct::scene_graph {
@@ -54,9 +55,24 @@ void compiled_aabb_scene_graph::create_pipeline(
   auto dsci = pipeline_dynamic_state_create_info_t()
     .add_dynamic_state( vk::DynamicState::eViewport )
     .add_dynamic_state( vk::DynamicState::eScissor );
-  const auto cbsci = pipeline_color_blend_state_create_info_t();
-  pipeline_depth_stencil_state_create_info_t dssci;
+  auto cbsci = pipeline_color_blend_state_create_info_t();
   const auto &attachments = props.render_pass->get_props().get_attachment();
+  for( const auto &attachment: attachments ) {
+    if( format_to_aspect( attachment.format ) == vk::ImageAspectFlagBits::eColor ) {
+      cbsci
+        .add_attachment(
+          vk::PipelineColorBlendAttachmentState()
+            .setBlendEnable( VK_FALSE )
+            .setColorWriteMask(
+              vk::ColorComponentFlagBits::eR |
+              vk::ColorComponentFlagBits::eG |
+              vk::ColorComponentFlagBits::eB |
+              vk::ColorComponentFlagBits::eA
+            )
+        );
+    }
+  }
+  pipeline_depth_stencil_state_create_info_t dssci;
   if( std::find_if(
     attachments.begin(),
     attachments.end(),
@@ -100,8 +116,12 @@ void compiled_aabb_scene_graph::create_pipeline(
       .add_dynamic_state( vk::DynamicState::eDepthCompareOpExt );
 #endif
   }
+  const auto shader = load_shader( graph );
   pipeline = graph.get_props().pipeline_cache->get_pipeline(
     graphics_pipeline_create_info_t()
+      .add_stage( get_shader( shader, shader_flag_t::vertex ) )
+      .add_stage( get_shader( shader, shader_flag_t::geometry ) )
+      .add_stage( get_shader( shader, shader_flag_t::fragment ) )
       .set_vertex_input( vertex_input )
       .set_input_assembly(
         pipeline_input_assembly_state_create_info_t()
@@ -145,10 +165,8 @@ void compiled_aabb_scene_graph::create_pipeline(
       .rebuild_chain()
   );
 }
-void compiled_aabb_scene_graph::create_vertex_buffer(
-  const scene_graph &graph
-) {
-  vertex_buffer_desc = graph.get_resource()->vertex->allocate(
+void compiled_aabb_scene_graph::create_vertex_buffer() {
+  vertex_buffer_desc = resource->vertex->allocate(
     std::vector< glm::vec4 >{ { 0.f, 0.f, 0.f, 1.f } }
   );
 }
@@ -157,7 +175,7 @@ compiled_aabb_scene_graph::compiled_aabb_scene_graph(
   const compiled_aabb_scene_graph_create_info &ci,
   const scene_graph &graph
 ) : props( ci ), resource( graph.get_resource() ) {
-  create_vertex_buffer( graph );
+  create_vertex_buffer();
   create_pipeline( graph );
   load_graph( graph );
 }
@@ -173,7 +191,7 @@ void compiled_aabb_scene_graph::load_graph(
 
 void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   rec.bind_pipeline( pipeline );
-  auto b = vertex->get( vertex_buffer_desc );
+  auto b = resource->vertex->get( vertex_buffer_desc );
   rec->bindVertexBuffers( 0u, { **b }, { 0u } );
 }
 

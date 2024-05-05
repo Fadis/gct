@@ -63,6 +63,7 @@ public:
   const instance_list_create_info &get_props() const {
     return props;
   }
+  std::vector< resource_pair > get_last_visible_list() const;
 private:
   instance_list_create_info props;
   std::shared_ptr< scene_graph_resource > resource;

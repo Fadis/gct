@@ -143,47 +143,8 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
-      .set_matrix(
-        gct::matrix_pool_create_info()
-          .set_read_shader( CMAKE_CURRENT_BINARY_DIR "/matrix_pool/read.comp.spv" )
-          .set_write_shader( CMAKE_CURRENT_BINARY_DIR "/matrix_pool/write.comp.spv" )
-          .set_update_shader( CMAKE_CURRENT_BINARY_DIR "/matrix_pool/update.comp.spv" )
-      )
-      .set_aabb(
-        gct::aabb_pool_create_info()
-          .set_read_shader( CMAKE_CURRENT_BINARY_DIR "/aabb_pool/read.comp.spv" )
-          .set_write_shader( CMAKE_CURRENT_BINARY_DIR "/aabb_pool/write.comp.spv" )
-          .set_update_shader( CMAKE_CURRENT_BINARY_DIR "/aabb_pool/update.comp.spv" )
-      )
-      .set_primitive_resource_index(
-        gct::buffer_pool_create_info()
-          .set_read_shader( CMAKE_CURRENT_BINARY_DIR "/primitive_resource_index_pool/read.comp.spv" )
-          .set_write_shader( CMAKE_CURRENT_BINARY_DIR "/primitive_resource_index_pool/write.comp.spv" )
-          .set_buffer_name( "primitive_resource_index" )
-      )
-      .set_instance_resource_index(
-        gct::buffer_pool_create_info()
-          .set_read_shader( CMAKE_CURRENT_BINARY_DIR "/instance_resource_index_pool/read.comp.spv" )
-          .set_write_shader( CMAKE_CURRENT_BINARY_DIR "/instance_resource_index_pool/write.comp.spv" )
-          .set_buffer_name( "instance_resource_index" )
-      )
-      .set_visibility(
-        gct::buffer_pool_create_info()
-          .set_read_shader( CMAKE_CURRENT_BINARY_DIR "/visibility_pool/read.comp.spv" )
-          .set_write_shader( CMAKE_CURRENT_BINARY_DIR "/visibility_pool/write.comp.spv" )
-          .set_buffer_name( "visibility" )
-      )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR )
   );
-
-  /*gct::test_matrix_pool(
-    *sg->get_resource()->matrix,
-    *res.queue
-  );
-  gct::test_aabb_pool(
-    *sg->get_resource()->matrix,
-    *sg->get_resource()->aabb,
-    *res.queue
-  );*/
 
   gct::gltf::gltf2 doc(
     gct::gltf::gltf2_create_info()
@@ -434,14 +395,6 @@ int main( int argc, const char *argv[] ) {
   std::cout << scene_aabb->max[ 0 ] << " " << scene_aabb->max[ 1 ] << " " << scene_aabb->max[ 2 ] << std::endl;
 
   gct::glfw_walk walk( center, scale, res.walk_state_filename );
-  /*const auto point_lights = gct::gltf::get_point_lights(
-    doc.node,
-    doc.point_light
-  );
-  if( !point_lights.empty() ) {
-    walk.set_light_energy( point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100 );
-    walk.set_light_pos( point_lights[ 0 ].location );
-  }*/
   res.window->set_on_key(
     [&walk]( gct::glfw_window &p, int key, int scancode, int action, int mods ) {
       walk( p, key, scancode, action, mods );
@@ -478,8 +431,8 @@ int main( int argc, const char *argv[] ) {
       std::vector< gct::scene_graph::resource_pair > visible;
       gct::frustum_culling(
         projection,
-        walk.get_lookat(),
-        walk.get_camera_pos(),
+        walk.get_camera()[ 0 ].get_lookat(),
+        walk.get_camera()[ 0 ].get_camera_pos(),
         full_kd,
         visible,
         8u

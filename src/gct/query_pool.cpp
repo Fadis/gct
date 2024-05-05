@@ -36,6 +36,15 @@ void query_pool_t::get_result(
     vk::detail::throwResultException( vk::Result( result ), "query_pool_t::get_result : getQueryPoolResults failed" );
   }
 }
+void query_pool_t::reset(
+  std::uint32_t offset,
+  std::uint32_t count
+) const {
+  get_device( *this )->resetQueryPool( *handle, offset, count );
+}
+void query_pool_t::reset() const {
+  reset( 0u, props.get_basic().queryCount );
+}
 void to_json( nlohmann::json &dest, const query_pool_t &src ) {
   dest = nlohmann::json::object();
   dest[ "props" ] = src.get_props();

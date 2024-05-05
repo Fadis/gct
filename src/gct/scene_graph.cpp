@@ -2,6 +2,7 @@
 #include <vulkan2json/IndexType.hpp>
 #include <vulkan2json/VertexInputBindingDescription.hpp>
 #include <vulkan2json/VertexInputAttributeDescription.hpp>
+#include <gct/instance.hpp>
 #include <gct/device.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/descriptor_pool_create_info.hpp>
@@ -264,11 +265,28 @@ void node::to_json( nlohmann::json &dest ) const {
 void to_json( nlohmann::json &dest, const node &src ) {
   src.to_json( dest );
 }
+scene_graph_create_info::scene_graph_create_info() {
+  primitive_resource_index.set_buffer_name( "primitive_resource_index" );
+  instance_resource_index.set_buffer_name( "instance_resource_index" );
+  visibility.set_buffer_name( "visibility" );  
+}
+
+scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
+  matrix.set_shader( dir / "matrix_pool" );
+  aabb.set_shader( dir / "aabb_pool" );
+  primitive_resource_index.set_shader( dir / "primitive_resource_index_pool" );
+  instance_resource_index.set_shader( dir / "instance_resource_index_pool" );
+  visibility.set_shader( dir / "visibility_pool" );
+  return *this;
+}
 
 scene_graph::scene_graph(
   const scene_graph_create_info &ci
 ) : props( new scene_graph_create_info( ci ) ), resource( new scene_graph_resource( ci ) ) {
   auto &device = get_device( *props->allocator );
+
+  use_conditional = device.get_factory()->get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_factory()->get_activated_extensions().end();
+
   std::vector< descriptor_set_layout_create_info_t > descriptor_set_layout_create_info;
   bool indexing = false;
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
@@ -386,6 +404,13 @@ scene_graph::scene_graph(
       .set_descriptor_pool( props->descriptor_pool )
       .set_pipeline_cache( props->pipeline_cache )
   ) );
+  resource->last_visibility = props->allocator->create_mappable_buffer(
+    resource->visibility->get_buffer()->get_props().get_basic().size,
+    use_conditional ?
+      vk::BufferUsageFlagBits::eStorageBuffer|
+      vk::BufferUsageFlagBits::eConditionalRenderingEXT :
+      vk::BufferUsageFlagBits::eStorageBuffer
+  );
   resource->vertex.reset( new vertex_buffer_pool(
     vertex_buffer_pool_create_info( props->vertex )
       .set_allocator( props->allocator )
@@ -408,6 +433,7 @@ scene_graph::scene_graph(
       0.0f, 0.0f, 0.0f, 1.0f
     )
   ) );
+  clear_visibility = true;
 }
 
 void scene_graph::to_json( nlohmann::json &dest ) const {
@@ -428,6 +454,13 @@ void to_json( nlohmann::json &dest, const scene_graph &src ) {
 }
 
 void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
+  if( clear_visibility ) {
+    rec.fill( resource->visibility->get_buffer(), 0u );
+    rec.barrier( {
+      resource->visibility->get_buffer()
+    }, {} );
+    clear_visibility = false;
+  }
   (*resource->matrix)( rec );
   rec.compute_barrier( { resource->matrix->get_buffer() }, {} );
   (*resource->aabb)( rec );
@@ -441,6 +474,22 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   rec.compute_to_graphics_barrier( {
     resource->matrix->get_buffer(),
     resource->aabb->get_buffer(),
+    resource->visibility->get_buffer()
+  }, {} );
+}
+
+void scene_graph::rotate_visibility( command_buffer_recorder_t &rec ) const {
+  rec.barrier( {
+    resource->visibility->get_buffer()
+  }, {} );
+  rec.copy( resource->visibility->get_buffer(), resource->last_visibility->get_buffer() );
+  rec.barrier( {
+    resource->visibility->get_buffer(),
+    resource->last_visibility->get_buffer()
+  }, {} );
+  rec.sync_to_host( resource->last_visibility );
+  rec.fill( resource->visibility->get_buffer(), 0u );
+  rec.barrier( {
     resource->visibility->get_buffer()
   }, {} );
 }

@@ -7,6 +7,24 @@
 
 namespace gct {
 
+buffer_pool_create_info &buffer_pool_create_info::add_resource(
+  const named_resource &n
+) {
+  resources.push_back( n );
+  return *this;
+}
+buffer_pool_create_info &buffer_pool_create_info::clear_resource() {
+  resources.clear();
+  return *this;
+}
+buffer_pool_create_info &buffer_pool_create_info::set_shader(
+  const std::filesystem::path &dir
+) {
+  set_write_shader( dir / "write.comp.spv" );
+  set_read_shader( dir / "read.comp.spv" );
+  return *this;
+}
+
 void to_json( nlohmann::json &dest, const buffer_pool_create_info &src ) {
   dest = nlohmann::json::object();
   if( src.allocator ) {

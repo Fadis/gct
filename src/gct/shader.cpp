@@ -16,7 +16,15 @@ namespace gct {
     created_from< device_t >( device ),
     props( create_info ) {
     props.rebuild_chain();
-    handle = (*device)->createShaderEXTUnique( props.get_basic() );
+    auto handle_maybe = (*device)->createShaderEXTUnique( props.get_basic() );
+    if( handle_maybe.result != vk::Result::eSuccess ) {
+#if VK_HEADER_VERSION >= 256
+      vk::detail::throwResultException( vk::Result( handle_maybe.result ), "createShaderExtUnique failed." );
+#else
+      vk::throwResultException( vk::Result( handle_maybe.result ), "createShaderExtUnique failed." );
+#endif
+    }
+    handle = std::move( handle_maybe.value );
   }
   void to_json( nlohmann::json &root, const shader_t &v ) {
     root = nlohmann::json::object();

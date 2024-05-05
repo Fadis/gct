@@ -52,6 +52,7 @@ subdirs(
   fom
   sky
   gltf2
+  occlusion_query
   radix_sort
   onesweep
 )

@@ -85,7 +85,9 @@ common_sample_setup::common_sample_setup(
     );
   }
   instance.reset( new instance_t( ici ) );
-  instance->abort_on_validation_failure( vm[ "debug" ].as< bool >() );
+  if( vm[ "validation" ].as< bool >() ) {
+    instance->abort_on_validation_failure( vm[ "debug" ].as< bool >() );
+  }
 
   auto groups = instance->get_physical_devices( {} );
   auto selected = groups[ 0 ].with_extensions( device_extensions );

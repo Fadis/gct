@@ -68,14 +68,11 @@ private:
   void create_pipeline(
     const scene_graph &graph
   );
-  void create_vertex_buffer(
-    const scene_graph &graph
-  );
+  void create_vertex_buffer();
   compiled_aabb_scene_graph_create_info props;
   std::shared_ptr< scene_graph_resource > resource;
   vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_desc;
   std::shared_ptr< graphics_pipeline_t > pipeline;
-  std::shared_ptr< vertex_buffer_pool > vertex;
   std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, compiled_aabb_primitive > prim;
 };
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/instance_list.hpp>
@@ -85,13 +86,15 @@ void instance_list::operator()(
     resource->texture_descriptor_set
   );
   compiled( rec );
+  unsigned int query_index = 0u;
   for( const auto &i: draw_list ) {
     const auto inst = resource->inst.get( i.inst );
     auto p = prim.find( i.prim );
     if( inst && p != prim.end() ) {
       const auto query_token = rec.begin(
         query_pool,
-        *inst->descriptor.visibility,
+        query_index,
+        //*inst->descriptor.visibility,
         vk::QueryControlFlags( 0 )
       );
       push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *i.inst;
@@ -105,8 +108,36 @@ void instance_list::operator()(
       );
       (p->second)( rec );
     }
+    ++query_index;
   }
 }
+std::vector< resource_pair > instance_list::get_last_visible_list() const {
+  std::unordered_set< std::uint32_t > visible_instance_ids;
+  std::vector< std::uint32_t > visibility;
+  {
+    const auto mapped = resource->last_visibility->map< std::uint32_t >();
+    visibility.assign( mapped.begin(), mapped.end() );
+  }
+  std::uint32_t instance_id = 0u;
+  for( const auto &v: visibility ) {
+    if( v ) {
+      visible_instance_ids.insert( instance_id );
+    }
+    ++instance_id;
+  }
+  std::vector< resource_pair > visible_instance;
+  for( const auto &v: draw_list ) {
+    const auto inst = resource->inst.get( v.inst );
+    if( inst ) {
+      if( visible_instance_ids.find( *inst->descriptor.visibility ) != visible_instance_ids.end() ) {
+        visible_instance.push_back( v );
+      }
+    }
+  }
+  return visible_instance;
+}
+
+
 void append(
   const scene_graph_resource &resource,
   const std::vector< resource_pair > &l,

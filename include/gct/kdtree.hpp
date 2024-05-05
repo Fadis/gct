@@ -33,6 +33,8 @@ public:
     std::shared_ptr< node_type > greater_equal;
     std::shared_ptr< leaf_type > leaf;
   };
+  kdtree() {}
+  kdtree( const std::shared_ptr< node_type > &node ) : root( node ) {}
   void insert( const aabb &r, const T &v ) {
     insert( root, axis_type::x_begin, r, v );
   }
@@ -78,7 +80,47 @@ public:
     get( root, temp );
     return temp;
   }
+  void clear() {
+    root.reset();
+  }
+  bool empty() const {
+    return !root;
+  }
+  std::pair< kdtree, kdtree > subtree() const {
+    if( !root ) {
+      return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
+    }
+    const auto branch = get_branch( root );
+    if( !branch ) {
+      return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
+    }
+    if( branch->leaf ) {
+      return std::pair< kdtree, kdtree >{ kdtree( branch->leaf ), kdtree() };
+    }
+    if( branch->less_than && branch->greater_equal ) {
+      return std::pair< kdtree, kdtree >{ kdtree( branch->less_than ), kdtree( branch->greater_equal ) };
+    }
+    return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
+  }
 private:
+  const std::shared_ptr< node_type > &get_branch( const std::shared_ptr< node_type > &node ) const {
+    if( !node ) {
+      return node;
+    }
+    if( node.leaf ) {
+      return node;
+    }
+    if( node.less_than && node.greater_equal ) {
+      return node;
+    }
+    if( node.less_than ) {
+      return get_branch( node.less_than );
+    }
+    if( node.greater_equal ) {
+      return get_branch( node.greater_equal );
+    }
+    return node;
+  }
   std::string to_string( const std::shared_ptr< node_type > &node ) const {
     if( !node ) return "null";
     else if( node->leaf ) {

@@ -191,6 +191,7 @@
       root[ #node ] = nlohmann::json::object(); \
     } \
     if( !v.get_ ## name ().empty() ) { \
+      root[ #node ][ #json_name ] = nlohmann::json::array(); \
       for( const auto &e: v.get_ ## name () ) { \
         root[ #node ][ #json_name ].push_back( gct::detail::unwrap_pointer< nlohmann::json >( e ) ); \
       } \

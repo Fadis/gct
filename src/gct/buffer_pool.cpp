@@ -196,6 +196,7 @@ void buffer_pool::state_type::clear( const buffer_descriptor &desc ) {
   }
 }
 
+
 void buffer_pool::state_type::clear() {
   if( execution_pending ) {
     throw exception::runtime_error( "buffer_pool::state_type::set : last execution is not completed yet", __FILE__, __LINE__ );
@@ -206,6 +207,11 @@ void buffer_pool::state_type::clear() {
     }
   }
 }
+
+std::uint32_t buffer_pool::state_type::size() const {
+  return index_allocator.get_tail();
+}
+
 
 void buffer_pool::state_type::get( const buffer_descriptor &desc, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) > &cb ) {
   if( execution_pending ) {
@@ -263,7 +269,13 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
 {
   const auto reflection = shader_module_reflection_t( std::filesystem::path( props.write_shader ) );
   aligned_size = reflection.get_member_pointer( props.buffer_name, props.layout ).get_stride();
-  buffer = props.allocator->create_buffer( aligned_size * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
+  buffer = props.allocator->create_buffer(
+    aligned_size * props.max_buffer_count,
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
   staging_buffer = props.allocator->create_buffer( aligned_size * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
@@ -402,6 +414,11 @@ void buffer_pool::clear( const buffer_descriptor &desc ) {
 void buffer_pool::clear() {
   std::lock_guard< std::mutex > lock( state->guard );
   state->clear();
+}
+
+std::uint32_t buffer_pool::size() const {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->size();
 }
 
 void buffer_pool::get( const buffer_descriptor &desc, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) > &cb ) {

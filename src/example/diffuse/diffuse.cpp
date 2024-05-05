@@ -90,9 +90,9 @@ int main() {
             .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
             .setApiVersion( VK_MAKE_VERSION( 1, 2, 0 ) )
         )
-        .add_layer(
+        /*.add_layer(
           "VK_LAYER_KHRONOS_validation"
-        )
+        )*/
         .add_extension(
           iext.begin(), iext.end()
         )

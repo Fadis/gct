@@ -224,59 +224,37 @@ namespace gct {
   glfw::~glfw() {
     glfwTerminate();
   }
-  glfw_walk::glfw_walk(
+
+  glfw_walk_camera::glfw_walk_camera(
     const glm::vec3 &center_,
     float scale_
-  ) : 
+  ) :
     center( center_ ),
-    scale( scale_ ),
-    end_( false ) {
+    scale( scale_ ) {
     camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
     camera_angle_h = 0;
     camera_angle_v = 0;
     speed = 0.01f*scale;
-    light_pos = glm::vec3{ 0.0f*scale, -0.5f*scale, 0.0f*scale };
-    light_energy = 5.0f;
     camera_direction = glm::vec3{ std::sin( camera_angle_h ) * std::cos( camera_angle_v ), std::sin( camera_angle_v ), -std::cos( camera_angle_h ) * std::cos( camera_angle_v ) };
     lookat = glm::lookAt(
       camera_pos,
       camera_pos + camera_direction,
       glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
     );
+    camera_pos_changed = true;
   }
-  glfw_walk::glfw_walk(
-    const glm::vec3 &center_,
-    float scale_,
-    const std::string &filename
-  ) : 
-    center( center_ ),
-    scale( scale_ ),
-    end_( false ) {
-    camera_pos = center + glm::vec3{ 0.f, 0.f, 1.0f*scale };
-    camera_angle_h = 0;
-    camera_angle_v = 0;
-    light_pos = glm::vec3{ 0.0f*scale, -0.5f*scale, 0.0f*scale };
-    light_energy = 5.0f;
-    speed = 0.01f*scale;
-    if( std::filesystem::is_regular_file( filename ) ) {
-      try {
-        std::ifstream fd( filename );
-        from_json( nlohmann::json::parse( fd ) );
-      }
-      catch(...) {}
-    }
+  void glfw_walk_camera::set_camera_pos( const glm::vec3 &v ) {
+    camera_pos = v;
+    lookat = glm::lookAt(
+      camera_pos,
+      camera_pos + camera_direction,
+      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
+    );
+    camera_pos_changed = true;
   }
-  void glfw_walk::operator()( glfw_window&, int key, int scancode, int action, int mods ) {
-    if( action == GLFW_RELEASE )
-      pressed_keys.erase( key );
-    else if( action == GLFW_PRESS )
-      pressed_keys.insert( key );
-  }
-  void glfw_walk::reset_flags() {
-    camera_pos_changed = false;
-    light_pos_changed = false;
-  }
-  void glfw_walk::operator++() {
+  void glfw_walk_camera::update(
+    const std::unordered_set< int > &pressed_keys
+  ) {
     if( pressed_keys.find( GLFW_KEY_A ) != pressed_keys.end() ) {
       camera_angle_h -= 0.02 * M_PI/2;
       camera_pos_changed = true;
@@ -314,6 +292,152 @@ namespace gct {
       camera_pos[ 1 ] += speed;
       camera_pos_changed = true;
     }
+    lookat = glm::lookAt(
+      camera_pos,
+      camera_pos + camera_direction,
+      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
+    );
+  }
+  void glfw_walk_camera::reset_flags() {
+    camera_pos_changed = false;
+  }
+  void glfw_walk_camera::to_json( nlohmann::json &dest ) const {
+    dest = nlohmann::json::object();
+    dest[ "center" ] = nlohmann::json::array();
+    dest[ "center" ].push_back( center[ 0 ] );
+    dest[ "center" ].push_back( center[ 1 ] );
+    dest[ "center" ].push_back( center[ 2 ] );
+    dest[ "scale" ] = scale;
+    dest[ "speed" ] = speed;
+    dest[ "camera_pos" ] = nlohmann::json::array();
+    dest[ "camera_pos" ].push_back( camera_pos[ 0 ] );
+    dest[ "camera_pos" ].push_back( camera_pos[ 1 ] );
+    dest[ "camera_pos" ].push_back( camera_pos[ 2 ] );
+    dest[ "camera_angle_h" ] = camera_angle_h;
+    dest[ "camera_angle_v" ] = camera_angle_v;
+  }
+  void glfw_walk_camera::from_json( const nlohmann::json &src ) {
+    if( !src.is_object() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "center" ) == src.end() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( !src[ "center" ].is_array() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src[ "center" ].size() != 3 )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "camera_pos" ) == src.end() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( !src[ "camera_pos" ].is_array() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src[ "camera_pos" ].size() != 3 )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "camera_angle_h" ) == src.end() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "camera_angle_v" ) == src.end() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    center = glm::vec3( src[ "center" ][ 0 ], src[ "center" ][ 1 ], src[ "center" ][ 2 ] );
+    scale = src[ "scale" ];
+    speed = src[ "speed" ];
+    camera_pos = glm::vec3( src[ "camera_pos" ][ 0 ], src[ "camera_pos" ][ 1 ], src[ "camera_pos" ][ 2 ] );
+    camera_angle_h = src[ "camera_angle_h" ];
+    camera_angle_v = src[ "camera_angle_v" ];
+    camera_direction = glm::vec3{ std::sin( camera_angle_h ) * std::cos( camera_angle_v ), std::sin( camera_angle_v ), -std::cos( camera_angle_h ) * std::cos( camera_angle_v ) };
+    lookat = glm::lookAt(
+      camera_pos,
+      camera_pos + camera_direction,
+      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
+    );
+    camera_pos_changed = true;
+  }
+  void to_json( nlohmann::json &dest, const glfw_walk_camera &src ) {
+    src.to_json( dest );
+  }
+  void from_json( const nlohmann::json &src, glfw_walk_camera &dest ) {
+    dest.from_json( src );
+  }
+
+  glfw_walk::glfw_walk(
+    const glm::vec3 &center_,
+    float scale_
+  ) : 
+    center( center_ ),
+    scale( scale_ ),
+    end_( false ) {
+    speed = 0.01f*scale;
+    light_pos = glm::vec3{ 0.0f*scale, -0.5f*scale, 0.0f*scale };
+    light_energy = 5.0f;
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+  }
+  glfw_walk::glfw_walk(
+    const glm::vec3 &center_,
+    float scale_,
+    const std::string &filename
+  ) : 
+    center( center_ ),
+    scale( scale_ ),
+    end_( false ) {
+    light_pos = glm::vec3{ 0.0f*scale, -0.5f*scale, 0.0f*scale };
+    light_energy = 5.0f;
+    if( std::filesystem::is_regular_file( filename ) ) {
+      try {
+        std::ifstream fd( filename );
+        from_json( nlohmann::json::parse( fd ) );
+      }
+      catch(...) {}
+    }
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+  }
+  void glfw_walk::operator()( glfw_window&, int key, int scancode, int action, int mods ) {
+    if( action == GLFW_RELEASE )
+      pressed_keys.erase( key );
+    else if( action == GLFW_PRESS )
+      pressed_keys.insert( key );
+  }
+  void glfw_walk::reset_flags() {
+    for( auto &c: camera ) {
+      c.reset_flags();
+    }
+    light_pos_changed = false;
+  }
+  const glm::vec3 &glfw_walk::get_camera_pos() const {
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    return camera[ current_camera ].get_camera_pos();
+  }
+  const glm::mat4 &glfw_walk::get_lookat() const {
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    return camera[ current_camera ].get_lookat();
+  }
+  void glfw_walk::operator++() {
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    camera[ current_camera ].update( pressed_keys );
+    bool camera_changed = false;
+    bool old_grid = grid;
+    if( pressed_keys.find( GLFW_KEY_1 ) != pressed_keys.end() ) {
+      current_camera = 0;
+      camera_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_2 ) != pressed_keys.end() ) {
+      current_camera = 1;
+      camera_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_3 ) != pressed_keys.end() ) {
+      current_camera = 2;
+      camera_changed = true;
+    }
+    if( pressed_keys.find( GLFW_KEY_4 ) != pressed_keys.end() ) {
+      current_camera = 3;
+      camera_changed = true;
+    }
     if( pressed_keys.find( GLFW_KEY_J ) != pressed_keys.end() ) {
       light_pos[ 0 ] -= speed;
       light_pos_changed = true;
@@ -346,42 +470,54 @@ namespace gct {
       light_energy -= 0.05f;
       light_pos_changed = true;
     }
+    if( pressed_keys.find( GLFW_KEY_G ) != pressed_keys.end() ) {
+      grid = true;
+    }
+    else {
+      grid = false;
+    }
     if( pressed_keys.find( GLFW_KEY_ESCAPE ) != pressed_keys.end() )
       end_ = true;
-    lookat = glm::lookAt(
-      camera_pos,
-      camera_pos + camera_direction,
-      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
-    );
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    if( camera_changed ) {
+      camera[ current_camera ].touch();
+    }
+    grid_changed = grid != old_grid;
   }
   void glfw_walk::set_camera_pos( const glm::vec3 &v ) {
-    camera_pos = v;
-    lookat = glm::lookAt(
-      camera_pos,
-      camera_pos + camera_direction,
-      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
-    );
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    camera[ current_camera ].set_camera_pos( v );
+  }
+  bool glfw_walk::camera_moved() const {
+    if( current_camera >= camera.size() ) {
+      camera.resize( current_camera + 1u, glfw_walk_camera( center, scale ) );
+    }
+    return camera[ current_camera ].camera_moved();
   }
   void glfw_walk::to_json( nlohmann::json &dest ) {
     dest = nlohmann::json::object();
+    dest[ "camera" ] = camera;
     dest[ "center" ] = nlohmann::json::array();
     dest[ "center" ].push_back( center[ 0 ] );
     dest[ "center" ].push_back( center[ 1 ] );
     dest[ "center" ].push_back( center[ 2 ] );
-    dest[ "camera_pos" ] = nlohmann::json::array();
-    dest[ "camera_pos" ].push_back( camera_pos[ 0 ] );
-    dest[ "camera_pos" ].push_back( camera_pos[ 1 ] );
-    dest[ "camera_pos" ].push_back( camera_pos[ 2 ] );
-    dest[ "camera_angle_h" ] = camera_angle_h;
-    dest[ "camera_angle_v" ] = camera_angle_v;
+    dest[ "scale" ] = scale;
+    dest[ "speed" ] = speed;
     dest[ "light_pos" ] = nlohmann::json::array();
     dest[ "light_pos" ].push_back( light_pos[ 0 ] );
     dest[ "light_pos" ].push_back( light_pos[ 1 ] );
     dest[ "light_pos" ].push_back( light_pos[ 2 ] );
     dest[ "light_energy" ] = light_energy;
+    dest[ "grid" ] = grid;
   }
   void glfw_walk::from_json( const nlohmann::json &src ) {
     if( !src.is_object() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "speed" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
     if( src.find( "center" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
@@ -389,15 +525,9 @@ namespace gct {
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
     if( src[ "center" ].size() != 3 )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
-    if( src.find( "camera_pos" ) == src.end() )
+    if( src.find( "scale" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
-    if( !src[ "camera_pos" ].is_array() )
-      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
-    if( src[ "camera_pos" ].size() != 3 )
-      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
-    if( src.find( "camera_angle_h" ) == src.end() )
-      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
-    if( src.find( "camera_angle_v" ) == src.end() )
+    if( src.find( "camera" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
     if( src.find( "light_pos" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
@@ -407,18 +537,21 @@ namespace gct {
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
     if( src.find( "light_energy" ) == src.end() )
       throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    if( src.find( "grid" ) == src.end() )
+      throw gct::exception::runtime_error( "incompatible walk data", __FILE__, __LINE__ );
+    camera.clear();
+    for( const auto &c: src[ "camera" ] ) {
+      glfw_walk_camera temp( center, scale );
+      temp.from_json( c );
+      camera.push_back( temp );
+    }
     center = glm::vec3( src[ "center" ][ 0 ], src[ "center" ][ 1 ], src[ "center" ][ 2 ] );
-    camera_pos = glm::vec3( src[ "camera_pos" ][ 0 ], src[ "camera_pos" ][ 1 ], src[ "camera_pos" ][ 2 ] );
-    camera_angle_h = src[ "camera_angle_h" ];
-    camera_angle_v = src[ "camera_angle_v" ];
+    scale = src[ "scale" ];
+    speed = src[ "speed" ];
     light_pos = glm::vec3( src[ "light_pos" ][ 0 ], src[ "light_pos" ][ 1 ], src[ "light_pos" ][ 2 ] );
     light_energy = src[ "light_energy" ];
-    camera_direction = glm::vec3{ std::sin( camera_angle_h ) * std::cos( camera_angle_v ), std::sin( camera_angle_v ), -std::cos( camera_angle_h ) * std::cos( camera_angle_v ) };
-    lookat = glm::lookAt(
-      camera_pos,
-      camera_pos + camera_direction,
-      glm::vec3{ 0.f, camera_pos[ 1 ] + 100.f*scale, 0.f }
-    );
+    grid = src[ "grid" ];
+    light_pos_changed = true;
   }
   void glfw_walk::save( const std::string &filename ) {
     nlohmann::json root;

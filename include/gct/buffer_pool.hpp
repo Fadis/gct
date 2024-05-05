@@ -70,6 +70,7 @@ public:
     return state->buffer;
   }
   spv_member_pointer get_member_pointer() const;
+  std::uint32_t size() const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const buffer_pool_create_info& );
@@ -84,6 +85,7 @@ private:
     void get( const buffer_descriptor&, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) >& );
     bool is_valid( const buffer_descriptor& ) const;
     void flush( command_buffer_recorder_t& );
+    std::uint32_t size() const;
     std::vector< request_range > build_update_request_range();
     buffer_pool_create_info props;
     std::vector< buffer_state_type > buffer_state;

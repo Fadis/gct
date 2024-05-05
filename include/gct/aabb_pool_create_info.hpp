@@ -33,6 +33,13 @@ struct aabb_pool_create_info {
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( update_request_buffer_name )
   LIBGCT_SETTER( resources )
+  aabb_pool_create_info &add_resource(
+    const named_resource &n
+  );
+  aabb_pool_create_info &clear_resource();
+  aabb_pool_create_info &set_shader(
+    const std::filesystem::path &
+  );
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;

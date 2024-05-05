@@ -8,6 +8,25 @@
 
 namespace gct {
 
+aabb_pool_create_info &aabb_pool_create_info::add_resource(
+  const named_resource &n
+) {
+  resources.push_back( n );
+  return *this;
+}
+aabb_pool_create_info &aabb_pool_create_info::clear_resource() {
+  resources.clear();
+  return *this;
+}
+aabb_pool_create_info &aabb_pool_create_info::set_shader(
+  const std::filesystem::path &dir
+) {
+  set_write_shader( dir / "write.comp.spv" );
+  set_read_shader( dir / "read.comp.spv" );
+  set_update_shader( dir / "update.comp.spv" );
+  return *this;
+}
+
 void to_json( nlohmann::json &dest, const aabb_pool_create_info &src ) {
   dest = nlohmann::json::object();
   if( src.allocator ) {

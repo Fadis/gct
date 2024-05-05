@@ -298,5 +298,15 @@ aabb4 get_unit_aabb4() {
   return temp;
 }
 
+aabb4 create_cube_area(
+  glm::vec3 pos,
+  float size
+) {
+  gct::aabb4 near_box;
+  near_box.min = glm::vec4( pos - glm::vec3( size, size, size ), 1.f );
+  near_box.max = glm::vec4( pos + glm::vec3( size, size, size ), 1.f );
+  return near_box;
+}
+
 }
 

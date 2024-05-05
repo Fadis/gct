@@ -35,6 +35,9 @@ namespace gct {
     std::uint32_t get_stride() const {
       return stride;
     }
+    const std::shared_ptr< pipeline_layout_t > get_layout() const {
+      return pipeline_layout;
+    }
   private:
     graphics_create_info props;
     std::shared_ptr< descriptor_set_layout_t > descriptor_set_layout;
