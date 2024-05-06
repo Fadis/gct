@@ -53,6 +53,7 @@ subdirs(
   sky
   gltf2
   occlusion_query
+  chc
   radix_sort
   onesweep
 )

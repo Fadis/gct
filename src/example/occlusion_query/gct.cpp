@@ -498,13 +498,12 @@ int main( int argc, const char *argv[] ) {
         gct::frustum_culling(
           projection,
           walk.get_camera()[ 0 ].get_lookat(),
-          walk.get_camera_pos(),
           full_kd,
           visible,
           8u
         );
         view_il->get_draw_list() = visible;
-        if( last_visible.empty() ) {
+        if( last_visible_il->get_draw_list().empty() ) {
           last_visible_il->get_draw_list() = view_il->get_draw_list();
         }
       }
@@ -722,8 +721,10 @@ int main( int argc, const char *argv[] ) {
       command_buffer->execute_and_wait();
     }
     if( walk.get_current_camera() == 0 ) {
-      last_visible = view_il->get_last_visible_list();
-      last_visible_il->get_draw_list() = last_visible;
+      if( walk.light_moved() || walk.camera_moved() ) {
+        last_visible = view_il->get_last_visible_list();
+        last_visible_il->get_draw_list() = std::move( last_visible );
+      }
     }
     auto &sync = framebuffers[ current_frame ];
     if( !sync.initial ) {

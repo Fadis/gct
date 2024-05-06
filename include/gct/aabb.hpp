@@ -14,7 +14,9 @@ namespace gct {
 struct aabb4;
 
 struct aabb {
-  aabb() {}
+  aabb() :
+    min( 0.f, 0.f, 0.f ),
+    max( 0.f, 0.f, 0.f ) {}
   aabb( const glm::vec3 &min_, const glm::vec3 &max_ );
   aabb( const aabb4& );
   aabb( const aabb& ) = default;
@@ -28,7 +30,9 @@ struct aabb {
 using aabb3 = aabb;
 
 struct aabb4 {
-  aabb4() {}
+  aabb4() :
+    min( 0.f, 0.f, 0.f, 1.f ),
+    max( 0.f, 0.f, 0.f, 1.f ) {}
   aabb4( const glm::vec4 &min_, const glm::vec4 &max_ );
   aabb4( const aabb& );
   aabb4( const aabb4& ) = default;

@@ -80,11 +80,20 @@ public:
     get( root, temp );
     return temp;
   }
+  void get( std::vector< std::shared_ptr< leaf_type > > &dest ) const {
+    get( root, dest );
+  }
+  void get( std::vector< T > &dest ) const {
+    get( root, dest );
+  }
   void clear() {
     root.reset();
   }
   bool empty() const {
     return !root;
+  }
+  bool is_leaf() const {
+    return root && root->leaf;
   }
   std::pair< kdtree, kdtree > subtree() const {
     if( !root ) {
@@ -95,29 +104,33 @@ public:
       return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
     }
     if( branch->leaf ) {
-      return std::pair< kdtree, kdtree >{ kdtree( branch->leaf ), kdtree() };
+      return std::pair< kdtree, kdtree >{ kdtree( branch ), kdtree() };
     }
     if( branch->less_than && branch->greater_equal ) {
       return std::pair< kdtree, kdtree >{ kdtree( branch->less_than ), kdtree( branch->greater_equal ) };
     }
     return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
   }
+  aabb4 get_aabb() const {
+    if( !root ) return aabb4{};
+    return root->range;
+  }
 private:
   const std::shared_ptr< node_type > &get_branch( const std::shared_ptr< node_type > &node ) const {
     if( !node ) {
       return node;
     }
-    if( node.leaf ) {
+    if( node->leaf ) {
       return node;
     }
-    if( node.less_than && node.greater_equal ) {
+    if( node->less_than && node->greater_equal ) {
       return node;
     }
-    if( node.less_than ) {
-      return get_branch( node.less_than );
+    if( node->less_than ) {
+      return get_branch( node->less_than );
     }
-    if( node.greater_equal ) {
-      return get_branch( node.greater_equal );
+    if( node->greater_equal ) {
+      return get_branch( node->greater_equal );
     }
     return node;
   }
@@ -515,6 +528,24 @@ private:
       }
     }
   }
+  static void get(
+    const std::shared_ptr< node_type > &node,
+    std::vector< T > &dest
+  ) {
+    if( !node ) {
+    }
+    else if( node->leaf ) {
+      dest.insert( dest.end(), node->leaf->value.begin(), node->leaf->value.end() );
+    }
+    else {
+      if( node->less_than ) {
+        get( node->less_than, dest );
+      }
+      if( node->greater_equal ) {
+        get( node->greater_equal, dest );
+      }
+    }
+  }
   std::shared_ptr< node_type > root;
 };
 
@@ -539,7 +570,6 @@ template< typename T >
 void frustum_culling(
   const glm::mat4 &projection,
   const glm::mat4 &camera,
-  const glm::vec3 &camera_pos,
   const kdtree< T > &src,
   std::vector< T > &dest,
   std::uint32_t m

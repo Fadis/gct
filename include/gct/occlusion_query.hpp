@@ -34,6 +34,9 @@ public:
   std::uint32_t operator[]( occlusion_query_id_t ) const;
   void reset();
   const std::shared_ptr< image_view_t > &get_image_view() const;
+  bool empty() const {
+    return pushed.empty();
+  }
 private:
   occlusion_query_create_info props;
   std::shared_ptr< gbuffer > output;
