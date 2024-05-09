@@ -54,6 +54,7 @@ subdirs(
   gltf2
   occlusion_query
   chc
+  nohc
   radix_sort
   onesweep
 )

@@ -28,6 +28,11 @@ std::vector< aabb > get_clipping_aabb(
   std::uint32_t m
 );
 
+std::vector< std::pair< glm::vec4, glm::vec4 > > get_clippling_area_edges(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+);
+
 bool is_visible(
   const glm::mat4 &matrix,
   const aabb &box

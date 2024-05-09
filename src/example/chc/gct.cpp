@@ -59,6 +59,7 @@
 #include <gct/skyview.hpp>
 #include <gct/skyview_froxel.hpp>
 #include <gct/occlusion_query.hpp>
+#include <gct/chc.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
 struct fb_resources_t {
@@ -199,7 +200,7 @@ int main( int argc, const char *argv[] ) {
     *sg
   );
   
-  auto occlusion_query = gct::occlusion_query< gct::kdtree< gct::scene_graph::resource_pair > >(
+  auto occlusion_query = gct::occlusion_query< gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > >(
     gct::occlusion_query_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
@@ -223,7 +224,7 @@ int main( int argc, const char *argv[] ) {
       .set_query( false )
   );
 
-  gct::kdtree< gct::scene_graph::resource_pair > full_kd;
+  gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > full_kd;
   gct::scene_graph::append(
     *il->get_resource(),
     il->get_draw_list(),
@@ -468,7 +469,8 @@ int main( int argc, const char *argv[] ) {
 
   std::vector< gct::scene_graph::resource_pair > last_visible;
   std::vector< gct::scene_graph::resource_pair > visible;
-  gct::kdtree< gct::scene_graph::resource_pair > visible_tree;
+  gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > visible_tree;
+  std::unordered_set< unsigned int > visible_set;
   std::uint32_t current_frame = 0u;
   std::uint32_t frame_counter = 0u;
   while( !walk.end() ) {
@@ -503,7 +505,7 @@ int main( int argc, const char *argv[] ) {
           visible_tree,
           8u
         );
-        //view_il->get_draw_list() = visible;
+        gct::scene_graph::mark_node_visibility( visible_tree, visible_set );
         if( last_visible_il->get_draw_list().empty() ) {
           visible.clear();
           visible_tree.get( visible );
@@ -540,44 +542,19 @@ int main( int argc, const char *argv[] ) {
     // occlusion query
     if( walk.get_current_camera() == 0 ) {
       if( walk.camera_moved() ) {
-        const auto near_box = gct::create_cube_area( walk.get_camera()[ 0 ].get_camera_pos(), znear*2 );
         visible.clear();
-        std::vector< gct::kdtree< gct::scene_graph::resource_pair > > candidate{ visible_tree };
-        std::vector< gct::kdtree< gct::scene_graph::resource_pair > > not_occluded{};
-        unsigned int cycle = 0u;
+        std::vector< gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > > candidate;
+        gct::scene_graph::get_visibility_unknown_node( { visible_tree }, candidate, visible );
         while( !candidate.empty() ) {
-          occlusion_query.reset();
-          for( const auto &c: candidate ) {
-            const auto aabb = c.get_aabb();
-            if( aabb && near_box ) {
-              if( c.is_leaf() ) {
-                c.get( visible );
-              }
-              else {
-                const auto [lt,ge] = c.subtree();
-                if( !lt.empty() ) {
-                  not_occluded.push_back( lt );
-                }
-                if( !ge.empty() ) {
-                  not_occluded.push_back( ge );
-                }
-              }
-            }
-            else {
-              if( c.is_leaf() ) {
-                c.get( visible );
-              }
-              else {
-                const auto [lt,ge] = c.subtree();
-                if( !lt.empty() ) {
-                  occlusion_query.push( lt.get_aabb(), lt );
-                }
-                if( !ge.empty() ) {
-                  occlusion_query.push( ge.get_aabb(), ge );
-                }
-              }
-            }
-          }
+          std::vector< gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > > not_occluded;
+          gct::scene_graph::chc(
+            candidate,
+            not_occluded,
+            visible,
+            occlusion_query,
+            walk.get_camera()[ 0 ].get_camera_pos(),
+            znear*2
+          );
           if( !occlusion_query.empty() ) {
             {
               {
@@ -585,8 +562,6 @@ int main( int argc, const char *argv[] ) {
                 rec.copy( camera0_data, global_uniform );
                 rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
                 rec.barrier( {}, { depth_gbuffer.get_depth_views()[ 0 ]->get_factory() } );
-                rec->setViewport( 0, 1, &gbuffer.get_viewport() );
-                rec->setScissor( 0, 1, &gbuffer.get_scissor() );
                 rec->setCullMode( vk::CullModeFlagBits::eBack );
                 rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
                 occlusion_query( rec, projection * walk.get_camera()[ 0 ].get_lookat() );
@@ -596,9 +571,9 @@ int main( int argc, const char *argv[] ) {
             occlusion_query.get_result( not_occluded );
           }
           candidate = std::move( not_occluded );
-          not_occluded.clear();
         }
-        view_il->get_draw_list() = visible;
+        view_il->get_draw_list() = std::move( visible );
+        visible.clear();
       }
     }
     // rendering
@@ -609,17 +584,21 @@ int main( int argc, const char *argv[] ) {
         if( walk.camera_moved() || walk.get_grid_changed() || frame_counter <= 2u ) {
           draw_aabb.reset();
           if( walk.get_grid() ) {
+            std::unordered_set< unsigned int > visible_set;
             for( std::uint32_t i = 0u; i != view_il->get_draw_list().size(); ++i ) {
-              const auto inst = view_il->get_resource()->inst.get( view_il->get_draw_list()[ i ].inst );
-              draw_aabb.push( inst->initial_world_aabb );
+              visible_set.insert( *view_il->get_draw_list()[ i ].inst ); 
+            }
+            for( std::uint32_t i = 0u; i != il->get_draw_list().size(); ++i ) {
+              if( visible_set.find( *il->get_draw_list()[ i ].inst ) == visible_set.end() ) {
+                const auto inst = il->get_resource()->inst.get( il->get_draw_list()[ i ].inst );
+                draw_aabb.push( inst->initial_world_aabb );
+              }
             }
           }
           if( walk.get_grid() || walk.get_grid_changed() || frame_counter <= 2u ) {
             rec.copy( global_data, global_uniform );
             rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
             rec.barrier( {}, { depth_gbuffer.get_depth_views()[ 0 ]->get_factory() } );
-            rec->setViewport( 0, 1, &gbuffer.get_viewport() );
-            rec->setScissor( 0, 1, &gbuffer.get_scissor() );
             rec->setCullMode( vk::CullModeFlagBits::eBack );
             rec->setDepthCompareOp( vk::CompareOp::eAlways );
             rec.convert_image(
@@ -757,7 +736,9 @@ int main( int argc, const char *argv[] ) {
     if( walk.get_current_camera() == 0 ) {
       if( walk.light_moved() || walk.camera_moved() ) {
         last_visible = view_il->get_last_visible_list();
+        gct::scene_graph::build_visible_set( last_visible, visible_set );
         last_visible_il->get_draw_list() = std::move( last_visible );
+        last_visible.clear();
       }
     }
     auto &sync = framebuffers[ current_frame ];

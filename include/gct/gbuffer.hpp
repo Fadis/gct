@@ -5,6 +5,7 @@
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
+#include <gct/created_from.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/gbuffer_create_info.hpp>
 

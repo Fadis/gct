@@ -49,6 +49,7 @@ public:
   vertex_buffer_pool( const vertex_buffer_pool_create_info & );
   vertex_buffer_descriptor allocate( const std::string &filename );
   vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
+  vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
   std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
   std::vector< std::shared_ptr< buffer_t > > get();
   const vertex_buffer_pool_create_info &get_props() const { return state->props; }
@@ -61,6 +62,7 @@ private:
     void release_index( vertex_buffer_index_t );
     vertex_buffer_descriptor allocate( const std::string &filename );
     vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
+    vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
     std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
     std::vector< std::shared_ptr< buffer_t > > get();
     void release( vertex_buffer_index_t );

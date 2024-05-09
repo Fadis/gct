@@ -54,9 +54,7 @@ basic_occlusion_query::basic_occlusion_query(
         vk::VertexInputBindingDescription()
           .setInputRate( vk::VertexInputRate::eVertex )
       );
-  auto dsci = pipeline_dynamic_state_create_info_t()
-    .add_dynamic_state( vk::DynamicState::eViewport )
-    .add_dynamic_state( vk::DynamicState::eScissor );
+  auto dsci = pipeline_dynamic_state_create_info_t();
   auto cbsci = pipeline_color_blend_state_create_info_t();
   const auto &attachments = output->get_render_pass()->get_props().get_attachment();
   for( const auto &attachment: attachments ) {
@@ -135,11 +133,8 @@ basic_occlusion_query::basic_occlusion_query(
           )
           .set_viewport(
             pipeline_viewport_state_create_info_t()
-              .set_basic(
-                vk::PipelineViewportStateCreateInfo()
-                  .setViewportCount( 1 )
-                  .setScissorCount( 1 )
-              )
+              .add_viewport( output->get_viewport() )
+              .add_scissor( output->get_scissor() )
           )
           .set_rasterization(
             pipeline_rasterization_state_create_info_t()
@@ -188,6 +183,10 @@ basic_occlusion_query::basic_occlusion_query(
   }
 }
 occlusion_query_id_t basic_occlusion_query::push( const aabb4 &a ) {
+  pushed.push_back( { a } );
+  return pushed.size() - 1u;
+}
+occlusion_query_id_t basic_occlusion_query::push( const std::vector< aabb4 > &a ) {
   pushed.push_back( a );
   return pushed.size() - 1u;
 }
@@ -214,30 +213,34 @@ void basic_occlusion_query::operator()(
           i,
           vk::QueryControlFlags( 0 )
         );
-        const auto pc = push_constant_type()
-          .set_matrix( matrix )
-          .set_aabb( pushed[ i ] );
-        rec->pushConstants(
-          **pipeline->get_layout(),
-          pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-          0u,
-          sizeof( push_constant_type ),
-          &pc
-        );
-        rec->draw( 1u, 1u, 0u, 0u );
+        for( const auto &a: pushed[ i ] ) {
+          const auto pc = push_constant_type()
+            .set_matrix( matrix )
+            .set_aabb( a );
+          rec->pushConstants(
+            **pipeline->get_layout(),
+            pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+            0u,
+            sizeof( push_constant_type ),
+            &pc
+          );
+          rec->draw( 1u, 1u, 0u, 0u );
+        }
       }
       else {
-        const auto pc = push_constant_type()
-          .set_matrix( matrix )
-          .set_aabb( pushed[ i ] );
-        rec->pushConstants(
-          **pipeline->get_layout(),
-          pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-          0u,
-          sizeof( push_constant_type ),
-          &pc
-        );
-        rec->draw( 1u, 1u, 0u, 0u );
+        for( const auto &a: pushed[ i ] ) {
+          const auto pc = push_constant_type()
+            .set_matrix( matrix )
+            .set_aabb( a );
+          rec->pushConstants(
+            **pipeline->get_layout(),
+            pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+            0u,
+            sizeof( push_constant_type ),
+            &pc
+          );
+          rec->draw( 1u, 1u, 0u, 0u );
+        }
       }
     }
   }

@@ -59,6 +59,45 @@ std::vector< aabb > get_clipping_aabb(
   return temp;
 }
 
+std::vector< std::pair< glm::vec4, glm::vec4 > > get_clippling_area_edges(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+) {
+  const auto inv = glm::inverse( projection_matrix * camera_matrix );
+  std::array< glm::vec4, 8u > vertex{
+    inv * glm::vec4( -1.f, -1.f, -1.f, 1.f ),
+    inv * glm::vec4( -1.f, -1.f,  1.f, 1.f ),
+    inv * glm::vec4( -1.f,  1.f, -1.f, 1.f ),
+    inv * glm::vec4( -1.f,  1.f,  1.f, 1.f ),
+    inv * glm::vec4(  1.f, -1.f, -1.f, 1.f ),
+    inv * glm::vec4(  1.f, -1.f,  1.f, 1.f ),
+    inv * glm::vec4(  1.f,  1.f, -1.f, 1.f ),
+    inv * glm::vec4(  1.f,  1.f,  1.f, 1.f )
+  };
+  for( auto &v: vertex ) {
+    v /= v.w;
+  }
+  const std::array< unsigned int, 24 > indices{
+    0,1,
+    1,5,
+    5,4,
+    4,0,
+    2,3,
+    3,7,
+    7,6,
+    6,2,
+    0,2,
+    4,6,
+    1,3,
+    5,7
+  };
+  std::vector< std::pair< glm::vec4, glm::vec4 > > edges;
+  for( unsigned int i = 0u; i != 12u; ++i ) {
+    edges.push_back( std::make_pair( vertex[ indices[ i * 2u ] ], vertex[ indices[ i * 2u + 1u ] ] ) );
+  }
+  return edges;
+}
+
 bool is_visible(
   const glm::mat4 &matrix,
   const aabb &box

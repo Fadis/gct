@@ -128,10 +128,6 @@ struct scene_graph_resource {
 void to_json( nlohmann::json&, const scene_graph_resource& );
 
 struct primitive_descriptor {
-  LIBGCT_SETTER( vertex_buffer )
-  LIBGCT_SETTER( vertex_buffer_offset )
-  LIBGCT_SETTER( index_buffer )
-  LIBGCT_SETTER( index_buffer_offset )
   LIBGCT_SETTER( base_color_texture )
   LIBGCT_SETTER( metallic_roughness_texture )
   LIBGCT_SETTER( normal_texture )
@@ -139,10 +135,6 @@ struct primitive_descriptor {
   LIBGCT_SETTER( emissive_texture )
   LIBGCT_SETTER( resource_index )
   LIBGCT_SETTER( aabb )
-  std::vector< vertex_buffer_pool::vertex_buffer_descriptor > vertex_buffer;
-  std::vector< vk::DeviceSize > vertex_buffer_offset;
-  vertex_buffer_pool::vertex_buffer_descriptor index_buffer;
-  vk::DeviceSize index_buffer_offset = 0u;
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
   texture_pool::texture_descriptor normal_texture;

@@ -115,7 +115,7 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
 
 void to_json( nlohmann::json &dest, const primitive_descriptor &src ) {
   dest = nlohmann::json::object();
-  dest[ "vertex_buffer" ] = nlohmann::json::array();
+  /*dest[ "vertex_buffer" ] = nlohmann::json::array();
   for( const auto &v: src.vertex_buffer ) {
     dest[ "vertex_buffer" ].push_back( *v );
   }
@@ -126,7 +126,7 @@ void to_json( nlohmann::json &dest, const primitive_descriptor &src ) {
   if( src.index_buffer ) {
     dest[ "index_buffer" ] = *src.index_buffer;
   }
-  dest[ "index_buffer_offset" ] = src.index_buffer_offset;
+  dest[ "index_buffer_offset" ] = src.index_buffer_offset;*/
   if( src.base_color_texture ) {
     dest[ "base_color_texture" ] = *src.base_color_texture;
   }

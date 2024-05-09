@@ -25,7 +25,9 @@ namespace gct::gltf {
 gltf2::gltf2(
   const gltf2_create_info &ci
 ) : props( ci ) {
-  fx::gltf::Document doc = fx::gltf::LoadFromText( props.filename.string() );
+  fx::gltf::ReadQuotas quota;
+  quota.MaxBufferByteLength = 1024 * 1024 * 1024;
+  fx::gltf::Document doc = fx::gltf::LoadFromText( props.filename.string(), quota );
   cd = props.filename.parent_path();
   load_buffer( doc );
   load_sampler( doc );

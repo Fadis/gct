@@ -10,7 +10,9 @@
 
 namespace gct {
 
-template< typename T >
+struct empty_data {};
+
+template< typename T, typename U = empty_data >
 class kdtree {
   enum class axis_type {
     x_begin,
@@ -32,14 +34,16 @@ public:
     std::shared_ptr< node_type > less_than;
     std::shared_ptr< node_type > greater_equal;
     std::shared_ptr< leaf_type > leaf;
+    std::weak_ptr< node_type > parent;
+    U value;
   };
   kdtree() {}
   kdtree( const std::shared_ptr< node_type > &node ) : root( node ) {}
   void insert( const aabb &r, const T &v ) {
-    insert( root, axis_type::x_begin, r, v );
+    insert( std::shared_ptr< node_type >(), root, axis_type::x_begin, r, v );
   }
   void insert( const aabb &r, const std::vector< T > &v ) {
-    insert( root, axis_type::x_begin, r, v );
+    insert( std::shared_ptr< node_type >(), root, axis_type::x_begin, r, v );
   }
   std::vector< std::shared_ptr< leaf_type > > find( const aabb &r ) const {
     std::vector< std::shared_ptr< leaf_type > > temp;
@@ -115,7 +119,58 @@ public:
     if( !root ) return aabb4{};
     return root->range;
   }
+  std::size_t size() const {
+    return get_size( root );
+  }
+  std::unordered_set< aabb > get_all_aabb() const {
+    std::unordered_set< aabb > temp;
+    get_all_aabb( root, temp );
+    return temp;
+  }
+  void for_each_node( const std::function< void( std::shared_ptr< node_type >& ) > &f ) {
+    for_each_node( root, f, false );
+  }
+  void for_each_leaf_node( const std::function< void( std::shared_ptr< node_type >& ) > &f ) {
+    for_each_node( root, f, true );
+  }
+  const node_type &get_root_node() const {
+    return *root;
+  }
+  node_type &get_root_node() {
+    return *root;
+  }
+  void get_leaf_node(
+    std::vector< kdtree > &dest
+  ) {
+    for_each_node( root, [&]( std::shared_ptr< node_type > &v ) { dest.push_back( kdtree{ v } ); }, true );
+  }
 private:
+  static void for_each_node(
+    std::shared_ptr< node_type > &node,
+    const std::function< void( std::shared_ptr< node_type >& ) > &f,
+    bool leaf_only
+  ) {
+    if( !node ) return;
+    for_each_node( node->less_than, f, leaf_only );
+    for_each_node( node->greater_equal, f, leaf_only );
+    if( node->leaf || !leaf_only ) {
+      f( node );
+    }
+  }
+  static void get_all_aabb(
+    const std::shared_ptr< node_type > &node,
+    const std::unordered_set< aabb > &v
+  ) {
+    if( !node ) return;
+    v.insert( node->range );
+    get_all_aabb( node->less_than, v );
+    get_all_aabb( node->greater_equal, v );
+  }
+  static std::size_t get_size( const std::shared_ptr< node_type > &node ) {
+    if( !node ) return 0u;
+    if( node->leaf ) return node->leaf->value.size();
+    return get_size( node->less_than ) + get_size( node->greater_equal );
+  }
   const std::shared_ptr< node_type > &get_branch( const std::shared_ptr< node_type > &node ) const {
     if( !node ) {
       return node;
@@ -183,7 +238,11 @@ private:
       throw -1;
     }
   }
-  void insert( std::shared_ptr< node_type > &node, axis_type axis, const aabb &r, const T &v ) {
+  void insert(
+    const std::shared_ptr< node_type > &parent,
+    std::shared_ptr< node_type > &node,
+    axis_type axis, const aabb &r, const T &v
+  ) {
     if( !node ) {
       auto new_leaf = std::make_shared< leaf_type >();
       new_leaf->range = r;
@@ -192,6 +251,7 @@ private:
       new_node->axis = axis;
       new_node->range = r;
       new_node->leaf = new_leaf;
+      new_node->parent = parent;
       node = new_node;
     }
     else if( node->leaf ) {
@@ -208,8 +268,10 @@ private:
           new_node->threshold = threshold;
           new_node->range = node->range | r;
           new_node->greater_equal = node;
+          new_node->greater_equal->parent = new_node;
           new_node->greater_equal->axis = next( axis );
-          insert( new_node->greater_equal, next( axis ), r, v );
+          new_node->parent = parent;
+          insert( new_node, new_node->greater_equal, next( axis ), r, v );
           node = new_node;
         }
       }
@@ -219,14 +281,17 @@ private:
         new_node->axis = axis;
         new_node->threshold = threshold;
         new_node->range = node->range | r;
+        new_node->parent = parent;
         if( existing_axis_value < threshold ) {
           new_node->less_than = node;
+          new_node->less_than->parent = new_node;
           new_node->less_than->axis = next( new_node->less_than->axis );
-          insert( new_node->greater_equal, next( axis ), r, v );
+          insert( new_node, new_node->greater_equal, next( axis ), r, v );
         }
         else {
-          insert( new_node->less_than, next( axis ), r, v );
+          insert( new_node, new_node->less_than, next( axis ), r, v );
           new_node->greater_equal = node;
+          new_node->greater_equal->parent = new_node;
           new_node->greater_equal->axis = next( new_node->greater_equal->axis );
         }
         node = new_node;
@@ -236,14 +301,18 @@ private:
       const auto axis_value = get_axis_value( node->axis, r );
       node->range = node->range | r;
       if( axis_value < node->threshold ) {
-        insert( node->less_than, next( axis ), r, v );
+        insert( node, node->less_than, next( axis ), r, v );
       }
       else {
-        insert( node->greater_equal, next( axis ), r, v );
+        insert( node, node->greater_equal, next( axis ), r, v );
       }
     }
   }
-  void insert( std::shared_ptr< node_type > &node, axis_type axis, const aabb &r, const std::vector< T > &v ) {
+  void insert(
+    const std::shared_ptr< node_type > &parent,
+    std::shared_ptr< node_type > &node,
+    axis_type axis, const aabb &r, const std::vector< T > &v
+  ) {
     if( !node ) {
       auto new_leaf = std::make_shared< leaf_type >();
       new_leaf->range = r;
@@ -252,6 +321,7 @@ private:
       new_node->axis = axis;
       new_node->range = r;
       new_node->leaf = new_leaf;
+      new_node->parent = parent;
       node = new_node;
     }
     else if( node->leaf ) {
@@ -268,8 +338,10 @@ private:
           new_node->threshold = threshold;
           new_node->range = node->range | r;
           new_node->greater_equal = node;
+          new_node->greater_equal->parent = new_node;
           new_node->greater_equal->axis = next( axis );
-          insert( new_node->greater_equal, next( axis ), r, v );
+          insert( new_node, new_node->greater_equal, next( axis ), r, v );
+          new_node->parent = parent;
           node = new_node;
         }
       }
@@ -279,14 +351,17 @@ private:
         new_node->axis = axis;
         new_node->threshold = threshold;
         new_node->range = node->range | r;
+        new_node->parent = parent;
         if( existing_axis_value < threshold ) {
           new_node->less_than = node;
+          new_node->less_than->parent = new_node;
           new_node->less_than->axis = next( new_node->less_than->axis );
-          insert( new_node->greater_equal, next( axis ), r, v );
+          insert( new_node, new_node->greater_equal, next( axis ), r, v );
         }
         else {
-          insert( new_node->less_than, next( axis ), r, v );
+          insert( new_node, new_node->less_than, next( axis ), r, v );
           new_node->greater_equal = node;
+          new_node->greater_equal->parent = new_node;
           new_node->greater_equal->axis = next( new_node->greater_equal->axis );
         }
         node = new_node;
@@ -296,10 +371,10 @@ private:
       const auto axis_value = get_axis_value( node->axis, r );
       node->range = node->range | r;
       if( axis_value < node->threshold ) {
-        insert( node->less_than, next( axis ), r, v );
+        insert( node, node->less_than, next( axis ), r, v );
       }
       else {
-        insert( node->greater_equal, next( axis ), r, v );
+        insert( node, node->greater_equal, next( axis ), r, v );
       }
     }
   }
@@ -549,33 +624,37 @@ private:
   std::shared_ptr< node_type > root;
 };
 
-template< typename T >
+template< typename T, typename U >
 void frustum_culling(
   const glm::mat4 &projection,
   const glm::mat4 &camera,
-  const kdtree< T > &src,
-  kdtree< T > &dest,
+  const kdtree< T, U > &src,
+  kdtree< T, U > &dest,
   std::uint32_t m
 ) {
   const auto proj_cam = projection * camera;  
+  std::unordered_set< typename kdtree< T, U >::leaf_type* > known;
   for( const auto &view: get_clipping_aabb( projection, camera, m ) ) {
     for( const auto box: src.find( view ) ) {
-      if( is_visible( proj_cam, box->range ) ) {
-        dest.insert( box->range, box->value );
+      if( known.find( box.get() ) == known.end() ) {
+        if( is_visible( proj_cam, box->range ) ) {
+          dest.insert( box->range, box->value );
+          known.insert( box.get() );
+        }
       }
     }
   }
 }
-template< typename T >
+template< typename T, typename U >
 void frustum_culling(
   const glm::mat4 &projection,
   const glm::mat4 &camera,
-  const kdtree< T > &src,
+  const kdtree< T, U > &src,
   std::vector< T > &dest,
   std::uint32_t m
 ) {
   const auto proj_cam = projection * camera;
-  std::unordered_set< typename kdtree< T >::leaf_type* > known;
+  std::unordered_set< typename kdtree< T, U >::leaf_type* > known;
   for( const auto &view: get_clipping_aabb( projection, camera, m ) ) {
     for( const auto box: src.find( view ) ) {
       if( known.find( box.get() ) == known.end() ) {
@@ -587,8 +666,6 @@ void frustum_culling(
     }
   }
 }
-
-
 
 bool test_kdtree();
 

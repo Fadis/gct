@@ -29,6 +29,7 @@ namespace gct {
     unsigned int mip_width = image->get_props().get_basic().extent.width;
     unsigned int mip_height = image->get_props().get_basic().extent.height;
     unsigned int mipmap_count = get_pot( image->get_props().get_basic().extent.width );
+    if( mipmap_count == 0u ) return;
     convert_image(
       image,
       0, 1, 0, image->get_props().get_basic().arrayLayers,

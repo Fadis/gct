@@ -41,6 +41,9 @@ add_shader( chc aabb/world.frag )
 add_shader( chc aabb/world.geom )
 add_shader( chc aabb/world.vert )
 
+add_shader( chc line/world.frag )
+add_shader( chc line/world.vert )
+
 add_shader( chc aabb_test/world.frag )
 add_shader( chc aabb_test/world.geom )
 add_shader( chc aabb_test/world.vert )

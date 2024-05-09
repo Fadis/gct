@@ -5,6 +5,8 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/instance_list.hpp>
 #include <gct/query_pool.hpp>
+#include <gct/aabb.hpp>
+#include <gct/kdtree.hpp>
 
 namespace gct::scene_graph {
 
@@ -171,6 +173,32 @@ void instance_list::to_json( nlohmann::json &dest ) const {
 
 void to_json( nlohmann::json &dest, const instance_list &src ) {
   src.to_json( dest );
+}
+
+void sort_by_distance(
+  std::vector< kdtree< resource_pair > > &dest,
+  const glm::vec3 &eye_pos
+) {
+  std::vector< std::pair< float, kdtree< resource_pair > > > temp;
+  temp.reserve( dest.size() );
+  std::transform(
+    dest.begin(),
+    dest.end(),
+    std::back_inserter( temp ),
+    [&]( const auto &v ) {
+      const auto distance = glm::distance( get_center( v.get_aabb() ), eye_pos );
+      return std::make_pair( distance, v );
+    }
+  );
+  std::sort( temp.begin(), temp.end(), []( const auto &l, const auto &r ) { return l.first < r.first; } );
+  std::transform(
+    temp.begin(),
+    temp.end(),
+    dest.begin(),
+    [&]( const auto &v ) {
+      return v.second;
+    }
+  );
 }
 
 }

@@ -308,5 +308,30 @@ aabb4 create_cube_area(
   return near_box;
 }
 
+glm::vec3 get_center( const aabb3 &a ) {
+  return glm::vec3(
+    ( a.min.x + a.max.x ) / 2.f,
+    ( a.min.y + a.max.y ) / 2.f,
+    ( a.min.z + a.max.z ) / 2.f
+  );
+}
+
+float surface_area( const aabb3 &a ) {
+  return 
+    ( a.max.x - a.min.x ) * ( a.max.y - a.min.y ) * 2.f +
+    ( a.max.y - a.min.y ) * ( a.max.z - a.min.z ) * 2.f +
+    ( a.max.z - a.min.z ) * ( a.max.x - a.min.x ) * 2.f;
+}
+float surface_area( const aabb4 &a ) {
+  return surface_area( aabb3( a ) );
+}
+
+float get_inner_sphere_radius( const aabb3 &a ) {
+  return std::min( std::min( a.max.x - a.min.x, a.max.y - a.min.y ), a.max.z - a.min.z );
+}
+float get_inner_sphere_radius( const aabb4 &a ) {
+  return get_inner_sphere_radius( aabb3( a ) );
+}
+
 }
 

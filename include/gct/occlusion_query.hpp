@@ -27,6 +27,7 @@ public:
     const occlusion_query_create_info&
   );
   occlusion_query_id_t push( const aabb4& );
+  occlusion_query_id_t push( const std::vector< aabb4 >& );
   void operator()(
     command_buffer_recorder_t&,
     const glm::mat4 &matrix
@@ -41,7 +42,7 @@ private:
   occlusion_query_create_info props;
   std::shared_ptr< gbuffer > output;
   std::shared_ptr< graphics > pipeline;
-  std::vector< aabb4 > pushed;
+  std::vector< std::vector< aabb4 > > pushed;
   mutable std::vector< std::uint32_t > result;
   std::shared_ptr< mappable_buffer_t > point_mesh;
   std::shared_ptr< query_pool_t > query_pool;
@@ -56,6 +57,9 @@ public:
     const occlusion_query_create_info &ci
   ) : basic_occlusion_query( ci ) {}
   void push( const aabb4 &box, const T &v ) {
+    occ_map.emplace( basic_occlusion_query::push( box ), v );
+  }
+  void push( const std::vector< aabb4 > &box, const T &v ) {
     occ_map.emplace( basic_occlusion_query::push( box ), v );
   }
   void get_result(

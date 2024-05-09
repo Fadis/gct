@@ -248,8 +248,12 @@ add_library( gct SHARED
   gct/skyview.cpp
   gct/skyview_froxel_create_info.cpp
   gct/skyview_froxel.cpp
+  gct/nohc_benchmark_create_info.cpp
+  gct/nohc_benchmark.cpp
   gct/occlusion_query_create_info.cpp
   gct/occlusion_query.cpp
+  gct/draw_line_create_info.cpp
+  gct/draw_line.cpp
   gct/generate_projection_matrix.cpp
   gct/projection_matrix.cpp
   gct/particle_buffer.cpp
@@ -289,6 +293,8 @@ add_library( gct SHARED
   gct/compiled_scene_graph.cpp
   gct/compiled_aabb_scene_graph.cpp
   gct/instance_list.cpp
+  gct/chc.cpp
+  gct/nohc.cpp
   gct/similar_matrix.cpp
   gct/generate_random_matrix.cpp
   gct/gltf2.cpp

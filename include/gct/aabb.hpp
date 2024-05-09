@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <random>
+#include <functional>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -84,6 +85,10 @@ aabb4 get_unit_aabb4();
 
 float area( const aabb3 &a );
 float area( const aabb4 &a );
+float surface_area( const aabb3 &a );
+float surface_area( const aabb4 &a );
+float get_inner_sphere_radius( const aabb3 &a );
+float get_inner_sphere_radius( const aabb4 &a );
 bool operator&&( const aabb3 &l, const aabb3 &r );
 bool operator&&( const aabb4 &l, const aabb4 &r );
 
@@ -92,6 +97,37 @@ aabb4 create_cube_area(
   float size
 );
 
+glm::vec3 get_center( const aabb3& );
+
+}
+
+namespace std {
+  template<>
+  struct hash< gct::aabb3 > {
+    std::size_t operator()( const gct::aabb3 &v ) const {
+      return
+        std::hash< float >()( v.min.x ) ^
+        std::hash< float >()( v.min.y ) ^
+        std::hash< float >()( v.min.z ) ^
+        std::hash< float >()( v.max.x ) ^
+        std::hash< float >()( v.max.y ) ^
+        std::hash< float >()( v.max.z );
+    }
+  };
+  template<>
+  struct hash< gct::aabb4 > {
+    std::size_t operator()( const gct::aabb4 &v ) const {
+      return
+        std::hash< float >()( v.min.x ) ^
+        std::hash< float >()( v.min.y ) ^
+        std::hash< float >()( v.min.z ) ^
+        std::hash< float >()( v.min.w ) ^
+        std::hash< float >()( v.max.x ) ^
+        std::hash< float >()( v.max.y ) ^
+        std::hash< float >()( v.max.z ) ^
+        std::hash< float >()( v.max.w );
+    }
+  };
 }
 
 #endif

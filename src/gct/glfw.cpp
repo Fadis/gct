@@ -378,6 +378,7 @@ namespace gct {
     center( center_ ),
     scale( scale_ ),
     end_( false ) {
+    speed = 0.01f*scale;
     light_pos = glm::vec3{ 0.0f*scale, -0.5f*scale, 0.0f*scale };
     light_energy = 5.0f;
     if( std::filesystem::is_regular_file( filename ) ) {

@@ -12,6 +12,7 @@
 #include <gct/compiled_scene_graph.hpp>
 #include <gct/compiled_aabb_scene_graph.hpp>
 #include <gct/kdtree.hpp>
+#include <gct/nohc_parameter.hpp>
 
 namespace gct {
   class command_buffer_recorder_t;
@@ -26,8 +27,12 @@ struct instance_list_create_info {
 struct resource_pair {
   LIBGCT_SETTER( inst )
   LIBGCT_SETTER( prim )
+  LIBGCT_SETTER( visible )
+  LIBGCT_SETTER( history )
   pool< std::shared_ptr< instance > >::descriptor inst;
   pool< std::shared_ptr< primitive > >::descriptor prim;
+  bool visible = false;
+  std::uint32_t history = 0u;
 };
 
 bool operator==( const resource_pair &l, const resource_pair &r );
@@ -70,13 +75,48 @@ private:
   std::vector< resource_pair > draw_list;
 };
 
+void to_json( nlohmann::json &dest, const instance_list &src );
+
+template< typename T >
 void append(
   const scene_graph_resource &resource,
   const std::vector< resource_pair > &l,
-  kdtree< resource_pair > &kd
-);
+  T &kd
+) {
+  for( const auto &v: l ) {
+    const auto inst = resource.inst.get( v.inst );
+    if( inst ) {
+      kd.insert( inst->initial_world_aabb, v );
+    }
+  }
+}
 
-void to_json( nlohmann::json &dest, const instance_list &src );
+template< typename T >
+void sort_by_distance(
+  T &dest,
+  const glm::vec3 &eye_pos
+) {
+  std::vector< std::pair< float, typename T::value_type > > temp;
+  temp.reserve( dest.size() );
+  std::transform(
+    dest.begin(),
+    dest.end(),
+    std::back_inserter( temp ),
+    [&]( const auto &v ) {
+      const auto distance = glm::distance( get_center( v.get_aabb() ), eye_pos );
+      return std::make_pair( distance, v );
+    }
+  );
+  std::sort( temp.begin(), temp.end(), []( const auto &l, const auto &r ) { return l.first < r.first; } );
+  std::transform(
+    temp.begin(),
+    temp.end(),
+    dest.begin(),
+    [&]( const auto &v ) {
+      return v.second;
+    }
+  );
+}
 
 }
 
