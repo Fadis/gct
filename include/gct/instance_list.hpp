@@ -28,11 +28,11 @@ struct resource_pair {
   LIBGCT_SETTER( inst )
   LIBGCT_SETTER( prim )
   LIBGCT_SETTER( visible )
-  LIBGCT_SETTER( history )
+  LIBGCT_SETTER( frame_count )
   pool< std::shared_ptr< instance > >::descriptor inst;
   pool< std::shared_ptr< primitive > >::descriptor prim;
   bool visible = false;
-  std::uint32_t history = 0u;
+  std::uint32_t frame_count = 0u;
 };
 
 bool operator==( const resource_pair &l, const resource_pair &r );

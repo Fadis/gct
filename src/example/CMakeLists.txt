@@ -55,6 +55,7 @@ subdirs(
   occlusion_query
   chc
   nohc
+  chcplus
   radix_sort
   onesweep
 )

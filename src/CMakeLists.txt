@@ -295,6 +295,7 @@ add_library( gct SHARED
   gct/instance_list.cpp
   gct/chc.cpp
   gct/nohc.cpp
+  gct/chcplus.cpp
   gct/similar_matrix.cpp
   gct/generate_random_matrix.cpp
   gct/gltf2.cpp
