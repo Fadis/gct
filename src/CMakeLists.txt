@@ -103,6 +103,7 @@ add_library( gct SHARED
   gct/begin_render_pass.cpp
   gct/begin_rendering.cpp
   gct/begin_query.cpp
+  gct/conditional_rendering.cpp
   gct/image_view_create_info.cpp
   gct/image_view.cpp
   gct/framebuffer_create_info.cpp
@@ -198,6 +199,7 @@ add_library( gct SHARED
   gct/validation_cache.cpp
   gct/query_pool_create_info.cpp
   gct/query_pool.cpp
+  gct/conditional_rendering_begin_info.cpp
   gct/draw.cpp
   gct/dispatch.cpp
   gct/font.cpp

@@ -116,6 +116,10 @@ basic_occlusion_query::basic_occlusion_query(
       .add_dynamic_state( vk::DynamicState::eDepthCompareOpExt );
 #endif
   }
+  aabb_buf = props.allocator->create_mappable_buffer(
+    props.max_query_count * sizeof( aabb4 ),
+    vk::BufferUsageFlagBits::eStorageBuffer
+  );
   pipeline = std::make_shared< graphics >(
     graphics_create_info()
       .set_allocator( props.allocator )
@@ -164,6 +168,7 @@ basic_occlusion_query::basic_occlusion_query(
       .set_swapchain_image_count( 1u )
       .add_shader( props.shaders )
       .set_resources( props.resources )
+      .add_resource( { "aabb", aabb_buf } )
   );
   if( props.query ) {
     query_pool = get_device( *props.allocator ).get_query_pool(
@@ -199,6 +204,22 @@ void basic_occlusion_query::operator()(
     rec.barrier( { point_mesh->get_buffer() }, {} );
     transfered = true;
   }
+  std::vector< std::pair< std::uint32_t, std::uint32_t > > range;
+  {
+    auto mapped = aabb_buf->map< aabb4 >();
+    std::uint32_t head = 0u;
+    for( unsigned int i = 0u; i != pushed.size(); ++i ) {
+      std::copy(
+        pushed[ i ].begin(),
+        pushed[ i ].end(),
+        std::next( mapped.begin(), head )
+      );
+      range.push_back( std::make_pair( head, std::uint32_t( pushed[ i ].size() ) ) );
+      head += pushed[ i ].size();
+    }
+  }
+  rec.sync_to_device( aabb_buf );
+  rec.transfer_to_graphics_barrier( { aabb_buf->get_buffer() }, {} );
   {
     auto render_pass_token = rec.begin_render_pass(
       output->get_render_pass_begin_info( 0 ),
@@ -213,34 +234,32 @@ void basic_occlusion_query::operator()(
           i,
           vk::QueryControlFlags( 0 )
         );
-        for( const auto &a: pushed[ i ] ) {
-          const auto pc = push_constant_type()
-            .set_matrix( matrix )
-            .set_aabb( a );
-          rec->pushConstants(
-            **pipeline->get_layout(),
-            pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-            0u,
-            sizeof( push_constant_type ),
-            &pc
-          );
-          rec->draw( 1u, 1u, 0u, 0u );
-        }
+        const auto r = range[ i ];
+        const auto pc = push_constant_type()
+          .set_matrix( matrix )
+          .set_head( r.first );
+        rec->pushConstants(
+          **pipeline->get_layout(),
+          pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+          0u,
+          sizeof( push_constant_type ),
+          &pc
+        );
+        rec->draw( 1u, r.second, 0u, 0u );
       }
       else {
-        for( const auto &a: pushed[ i ] ) {
-          const auto pc = push_constant_type()
-            .set_matrix( matrix )
-            .set_aabb( a );
-          rec->pushConstants(
-            **pipeline->get_layout(),
-            pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-            0u,
-            sizeof( push_constant_type ),
-            &pc
-          );
-          rec->draw( 1u, 1u, 0u, 0u );
-        }
+        const auto r = range[ i ];
+        const auto pc = push_constant_type()
+          .set_matrix( matrix )
+          .set_head( r.first );
+        rec->pushConstants(
+          **pipeline->get_layout(),
+          pipeline->get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+          0u,
+          sizeof( push_constant_type ),
+          &pc
+        );
+        rec->draw( 1u, r.second, 0u, 0u );
       }
     }
   }

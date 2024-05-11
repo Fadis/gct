@@ -14,7 +14,7 @@ struct aabb_type {
 
 layout(push_constant) uniform PushConstants {
   mat4 matrix;
-  aabb_type aabb;
+  uint head;
 } push_constants;
 
 layout (points) in;
@@ -29,6 +29,13 @@ out gl_PerVertex
 {
   vec4 gl_Position;
 };
+
+layout ( location = 0 ) flat in uint input_instance_id[];
+
+layout(binding = 7,std430) buffer AABBPool {
+  aabb_type aabb[];
+};
+
 
 vec4 get_aabb_vertex( aabb_type aabb, uint i ) {
   return vec4(
@@ -57,7 +64,7 @@ int vertices[24]=int[](
 void main() {
   gl_PrimitiveID = gl_PrimitiveIDIn;
   const mat4 proj_cam = push_constants.matrix;
-  const aabb_type aabb = push_constants.aabb;
+  const aabb_type aabb = aabb[ push_constants.head + input_instance_id[ 0 ] ];
   for( int f = 0; f < 12; f++ ) {
     const vec4 v0 = proj_cam * get_aabb_vertex( aabb, vertices[ f * 2 + 0 ] );
     const vec4 v1 = proj_cam * get_aabb_vertex( aabb, vertices[ f * 2 + 1 ] );

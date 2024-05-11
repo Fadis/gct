@@ -46,14 +46,17 @@ public:
     const instance_list_create_info &ci,
     const scene_graph &graph
   );
-  void operator()(
-    command_buffer_recorder_t&,
-    const compiled_scene_graph &compiled
+  void setup_resource_pair_buffer(
+    command_buffer_recorder_t &rec
   ) const;
   void operator()(
     command_buffer_recorder_t&,
-    const compiled_aabb_scene_graph &compiled,
-    const std::shared_ptr< query_pool_t > &query_pool
+    const compiled_scene_graph &compiled,
+    bool conditional = false
+  ) const;
+  void operator()(
+    command_buffer_recorder_t&,
+    const compiled_aabb_scene_graph &compiled
   ) const;
   void to_json( nlohmann::json& ) const;
   std::vector< resource_pair > &get_draw_list() {
@@ -73,6 +76,7 @@ private:
   instance_list_create_info props;
   std::shared_ptr< scene_graph_resource > resource;
   std::vector< resource_pair > draw_list;
+  bool enable_conditional = false;
 };
 
 void to_json( nlohmann::json &dest, const instance_list &src );

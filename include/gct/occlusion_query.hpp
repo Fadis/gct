@@ -18,9 +18,9 @@ using occlusion_query_id_t = std::uint32_t;
 class basic_occlusion_query {
   struct push_constant_type {
     LIBGCT_SETTER( matrix )
-    LIBGCT_SETTER( aabb )
+    LIBGCT_SETTER( head )
     glm::mat4 matrix;
-    aabb4 aabb;
+    std::uint32_t head = 0u;
   };
 public:
   basic_occlusion_query(
@@ -48,6 +48,7 @@ private:
   std::shared_ptr< query_pool_t > query_pool;
   mutable bool received = false;
   bool transfered = false;
+  std::shared_ptr< mappable_buffer_t > aabb_buf;
 };
 
 template< typename T >

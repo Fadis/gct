@@ -16,6 +16,7 @@
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/pool.hpp>
 #include <gct/array_of.hpp>
+#include <gct/raw_resource_pair_type.hpp>
 
 namespace gct {
 
@@ -30,7 +31,6 @@ struct buffer_offset {
   std::uint32_t offset = 0u;
 };
 void to_json( nlohmann::json&, const buffer_offset& );
-
 
 struct scene_graph_create_info {
   LIBGCT_SETTER( allocator )
@@ -93,6 +93,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( instance_resource_index )
   LIBGCT_SETTER( visibility )
   LIBGCT_SETTER( last_visibility )
+  LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
@@ -112,6 +113,7 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > instance_resource_index;
   std::shared_ptr< buffer_pool > visibility;
   std::shared_ptr< mappable_buffer_t > last_visibility;
+  std::shared_ptr< mappable_buffer_t > resource_pair;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::shared_ptr< descriptor_set_t > descriptor_set;
@@ -289,11 +291,12 @@ public:
   void to_json( nlohmann::json& ) const;
   void operator()( command_buffer_recorder_t& ) const;
   void rotate_visibility( command_buffer_recorder_t &rec ) const;
+  void clear_visibility( command_buffer_recorder_t &rec ) const;
 private:
   std::shared_ptr< scene_graph_create_info > props;
   std::shared_ptr< node > root_node;
   std::shared_ptr< scene_graph_resource > resource;
-  mutable bool clear_visibility = true;
+  mutable bool init_visibility = true;
   bool use_conditional = false;
 };
 

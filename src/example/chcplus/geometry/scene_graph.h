@@ -43,5 +43,14 @@ layout(binding = 3,std430) buffer MatrixPool {
 layout(binding = 4,std430) buffer AABBPool {
   aabb_type aabb_pool[];
 };
+
+struct resource_pair_type {
+  uint inst;
+  uint prim;
+};
+
+layout(binding = 5,std430) buffer ResourcePairPool {
+  resource_pair_type resource_pair[];
+};
 layout(set = 2, binding = 0) uniform sampler2D texture_pool[];
 

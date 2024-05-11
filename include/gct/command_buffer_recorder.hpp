@@ -51,6 +51,9 @@ namespace gct {
 #ifdef VK_EXT_SHADER_OBJECT_EXTENSION_NAME
   class shader_t;
 #endif
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+  class conditional_rendering_begin_info_t;
+#endif
   std::uint32_t get_pot( std::uint32_t v );
   class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
   public:
@@ -544,6 +547,11 @@ namespace gct {
       std::uint32_t query,
       vk::QueryControlFlags flags,
       std::uint32_t index
+    );
+#endif
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+    std::shared_ptr< void > begin(
+      const conditional_rendering_begin_info_t&
     );
 #endif
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME

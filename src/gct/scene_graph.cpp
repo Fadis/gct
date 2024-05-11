@@ -285,7 +285,11 @@ scene_graph::scene_graph(
 ) : props( new scene_graph_create_info( ci ) ), resource( new scene_graph_resource( ci ) ) {
   auto &device = get_device( *props->allocator );
 
-  use_conditional = device.get_factory()->get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_factory()->get_activated_extensions().end();
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+  use_conditional = device.get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_activated_extensions().end();
+#else
+  use_conditional = false;
+#endif
 
   std::vector< descriptor_set_layout_create_info_t > descriptor_set_layout_create_info;
   bool indexing = false;
@@ -411,6 +415,10 @@ scene_graph::scene_graph(
       vk::BufferUsageFlagBits::eConditionalRenderingEXT :
       vk::BufferUsageFlagBits::eStorageBuffer
   );
+  resource->resource_pair = props->allocator->create_mappable_buffer(
+    resource->visibility->get_props().max_buffer_count * sizeof( raw_resource_pair_type ),
+    vk::BufferUsageFlagBits::eStorageBuffer
+  );
   resource->vertex.reset( new vertex_buffer_pool(
     vertex_buffer_pool_create_info( props->vertex )
       .set_allocator( props->allocator )
@@ -420,7 +428,8 @@ scene_graph::scene_graph(
     { "instance_resource_index", resource->instance_resource_index->get_buffer() },
     { "visibility_pool", resource->visibility->get_buffer() },
     { "matrix_pool", resource->matrix->get_buffer() },
-    { "aabb_pool", resource->aabb->get_buffer() }
+    { "aabb_pool", resource->aabb->get_buffer() },
+    { "resource_pair", resource->resource_pair->get_buffer() }
   });
 
   root_node.reset( new node(
@@ -433,7 +442,7 @@ scene_graph::scene_graph(
       0.0f, 0.0f, 0.0f, 1.0f
     )
   ) );
-  clear_visibility = true;
+  init_visibility = true;
 }
 
 void scene_graph::to_json( nlohmann::json &dest ) const {
@@ -454,12 +463,12 @@ void to_json( nlohmann::json &dest, const scene_graph &src ) {
 }
 
 void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
-  if( clear_visibility ) {
+  if( init_visibility ) {
     rec.fill( resource->visibility->get_buffer(), 0u );
     rec.barrier( {
       resource->visibility->get_buffer()
     }, {} );
-    clear_visibility = false;
+    init_visibility = false;
   }
   (*resource->matrix)( rec );
   rec.compute_barrier( { resource->matrix->get_buffer() }, {} );
@@ -488,6 +497,12 @@ void scene_graph::rotate_visibility( command_buffer_recorder_t &rec ) const {
     resource->last_visibility->get_buffer()
   }, {} );
   rec.sync_to_host( resource->last_visibility );
+  rec.fill( resource->visibility->get_buffer(), 0u );
+  rec.barrier( {
+    resource->visibility->get_buffer()
+  }, {} );
+}
+void scene_graph::clear_visibility( command_buffer_recorder_t &rec ) const {
   rec.fill( resource->visibility->get_buffer(), 0u );
   rec.barrier( {
     resource->visibility->get_buffer()

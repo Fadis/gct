@@ -84,7 +84,7 @@ void compiled_aabb_scene_graph::create_pipeline(
       .set_basic(
         vk::PipelineDepthStencilStateCreateInfo()
           .setDepthTestEnable( VK_TRUE )
-          .setDepthWriteEnable( VK_TRUE )
+          .setDepthWriteEnable( VK_FALSE )
           .setDepthCompareOp( vk::CompareOp::eLessOrEqual )
           .setDepthBoundsTestEnable( VK_FALSE )
           .setStencilTestEnable( VK_FALSE )
@@ -117,8 +117,7 @@ void compiled_aabb_scene_graph::create_pipeline(
 #endif
   }
   const auto shader = load_shader( graph );
-  pipeline = graph.get_props().pipeline_cache->get_pipeline(
-    graphics_pipeline_create_info_t()
+  auto gpci = graphics_pipeline_create_info_t()
       .add_stage( get_shader( shader, shader_flag_t::vertex ) )
       .add_stage( get_shader( shader, shader_flag_t::geometry ) )
       .add_stage( get_shader( shader, shader_flag_t::fragment ) )
@@ -162,8 +161,16 @@ void compiled_aabb_scene_graph::create_pipeline(
       .set_dynamic( std::move( dsci ) )
       .set_layout( graph.get_resource()->pipeline_layout )
       .set_render_pass( props.render_pass, props.subpass )
-      .rebuild_chain()
-  );
+      .rebuild_chain();
+#ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+  if( enable_representive ) {
+    gpci.set_representative_fragment_test(
+      vk::PipelineRepresentativeFragmentTestStateCreateInfoNV()
+        .setRepresentativeFragmentTestEnable( true )
+    );
+  }
+#endif
+  pipeline = graph.get_props().pipeline_cache->get_pipeline( gpci );
 }
 void compiled_aabb_scene_graph::create_vertex_buffer() {
   vertex_buffer_desc = resource->vertex->allocate(
@@ -175,6 +182,12 @@ compiled_aabb_scene_graph::compiled_aabb_scene_graph(
   const compiled_aabb_scene_graph_create_info &ci,
   const scene_graph &graph
 ) : props( ci ), resource( graph.get_resource() ) {
+  const auto &device = get_device( *graph.get_props().allocator );
+#ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+  enable_representive = device.get_activated_extensions().find( VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME ) != device.get_activated_extensions().end();
+#else
+  enable_conditional = false;
+#endif
   create_vertex_buffer();
   create_pipeline( graph );
   load_graph( graph );
@@ -189,10 +202,11 @@ void compiled_aabb_scene_graph::load_graph(
   }
 }
 
-void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec ) const {
+void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec, std::uint32_t instance_count ) const {
   rec.bind_pipeline( pipeline );
   auto b = resource->vertex->get( vertex_buffer_desc );
   rec->bindVertexBuffers( 0u, { **b }, { 0u } );
+  rec.draw( 1, instance_count, 0, 0 );
 }
 
 std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > > compiled_aabb_scene_graph::load_shader(

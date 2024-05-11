@@ -54,7 +54,7 @@ public:
   get_primitive() const {
     return prim;
   }
-  void operator()( command_buffer_recorder_t& ) const;
+  void operator()( command_buffer_recorder_t&, std::uint32_t instance_count ) const;
 private:
   void load_graph(
     const scene_graph &graph
@@ -74,6 +74,7 @@ private:
   vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_desc;
   std::shared_ptr< graphics_pipeline_t > pipeline;
   std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, compiled_aabb_primitive > prim;
+  bool enable_representive = false;
 };
 
 }

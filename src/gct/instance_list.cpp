@@ -1,5 +1,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <gct/allocator.hpp>
 #include <gct/mappable_buffer.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/command_buffer_recorder.hpp>
@@ -7,6 +8,10 @@
 #include <gct/query_pool.hpp>
 #include <gct/aabb.hpp>
 #include <gct/kdtree.hpp>
+#include <gct/allocator.hpp>
+#include <gct/device.hpp>
+#include <gct/conditional_rendering_begin_info.hpp>
+#include <gct/get_device.hpp>
 
 namespace gct::scene_graph {
 
@@ -33,10 +38,17 @@ instance_list::instance_list(
   if( !resource->push_constant_mp ) {
     throw -1;
   }
+  const auto &device = get_device( *graph.get_props().allocator );
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+  enable_conditional = device.get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_activated_extensions().end();
+#else
+  enable_conditional = false;
+#endif
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
-  const compiled_scene_graph &compiled
+  const compiled_scene_graph &compiled,
+  bool conditional
 ) const {
   std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
   const auto &prim = compiled.get_primitive();
@@ -52,11 +64,12 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->texture_descriptor_set
   );
-  for( const auto &i: draw_list ) {
-    auto p = prim.find( i.prim );
-    if( p != prim.end() ) {
-      push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *i.inst;
-      push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = *i.prim;
+  for( const auto &v: draw_list ) {
+    auto p = prim.find( v.prim );
+    auto i = resource->inst.get( v.inst );
+    if( p != prim.end() && i ) {
+      push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *v.inst;
+      push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = *v.prim;
       rec->pushConstants(
         **resource->pipeline_layout,
         resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
@@ -64,17 +77,57 @@ void instance_list::operator()(
         push_constant.size(),
         push_constant.data()
       );
-      (p->second)( rec );
+      if( conditional && enable_conditional ) {
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+        auto token = rec.begin(
+          conditional_rendering_begin_info_t()
+            .set_buffer( resource->last_visibility->get_buffer() )
+            .set_basic(
+              vk::ConditionalRenderingBeginInfoEXT()
+                .setOffset( *i->descriptor.visibility * sizeof( std::uint32_t ) )
+            )
+        );
+#endif
+        (p->second)( rec );
+      }else {
+        (p->second)( rec );
+      }
     }
   }
 }
+void instance_list::setup_resource_pair_buffer(
+  command_buffer_recorder_t &rec
+) const {
+  {
+    auto mapped = resource->resource_pair->map< raw_resource_pair_type >();
+    std::transform(
+      draw_list.begin(),
+      draw_list.end(),
+      mapped.begin(),
+      []( const auto &v ) -> raw_resource_pair_type {
+        return raw_resource_pair_type()
+          .set_inst( *v.inst )
+          .set_prim( *v.prim );
+      }
+    );
+  }
+  rec.sync_to_device( resource->resource_pair );
+  rec.transfer_to_graphics_barrier( { resource->resource_pair->get_buffer() }, {} );
+  std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
+  push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = 0u;
+  push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = 0u;
+  rec->pushConstants(
+    **resource->pipeline_layout,
+    resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
+    resource->push_constant_mp->get_offset(),
+    push_constant.size(),
+    push_constant.data()
+  );
+}
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
-  const compiled_aabb_scene_graph &compiled,
-  const std::shared_ptr< query_pool_t > &query_pool
+  const compiled_aabb_scene_graph &compiled
 ) const {
-  std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
-  const auto &prim = compiled.get_primitive();
   rec.bind_descriptor_set(
     vk::PipelineBindPoint::eGraphics,
     resource->descriptor_set_id,
@@ -87,18 +140,11 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->texture_descriptor_set
   );
-  compiled( rec );
-  unsigned int query_index = 0u;
-  for( const auto &i: draw_list ) {
+  compiled( rec, draw_list.size() );
+  /*for( const auto &i: draw_list ) {
     const auto inst = resource->inst.get( i.inst );
     auto p = prim.find( i.prim );
     if( inst && p != prim.end() ) {
-      const auto query_token = rec.begin(
-        query_pool,
-        query_index,
-        //*inst->descriptor.visibility,
-        vk::QueryControlFlags( 0 )
-      );
       push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *i.inst;
       push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = *i.prim;
       rec->pushConstants(
@@ -110,8 +156,7 @@ void instance_list::operator()(
       );
       (p->second)( rec );
     }
-    ++query_index;
-  }
+  }*/
 }
 std::vector< resource_pair > instance_list::get_last_visible_list() const {
   std::unordered_set< std::uint32_t > visible_instance_ids;

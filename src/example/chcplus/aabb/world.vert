@@ -10,7 +10,10 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 
+layout ( location = 0 ) flat out uint output_instance_id;
+
 void main() {
   gl_Position = vec4( 0.0, 0.0, 0.0, 1.0 );
+  output_instance_id = gl_InstanceIndex;
 }
 
