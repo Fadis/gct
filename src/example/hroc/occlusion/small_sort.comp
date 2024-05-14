@@ -1,0 +1,87 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+layout(local_size_x = 1024, local_size_y = 1 ) in;
+
+layout(push_constant) uniform PushConstants {
+  uint n;
+  uint digit;
+} push_constants;
+
+struct key_value {
+  uint key;
+  uint value;
+};
+
+layout(std430, binding = 0) buffer Input {
+  key_value input_data[];
+};
+
+layout(std430, binding = 3) buffer Output {
+  key_value output_data[];
+};
+
+shared key_value[2048] temp;
+shared uint[32] subgroup_offset;
+
+void main() {
+  const uint index = gl_GlobalInvocationID.x;
+  if( index < push_constants.n ) {
+    temp[ index ] = input_data[ index ];
+  }
+  for( uint digit = 0; digit < 31; digit++ ) {
+    uint value = 0;
+    uint input_offset = ( digit & 0x1 ) * 1024;
+    uint output_offset = 1024 - input_offset;
+    if( index < push_constants.n ) {
+      value = 1 - ( ( temp[ input_offset + index ].key >> digit ) & 0x1 );
+    }
+    uint subgroup_pos = subgroupInclusiveAdd( value );
+    if( gl_SubgroupInvocationID == gl_SubgroupSize - 1 ) {
+      subgroup_offset[ gl_SubgroupID ] = subgroup_pos;
+    }
+    barrier();
+    if( gl_SubgroupID == 0 ) {
+      subgroup_offset[ gl_SubgroupInvocationID ] = subgroupInclusiveAdd( subgroup_offset[ gl_SubgroupInvocationID ] );
+    }
+    barrier();
+    uint subgroup_offset_ = 0;
+    if( gl_SubgroupID != 0 ) {
+      subgroup_offset_ = subgroup_offset[ gl_SubgroupID - 1 ];
+    }
+ 
+    uint offset =
+      subgroup_offset_ +
+      subgroup_pos;
+ 
+    uint sep = subgroup_offset[ gl_SubgroupSize - 1u ];
+    barrier();
+ 
+    if( index < push_constants.n - 1 ) {
+      value = 1 - ( ( temp[ input_offset + index + 1 ].key >> digit ) & 0x1 );
+      if( value == 0 ) {
+        temp[ output_offset + index + 1 - offset + sep ] = temp[ input_offset + index + 1 ];
+      }
+      else {
+        temp[ output_offset + offset ] = temp[ input_offset + index + 1 ];
+      }
+    }
+    else if( index == push_constants.n - 1 ) {
+      value = 1 - ( ( temp[ input_offset ].key >> digit ) & 0x1 );
+      if( value == 0 ) {
+        temp[ output_offset + sep ] = temp[ input_offset + 0 ];
+      }
+      else {
+        temp[ output_offset + 0 ] = temp[ input_offset + 0 ];
+      }
+    }
+    barrier();
+  }
+  if( index < push_constants.n ) {
+    output_data[ index ] = temp[ 1024 + index ];
+  }
+}
+

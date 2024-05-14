@@ -292,6 +292,7 @@ public:
   void operator()( command_buffer_recorder_t& ) const;
   void rotate_visibility( command_buffer_recorder_t &rec ) const;
   void clear_visibility( command_buffer_recorder_t &rec ) const;
+  void fill_visibility( command_buffer_recorder_t &rec, std::uint32_t ) const;
 private:
   std::shared_ptr< scene_graph_create_info > props;
   std::shared_ptr< node > root_node;

@@ -1,0 +1,62 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) writeonly uniform image2D dest_image;
+
+//const float ground_radius = 6360000;
+//const float top_radius = 6460000;
+
+layout(push_constant) uniform PushConstants {
+  vec4 sigma_ma;
+  vec4 sigma_oa;
+  vec4 sigma_rs;
+  vec4 sigma_ms;
+  float ground_radius;
+  float top_radius;
+} push_constants;
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1 ) in;
+
+#include "constants.h"
+#include "volumetric.h"
+#include "sky.h"
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const float y_rel = 1.0 - float( screen_pos.y )/float( gl_NumWorkGroups.y * gl_WorkGroupSize.y );
+  const float altitude = mix( push_constants.top_radius, push_constants.ground_radius, 1.0 - ( y_rel * y_rel ) );
+  const float min_angle = get_min_rad( altitude, push_constants.ground_radius );
+  const float x_rel = 1.0 - float( screen_pos.x )/float( gl_NumWorkGroups.x * gl_WorkGroupSize.x );
+  const float angle = mix( pi/2, min_angle, 1.0 - ( x_rel * x_rel ) );
+  const vec2 begin = vec2( 0, altitude );
+  const vec3 direction = vec3(
+    cos( angle ),
+    sin( angle ),
+    0.0
+  );
+  const vec3 atmosphere_distance = get_atmosphere_distance( altitude, direction, push_constants.ground_radius, push_constants.top_radius );
+  const vec2 end = begin + direction.xy * atmosphere_distance.y;
+  const float d_distance = distance( begin, end )/40.0;
+  vec3 light_energy = vec3( 1.0, 1.0, 1.0 );
+  for( uint i = 0; i < 41; i++ ) {
+    const vec2 d_begin = mix( begin, end, i / 40.0 );
+    const vec2 d_end = mix( begin, end, ( i + 1.0 ) / 40.0 );
+    const float d_altitude = length( d_begin );
+    const float d_altitude_from_ground = d_altitude - push_constants.ground_radius;
+    const float rayleigh_density = relative_rayleigh_density( d_altitude_from_ground );
+    const float mie_density = relative_mie_density( d_altitude_from_ground );
+    const float ozone_density = relative_ozone_density( d_altitude_from_ground );
+    const vec3 mie_extinction = beer_lambert( push_constants.sigma_ma.rgb, mie_density, d_distance );
+    const vec3 ozone_extinction = beer_lambert( push_constants.sigma_oa.rgb, ozone_density, d_distance );
+    const vec3 rayleigh_scattering = beer_lambert( push_constants.sigma_rs.rgb, rayleigh_density, d_distance );
+    const vec3 mie_scattering = beer_lambert( push_constants.sigma_ms.rgb, mie_density, d_distance );
+    light_energy *= mie_extinction;
+    light_energy *= ozone_extinction;
+    light_energy *= rayleigh_scattering;
+    light_energy *= mie_scattering;
+  }
+  imageStore( dest_image, screen_pos, vec4( light_energy, 1.0 ) );
+}
+

@@ -59,6 +59,8 @@ struct onesweep_create_info {
   std::vector< named_resource > resources;
 };
 
+void to_json( nlohmann::json &dest, const onesweep_create_info &src );
+
 }
 
 #endif

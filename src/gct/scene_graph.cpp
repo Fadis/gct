@@ -508,6 +508,12 @@ void scene_graph::clear_visibility( command_buffer_recorder_t &rec ) const {
     resource->visibility->get_buffer()
   }, {} );
 }
+void scene_graph::fill_visibility( command_buffer_recorder_t &rec, std::uint32_t v ) const {
+  rec.fill( resource->visibility->get_buffer(), v );
+  rec.barrier( {
+    resource->visibility->get_buffer()
+  }, {} );
+}
 
 }
 

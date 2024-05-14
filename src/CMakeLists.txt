@@ -298,6 +298,8 @@ add_library( gct SHARED
   gct/chc.cpp
   gct/nohc.cpp
   gct/chcplus.cpp
+  gct/hierarchical_raster_occlusion_culling_create_info.cpp
+  gct/hierarchical_raster_occlusion_culling.cpp
   gct/similar_matrix.cpp
   gct/generate_random_matrix.cpp
   gct/gltf2.cpp

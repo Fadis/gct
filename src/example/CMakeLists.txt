@@ -57,6 +57,7 @@ subdirs(
   nohc
   chcplus
   roc
+  hroc
   radix_sort
   onesweep
 )

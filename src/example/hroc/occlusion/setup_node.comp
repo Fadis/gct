@@ -1,0 +1,74 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+layout(local_size_x = 1024, local_size_y = 1 ) in;
+
+layout(push_constant) uniform PushConstants {
+  uint src_count;
+  uint src_offset;
+  uint dest_count;
+  uint dest_offset;
+} push_constants;
+
+struct aabb_type {
+  vec4 min;
+  vec4 max;
+};
+
+const uint null_node = 0xFFFFFFFF;
+
+struct node_type {
+  aabb_type aabb;
+  uint parent;
+  uint left;
+  uint right;
+  uint leaf;
+};
+
+layout(std430, binding = 8) buffer BVH {
+  node_type bvh[];
+};
+
+aabb_type aabb_or3( aabb_type l, aabb_type r ) {
+  aabb_type result; 
+  result.min.x = min( l.min.x, r.min.x );
+  result.min.y = min( l.min.y, r.min.y );
+  result.min.z = min( l.min.z, r.min.z );
+  result.max.x = max( l.max.x, r.max.x );
+  result.max.y = max( l.max.y, r.max.y );
+  result.max.z = max( l.max.z, r.max.z );
+  return result;
+}
+
+void main() {
+  const uint index = gl_GlobalInvocationID.x;
+  if( index < push_constants.dest_count ) {
+    uint output_index = push_constants.dest_offset + index;
+    const uint left_index = push_constants.src_offset + index * 2;
+    const aabb_type left_aabb = bvh[ left_index ].aabb;
+    if( index * 2 + 1 < push_constants.src_count ) {
+      const uint right_index = push_constants.src_offset + index * 2 + 1;
+      const aabb_type right_aabb = bvh[ right_index ].aabb;
+      const aabb_type aabb = aabb_or3( left_aabb, right_aabb );
+      bvh[ left_index ].parent = output_index;
+      bvh[ right_index ].parent = output_index;
+      bvh[ output_index ].aabb = aabb;
+      bvh[ output_index ].parent = null_node;
+      bvh[ output_index ].left = left_index;
+      bvh[ output_index ].right = right_index;
+      bvh[ output_index ].leaf = null_node;
+    }
+    else {
+      bvh[ left_index ].parent = output_index;
+      bvh[ output_index ].aabb = left_aabb;
+      bvh[ output_index ].parent = null_node;
+      bvh[ output_index ].left = left_index;
+      bvh[ output_index ].right = null_node;
+      bvh[ output_index ].leaf = null_node;
+    }
+  }
+}
+
