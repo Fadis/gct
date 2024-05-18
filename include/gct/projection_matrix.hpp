@@ -43,6 +43,23 @@ bool is_visible(
   const aabb4 &box
 );
 
+std::vector< glm::vec4 > get_far_plane(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+);
+
+std::vector< glm::vec4 > get_near_plane(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+);
+
+aabb get_minimum_projection_matrix(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix,
+  const std::vector< glm::vec4 > &p,
+  float
+);
+
 }
 
 #endif

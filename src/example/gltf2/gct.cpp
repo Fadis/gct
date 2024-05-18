@@ -181,10 +181,7 @@ int main( int argc, const char *argv[] ) {
     il->get_draw_list(),
     full_kd
   );
-  auto view_il = std::make_shared< gct::scene_graph::instance_list >(
-    *il
-  );
-  
+
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
     {
@@ -427,17 +424,6 @@ int main( int argc, const char *argv[] ) {
   while( !walk.end() ) {
     gct::blocking_timer frame_rate;
     ++walk;
-    if( walk.camera_moved() ) {
-      std::vector< gct::scene_graph::resource_pair > visible;
-      gct::frustum_culling(
-        projection,
-        walk.get_camera()[ 0 ].get_lookat(),
-        full_kd,
-        visible,
-        8u
-      );
-      view_il->get_draw_list() = visible;
-    }
     {
       {
         auto rec = command_buffer->begin();
@@ -523,7 +509,7 @@ int main( int argc, const char *argv[] ) {
               sg->get_resource()->pipeline_layout,
               global_descriptor_set
             );
-            (*view_il)( rec, *geometry_csg );
+            (*il)( rec, *geometry_csg );
           }
           rec.convert_image(
             gbuffer.get_image( 0 ),

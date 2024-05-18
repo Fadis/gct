@@ -273,6 +273,17 @@ install(
 
 endif()
 
+install(
+  FILES
+  ${CMAKE_SOURCE_DIR}/external/hdmap/include/hdmap/hdmap.hpp
+  DESTINATION
+  ${CMAKE_INSTALL_FULL_INCLUDEDIR}/hdmap
+  PERMISSIONS
+  OWNER_READ OWNER_WRITE
+  GROUP_READ
+  WORLD_READ
+)
+
 if( EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json" )
   execute_process(
     COMMAND

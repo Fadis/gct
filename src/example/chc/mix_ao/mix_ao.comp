@@ -12,6 +12,7 @@ layout (binding = 5, rgba32f) writeonly uniform image2D bloom_image;
 layout (binding = 9) uniform sampler2D skyview;
 layout (binding = 10, rgba32f) readonly uniform image2D scattering;
 layout (binding = 11, rgba32f) readonly uniform image2D aabb;
+layout (binding = 12, rgba32f) readonly uniform image2D frustum;
 
 #include "push_constants.h"
 #include "constants.h"
@@ -38,6 +39,7 @@ void main()  {
   const vec3 pos_in_froxel = pos_in_screen.xyz * 0.5 + 0.5;
   const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
   const vec4 aabb = imageLoad( aabb, screen_pos );
+  const vec4 frustum = imageLoad( frustum, screen_pos );
   
   const vec3 eye_dir = normalize( pos - dynamic_uniforms.eye_pos.xyz );
   const vec2 latitude_longitude = world_to_llar( eye_dir );
@@ -61,6 +63,9 @@ void main()  {
   if( aabb == vec4( 1.0, 1.0, 1.0, 1.0 ) ) {
     total = vec3( 1.0, 0.0, 1.0 );
   }
+  /*if( frustum == vec4( 1.0, 1.0, 1.0, 1.0 ) ) {
+    total = vec3( 0.05, 0.1, 0.0 );
+  }*/
 
   imageStore( dest_image, screen_pos, vec4( total, albedo.a ) );
   imageStore( bloom_image, screen_pos, vec4( bloom, 1.0 ) );

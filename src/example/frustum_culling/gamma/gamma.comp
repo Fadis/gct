@@ -1,0 +1,20 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2D src_image;
+layout (binding = 1, rgba8) writeonly uniform image2D dest_image;
+layout (binding = 2, rgba32f) readonly uniform image2D bloom_image;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include "gamma.h"
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  vec4 linear = imageLoad( src_image, screen_pos );
+  vec3 bloom = imageLoad( bloom_image, screen_pos ).rgb;
+  imageStore( dest_image, screen_pos, vec4( gamma( linear.rgb + bloom ), linear.a ) );
+}
+

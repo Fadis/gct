@@ -214,7 +214,7 @@ void calculate_poccl(
       if( !n->leaf ) {
         bool lt = n->less_than ? n->less_than->value.poccl : 1.0f;
         bool ge = n->greater_equal ? n->greater_equal->value.poccl : 1.0f;
-        n->value.poccl = std::min( lt, ge );
+        n->value.poccl = lt * ge;
       }
     }
   );
@@ -272,13 +272,6 @@ void nohc_(
     else {
       if( v.get_root_node().leaf ) {
         v.get( visible );
-        /*const auto aabb = v.get_aabb();
-        if( aabb && near_box ) {
-          v.get( visible );
-        }
-        else {
-          v.get( visible );
-        }*/
       }
       else {
         const auto [lt,ge] = v.subtree();

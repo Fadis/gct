@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <glm/fwd.hpp>
 #include <nlohmann/json.hpp>
 #include <gct/aabb.hpp>
 
@@ -194,6 +195,62 @@ bool contain( const aabb4 &range, const glm::vec3 &p ) {
 bool contain( const aabb4 &range, const glm::vec4 &p ) {
   return contain( aabb3( range ), glm::vec3( p.x/p.w, p.y/p.w, p.z/p.w ) );
 }
+bool contain( const aabb3 &range, const std::vector< glm::vec3 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return !contain( range, p );
+    }
+  ) == p.end();
+}
+bool contain( const aabb3 &range, const std::vector< glm::vec4 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return !contain( range, p );
+    }
+  ) == p.end();
+}
+bool contain( const aabb4 &range, const std::vector< glm::vec3 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return !contain( range, p );
+    }
+  ) == p.end();
+}
+bool contain( const aabb4 &range, const std::vector< glm::vec4 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return !contain( range, p );
+    }
+  ) == p.end();
+}
+bool outside( const aabb3 &range, const std::vector< glm::vec3 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return contain( range, p );
+    }
+  ) == p.end();
+}
+bool outside( const aabb3 &range, const std::vector< glm::vec4 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return contain( range, p );
+    }
+  ) == p.end();
+}
+bool outside( const aabb4 &range, const std::vector< glm::vec3 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return contain( range, p );
+    }
+  ) == p.end();
+}
+bool outside( const aabb4 &range, const std::vector< glm::vec4 >&p ) {
+  return std::find_if(
+    p.begin(), p.end(), [&range]( const auto &p ) {
+      return contain( range, p );
+    }
+  ) == p.end();
+}
 
 
 std::string to_string( const aabb3 &v ) {
@@ -331,6 +388,33 @@ float get_inner_sphere_radius( const aabb3 &a ) {
 }
 float get_inner_sphere_radius( const aabb4 &a ) {
   return get_inner_sphere_radius( aabb3( a ) );
+}
+
+std::pair< float, float > intersect(
+  const aabb &box,
+  const glm::vec3 &p0,
+  const glm::vec3 &p1
+) {
+  glm::vec3 tmin = ( box.min - p0 ) / ( p1 - p0 );
+  glm::vec3 tmax = ( box.max - p0 ) / ( p1 - p0 );
+  glm::vec3 t1 = glm::min( tmin, tmax );
+  glm::vec3 t2 = glm::max( tmin, tmax );
+  float tnear = std::max( std::max( t1.x, t1.y ), t1.z );
+  float tfar = std::min( std::min( t2.x, t2.y ), t2.z );
+  return std::make_pair( tnear, tfar );
+}
+std::pair< float, float > intersect(
+  const aabb &box,
+  const glm::vec4 &p0,
+  const glm::vec4 &p1
+) {
+  glm::vec4 p0t = p0;
+  glm::vec4 p1t = p1;
+  p0t /= p0t.w;
+  p1t /= p1t.w;
+  glm::vec3 p03( p0t.x, p0t.y, p0t.z );
+  glm::vec3 p13( p1t.x, p1t.y, p1t.z );
+  return intersect( box, p03, p13 );
 }
 
 }

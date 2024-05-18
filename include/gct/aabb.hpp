@@ -63,6 +63,14 @@ bool contain( const aabb3&, const glm::vec3& );
 bool contain( const aabb3&, const glm::vec4& );
 bool contain( const aabb4&, const glm::vec3& );
 bool contain( const aabb4&, const glm::vec4& );
+bool contain( const aabb3&, const std::vector< glm::vec3 >& );
+bool contain( const aabb3&, const std::vector< glm::vec4 >& );
+bool contain( const aabb4&, const std::vector< glm::vec3 >& );
+bool contain( const aabb4&, const std::vector< glm::vec4 >& );
+bool outside( const aabb3&, const std::vector< glm::vec3 >& );
+bool outside( const aabb3&, const std::vector< glm::vec4 >& );
+bool outside( const aabb4&, const std::vector< glm::vec3 >& );
+bool outside( const aabb4&, const std::vector< glm::vec4 >& );
 
 std::string to_string( const aabb3& );
 std::string to_string( const aabb4& );
@@ -98,6 +106,16 @@ aabb4 create_cube_area(
 );
 
 glm::vec3 get_center( const aabb3& );
+std::pair< float, float > intersect(
+  const aabb &box,
+  const glm::vec3 &p0,
+  const glm::vec3 &p1
+);
+std::pair< float, float > intersect(
+  const aabb &box,
+  const glm::vec4 &p0,
+  const glm::vec4 &p1
+);
 
 }
 

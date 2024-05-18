@@ -52,7 +52,6 @@ void sort_by_history(
       const auto lh = vh.get().find( *l.second.inst );
       const auto rh = vh.get().find( *r.second.inst );
       return lh->second.frame_count > rh->second.frame_count;
-      //return l.second.frame_count > r.second.frame_count;
     }
   );
 }

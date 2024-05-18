@@ -52,6 +52,8 @@ subdirs(
   fom
   sky
   gltf2
+  frustum_culling
+  portal_culling
   occlusion_query
   chc
   nohc

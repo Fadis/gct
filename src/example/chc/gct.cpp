@@ -1,3 +1,4 @@
+#include "gct/draw_line_create_info.hpp"
 #include <iostream>
 #include <algorithm>
 #include <boost/program_options.hpp>
@@ -60,6 +61,7 @@
 #include <gct/skyview_froxel.hpp>
 #include <gct/occlusion_query.hpp>
 #include <gct/chc.hpp>
+#include <gct/draw_line.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
 struct fb_resources_t {
@@ -222,6 +224,19 @@ int main( int argc, const char *argv[] ) {
       .set_dynamic_cull_mode( true )
       .set_max_query_count( il->get_draw_list().size() )
       .set_query( false )
+  );
+  auto draw_line = gct::draw_line(
+    gct::draw_line_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_color_attachment_count( 1u )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/line" )
+      .set_dynamic_cull_mode( false )
+      .set_max_line_count( 128u )
+      .set_width( res.width )
+      .set_height( res.height )
+      .set_line_width( 5 )
   );
 
   gct::kdtree< gct::scene_graph::resource_pair, gct::scene_graph::chc_node_data > full_kd;
@@ -406,6 +421,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
       .add_resource( { "aabb", draw_aabb.get_image_view(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "frustum", draw_line.get_image_view(), vk::ImageLayout::eGeneral } )
       .add_resource( { "dynamic_uniforms", global_uniform } )
   )(
     gct::image_filter_create_info()
@@ -575,6 +591,28 @@ int main( int argc, const char *argv[] ) {
         view_il->get_draw_list() = std::move( visible );
         visible.clear();
       }
+    }
+    // frustum
+    {
+      draw_line.reset();
+      for( const auto &v: gct::get_clippling_area_edges( projection, walk.get_camera()[ 0 ].get_lookat() ) ) {
+        draw_line.push( v.first, v.second );
+      }
+      {
+        auto rec = command_buffer->begin();
+        draw_line( rec, projection * walk.get_lookat() );
+        rec.convert_image(
+          draw_line.get_image_view()->get_factory(),
+          vk::ImageLayout::eGeneral
+        );
+        rec.barrier(
+          {},
+          {
+            draw_line.get_image_view()->get_factory(),
+          }
+        );
+      }
+      command_buffer->execute_and_wait();
     }
     // rendering
     {

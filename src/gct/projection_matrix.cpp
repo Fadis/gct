@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <glm/fwd.hpp>
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <glm/vec4.hpp>
@@ -97,6 +99,67 @@ std::vector< std::pair< glm::vec4, glm::vec4 > > get_clippling_area_edges(
   }
   return edges;
 }
+
+std::vector< glm::vec4 > get_far_plane(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+) {
+  const auto inv = glm::inverse( projection_matrix * camera_matrix );
+  std::vector< glm::vec4 > vertex{
+    inv * glm::vec4( -1.f, -1.f,  1.f, 1.f ),
+    inv * glm::vec4( -1.f,  1.f,  1.f, 1.f ),
+    inv * glm::vec4(  1.f, -1.f,  1.f, 1.f ),
+    inv * glm::vec4(  1.f,  1.f,  1.f, 1.f )
+  };
+  for( auto &v: vertex ) {
+    v /= v.w;
+  }
+  return vertex;
+}
+
+std::vector< glm::vec4 > get_near_plane(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix
+) {
+  const auto inv = glm::inverse( projection_matrix * camera_matrix );
+  std::vector< glm::vec4 > vertex{
+    inv * glm::vec4( -1.f, -1.f, -1.f, 1.f ),
+    inv * glm::vec4( -1.f,  1.f, -1.f, 1.f ),
+    inv * glm::vec4(  1.f, -1.f, -1.f, 1.f ),
+    inv * glm::vec4(  1.f,  1.f, -1.f, 1.f )
+  };
+  for( auto &v: vertex ) {
+    v /= v.w;
+  }
+  return vertex;
+}
+
+aabb get_minimum_projection_matrix(
+  const glm::mat4 &projection_matrix,
+  const glm::mat4 &camera_matrix,
+  const std::vector< glm::vec4 > &p,
+  float near
+) {
+  std::vector< glm::vec4 > cam_p;
+  for( const auto &v: p ) {
+    cam_p.push_back( camera_matrix * glm::vec4( v.x, -v.y, v.z, v.w ) );
+  }
+  for( auto &v: cam_p ) {
+    v.x *= near/glm::length(v);
+    v.y *= near/glm::length(v);
+  }
+  auto min = cam_p[ 0 ];
+  auto max = cam_p[ 0 ];
+  for( unsigned int i = 0u; i != 4u; ++i ) {
+    min = glm::min( min, cam_p[ i ] );
+    max = glm::max( max, cam_p[ i ] );
+  }
+  return
+    aabb()
+      .emplace_min( min.x, min.y, min.z )
+      .emplace_max( max.x, max.y, max.z );
+}
+
 
 bool is_visible(
   const glm::mat4 &matrix,
