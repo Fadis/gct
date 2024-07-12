@@ -5,12 +5,11 @@
 #include <gct/setter.hpp>
 #include <gct/matrix_pool.hpp>
 #include <gct/aabb_pool.hpp>
-#include <gct/matrix_pool.hpp>
-#include <gct/aabb_pool.hpp>
 #include <gct/image_pool.hpp>
 #include <gct/texture_pool.hpp>
 #include <gct/sampler_pool.hpp>
 #include <gct/buffer_pool.hpp>
+#include <gct/light_pool.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/vertex_buffer_pool.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
@@ -46,6 +45,7 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( instance_resource_index )
   LIBGCT_SETTER( visibility )
   LIBGCT_SETTER( vertex )
+  LIBGCT_SETTER( light )
   LIBGCT_SETTER( prim_pool_size )
   LIBGCT_SETTER( inst_pool_size )
   LIBGCT_SETTER( descriptor_set_id )
@@ -69,6 +69,7 @@ struct scene_graph_create_info {
   buffer_pool_create_info instance_resource_index;
   buffer_pool_create_info visibility;
   vertex_buffer_pool_create_info vertex;
+  light_pool_create_info light;
   std::uint32_t prim_pool_size = 65536u;
   std::uint32_t inst_pool_size = 65536u;
   std::uint32_t descriptor_set_id = 0u;
@@ -95,6 +96,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
+  LIBGCT_SETTER( light )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
   LIBGCT_SETTER( texture_descriptor_set )
@@ -115,6 +117,7 @@ struct scene_graph_resource {
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< mappable_buffer_t > resource_pair;
   std::shared_ptr< vertex_buffer_pool > vertex;
+  std::shared_ptr< light_pool > light;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::shared_ptr< descriptor_set_t > descriptor_set;
   std::shared_ptr< descriptor_set_t > texture_descriptor_set;
@@ -253,6 +256,7 @@ struct node {
   std::string name;
   std::vector< std::shared_ptr< node > > child;
   std::vector< pool< std::shared_ptr< instance > >::descriptor > inst;
+  std::vector< light_pool::light_descriptor > light;
   glm::mat4 initial_world_matrix;
   aabb4 prim_aabb;
   matrix_pool::matrix_descriptor matrix;

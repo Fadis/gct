@@ -33,6 +33,7 @@ struct common_sample_setup {
   std::shared_ptr< instance_t > instance;
   std::uint32_t width;
   std::uint32_t height;
+  std::uint32_t light_count;
   std::shared_ptr< surface_t > surface;
   std::shared_ptr< device_t > device;
   std::shared_ptr< queue_t > queue;

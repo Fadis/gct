@@ -22,6 +22,7 @@ struct compute_create_info {
   LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
+  LIBGCT_SETTER( ignore_unused_descriptor )
   compute_create_info &add_resource(
     const named_resource &n
   );
@@ -35,6 +36,7 @@ struct compute_create_info {
   std::shared_ptr< descriptor_set_t > external_descriptor_set;
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
+  bool ignore_unused_descriptor = false;
 };
 
 void to_json( nlohmann::json&, const compute_create_info& );

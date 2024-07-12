@@ -339,6 +339,24 @@ namespace gct {
       const std::shared_ptr< mappable_buffer_t > &,
       std::uint32_t
     );
+    void fill(
+      const std::shared_ptr< image_t > &dest,
+      const std::array< float, 4u > &color
+    );
+    void fill(
+      const std::shared_ptr< image_t > &dest,
+      const vk::ClearColorValue &color
+    );
+    void fill(
+      const std::shared_ptr< image_t > &dest,
+      const std::array< float, 4u > &color,
+      const vk::ImageSubresourceRange &range
+    );
+    void fill(
+      const std::shared_ptr< image_t > &dest,
+      const vk::ClearColorValue &color,
+      const vk::ImageSubresourceRange &range
+    );
     std::vector< vk::ImageMemoryBarrier > barrier(
       vk::AccessFlagBits,
       vk::AccessFlagBits,

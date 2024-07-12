@@ -27,7 +27,7 @@ namespace gct {
       for( const auto &r: props.resources ) {
         temp.push_back( { r, 0 } );
       }
-      props.external_descriptor_set->update( temp );
+      props.external_descriptor_set->update( temp, props.ignore_unused_descriptor );
     }
     else {
       for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
@@ -38,7 +38,7 @@ namespace gct {
         for( const auto &r: props.resources ) {
           temp.push_back( { r, i } );
         }
-        descriptor_set.back()->update( temp );
+        descriptor_set.back()->update( temp, props.ignore_unused_descriptor );
       }
     }
   }

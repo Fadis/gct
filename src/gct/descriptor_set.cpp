@@ -26,26 +26,32 @@ namespace gct {
     )[ 0 ] );
   }
   void descriptor_set_t::update(
-    const std::vector< write_descriptor_set_t > &updates_
+    const std::vector< write_descriptor_set_t > &updates_,
+    bool ignore_unused
   ) {
     auto updates = updates_;
     std::vector< vk::WriteDescriptorSet > unwrapped;
-    std::transform(
-      updates.begin(),
-      updates.end(),
-      std::back_inserter( unwrapped ),
-      [&]( auto &v ) {
-        const auto &name = v.get_name();
-        if( !name.empty() ) {
+    for( auto &v: updates ) {
+      const auto &name = v.get_name();
+      if( !name.empty() ) {
+        if( ignore_unused ) {
+          if( has( name ) ) {
+            v.set_basic( (*this)[ name ] );
+          }
+          else {
+            continue;
+          }
+        }
+        else {
           v.set_basic( (*this)[ name ] );
         }
-        v.rebuild_chain();
-        auto basic = v.get_basic();
-        basic.setDstArrayElement( v.get_index() );
-        basic.setDstSet( *handle );
-        return basic;
       }
-    );
+      v.rebuild_chain();
+      auto basic = v.get_basic();
+      basic.setDstArrayElement( v.get_index() );
+      basic.setDstSet( *handle );
+      unwrapped.push_back( basic );
+    }
     (*get_factory()->get_factory())->updateDescriptorSets(
       unwrapped,
       nullptr

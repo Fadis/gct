@@ -44,6 +44,7 @@
 #include <gct/cubemap_matrix_generator.hpp>
 #include <gct/image_filter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/common_sample_setup.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -60,109 +61,16 @@ struct tone_state_t {
 };
 
 int main( int argc, const char *argv[] ) {
-  namespace po = boost::program_options;
-  po::options_description desc( "Options" );
-  desc.add_options()
-    ( "help,h", "show this message" )
-    ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
-    ( "model,m", po::value< std::string >(), "glTF filename" )
-    ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" );
-  po::variables_map vm;
-  po::store( po::parse_command_line( argc, argv, desc ), vm );
-  po::notify( vm );
-  if( vm.count( "help" ) || !vm.count( "model" ) ) {
-    std::cout << desc << std::endl;
-    return 0;
-  }
-  const std::string walk_state_filename = vm[ "walk" ].as< std::string >();
-  const std::string model_filename = vm[ "model" ].as< std::string >();
-  const float ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
-
-  gct::glfw::get();
-  uint32_t iext_count = 0u;
-  auto exts = glfwGetRequiredInstanceExtensions( &iext_count );
-  std::vector< const char* > iext{};
-  for( uint32_t i = 0u; i != iext_count; ++i )
-    iext.push_back( exts[ i ] );
-  iext.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
-  const auto ilayers = gct::get_instance_layers();
-  const auto iexts = gct::get_instance_extensions( std::vector< const char* >() );
-  std::shared_ptr< gct::instance_t > instance(
-    new gct::instance_t(
-      gct::instance_create_info_t()
-        .set_application_info(
-          vk::ApplicationInfo()
-            .setPApplicationName( "my_application" )
-            .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
-            .setApiVersion( VK_MAKE_VERSION( 1, 3, 0 ) )
-        )
-        .add_layer(
-          "VK_LAYER_KHRONOS_validation"
-        )
-        .add_extension(
-          iext.begin(), iext.end()
-        )
-    )
-  );
-  instance->set_debug_callback(
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-    vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-    [](
-      vk::DebugUtilsMessageSeverityFlagBitsEXT,
-      vk::DebugUtilsMessageTypeFlagsEXT,
-      const vk::DebugUtilsMessengerCallbackDataEXT &data
-    ) {
-      std::cout << "validation : " << data.pMessage << std::endl;
-      std::abort();
-    }
-  );
-
-  auto groups = instance->get_physical_devices( {} );
-  auto selected = groups[ 0 ].with_extensions( {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
-    VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
-    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-    VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
-  } );
-  std::cout << nlohmann::json( groups[ 0 ] ).dump( 2 ) << std::endl;
-
-  std::uint32_t width = 1920u*2;
-  std::uint32_t height = 1080u*2;
-
-  gct::glfw_window window( width, height, "window title", false );
-  gct::glfw::get().poll();
-  auto surface = window.get_surface( *groups[ 0 ].devices[ 0 ] );
-  std::cout << nlohmann::json( *surface ).dump( 2 ) << std::endl;
- 
-  std::vector< gct::queue_requirement_t > queue_requirements{
-    gct::queue_requirement_t{
-      vk::QueueFlagBits::eGraphics,
-      0u,
-      vk::Extent3D(),
-#ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
-      vk::QueueGlobalPriorityEXT(),
-#endif
-      { **surface },
-      vk::CommandPoolCreateFlagBits::eResetCommandBuffer
-    }
-  };
-  auto device = selected.create_device(
-    queue_requirements,
-    gct::device_create_info_t()
-  );
-  auto queue = device->get_queue( 0u );
-  auto gcb = queue->get_command_pool()->allocate();
-
-  auto swapchain = device->get_swapchain( surface );
-  auto swapchain_images = swapchain->get_images();
-  std::cout << "swapchain images : " << swapchain_images.size() << std::endl;
-
-  auto descriptor_pool = device->get_descriptor_pool(
+  const gct::common_sample_setup res(
+    argc, argv,
+    {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
+      VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
+      VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+      VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
+    },
     gct::descriptor_pool_create_info_t()
       .set_basic(
         vk::DescriptorPoolCreateInfo()
@@ -175,9 +83,11 @@ int main( int argc, const char *argv[] ) {
       .rebuild_chain()
   );
 
-  auto pipeline_cache = device->get_pipeline_cache();
+  auto gcb = res.queue->get_command_pool()->allocate();
 
-  auto shadow_render_pass = device->get_render_pass(
+  std::cout << "swapchain images : " << res.swapchain_images.size() << std::endl;
+
+  auto shadow_render_pass = res.device->get_render_pass(
     gct::render_pass_create_info_t()
       .add_attachment(
         vk::AttachmentDescription()
@@ -211,15 +121,12 @@ int main( int argc, const char *argv[] ) {
   );
 
   VmaAllocatorCreateInfo allocator_create_info{};
-  auto allocator = device->get_allocator(
-    allocator_create_info
-  );
 
   const unsigned int shadow_map_size = 1024u;
   std::vector< gct::cubemap_images > cubemap_images;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     cubemap_images.emplace_back( gct::cubemap_images(
-      allocator,
+      res.allocator,
       {
         gct::image_create_info_t()
           .set_basic(
@@ -262,20 +169,20 @@ int main( int argc, const char *argv[] ) {
       }
     ) );
   }
-  auto cubemap_sampler = device->get_sampler(
+  auto cubemap_sampler = res.device->get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
 
   constexpr std::size_t gbuf_count = 8u;
   gct::gbuffer gbuffer(
-    allocator,
-    width,
-    height,
-    swapchain_images.size(),
+    res.allocator,
+    res.width,
+    res.height,
+    res.swapchain_images.size(),
     gbuf_count
   );
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( gbuffer.get_image_views(), vk::ImageLayout::eGeneral );
@@ -286,7 +193,7 @@ int main( int argc, const char *argv[] ) {
 
   std::vector< fb_resources_t > framebuffers;
 
-  const auto dynamic_descriptor_set_layout = device->get_descriptor_set_layout(
+  const auto dynamic_descriptor_set_layout = res.device->get_descriptor_set_layout(
     gct::descriptor_set_layout_create_info_t()
       .add_binding(
         vk::DescriptorSetLayoutBinding()
@@ -313,23 +220,23 @@ int main( int argc, const char *argv[] ) {
   std::vector< std::shared_ptr< gct::buffer_t > > staging_dynamic_uniform;
   std::vector< std::shared_ptr< gct::buffer_t > > dynamic_uniform;
   std::vector< std::shared_ptr< gct::descriptor_set_t > > dynamic_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     staging_dynamic_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferSrc,
         VMA_MEMORY_USAGE_CPU_TO_GPU
       )
     );
     dynamic_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
         VMA_MEMORY_USAGE_GPU_ONLY
       )
     );
     dynamic_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         dynamic_descriptor_set_layout
       )
     );
@@ -369,35 +276,35 @@ int main( int argc, const char *argv[] ) {
     dynamic_descriptor_set.back()->update( updates );
   }
 
-  const auto [voxel_clear_descriptor_set_layout,voxel_clear_pipeline] = pipeline_cache->get_pipeline(
+  const auto [voxel_clear_descriptor_set_layout,voxel_clear_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/voxel/clear.comp.spv"
   );
-  const auto [voxel_voronoi_descriptor_set_layout,voxel_voronoi_pipeline] = pipeline_cache->get_pipeline(
+  const auto [voxel_voronoi_descriptor_set_layout,voxel_voronoi_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/voronoi/voronoi.comp.spv"
   );
-  const auto [distance_field_descriptor_set_layout,distance_field_pipeline] = pipeline_cache->get_pipeline(
+  const auto [distance_field_descriptor_set_layout,distance_field_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/distance_field/distance_field.comp.spv"
   );
 
 
   gct::voxel_image voxel_image(
-    allocator,
+    res.allocator,
     9u,
     vk::Format::eR32Uint
   );
   
   gct::voxel_image distance_field(
-    allocator,
+    res.allocator,
     9u,
     vk::Format::eR32Sfloat
   );
   
-  auto voxel_sampler = device->get_sampler(
+  auto voxel_sampler = res.device->get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
 
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( { voxel_image.get_image() }, vk::ImageLayout::eGeneral );
@@ -409,7 +316,7 @@ int main( int argc, const char *argv[] ) {
   std::shared_ptr< gct::descriptor_set_t > voxel_clear_descriptor_set;
   {
     voxel_clear_descriptor_set =
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         voxel_clear_descriptor_set_layout
       );
     std::vector< gct::write_descriptor_set_t > updates;
@@ -424,7 +331,7 @@ int main( int argc, const char *argv[] ) {
   std::shared_ptr< gct::descriptor_set_t > distance_field_descriptor_set;
   {
     distance_field_descriptor_set =
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         distance_field_descriptor_set_layout
       );
     std::vector< gct::write_descriptor_set_t > updates{
@@ -443,21 +350,21 @@ int main( int argc, const char *argv[] ) {
   std::vector< std::shared_ptr< gct::descriptor_set_t > > voxel_descriptor_set;
   for( std::size_t i = 0u; i != 3u; ++i ) {
     staging_voxel_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferSrc,
         VMA_MEMORY_USAGE_CPU_TO_GPU
       )
     );
     voxel_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
         VMA_MEMORY_USAGE_GPU_ONLY
       )
     );
     voxel_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         dynamic_descriptor_set_layout
       )
     );
@@ -490,7 +397,7 @@ int main( int argc, const char *argv[] ) {
   std::cout << "debug" << std::endl;
 
 
-  auto environment_sampler = device->get_sampler(
+  auto environment_sampler = res.device->get_sampler(
     gct::sampler_create_info_t()
       .set_basic(
         vk::SamplerCreateInfo()
@@ -511,11 +418,11 @@ int main( int argc, const char *argv[] ) {
   );
   std::shared_ptr< gct::image_t > environment_image;
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       environment_image = recorder.load_image(
-        allocator,
+        res.allocator,
         "../images/environment.png",
         vk::ImageUsageFlagBits::eSampled,
         true, gct::integer_attribute_t::srgb
@@ -548,7 +455,7 @@ int main( int argc, const char *argv[] ) {
         vk::ImageCreateInfo()
           .setImageType( vk::ImageType::e2D )
           .setFormat( vk::Format::eR32Sfloat )
-          .setExtent( { width, height, 1 } )
+          .setExtent( { res.width, res.height, 1 } )
           .setMipLevels( 1 )
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
@@ -564,7 +471,7 @@ int main( int argc, const char *argv[] ) {
         vk::ImageCreateInfo()
           .setImageType( vk::ImageType::e2D )
           .setFormat( vk::Format::eR32Uint )
-          .setExtent( { width, height, 1 } )
+          .setExtent( { res.width, res.height, 1 } )
           .setMipLevels( 1 )
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
@@ -580,7 +487,7 @@ int main( int argc, const char *argv[] ) {
         vk::ImageCreateInfo()
           .setImageType( vk::ImageType::e2D )
           .setFormat( vk::Format::eR32G32B32A32Sfloat )
-          .setExtent( { width, height, 1 } )
+          .setExtent( { res.width, res.height, 1 } )
           .setMipLevels( 1 )
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
@@ -592,16 +499,16 @@ int main( int argc, const char *argv[] ) {
       );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ao_out;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_out.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         r32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( ao_out, vk::ImageLayout::eGeneral );
@@ -609,10 +516,10 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
 
-  const auto [reproject_descriptor_set_layout,reproject_pipeline] = pipeline_cache->get_pipeline(
+  const auto [reproject_descriptor_set_layout,reproject_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/reproject/reproject.comp.spv"
   );
-  const auto [reproject_clear_descriptor_set_layout,reproject_clear_pipeline] = pipeline_cache->get_pipeline(
+  const auto [reproject_clear_descriptor_set_layout,reproject_clear_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/reproject/clear.comp.spv"
   );
 
@@ -620,34 +527,34 @@ int main( int argc, const char *argv[] ) {
   std::vector< std::shared_ptr< gct::image_view_t > > post_history;
   std::vector< std::shared_ptr< gct::image_view_t > > reproject_ao;
   std::vector< std::shared_ptr< gct::image_view_t > > reproject_ao_depth;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     reproject_ao.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
     reproject_ao_depth.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         r32uici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
     pre_history.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         r32uici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
     post_history.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         r32uici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( reproject_ao, vk::ImageLayout::eGeneral );
@@ -658,9 +565,9 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     reproject_ao_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         reproject_descriptor_set_layout
       )
     );
@@ -691,9 +598,9 @@ int main( int argc, const char *argv[] ) {
     );
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > reproject_clear_ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     reproject_clear_ao_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         reproject_clear_descriptor_set_layout
       )
     );
@@ -712,28 +619,28 @@ int main( int argc, const char *argv[] ) {
     );
   }
 
-  const auto [light_descriptor_set_layout,light_pipeline] = pipeline_cache->get_pipeline(
+  const auto [light_descriptor_set_layout,light_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > diffuse;
   std::vector< std::shared_ptr< gct::image_view_t > > specular;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     diffuse.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
     specular.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( diffuse, vk::ImageLayout::eGeneral );
@@ -742,9 +649,9 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > light_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     light_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         light_descriptor_set_layout
       )
     );
@@ -767,15 +674,15 @@ int main( int argc, const char *argv[] ) {
   }
 
   std::vector< std::shared_ptr< gct::image_view_t > > ao_temp;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_temp.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         gct::image_create_info_t()
           .set_basic(
             vk::ImageCreateInfo()
               .setImageType( vk::ImageType::e2D )
               .setFormat( vk::Format::eR32G32Sfloat )
-              .setExtent( { width, height, 1 } )
+              .setExtent( { res.width, res.height, 1 } )
               .setMipLevels( 1 )
               .setArrayLayers( 4 )
               .setSamples( vk::SampleCountFlagBits::e1 )
@@ -791,7 +698,7 @@ int main( int argc, const char *argv[] ) {
   }
   
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( ao_temp, vk::ImageLayout::eGeneral );
@@ -799,15 +706,15 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   
-  const auto [ao_descriptor_set_layout,ao_pipeline] = pipeline_cache->get_pipeline(
+  const auto [ao_descriptor_set_layout,ao_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/ao/rtao.comp.spv"
   );
 
   //////////////
   std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         ao_descriptor_set_layout
       )
     );
@@ -861,24 +768,24 @@ int main( int argc, const char *argv[] ) {
     );
   }
 
-  const auto [ao_hgauss_descriptor_set_layout,ao_hgauss_pipeline] = pipeline_cache->get_pipeline(
+  const auto [ao_hgauss_descriptor_set_layout,ao_hgauss_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/hadaptive.comp.spv"
   );
-  const auto [ao_vgauss_descriptor_set_layout,ao_vgauss_pipeline] = pipeline_cache->get_pipeline(
+  const auto [ao_vgauss_descriptor_set_layout,ao_vgauss_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/selective_gauss2/vadaptive.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > ao_gauss_temp;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_gauss_temp.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( ao_gauss_temp, vk::ImageLayout::eGeneral );
@@ -886,9 +793,9 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_hgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_hgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         ao_hgauss_descriptor_set_layout
       )
     );
@@ -910,9 +817,9 @@ int main( int argc, const char *argv[] ) {
     );
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > ao_vgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     ao_vgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         ao_vgauss_descriptor_set_layout
       )
     );
@@ -935,13 +842,13 @@ int main( int argc, const char *argv[] ) {
   }
 
 
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     framebuffers.emplace_back(
       fb_resources_t{
-        device->get_semaphore(),
-        device->get_semaphore(),
-        device->get_semaphore(),
-        queue->get_command_pool()->allocate(),
+        res.device->get_semaphore(),
+        res.device->get_semaphore(),
+        res.device->get_semaphore(),
+        res.queue->get_command_pool()->allocate(),
         gbuffer.get_render_pass_begin_info( i )
       }
     );
@@ -955,9 +862,9 @@ int main( int argc, const char *argv[] ) {
 
   std::vector< std::shared_ptr< gct::buffer_t > > tone;
   std::vector< std::shared_ptr< gct::buffer_t > > tone_staging;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     tone.push_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( tone_state_t ),
         vk::BufferUsageFlagBits::eStorageBuffer|
         vk::BufferUsageFlagBits::eTransferDst|
@@ -966,7 +873,7 @@ int main( int argc, const char *argv[] ) {
       )
     );
     tone_staging.push_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( tone_state_t ),
         vk::BufferUsageFlagBits::eTransferDst|
         vk::BufferUsageFlagBits::eTransferSrc,
@@ -976,29 +883,29 @@ int main( int argc, const char *argv[] ) {
   }
   
 
-  const auto [mix_ao_descriptor_set_layout,mix_ao_pipeline] = pipeline_cache->get_pipeline(
+  const auto [mix_ao_descriptor_set_layout,mix_ao_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv"
   );
 
 
   std::vector< std::shared_ptr< gct::image_view_t > > mixed_out;
   std::vector< std::shared_ptr< gct::image_view_t > > bloom_out;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     mixed_out.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
     bloom_out.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( mixed_out, vk::ImageLayout::eGeneral );
@@ -1008,9 +915,9 @@ int main( int argc, const char *argv[] ) {
   }
 
   std::vector< std::shared_ptr< gct::descriptor_set_t > > mix_ao_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     mix_ao_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         mix_ao_descriptor_set_layout
       )
     );
@@ -1044,24 +951,24 @@ int main( int argc, const char *argv[] ) {
     );
   }
 
-  const auto [bloom_hgauss_descriptor_set_layout,bloom_hgauss_pipeline] = pipeline_cache->get_pipeline(
+  const auto [bloom_hgauss_descriptor_set_layout,bloom_hgauss_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv"
   );
-  const auto [bloom_vgauss_descriptor_set_layout,bloom_vgauss_pipeline] = pipeline_cache->get_pipeline(
+  const auto [bloom_vgauss_descriptor_set_layout,bloom_vgauss_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::image_view_t > > bloom_gauss_temp;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     bloom_gauss_temp.push_back(
-      allocator->create_image(
+      res.allocator->create_image(
         rgba32ici,
         VMA_MEMORY_USAGE_GPU_ONLY
       )->get_view( vk::ImageAspectFlagBits::eColor )
     );
   }
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( bloom_gauss_temp, vk::ImageLayout::eGeneral );
@@ -1069,9 +976,9 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > bloom_hgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     bloom_hgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         bloom_hgauss_descriptor_set_layout
       )
     );
@@ -1087,9 +994,9 @@ int main( int argc, const char *argv[] ) {
     );
   }
   std::vector< std::shared_ptr< gct::descriptor_set_t > > bloom_vgauss_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     bloom_vgauss_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         bloom_vgauss_descriptor_set_layout
       )
     );
@@ -1107,14 +1014,14 @@ int main( int argc, const char *argv[] ) {
 
 
 
-  const auto [tone_descriptor_set_layout,tone_pipeline] = pipeline_cache->get_pipeline(
+  const auto [tone_descriptor_set_layout,tone_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv"
   );
 
   std::vector< std::shared_ptr< gct::descriptor_set_t > > tone_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     tone_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         tone_descriptor_set_layout
       )
     );
@@ -1130,26 +1037,26 @@ int main( int argc, const char *argv[] ) {
     );
   }
 
-  const auto [gamma_descriptor_set_layout,gamma_pipeline] = pipeline_cache->get_pipeline(
+  const auto [gamma_descriptor_set_layout,gamma_pipeline] = res.pipeline_cache->get_pipeline(
     CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv"
   );
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      recorder.set_image_layout( swapchain_images, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( res.swapchain_images, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
   std::vector< std::shared_ptr< gct::image_view_t > > swapchain_image_views;
-  for( const auto &image: swapchain_images ) {
+  for( const auto &image: res.swapchain_images ) {
     swapchain_image_views.push_back( image->get_view( vk::ImageAspectFlagBits::eColor ) );
   }
 
   std::vector< std::shared_ptr< gct::descriptor_set_t > > gamma_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size(); ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
     gamma_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         gamma_descriptor_set_layout
       )
     );
@@ -1173,11 +1080,11 @@ int main( int argc, const char *argv[] ) {
   {
     auto rec = gcb->begin();
     doc = gct::gltf::load_gltf(
-      model_filename,
-      device,
+      res.model_filename,
+      res.device,
       rec,
-      allocator,
-      descriptor_pool,
+      res.allocator,
+      res.descriptor_pool,
       {
         shadow_render_pass,
         gbuffer.get_render_pass(),
@@ -1191,7 +1098,7 @@ int main( int argc, const char *argv[] ) {
       0,
       framebuffers.size(),
       0,
-      float( width ) / float( height ),
+      float( res.width ) / float( res.height ),
       false,
       {
         dynamic_descriptor_set_layout
@@ -1211,11 +1118,11 @@ int main( int argc, const char *argv[] ) {
 
   auto const viewport =
     vk::Viewport()
-      .setWidth( width )
-      .setHeight( height )
+      .setWidth( res.width )
+      .setHeight( res.height )
       .setMinDepth( 0.0f )
       .setMaxDepth( 1.0f );
-  vk::Rect2D const scissor( vk::Offset2D(0, 0), vk::Extent2D( width, height ) );
+  vk::Rect2D const scissor( vk::Offset2D(0, 0), vk::Extent2D( res.width, res.height ) );
   auto const cube_viewport =
     vk::Viewport()
       .setWidth( shadow_map_size )
@@ -1228,10 +1135,10 @@ int main( int argc, const char *argv[] ) {
 
   const glm::mat4 voxel_camera = glm::mat4( 1.0 );
 
-  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(width)/float(height)), std::min(0.1f*scale,0.5f), scale );
+  const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(res.width)/float(res.height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;
 
-  gct::glfw_walk walk( center, scale, walk_state_filename );
+  gct::glfw_walk walk( center, scale, res.walk_state_filename );
   const auto point_lights = gct::gltf::get_point_lights(
     doc.node,
     doc.point_light
@@ -1240,12 +1147,12 @@ int main( int argc, const char *argv[] ) {
     walk.set_light_energy( point_lights[ 0 ].intensity / ( 4 * M_PI ) / 100 );
     walk.set_light_pos( point_lights[ 0 ].location );
   }
-  window.set_on_key(
+  res.window->set_on_key(
     [&walk]( gct::glfw_window &p, int key, int scancode, int action, int mods ) {
       walk( p, key, scancode, action, mods );
     }
   );
-  window.set_on_closed(
+  res.window->set_on_closed(
     [&walk]( auto & ) {
       walk.set_end();
     }
@@ -1254,23 +1161,23 @@ int main( int argc, const char *argv[] ) {
   std::vector< std::shared_ptr< gct::buffer_t > > staging_cube_uniform;
   std::vector< std::shared_ptr< gct::buffer_t > > cube_uniform;
   std::vector< std::shared_ptr< gct::descriptor_set_t > > cube_descriptor_set;
-  for( std::size_t i = 0u; i != swapchain_images.size() * 6u; ++i ) {
+  for( std::size_t i = 0u; i != res.swapchain_images.size() * 6u; ++i ) {
     staging_cube_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferSrc,
         VMA_MEMORY_USAGE_CPU_TO_GPU
       )
     );
     cube_uniform.emplace_back(
-      allocator->create_buffer(
+      res.allocator->create_buffer(
         sizeof( gct::gltf::dynamic_uniforms_t ),
         vk::BufferUsageFlagBits::eTransferDst|vk::BufferUsageFlagBits::eUniformBuffer,
         VMA_MEMORY_USAGE_GPU_ONLY
       )
     );
     cube_descriptor_set.push_back(
-      descriptor_pool->allocate(
+      res.descriptor_pool->allocate(
         dynamic_descriptor_set_layout
       )
     );
@@ -1306,7 +1213,7 @@ int main( int argc, const char *argv[] ) {
   std::cout << "imax " << imax.x << " " << imax.y << " " <<imax.z << std::endl;
 
   {
-    auto command_buffer = queue->get_command_pool()->allocate();
+    auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto rec = command_buffer->begin();
       {
@@ -1334,7 +1241,7 @@ int main( int argc, const char *argv[] ) {
           .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
           .set_light_energy( walk.get_light_energy() )
           .set_light_size( light_size )
-          .set_ambient( ambient_level );
+          .set_ambient( res.ambient_level );
         rec.copy(
           dynamic_data,
           staging_voxel_uniform[ i ],
@@ -1443,7 +1350,7 @@ int main( int argc, const char *argv[] ) {
       sync.command_buffer->wait_for_executed();
     }
     else sync.initial = false;
-    auto image_index = swapchain->acquire_next_image( sync.image_acquired );
+    auto image_index = res.swapchain->acquire_next_image( sync.image_acquired );
     auto &fb = framebuffers[ image_index ];
     {
       auto mapped = tone_staging[ image_index ]->map< tone_state_t >();
@@ -1464,7 +1371,7 @@ int main( int argc, const char *argv[] ) {
           .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
           .set_light_energy( walk.get_light_energy() )
           .set_light_size( light_size )
-          .set_ambient( ambient_level );
+          .set_ambient( res.ambient_level );
         rec.copy(
           dynamic_data,
           staging_cube_uniform[ i + image_index * 6u ],
@@ -1521,7 +1428,7 @@ int main( int argc, const char *argv[] ) {
         .set_light_energy( walk.get_light_energy() )
         .set_light_size( light_size )
         .set_frame_counter( frame_counter )
-        .set_ambient( ambient_level );
+        .set_ambient( res.ambient_level );
       rec.copy(
         dynamic_data,
         staging_dynamic_uniform[ image_index ],
@@ -1532,7 +1439,7 @@ int main( int argc, const char *argv[] ) {
         reproject_clear_pipeline,
         { reproject_clear_ao_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       
       rec.barrier(
         vk::AccessFlagBits::eShaderRead,
@@ -1566,7 +1473,7 @@ int main( int argc, const char *argv[] ) {
         reproject_pipeline,
         { reproject_ao_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
 
       rec.barrier(
         vk::AccessFlagBits::eTransferRead,
@@ -1605,7 +1512,7 @@ int main( int argc, const char *argv[] ) {
         light_pipeline,
         { light_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       
       rec.compute_barrier(
         {},
@@ -1618,7 +1525,7 @@ int main( int argc, const char *argv[] ) {
         ao_pipeline,
         { ao_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
 
       rec.compute_barrier(
         {},
@@ -1632,7 +1539,7 @@ int main( int argc, const char *argv[] ) {
         ao_hgauss_pipeline,
         { ao_hgauss_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.compute_barrier(
         {},
         { ao_gauss_temp[ image_index ]->get_factory() }
@@ -1641,7 +1548,7 @@ int main( int argc, const char *argv[] ) {
         ao_vgauss_pipeline,
         { ao_vgauss_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
 
       rec.compute_barrier(
         {},
@@ -1655,7 +1562,7 @@ int main( int argc, const char *argv[] ) {
         mix_ao_pipeline,
         { mix_ao_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.compute_barrier(
         {},
         {
@@ -1667,7 +1574,7 @@ int main( int argc, const char *argv[] ) {
         bloom_hgauss_pipeline,
         { bloom_hgauss_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.compute_barrier(
         {},
         { bloom_gauss_temp[ image_index ]->get_factory() }
@@ -1676,7 +1583,7 @@ int main( int argc, const char *argv[] ) {
         bloom_vgauss_pipeline,
         { bloom_vgauss_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.compute_barrier(
         {},
         { bloom_out[ image_index ]->get_factory() }
@@ -1689,7 +1596,7 @@ int main( int argc, const char *argv[] ) {
         tone_pipeline,
         { tone_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.compute_to_transfer_barrier(
         { tone[ image_index ] },
         {}
@@ -1699,16 +1606,16 @@ int main( int argc, const char *argv[] ) {
         tone_staging[ image_index ]
       );
       rec.convert_image(
-        swapchain_images[ image_index ],
+        res.swapchain_images[ image_index ],
         vk::ImageLayout::eGeneral
       );
       rec.bind(
         gamma_pipeline,
         { gamma_descriptor_set[ image_index ] }
       );
-      rec.dispatch_threads( width, height, 1 );
+      rec.dispatch_threads( res.width, res.height, 1 );
       rec.convert_image(
-        swapchain_images[ image_index ],
+        res.swapchain_images[ image_index ],
         vk::ImageLayout::ePresentSrcKHR
       );
     }
@@ -1717,10 +1624,10 @@ int main( int argc, const char *argv[] ) {
         .add_wait_for( sync.image_acquired, vk::PipelineStageFlagBits::eColorAttachmentOutput )
         .add_signal_to( sync.draw_complete )
     );
-    queue->present(
+    res.queue->present(
       gct::present_info_t()
         .add_wait_for( sync.draw_complete )
-        .add_swapchain( swapchain, image_index )
+        .add_swapchain( res.swapchain, image_index )
     );
     last_image_index = image_index;
     glfwPollEvents();
@@ -1728,7 +1635,7 @@ int main( int argc, const char *argv[] ) {
     ++frame_counter;
     current_frame %= framebuffers.size();
   }
-  (*queue)->waitIdle();
-  walk.save( walk_state_filename );
+  (*res.queue)->waitIdle();
+  walk.save( res.walk_state_filename );
 }
 

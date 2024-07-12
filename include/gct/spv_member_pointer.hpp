@@ -59,6 +59,7 @@ public:
   bool operator==( const spv_member_pointer& ) const;
   bool operator!=( const spv_member_pointer& ) const;
   void to_json( nlohmann::json& ) const;
+  bool has( const std::string &name ) const;
 private:
   std::size_t begin_;
   const SpvReflectTypeDescription *type;

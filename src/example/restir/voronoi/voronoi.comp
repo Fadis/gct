@@ -1,0 +1,90 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1, r32ui) uniform uimage3D voxel;
+
+layout(push_constant) uniform PushConstants {
+  uint distance;
+} push_constants;
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 4 ) in;
+
+const ivec3 directions[26] = ivec3[](
+  ivec3(   0,   0, + 1 ),
+  ivec3(   0,   0, - 1 ),
+  ivec3(   0, + 1,   0 ),
+  ivec3(   0, + 1, + 1 ),
+  ivec3(   0, + 1, - 1 ),
+  ivec3(   0, - 1,   0 ),
+  ivec3(   0, - 1, + 1 ),
+  ivec3(   0, - 1, - 1 ),
+  ivec3( + 1,   0,   0 ),
+  ivec3( + 1,   0, + 1 ),
+  ivec3( + 1,   0, - 1 ),
+  ivec3( + 1, + 1,   0 ),
+  ivec3( + 1, + 1, + 1 ),
+  ivec3( + 1, + 1, - 1 ),
+  ivec3( + 1, - 1,   0 ),
+  ivec3( + 1, - 1, + 1 ),
+  ivec3( + 1, - 1, - 1 ),
+  ivec3( - 1,   0,   0 ),
+  ivec3( - 1,   0, + 1 ),
+  ivec3( - 1,   0, - 1 ),
+  ivec3( - 1, + 1,   0 ),
+  ivec3( - 1, + 1, + 1 ),
+  ivec3( - 1, + 1, - 1 ),
+  ivec3( - 1, - 1,   0 ),
+  ivec3( - 1, - 1, + 1 ),
+  ivec3( - 1, - 1, - 1 )
+);
+
+ivec3 get_target( ivec3 pos, uint d, uint index ) {
+  return pos + directions[ index ] * int( d );
+}
+
+ivec3 decode_pos( uint v ) {
+  return ivec3(
+    ( v >> 20 ) & 0x3FF,
+    ( v >> 10 ) & 0x3FF,
+    ( v ) & 0x3FF
+  );
+}
+
+uint encode_pos( ivec3 v ) {
+  return
+    ( v.x << 20 ) |
+    ( v.y << 10 ) |
+    v.z;
+}
+
+bool empty( uint v ) {
+  return ( v >> 30 ) != 0;
+}
+
+void main()  {
+  const ivec3 image_size = imageSize( voxel );
+  ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
+
+  const uint center_encoded = imageLoad( voxel, pos ).r;
+
+  uint selected_encoded = center_encoded;
+  ivec3 selected = decode_pos( selected_encoded );
+  ivec3 selected_distance_v = ivec3( selected ) - ivec3( pos );
+  selected_distance_v *= selected_distance_v;
+  uint selected_distance = selected_distance_v.x + selected_distance_v.y + selected_distance_v.z;
+  for( uint index = 0; index != 26; index++ ) {
+    const ivec3 target_pos = max( min( get_target( pos, push_constants.distance, index ), image_size - 1 ), ivec3( 0, 0, 0 ) );
+    const uint target_encoded = imageLoad( voxel, target_pos ).r;
+    const ivec3 target = decode_pos( target_encoded );
+    ivec3 d_new_v = target - pos;
+    d_new_v *= d_new_v;
+    const uint d_new = d_new_v.x + d_new_v.y + d_new_v.z;
+    const bool update = ( !empty( target_encoded ) && ( empty( selected_encoded ) || selected_distance > d_new ) );
+    selected_encoded = update ? target_encoded : selected_encoded;
+    selected_distance = update ? d_new : selected_distance;
+  }
+  imageStore( voxel, pos, uvec4( selected_encoded, 0, 0, 0 ) );
+}
+

@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include <random>
 #include <nlohmann/json.hpp>
@@ -45,17 +46,33 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
   auto staging = staging_matrix->map< glm::mat4 >();
 
   const matrix_index_t index = allocate_index();
+  
+  const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
 
   const matrix_index_t staging_index = staging_index_allocator.allocate();
 
   const request_index_t write_request_index = write_request_index_allocator.allocate();
+  
+  const request_index_t history_write_request_index = enable_copy ? write_request_index_allocator.allocate() : request_index_t( 0u );
 
   write_requests[ write_request_index ] =
     write_request()
       .set_staging( staging_index )
       .set_destination( index );
-
+  
   staging[ staging_index ] = value;
+  
+  if( enable_copy ) {
+    write_requests[ history_write_request_index ] =
+      write_request()
+        .set_staging( staging_index )
+        .set_destination( history_index );
+    matrix_state[ history_index ] =
+      matrix_state_type()
+        .set_valid( true )
+        .set_staging_index( staging_index )
+        .set_write_request_index( history_write_request_index );
+  }
 
   matrix_state[ index ] =
     matrix_state_type()
@@ -73,6 +90,23 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
     }
   );
   used_on_gpu.push_back( desc );
+  update_requested.insert( *desc );
+
+  if( enable_copy ) {
+    matrix_descriptor history_desc(
+      new matrix_index_t( history_index ),
+      [self=shared_from_this()]( const matrix_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+    used_on_gpu.push_back( history_desc );
+    matrix_state[ history_index ].set_self( history_desc.get_weak() );
+    matrix_state[ index ].set_history( history_desc );
+  }
+
   matrix_state[ index ].set_self( desc.get_weak() );
   return desc;
 }
@@ -93,15 +127,18 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
   }
 
   const matrix_index_t index = allocate_index();
+  const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
   const matrix_index_t local_index = allocate_index();
+  const matrix_index_t local_history_index = enable_copy ? allocate_index() : matrix_index_t( 0u ) ;
   const matrix_index_t staging_index = staging_index_allocator.allocate();
   const request_index_t write_request_index = write_request_index_allocator.allocate();
+  const request_index_t history_write_request_index = enable_copy ? write_request_index_allocator.allocate() : request_index_t( 0u );
 
   write_requests[ write_request_index ] =
     write_request()
       .set_staging( staging_index )
       .set_destination( local_index );
-
+  
   staging[ staging_index ] = value;
 
   matrix_state[ local_index ] =
@@ -109,7 +146,6 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
       .set_valid( true )
       .set_staging_index( staging_index )
       .set_write_request_index( write_request_index );
-
   matrix_descriptor local_desc(
     new matrix_index_t( local_index ),
     [self=shared_from_this()]( const matrix_index_t *p ) {
@@ -120,6 +156,35 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     }
   );
   used_on_gpu.push_back( local_desc );
+  update_requested.insert( *local_desc );
+ 
+  if( enable_copy ) {
+    write_requests[ history_write_request_index ] =
+      write_request()
+        .set_staging( staging_index )
+        .set_destination( local_history_index );
+    matrix_state[ local_history_index ] =
+      matrix_state_type()
+        .set_valid( true )
+        .set_staging_index( staging_index )
+        .set_write_request_index( history_write_request_index );
+    matrix_descriptor local_history_desc(
+      new matrix_index_t( local_history_index ),
+      [self=shared_from_this()]( const matrix_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+    used_on_gpu.push_back( local_history_desc );
+    matrix_state[ local_history_index ].set_self( local_history_desc.get_weak() );
+    matrix_state[ local_index ].set_history( local_history_desc );
+    matrix_state[ history_index ] =
+      matrix_state_type()
+        .set_valid( true );
+  }
+
   matrix_state[ local_index ].set_self( local_desc.get_weak() );
 
   matrix_state[ index ] =
@@ -146,12 +211,29 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     }
   );
   used_on_gpu.push_back( desc );
+  update_requested.insert( *desc );
   matrix_state[ index ].set_self( desc.get_weak() );
+
+  if( enable_copy ) {
+    matrix_descriptor history_desc(
+      new matrix_index_t( history_index ),
+      [self=shared_from_this()]( const matrix_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+    used_on_gpu.push_back( history_desc );
+    matrix_state[ history_index ].set_self( history_desc.get_weak() );
+    matrix_state[ index ].set_history( history_desc );
+  }
   return desc;
 }
 
 void matrix_pool::state_type::release( matrix_index_t index ) {
   matrix_descriptor local;
+  matrix_descriptor history;
   matrix_descriptor parent;
   {
     std::lock_guard< std::mutex > lock( guard );
@@ -161,6 +243,7 @@ void matrix_pool::state_type::release( matrix_index_t index ) {
     release_index( index );
     parent = matrix_state[ index ].parent;
     local = matrix_state[ index ].local;
+    history = matrix_state[ index ].history;
     matrix_state[ index ] = matrix_state_type();
   }
 }
@@ -308,6 +391,47 @@ void matrix_pool::state_type::get( const matrix_descriptor &desc, const std::fun
     }
   }
 }
+void matrix_pool::state_type::copy_to_history( const matrix_pool::matrix_descriptor &desc ) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy_to_history : Last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  if( !enable_copy ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy_to_history : copy is not supported on this matrix_pool", __FILE__, __LINE__ );
+  }
+  if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy_to_history : Matrix not found", __FILE__, __LINE__ );
+  }
+  if( !matrix_state[ *desc ].history ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy_to_history : The matrix doesn't have history", __FILE__, __LINE__ );
+  }
+  copy( desc, matrix_state[ *desc ].history ); 
+}
+void matrix_pool::state_type::copy( const matrix_pool::matrix_descriptor &from, const matrix_pool::matrix_descriptor &to ) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy : Last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  if( matrix_state.size() <= *from || !matrix_state[ *from ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy : Source matrix not found", __FILE__, __LINE__ );
+  }
+  if( matrix_state.size() <= *to || !matrix_state[ *to ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy : Destination matrix not found", __FILE__, __LINE__ );
+  }
+  if( copy_requested.find( *to ) != copy_requested.end() ) {
+    throw exception::runtime_error( "matrix_pool::state_type::copy : Multiple copy requests have same destination", __FILE__, __LINE__ );
+    return;
+  }
+  {
+    auto copy_requests = copy_request_buffer->map< copy_request >();
+    const request_index_t copy_request_index = copy_request_index_allocator.allocate();
+    copy_requests[ copy_request_index ] =
+      copy_request()
+        .set_source( *from )
+        .set_destination( *to );
+    used_on_gpu.push_back( from );
+    used_on_gpu.push_back( to );
+  }
+}
+
 bool matrix_pool::state_type::is_valid( const matrix_descriptor &desc ) const {
   if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
     return false;
@@ -324,7 +448,8 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
   staging_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
   write_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
-  read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) )
+  read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
+  copy_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) )
 {
   matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
   staging_matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
@@ -345,6 +470,10 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   //write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   update_request_buffer = props.allocator->create_buffer( sizeof( update_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  enable_copy = std::filesystem::exists( props.copy_shader );
+  if( enable_copy ) {
+    copy_request_buffer = props.allocator->create_buffer( sizeof( copy_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  }
   write.reset( new gct::compute(
     gct::compute_create_info()
       .set_allocator( props.allocator )
@@ -369,6 +498,19 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
       .add_resource( { props.staging_matrix_buffer_name, receive_matrix } )
       .add_resource( { props.read_request_buffer_name, read_request_buffer } )
   ) );
+  if( enable_copy ) {
+    copy_.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator( props.allocator )
+        .set_descriptor_pool( props.descriptor_pool )
+        .set_pipeline_cache( props.pipeline_cache )
+        .set_shader( props.copy_shader )
+        .set_swapchain_image_count( 1u )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, matrix } )
+        .add_resource( { props.copy_request_buffer_name, copy_request_buffer } )
+    ) );
+  }
   update.reset( new gct::compute(
     gct::compute_create_info()
       .set_allocator( props.allocator )
@@ -384,7 +526,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
 
 matrix_pool::matrix_descriptor matrix_pool::state_type::get_local( const matrix_descriptor &desc ) {
   if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
-    return desc;
+    throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix not found", __FILE__, __LINE__ );
   }
   const auto &s = matrix_state[ *desc ];
   if( s.local ) {
@@ -392,6 +534,18 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::get_local( const matrix_
   }
   return desc;
 }
+
+matrix_pool::matrix_descriptor matrix_pool::state_type::get_history( const matrix_descriptor &desc ) {
+  if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix not found", __FILE__, __LINE__ );
+  }
+  const auto &s = matrix_state[ *desc ];
+  if( s.history ) {
+    return s.history;
+  }
+  throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix has no history", __FILE__, __LINE__ );
+}
+
 
 std::vector< matrix_pool::request_range > matrix_pool::state_type::build_update_request_range() {
   std::vector< request_range > range;
@@ -425,16 +579,25 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
   }
-  //rec.sync_to_device( staging_matrix );
-  rec.sync_to_device( receive_matrix );
-  /*rec.sync_to_device( write_request_buffer );
-  rec.sync_to_device( read_request_buffer );
-  rec.sync_to_device( update_request_buffer );*/
-  rec.barrier( {
-    //staging_matrix->get_buffer(),
-    receive_matrix->get_buffer()
-  }, {} );
-  {
+  if( enable_copy && copy_request_index_allocator.get_tail() != 0u ) {
+    request_range range =
+      request_range()
+        .set_count( copy_request_index_allocator.get_tail() );
+    rec->pushConstants(
+        **copy_->get_pipeline()->get_props().get_layout(),
+        vk::ShaderStageFlagBits::eCompute,
+        0u,
+        sizeof( request_range ),
+        reinterpret_cast< void* >( &range )
+    );
+    (*copy_)( rec, 0u, copy_request_index_allocator.get_tail(), 1u, 1u );
+    rec.barrier( { matrix }, {} );
+  }
+  if( write_request_index_allocator.get_tail() != 0u ) {
+    rec.sync_to_device( receive_matrix );
+    rec.barrier( {
+      receive_matrix->get_buffer()
+    }, {} );
     request_range range =
       request_range()
         .set_count( write_request_index_allocator.get_tail() );
@@ -446,8 +609,8 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         reinterpret_cast< void* >( &range )
     );
     (*write)( rec, 0u, write_request_index_allocator.get_tail(), 1u, 1u );
+    rec.barrier( { matrix }, {} );
   }
-  rec.barrier( { matrix }, {} );
   auto update_range = build_update_request_range();
   for( unsigned int level = 0u; level != update_range.size(); ++level ) {
     if( update_range[ level ].count ) {
@@ -462,7 +625,7 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       rec.barrier( { matrix }, {} );
     }
   }
-  {
+  if( read_request_index_allocator.get_tail() != 0u ) {
     request_range range =
       request_range()
         .set_count( read_request_index_allocator.get_tail() );
@@ -474,14 +637,15 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         reinterpret_cast< void* >( &range )
     );
     (*read)( rec, 0u, read_request_index_allocator.get_tail(), 1u, 1u );
+    rec.compute_barrier( { matrix }, {} );
+    rec.barrier( { receive_matrix->get_buffer() }, {} );
+    rec.sync_to_host( receive_matrix );
   }
-  rec.compute_barrier( { matrix }, {} );
-  rec.barrier( { receive_matrix->get_buffer() }, {} );
-  rec.sync_to_host( receive_matrix );
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
       std::vector< std::function< void() > > cbs;
       std::vector< matrix_descriptor > used_on_gpu;
+      std::vector< matrix_descriptor > delayed_copy;
       {
         std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->receive_matrix->map< glm::mat4 >();
@@ -504,20 +668,40 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
                 }
               }
             }
+            if( self->enable_copy ) {
+              if( s.write_request_index ) {
+                if( s.history ) {
+                  delayed_copy.push_back( s.self );
+                }
+              }
+              if( self->update_requested.find( *desc ) != self->update_requested.end() ) {
+                if( s.history ) {
+                  delayed_copy.push_back( s.self );
+                }
+              }
+            }
             s.write_request_index = std::nullopt;
             s.read_request_index = std::nullopt;
             s.staging_index = std::nullopt;
           }
+        }
+        if( self->enable_copy ) {
+          self->copy_request_index_allocator.reset();
         }
         self->write_request_index_allocator.reset();
         self->read_request_index_allocator.reset();
         self->staging_index_allocator.reset();
         self->update_requested.clear();
         self->update_request_list.clear();
+        self->copy_requested.clear();
+        self->copy_request_index_allocator.reset();
         self->cbs.clear();
         used_on_gpu = std::move( self->used_on_gpu );
         self->used_on_gpu.clear();
         self->execution_pending = false;
+      }
+      for( auto &d: delayed_copy ) {
+        self->copy_to_history( d );
       }
       for( auto &cb: cbs ) {
         cb();
@@ -555,9 +739,16 @@ matrix_pool::matrix_descriptor matrix_pool::get_local( const matrix_descriptor &
   std::lock_guard< std::mutex > lock( state->guard );
   return state->get_local( desc );
 }
+matrix_pool::matrix_descriptor matrix_pool::get_history( const matrix_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get_history( desc );
+}
 void matrix_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->flush( rec );
+}
+bool matrix_pool::copy_enabled() const {
+  return state->enable_copy;
 }
 void matrix_pool::to_json( nlohmann::json &dest ) const {
   std::lock_guard< std::mutex > lock( state->guard );

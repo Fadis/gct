@@ -1,0 +1,73 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1) uniform sampler2D transmittance;
+layout (binding = 0, rgba32f) writeonly uniform image2D dest_image;
+
+layout(push_constant) uniform PushConstants {
+  vec4 sigma_ma;
+  vec4 sigma_oa;
+  vec4 sigma_rs;
+  vec4 sigma_ms;
+  float g;
+  float ground_radius;
+  float top_radius;
+  float light_energy;
+} push_constants;
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1 ) in;
+
+#include "constants.h"
+#include "volumetric.h"
+#include "sky.h"
+#include "poisson_sphere.h"
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const float altitude = mix( push_constants.top_radius, push_constants.ground_radius, float( screen_pos.y )/float( gl_NumWorkGroups.y * gl_WorkGroupSize.y ) );
+  const float sun_angle = mix( pi/2.0, -pi/2.0, float( screen_pos.x )/float( gl_NumWorkGroups.x * gl_WorkGroupSize.x ) );
+  const vec3 light_pos = vec3( cos( sun_angle ), sin( sun_angle ), 0.0 )*14960000000.0f;
+  const float max_angle = pi / 2.0;
+  vec3 sum = vec3( 0.f, 0.f, 0.f );
+  vec3 fms = vec3( 0.f, 0.f, 0.f );
+  for( uint d = 0; d != poisson_sphere_sample_count; d++ )  {
+    const vec3 direction = poisson_sphere[ d ];
+    const vec3 V = -direction;
+    const vec3 atmosphere_distance = get_atmosphere_distance( altitude, direction, push_constants.ground_radius, push_constants.top_radius );
+    vec3 view_transmittance = vec3( 1.f, 1.f, 1.f );
+    const float d_distance = ( atmosphere_distance.y - atmosphere_distance.x ) / 40.f;
+    for( uint i = 0; i != 40; i++ ) {
+      const vec3 sample_pos = vec3( 0.0, altitude, 0.0 ) + direction * d_distance * i + atmosphere_distance.x;
+      const float sample_altitude = length( sample_pos );
+      const vec3 L = normalize( light_pos - sample_pos );
+      const float zenith_sun_angle = acos( dot( normalize( sample_pos ), L ) );
+      view_transmittance *= beer_lambert( push_constants.sigma_rs.rgb, relative_rayleigh_density( sample_altitude - push_constants.ground_radius ), d_distance );
+      view_transmittance *= beer_lambert( push_constants.sigma_ma.rgb, relative_mie_density( sample_altitude - push_constants.ground_radius ), d_distance );
+      view_transmittance *= beer_lambert( push_constants.sigma_ms.rgb, relative_mie_density( sample_altitude - push_constants.ground_radius ), d_distance );
+      view_transmittance *= beer_lambert( push_constants.sigma_oa.rgb, relative_ozone_density( sample_altitude - push_constants.ground_radius ), d_distance );
+      const float min_angle = get_min_rad( sample_altitude, push_constants.ground_radius );
+      if( zenith_sun_angle < ( max_angle - min_angle ) ) {
+        vec2 transmittance_texcoord = vec2(
+          zenith_sun_angle/( max_angle - min_angle ),
+          ( push_constants.top_radius - sample_altitude )/( push_constants.top_radius - push_constants.ground_radius )
+        );
+        transmittance_texcoord.x = ( -2.0 + sqrt( 4.0 - 4.0 * transmittance_texcoord.x ) )/( -2.0 );
+        transmittance_texcoord.y = 1.0 - ( -2.0 + sqrt( 4.0 - 4.0 * transmittance_texcoord.y ) )/( -2.0 );
+        const vec3 light_transmittance = texture( transmittance, transmittance_texcoord ).rgb;
+        const vec3 rayleigh_scattering = push_constants.sigma_rs.rgb * rayleigh( acos( dot( -L, V ) ) );
+        const vec3 mie_scattering = push_constants.sigma_ms.rgb * henyey_greenstein_schlick2( push_constants.g, acos( dot( -L, V ) ) );
+        fms += view_transmittance * ( rayleigh_scattering + mie_scattering );
+        sum += view_transmittance * ( rayleigh_scattering + mie_scattering ) * light_transmittance * d_distance;
+      }
+    }
+  }
+  //sum *= 1.0 / ( 4.0 * pi );
+  fms *= 1.0 / float( poisson_sphere_sample_count );
+  vec3 ffms = 1.0 / ( 1.0 - fms );
+  sum *= ffms;
+  sum *= /* 4.0 * pi*/ 1.0 / float( poisson_sphere_sample_count );
+  imageStore( dest_image, screen_pos, vec4( sum, 1.0 ) );
+}
+

@@ -18,7 +18,12 @@ public:
     const std::shared_ptr< allocator_t > &allocator,
     unsigned int size,
     vk::Format format,
-    unsigned int mip = 1u
+    unsigned int mip = 1u,
+    vk::ImageUsageFlags usage =
+      vk::ImageUsageFlagBits::eStorage|
+      vk::ImageUsageFlagBits::eSampled|
+      vk::ImageUsageFlagBits::eTransferSrc|
+      vk::ImageUsageFlagBits::eTransferDst
   );
   const std::shared_ptr< gct::image_view_t > &get_image() const {
     return view;

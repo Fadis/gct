@@ -62,4 +62,5 @@ subdirs(
   hroc
   radix_sort
   onesweep
+  restir
 )

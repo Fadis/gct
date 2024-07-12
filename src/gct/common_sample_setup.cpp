@@ -41,7 +41,8 @@ common_sample_setup::common_sample_setup(
       ( "fullscreen,f", po::bool_switch(), "fullscreen" )
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
       ( "model,m", po::value< std::string >(), "glTF filename" )
-      ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" );
+      ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
+      ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" );
   }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
@@ -113,6 +114,7 @@ common_sample_setup::common_sample_setup(
       width = 1920;
       height = 1080;
     }
+    light_count = vm[ "light" ].as< unsigned int >();
     window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
     gct::glfw::get().poll();
     surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );

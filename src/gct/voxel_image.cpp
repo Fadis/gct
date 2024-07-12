@@ -10,13 +10,15 @@
 #include <gct/image.hpp>
 #include <gct/image_view.hpp>
 #include <gct/voxel_image.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 namespace gct {
 voxel_image::voxel_image(
   const std::shared_ptr< allocator_t > &allocator,
   unsigned int size,
   vk::Format format,
-  unsigned int mip
+  unsigned int mip,
+  vk::ImageUsageFlags usage
 ) {
   const auto image = allocator->create_image(
     gct::image_create_info_t()
@@ -29,11 +31,7 @@ voxel_image::voxel_image(
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
           .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage|
-            vk::ImageUsageFlagBits::eSampled|
-            vk::ImageUsageFlagBits::eTransferSrc
-          )
+          .setUsage( usage )
           .setInitialLayout( vk::ImageLayout::eUndefined )
       ),
     VMA_MEMORY_USAGE_GPU_ONLY

@@ -1,0 +1,60 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rgba32f) writeonly uniform image2D direct;
+
+layout(local_size_x = 256, local_size_y = 1 ) in;
+
+#include "constants.h"
+#include "push_constants.h"
+#include "punctual_light_parameter.h"
+
+layout(binding = 6,std430) buffer LightPool {
+  punctual_light_parameter light[];
+};
+
+layout(binding = 7,std430) buffer ActiveLight {
+  uint active_light[];
+};
+
+layout(binding = 8,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+void main()  {
+  const uint index = gl_GlobalInvocationID.x;
+  
+  const uint light_count = global_uniforms.light_count;
+
+  if( index >= light_count ) {
+    return;
+  }
+  
+  const vec4 world_light_pos = light[ active_light[ index ] ].world_position;
+  vec4 screen_light_pos =
+    matrix_pool[ global_uniforms.projection_matrix ] *
+    matrix_pool[ global_uniforms.camera_matrix ] * world_light_pos;
+  if( screen_light_pos.w < 0 ) {
+    return;
+  }
+  screen_light_pos /= screen_light_pos.w;
+  const float d = distance( global_uniforms.eye_pos.xyz, world_light_pos.xyz );
+  const ivec3 image_size = imageSize( gbuffer );
+  const ivec2 screen_pos = ivec2( ( screen_light_pos.xy * 0.5 + 0.5 ) * ( image_size.xy - ivec2( 1, 1 ) ) );
+  if(
+    screen_pos.x >= 0 &&
+    screen_pos.y >= 0 &&
+    screen_pos.x < image_size.x &&
+    screen_pos.y < image_size.y
+  ) {
+    const vec3 world_pos = imageLoad( gbuffer, ivec3( screen_pos, 0 ) ).xyz;
+    const float depth = distance( global_uniforms.eye_pos.xyz, world_pos.xyz );
+    if( depth > d ) {
+      imageStore( direct, screen_pos, vec4( light[ active_light[ index ] ].energy.xyz / ( d * d ) * 1000, 1.0 ) );
+    }
+  }
+}
+

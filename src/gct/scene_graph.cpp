@@ -55,6 +55,7 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "primitive_resource_index" ] = src.primitive_resource_index;
   dest[ "visibility" ] = src.visibility;
   dest[ "vertex" ] = src.vertex;
+  dest[ "light" ] = src.light;
   dest[ "prim_pool_size" ] = src.prim_pool_size;
   dest[ "inst_pool_size" ] = src.inst_pool_size;
   dest[ "descriptor_set_id" ] = src.descriptor_set_id;
@@ -86,6 +87,9 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   }
   if( src.vertex ) {
     dest[ "vertex" ] = *src.vertex;
+  }
+  if( src.light ) {
+    dest[ "light" ] = *src.light;
   }
   dest[ "descriptor_set_layout" ] = nlohmann::json::array();
   for( const auto &v: src.descriptor_set_layout ) {
@@ -251,6 +255,12 @@ void node::to_json( nlohmann::json &dest ) const {
       dest[ "instance" ].push_back( *i );
     }
   }
+  dest[ "light" ] = nlohmann::json::array();
+  for( const auto &i: light ) {
+    if( i ) {
+      dest[ "light" ].push_back( *i );
+    }
+  }
   dest[ "initial_world_matrix" ] = nlohmann::json::array();
   for( unsigned int i = 0u; i != 4; ++i ) {
     for( unsigned int j = 0u; j != 4; ++j ) {
@@ -277,6 +287,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   primitive_resource_index.set_shader( dir / "primitive_resource_index_pool" );
   instance_resource_index.set_shader( dir / "instance_resource_index_pool" );
   visibility.set_shader( dir / "visibility_pool" );
+  light.set_shader( dir / "light_pool" );
   return *this;
 }
 
@@ -408,6 +419,19 @@ scene_graph::scene_graph(
       .set_descriptor_pool( props->descriptor_pool )
       .set_pipeline_cache( props->pipeline_cache )
   ) );
+  if(
+    std::filesystem::exists( props->light.read_shader ) &&
+    std::filesystem::exists( props->light.write_shader ) &&
+    std::filesystem::exists( props->light.update_shader )
+  ) {
+    resource->light.reset( new light_pool(
+      light_pool_create_info( props->light )
+        .set_allocator( props->allocator )
+        .set_descriptor_pool( props->descriptor_pool )
+        .set_pipeline_cache( props->pipeline_cache )
+        .set_matrix_pool( resource->matrix->get_buffer() )
+    ) );
+  }
   resource->last_visibility = props->allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -423,14 +447,18 @@ scene_graph::scene_graph(
     vertex_buffer_pool_create_info( props->vertex )
       .set_allocator( props->allocator )
   ) );
-  resource->descriptor_set->update({
+  std::vector< write_descriptor_set_t > u{
     { "primitive_resource_index", resource->primitive_resource_index->get_buffer() },
     { "instance_resource_index", resource->instance_resource_index->get_buffer() },
     { "visibility_pool", resource->visibility->get_buffer() },
     { "matrix_pool", resource->matrix->get_buffer() },
     { "aabb_pool", resource->aabb->get_buffer() },
     { "resource_pair", resource->resource_pair->get_buffer() }
-  });
+  };
+  if( resource->light ) {
+    u.push_back( { "light_pool", resource->light->get_buffer() } );
+  }
+  resource->descriptor_set->update( std::move( u ) );
 
   root_node.reset( new node(
     props,
@@ -480,6 +508,9 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   (*resource->vertex)( rec );
   (*resource->primitive_resource_index)( rec );
   (*resource->instance_resource_index)( rec );
+  if( resource->light ) {
+    (*resource->light)( rec );
+  }
   rec.compute_to_graphics_barrier( {
     resource->matrix->get_buffer(),
     resource->aabb->get_buffer(),

@@ -189,6 +189,19 @@ namespace gct {
       throw exception::invalid_argument( "spv_member_pointer::operator* : Not an iterator.", __FILE__, __LINE__ );
     }
   }
+  bool spv_member_pointer::has( const std::string &name ) const {
+    if( stride != 0u ) {
+      throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
+    }
+    if( !child || child->empty() ) {
+      throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
+    }
+    const auto iter = child->find( name );
+    if( iter == child->end() ) {
+      return false;
+    }
+    return true;
+  }
   void spv_member_pointer::to_json( nlohmann::json &dest ) const {
     dest = nlohmann::json::object();
     dest[ "begin" ] = begin_;

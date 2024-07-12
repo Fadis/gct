@@ -105,9 +105,9 @@ int main( int argc, const char *argv[] ) {
     )
   );
   instance->set_debug_callback(
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
-    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning|
+    //vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose|
+    //vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo|
+    //vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning|
     vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
     vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
     [](

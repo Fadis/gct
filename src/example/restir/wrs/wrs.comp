@@ -1,0 +1,130 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, rgba32f) readonly uniform image2DArray previous_reservoir;
+layout (binding = 1, rgba32f) writeonly uniform image2DArray reservoir;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include "constants.h"
+#include "push_constants.h"
+#include "random.h"
+#include "punctual_light_parameter.h"
+
+layout (binding = 5) uniform sampler3D distance_field;
+
+layout(binding = 6,std430) buffer LightPool {
+  punctual_light_parameter light[];
+};
+
+layout(binding = 7,std430) buffer ActiveLight {
+  uint active_light[];
+};
+
+layout(binding = 8,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+mat2 get_rotate_matrix2( float angle ) {
+  float s = sin( angle );
+  float c = cos( angle );
+  return mat2( c, s, -s, c );
+}
+
+
+ivec2 neighbor[8] = ivec2[](
+  ivec2( -1, -1 ),
+  ivec2( -1,  0 ),
+  ivec2( -1,  1 ),
+  ivec2(  0, -1 ),
+  ivec2(  0,  1 ),
+  ivec2(  1, -1 ),
+  ivec2(  1,  0 ),
+  ivec2(  1,  1 )
+);
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+  const uint instance = uint( imageLoad( gbuffer, ivec3( screen_pos, 4 ) ).z );
+  const vec3 pos = imageLoad( gbuffer, ivec3( screen_pos, 0 ) ).xyz;
+
+  const uint light_count = global_uniforms.light_count;
+
+
+  const ivec3 image_size = imageSize( gbuffer );
+  const vec3 optical_flow = imageLoad( gbuffer, ivec3( screen_pos, 5 ) ).xyz;
+  
+  vec4 r = vec4( 32767, 0.0, 0.0, 0.0 );
+  const ivec2 previous_screen_pos = screen_pos - ivec2( ( optical_flow.xy * vec2( 0.5, 0.5 ) ) * ( vec2( image_size.xy ) ) );
+  {
+    ivec2 n = previous_screen_pos;
+    const bool valid_pos = (
+      n.x >= 0 && n.x < image_size.x &&
+      n.y >= 0 && n.y < image_size.y
+    );
+    const vec4 hist = imageLoad( previous_reservoir, ivec3( n, 1 ) );
+    const vec3 prev_normal = hist.xyz;
+    const uint prev_instance = uint( hist.w );
+    const bool history_valid =
+      valid_pos &&
+      ( instance == prev_instance ) &&
+      ( dot( normal, prev_normal ) >= 0.99 );
+    r = history_valid ? imageLoad( previous_reservoir, ivec3( n, 0 ) ) : r;
+  }
+
+  vec2 rand_seed = vec2( screen_pos.xy ) + vec2( global_uniforms.frame_counter.x * 48.0, global_uniforms.frame_counter.x * 37.0 );
+
+  const uint y = uint( r.x );
+  const float w_y = r.y;
+  const float speed = min( length( optical_flow.xy ), 1.0 );
+  const float w_sum = r.z * mix( 1.0, 0.01, speed );
+  const float m = r.w;
+
+
+  uint light_index = 0;
+  float weight = 0.0;
+  for( uint retry = 0; retry != 16; retry++ ) {
+    rand_seed = rand1_vec2( rand_seed );
+    light_index = active_light[ uint( rand_seed.x * light_count ) ];
+
+    float recv_ratio = dot( normalize( light[ light_index ].world_position.xyz - pos.xyz ), normal );
+    const float d = distance( pos.xyz, light[ light_index ].world_position.xyz );
+    weight = recv_ratio * max( max( light[ light_index ].energy.r, light[ light_index ].energy.g ), light[ light_index ].energy.b ) / ( d * d ) / light_count;
+    if( recv_ratio > 0.0 ) {
+      break;
+    }
+  }
+
+  rand_seed = rand1_vec2( rand_seed );
+  const float rand01 = rand_seed.x;
+  bool update = ( rand01 < weight / w_sum + weight );
+
+  const vec3 ray_begin = ( matrix_pool[ global_uniforms.voxel ] * vec4( pos, 1.0 ) ).xyz;
+  const vec3 ray_end = ( matrix_pool[ global_uniforms.voxel ] * vec4( light[ light_index ].world_position.xyz, 1.0 ) ).xyz;
+  const vec3 ray_dir = normalize( ray_end - ray_begin );
+  const float ray_distance = distance( ray_begin, ray_end );
+  vec3 ray_cur = ray_begin + ray_dir * 4.0/512.0;
+  float ray_traveled = 4.0/512.0;
+  float prev_r = 0.0;
+  float grad = 4.0/512.0;
+  for( int j = 0; j < 64; j++ ) {
+    float r = texture( distance_field, ray_cur ).r;
+    prev_r = r;
+    grad = r - prev_r;
+    ray_cur += ray_dir * r;
+    ray_traveled += r;
+  }
+  imageStore(
+    reservoir,
+    ivec3( screen_pos, 0 ),
+    ( update && ( ray_traveled >= ray_distance || grad > 0.0 ) ) ?
+    vec4( light_index, weight, w_sum + weight, m + 1 ) :
+    vec4( y, w_y, y == 32767 ? 0.0 : w_sum + weight, y == 32767 ? 0 : m + 1 )
+  );
+  imageStore( reservoir, ivec3( screen_pos, 1 ), vec4( normal, instance ) );
+}
+

@@ -214,7 +214,11 @@ add_library( gct SHARED
   gct/gbuffer.cpp
   gct/gbuffer_create_info.cpp
   gct/voxel_image.cpp
+  gct/voxel_buffer.cpp
+  gct/voxel_framebuffer.cpp
   gct/distance_field.cpp
+  gct/distance_field2.cpp
+  gct/distance_field2_create_info.cpp
   gct/spectrum.cpp
   gct/canvas/rect_renderer.cpp
   gct/canvas/text_renderer.cpp
@@ -242,6 +246,8 @@ add_library( gct SHARED
   gct/tone_mapping.cpp
   gct/hbao_create_info.cpp
   gct/hbao.cpp
+  gct/rtao_create_info.cpp
+  gct/rtao.cpp
   gct/epipolar_mesh_create_info.cpp
   gct/epipolar_mesh.cpp
   gct/epipolar_light_scattering_create_info.cpp
@@ -269,6 +275,9 @@ add_library( gct SHARED
   gct/matrix_pool_create_info.cpp
   gct/aabb_pool.cpp
   gct/aabb_pool_create_info.cpp
+  gct/punctual_light_type.cpp
+  gct/light_pool_create_info.cpp
+  gct/light_pool.cpp
   gct/linear_allocator.cpp
   gct/linear_allocator_create_info.cpp
   gct/texture_pool_create_info.cpp

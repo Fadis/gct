@@ -337,7 +337,7 @@ scene_graph::primitive gltf2::create_primitive(
     p.set_indexed( false );
     p.set_count( vertex_count );
   }
-  
+ 
   auto rimp = props.graph->get_resource()->primitive_resource_index->get_member_pointer();
   std::vector< std::uint8_t > ri( rimp.get_aligned_size() );
 
@@ -537,6 +537,15 @@ void gltf2::load_node(
    
       i->initial_world_matrix = cur->initial_world_matrix;
       ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
+      if( rimp.has( "previous_world_matrix" ) ) {
+        if( props.graph->get_resource()->matrix->copy_enabled() ) {
+          ri.data()->*rimp[ "previous_world_matrix" ] = *props.graph->get_resource()->matrix->get_history( i->descriptor.matrix );
+          //ri.data()->*rimp[ "previous_world_matrix" ] = *i->descriptor.matrix;
+        }
+        else {
+          ri.data()->*rimp[ "previous_world_matrix" ] = *i->descriptor.matrix;
+        }
+      }
       i->initial_world_aabb = cur->initial_world_matrix * prim->aabb;
       if( first ) {
         aabb = i->initial_world_aabb;

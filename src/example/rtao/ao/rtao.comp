@@ -50,7 +50,7 @@ void main() {
   const float roughness = mr.g;
   const vec3 center = center_.xyz;
   
-  const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) + dynamic_uniforms.frame_counter / 48 ) * 2 * pi ) );
+  const mat3 rot3 = mat3( get_rotate_matrix2( rand1( vec2( screen_pos.xy ) + vec2( dynamic_uniforms.frame_counter / 48.0, dynamic_uniforms.frame_counter / 37.0 ) ) * 2 * pi ) );
   
   const ivec3 image_size = imageSize( gbuffer );
   const ivec2 image_right_bottom = image_size.xy - ivec2( 1, 1 );

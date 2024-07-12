@@ -23,6 +23,7 @@ matrix_pool_create_info &matrix_pool_create_info::set_shader(
   set_write_shader( dir / "write.comp.spv" );
   set_read_shader( dir / "read.comp.spv" );
   set_update_shader( dir / "update.comp.spv" );
+  set_copy_shader( dir / "copy.comp.spv" );
   return *this;
 }
 
@@ -40,6 +41,7 @@ void to_json( nlohmann::json &dest, const matrix_pool_create_info &src ) {
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "update_shader" ] = src.update_shader.string();
+  dest[ "copy_shader" ] = src.copy_shader.string();
   dest[ "max_matrix_count" ] = src.max_matrix_count;
   dest[ "staging_matrix_buffer_name" ]  = src.staging_matrix_buffer_name;
   dest[ "matrix_buffer_name" ] = src.matrix_buffer_name;
