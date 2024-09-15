@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
@@ -14,31 +15,79 @@
 #include <gct/shader_module_create_info.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/compute_create_info.hpp>
+#include <gct/compute_pipeline_create_info.hpp>
+#include <gct/get_device.hpp>
+#include <gct/device.hpp>
 
 namespace gct {
   compute::compute(
     const compute_create_info &ci
   ) :
     props( ci ) {
-    std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline( ci.shader );
-
-    if( props.external_descriptor_set ) {
-      std::vector< write_descriptor_set_t > temp;
-      for( const auto &r: props.resources ) {
-        temp.push_back( { r, 0 } );
+    if( props.external_pipeline_layout ) {
+      auto &device = get_device( *props.pipeline_cache );
+      auto shader = device.get_shader_module( props.shader );
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
+      const auto &dsl = props.external_pipeline_layout->get_props().get_descriptor_set_layout();
+      for( unsigned int i = 0u; i != dsl.size(); ++i ) {
+        set_layouts.insert( std::make_pair( i, dsl[ i ] ) );
       }
-      props.external_descriptor_set->update( temp, props.ignore_unused_descriptor );
+      pipeline = props.pipeline_cache->get_pipeline(
+        compute_pipeline_create_info_t()
+          .set_stage( shader )
+          .set_layout( props.external_pipeline_layout )
+      );
+      descriptor_set_layout = set_layouts;
     }
     else {
+      std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout );
+    }
+    descriptor_set.resize( props.swapchain_image_count );
+    for( auto &d: descriptor_set_layout ) {
       for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-        descriptor_set.push_back( props.descriptor_pool->allocate(
-          descriptor_set_layout
-        ) );
-        std::vector< write_descriptor_set_t > temp;
-        for( const auto &r: props.resources ) {
-          temp.push_back( { r, i } );
+        if( descriptor_set[ i ].size() <= d.first ) {
+          descriptor_set[ i ].resize( d.first + 1u );
         }
-        descriptor_set.back()->update( temp, props.ignore_unused_descriptor );
+      }
+      const auto ext = props.external_descriptor_set.find( d.first );
+      if( ext != props.external_descriptor_set.end() ) {
+        for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+          std::cout << "use external for " << d.first <<std::endl;
+          descriptor_set[ i ][ d.first ] = ext->second;
+          descriptor_set_layout[ d.first ] = ext->second->get_props().get_layout()[ 0 ];
+        }
+      }
+      else {
+        for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+          std::cout << "use internal for " << d.first <<std::endl;
+          descriptor_set[ i ][ d.first ] = props.descriptor_pool->allocate(
+            d.second
+          );
+        }
+      }
+    }
+    for( unsigned int i = 0u; i != descriptor_set.size(); ++i ) {
+      std::vector< write_descriptor_set_t > temp;
+      for( const auto &r: props.resources ) {
+        temp.push_back( { r, i } );
+      }
+      if( props.ignore_unused_descriptor ) {
+        for( unsigned int did = 0u; did != descriptor_set[ i ].size(); ++did ) {
+          if( descriptor_set[ i ][ did ] ) {
+            const auto ext = props.external_descriptor_set.find( did );
+            if( ext == props.external_descriptor_set.end() ) {
+              descriptor_set[ i ][ did ]->update( temp, props.ignore_unused_descriptor );
+            }
+          }
+        }
+      }
+      else {
+        if( descriptor_set[ i ][ 0 ] ) {
+          const auto ext = props.external_descriptor_set.find( 0u );
+          if( ext == props.external_descriptor_set.end() ) {
+            descriptor_set[ i ][ 0 ]->update( temp, props.ignore_unused_descriptor );
+          }
+        }
       }
     }
   }
@@ -49,18 +98,10 @@ namespace gct {
     unsigned int y,
     unsigned int z
   ) const {
-    if( props.external_descriptor_set ) {
-      rec.bind(
-        pipeline,
-        { props.external_descriptor_set }
-      );
-    }
-    else {
-      rec.bind(
-        pipeline,
-        { descriptor_set[ image_index ] }
-      );
-    }
+    rec.bind(
+      pipeline,
+      descriptor_set[ image_index ]
+    );
     rec.dispatch_threads( x, y, z );
   }
   const shader_module_reflection_t &compute::get_reflection() const {

@@ -19,6 +19,7 @@
 #include <gct/index_range.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/handler.hpp>
+#include <gct/color_space.hpp>
 
 namespace gct {
 class image_t;
@@ -29,11 +30,13 @@ struct image_load_info {
   LIBGCT_SETTER( mipmap )
   LIBGCT_SETTER( attr )
   LIBGCT_SETTER( max_channels_per_layer )
+  LIBGCT_SETTER( enable_linear )
   std::string filename;
   vk::ImageUsageFlagBits usage;
   bool mipmap = true;
   integer_attribute_t attr = integer_attribute_t::normalized;
   unsigned int max_channels_per_layer = 4u;
+  bool enable_linear = false;
 };
 
 struct image_dump_info {
@@ -56,8 +59,10 @@ public:
   struct views {
     LIBGCT_SETTER( normalized )
     LIBGCT_SETTER( srgb )
+    LIBGCT_SETTER( linear )
     image_descriptor normalized;
     image_descriptor srgb;
+    image_descriptor linear;
   };
 private:
   struct image_state_type {
@@ -77,6 +82,16 @@ private:
     bool mipmap = true;
     std::shared_ptr< buffer_t > staging_buffer;
     std::shared_ptr< image_view_t > final_image;
+  };
+  struct rgb_to_xyz_request {
+    LIBGCT_SETTER( rgb )
+    LIBGCT_SETTER( xyz )
+    LIBGCT_SETTER( rgb_image )
+    LIBGCT_SETTER( xyz_image )
+    image_index_t rgb;
+    image_index_t xyz;
+    std::shared_ptr< image_view_t > rgb_image;
+    std::shared_ptr< image_view_t > xyz_image;
   };
   using request_range = index_range;
 public:
@@ -104,9 +119,15 @@ private:
     linear_allocator index_allocator;
     std::vector< write_request > write_request_list;
     std::vector< std::pair< std::shared_ptr< image_t >, image_dump_info > > dump_request_list;
+    std::vector< rgb_to_xyz_request > rgb_to_xyz_request_list;
     std::vector< image_descriptor > used_on_gpu;
     bool execution_pending = false;
     std::mutex guard;
+    bool enable_color_space = false;
+    std::shared_ptr< compute > rgba8;
+    std::shared_ptr< compute > rgba16;
+    std::shared_ptr< compute > rgba16f;
+    std::shared_ptr< compute > rgba32f;
   };
   std::shared_ptr< state_type > state;
 };

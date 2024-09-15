@@ -127,7 +127,7 @@ namespace gct {
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( video_profiles )
-    LIBGCT_ARRAY_OF_TO_JSON( video_profiles, pProfiles, profile )
+    LIBGCT_ARRAY_OF_TO_JSON( video_profiles, pProfiles, video_profile_info )
 #endif
   }
   void from_json( const nlohmann::json &root, image_create_info_t &v ) {
@@ -189,7 +189,7 @@ namespace gct {
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_FROM_JSON( video_profiles )
-    LIBGCT_ARRAY_OF_FROM_JSON( video_profiles, pProfiles, profile )
+    LIBGCT_ARRAY_OF_FROM_JSON( video_profiles, pProfiles, video_profile_info )
 #endif
   }
   image_create_info_t &image_create_info_t::rebuild_chain() {
@@ -256,7 +256,7 @@ namespace gct {
     LIBGCT_EXTENSION_REBUILD_CHAIN( video_profile )
 #endif
 #ifdef VK_KHR_VIDEO_QUEUE_EXTENSION_NAME
-    LIBGCT_ARRAY_OF_REBUILD_CHAIN( video_profiles, ProfileCount, PProfiles, profile )
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN( video_profiles, ProfileCount, PProfiles, video_profile_info )
     LIBGCT_EXTENSION_REBUILD_CHAIN( video_profiles )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN

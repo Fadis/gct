@@ -2,6 +2,7 @@
 #include <nlohmann/json.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
+#include <gct/descriptor_set_layout.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/spv2vk.hpp>
@@ -32,6 +33,16 @@ namespace gct {
     if( !v->get_props().has_reflection() )
       throw exception::invalid_argument( "Reflection is required to set shader directly to pipeline", __FILE__, __LINE__ );
     return add_push_constant_range( v->get_props().get_reflection() );
+  }
+  pipeline_layout_create_info_t &pipeline_layout_create_info_t::add_descriptor_set_layout(
+    unsigned int id,
+    const std::shared_ptr< descriptor_set_layout_t > &v
+  ) {
+    if( descriptor_set_layout.size() <= id ) {
+      descriptor_set_layout.resize( id + 1u );
+    }
+    descriptor_set_layout[ id ] = v;
+    return *this;
   }
   pipeline_layout_create_info_t &pipeline_layout_create_info_t::add_push_constant_range(
     const shader_module_reflection_t &v

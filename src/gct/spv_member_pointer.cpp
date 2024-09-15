@@ -3,6 +3,7 @@
 #include <gct/spirv_reflect.h>
 #include <gct/alignment.hpp>
 #include <gct/spv_member_pointer.hpp>
+#include <optional>
 
 namespace gct {
   spv_member_pointer::spv_member_pointer(
@@ -66,6 +67,19 @@ namespace gct {
     const auto iter = child->find( name );
     if( iter == child->end() ) {
       throw exception::invalid_argument( std::string( "spv_member_pointer::operator[] : There are no member named " ) + name + ".", __FILE__, __LINE__ );
+    }
+    return iter->second;
+  }
+  std::optional< spv_member_pointer > spv_member_pointer::get_maybe( const std::string &name ) const {
+    if( stride != 0u ) {
+      return std::nullopt;
+    }
+    if( !child || child->empty() ) {
+      return std::nullopt;
+    }
+    const auto iter = child->find( name );
+    if( iter == child->end() ) {
+      return std::nullopt;
     }
     return iter->second;
   }

@@ -114,9 +114,9 @@ namespace gct {
     integer_attribute_t attr,
     unsigned int max_channels_per_layer
   ) {
-    const auto [temporary_buffer,final_image] = create_image_from_file( allocator, filename, usage, mipmap, attr, max_channels_per_layer );
-    buffer_to_image( mipmap, temporary_buffer, final_image );
-    return final_image;
+    const auto [temporary_buffer,nonlinear_image,linear_image] = create_image_from_file( allocator, filename, usage, mipmap, attr, max_channels_per_layer );
+    buffer_to_image( mipmap, temporary_buffer, nonlinear_image );
+    return nonlinear_image;
   }
 
   void command_buffer_recorder_t::dump_image(

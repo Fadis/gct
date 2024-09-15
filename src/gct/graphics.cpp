@@ -33,16 +33,35 @@ namespace gct {
     props.pipeline_create_info.rebuild_chain();
     if( props.external_pipeline_layout ) {
       pipeline_layout = props.external_pipeline_layout;
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
+      const auto &dsl = props.external_pipeline_layout->get_props().get_descriptor_set_layout();
+      for( unsigned int i = 0u; i != dsl.size(); ++i ) {
+        set_layouts.insert( std::make_pair( i, dsl[ i ] ) );
+      }
+      descriptor_set_layout = set_layouts;
     }
     else {
-      gct::descriptor_set_layout_create_info_t dslci;
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
+      std::unordered_set< unsigned int > set_ids;
       for( const auto &s: props.pipeline_create_info.get_stage() ) {
-        dslci.add_binding( s.get_shader_module()->get_props().get_reflection() );
+        for( const auto id: s.get_shader_module()->get_props().get_reflection().get_descriptor_set_id() ) {
+          set_ids.insert( id );
+        }
       }
-      descriptor_set_layout = device.get_descriptor_set_layout( dslci );
+      for( const auto id: set_ids ) {
+        gct::descriptor_set_layout_create_info_t dslci;
+        for( const auto &s: props.pipeline_create_info.get_stage() ) {
+          dslci.add_binding( s.get_shader_module()->get_props().get_reflection(), id );
+        }
+        auto descriptor_set_layout = device.get_descriptor_set_layout( dslci );
+        set_layouts.insert( std::make_pair( id, descriptor_set_layout ) );
+      }
+      descriptor_set_layout = set_layouts;
      
       gct::pipeline_layout_create_info_t plci;
-      plci.add_descriptor_set_layout( descriptor_set_layout );
+      for( const auto &v: descriptor_set_layout ) {
+        plci.add_descriptor_set_layout( v.first, v.second );
+      }
       for( const auto &s: props.pipeline_create_info.get_stage() ) {
         plci.add_push_constant_range( s.get_shader_module() );
       }
@@ -65,26 +84,54 @@ namespace gct {
       device,
       vs->get_shader_module()->get_props().get_reflection()
     );
- 
-    if( props.external_descriptor_set ) {
+
+    descriptor_set.resize( props.swapchain_image_count );
+    for( auto &d: descriptor_set_layout ) {
+      for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+        if( descriptor_set[ i ].size() <= d.first ) {
+          descriptor_set[ i ].resize( d.first + 1u );
+        }
+      }
+      const auto ext = props.external_descriptor_set.find( d.first );
+      if( ext != props.external_descriptor_set.end() ) {
+        for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+          descriptor_set[ i ][ d.first ] = ext->second;
+          descriptor_set_layout[ d.first ] = ext->second->get_props().get_layout()[ 0 ];
+        }
+      }
+      else {
+        for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+          descriptor_set[ i ][ d.first ] = props.descriptor_pool->allocate(
+            d.second
+          );
+        }
+      }
+    }
+    for( unsigned int i = 0u; i != descriptor_set.size(); ++i ) {
       std::vector< write_descriptor_set_t > temp;
       for( const auto &r: props.resources ) {
-        temp.push_back( { r, 0 } );
+        temp.push_back( { r, i } );
       }
-      props.external_descriptor_set->update( temp );
-    }
-    else {
-      for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-        descriptor_set.push_back( props.descriptor_pool->allocate(
-          descriptor_set_layout
-        ) );
-        std::vector< write_descriptor_set_t > temp;
-        for( const auto &r: props.resources ) {
-          temp.push_back( { r, i } );
+      if( props.ignore_unused_descriptor ) {
+        for( unsigned int did = 0u; did != descriptor_set[ i ].size(); ++did ) {
+          if( descriptor_set[ i ][ did ] ) {
+            const auto ext = props.external_descriptor_set.find( did );
+            if( ext == props.external_descriptor_set.end() ) {
+              descriptor_set[ i ][ did ]->update( temp, props.ignore_unused_descriptor );
+            }
+          }
         }
-        descriptor_set.back()->update( temp );
+      }
+      else {
+        if( descriptor_set[ i ][ 0 ] ) {
+          const auto ext = props.external_descriptor_set.find( 0u );
+          if( ext == props.external_descriptor_set.end() ) {
+            descriptor_set[ i ][ 0 ]->update( temp, props.ignore_unused_descriptor );
+          }
+        }
       }
     }
+
     if( props.pipeline_create_info.get_color_blend().get_attachment().empty() ) {
       props.pipeline_create_info
         .set_color_blend(
@@ -103,18 +150,10 @@ namespace gct {
     command_buffer_recorder_t &rec,
     unsigned int image_index
   ) const {
-    if( props.external_descriptor_set ) {
-      rec.bind(
-        pipeline,
-        { props.external_descriptor_set }
-      );
-    }
-    else {
-      rec.bind(
-        pipeline,
-        { descriptor_set[ image_index ] }
-      );
-    }
+    rec.bind(
+      pipeline,
+      descriptor_set[ image_index ]
+    );
   }
 }
 

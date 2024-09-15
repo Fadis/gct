@@ -44,69 +44,100 @@ texture_pool::views texture_pool::state_type::allocate(
   if( !s ) {
     throw exception::runtime_error( "texture_pool::state_type::allocate : sampler not found", __FILE__, __LINE__ );
   }
-  const auto normalized = props.image->get( iid.normalized );
-  if( !normalized ) {
-    throw exception::runtime_error( "texture_pool::state_type::allocate : normalized image not found", __FILE__, __LINE__ );
-  }
-  const auto srgb = props.image->get( iid.srgb ); 
-  if( !srgb ) {
-    throw exception::runtime_error( "texture_pool::state_type::allocate : srgb image not found", __FILE__, __LINE__ );
-  }
 
-  const texture_index_t normalized_index = allocate_index();
-  const texture_index_t srgb_index = allocate_index();
+  const texture_index_t normalized_index = iid.normalized ? allocate_index() : texture_index_t( 0u );
+  const texture_index_t srgb_index = iid.srgb ? allocate_index() : texture_index_t( 0u );
+  const texture_index_t linear_index = iid.linear ? allocate_index() : texture_index_t( 0u );
 
-  write_request_list.push_back(
-    write_request()
-      .set_index( normalized_index )
-      .set_sampler( s )
-      .set_view( normalized )
-  );
-  texture_state[ normalized_index ] =
-    texture_state_type()
-      .set_valid( true )
-      .set_write_request_index( write_request_list.size() - 1u )
-      .set_sampler( s )
-      .set_view( normalized );
-
-  texture_descriptor normalized_desc(
-    new texture_index_t( normalized_index ),
-    [self=shared_from_this()]( const texture_index_t *p ) {
-      if( p ) {
-        self->release( *p );
-        delete p;
+  texture_descriptor normalized_desc;
+  texture_descriptor srgb_desc;
+  texture_descriptor linear_desc;
+  if( iid.normalized ) {
+    const auto normalized = props.image->get( iid.normalized );
+    write_request_list.push_back(
+      write_request()
+        .set_index( normalized_index )
+        .set_sampler( s )
+        .set_view( normalized )
+    );
+    texture_state[ normalized_index ] =
+      texture_state_type()
+        .set_valid( true )
+        .set_write_request_index( write_request_list.size() - 1u )
+        .set_sampler( s )
+        .set_view( normalized );
+    normalized_desc = texture_descriptor(
+      new texture_index_t( normalized_index ),
+      [self=shared_from_this()]( const texture_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
       }
-    }
-  );
-  used_on_gpu.push_back( normalized_desc );
+    );
+    used_on_gpu.push_back( normalized_desc );
+  }
 
-  write_request_list.push_back(
-    write_request()
-      .set_index( srgb_index )
-      .set_sampler( s )
-      .set_view( srgb )
-  );
-  texture_state[ srgb_index ] =
-    texture_state_type()
-      .set_valid( true )
-      .set_write_request_index( write_request_list.size() - 1u )
-      .set_sampler( s )
-      .set_view( srgb );
-
-  texture_descriptor srgb_desc(
-    new texture_index_t( srgb_index ),
-    [self=shared_from_this()]( const texture_index_t *p ) {
-      if( p ) {
-        self->release( *p );
-        delete p;
+  if( iid.srgb ) {
+    std::cout << "texture srgb active" << std::endl;
+    const auto srgb = props.image->get( iid.srgb ); 
+    write_request_list.push_back(
+      write_request()
+        .set_index( srgb_index )
+        .set_sampler( s )
+        .set_view( srgb )
+    );
+    texture_state[ srgb_index ] =
+      texture_state_type()
+        .set_valid( true )
+        .set_write_request_index( write_request_list.size() - 1u )
+        .set_sampler( s )
+        .set_view( srgb );
+ 
+    srgb_desc = texture_descriptor(
+      new texture_index_t( srgb_index ),
+      [self=shared_from_this()]( const texture_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
       }
-    }
-  );
-  used_on_gpu.push_back( srgb_desc );
+    );
+    used_on_gpu.push_back( srgb_desc );
+  }
+  
+  if( iid.linear ) {
+    std::cout << "texture linear active " << *iid.linear << std::endl;
+    const auto linear = props.image->get( iid.linear );
+    write_request_list.push_back(
+      write_request()
+        .set_index( linear_index )
+        .set_sampler( s )
+        .set_view( linear )
+    );
+    texture_state[ linear_index ] =
+      texture_state_type()
+        .set_valid( true )
+        .set_write_request_index( write_request_list.size() - 1u )
+        .set_sampler( s )
+        .set_view( linear );
+ 
+    linear_desc = texture_descriptor(
+      new texture_index_t( linear_index ),
+      [self=shared_from_this()]( const texture_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+    used_on_gpu.push_back( linear_desc );
+  }
 
   return views()
     .set_normalized( normalized_desc )
-    .set_srgb( srgb_desc );
+    .set_srgb( srgb_desc )
+    .set_linear( linear_desc );
 }
 
 

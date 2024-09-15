@@ -47,8 +47,10 @@ public:
   struct views {
     LIBGCT_SETTER( normalized )
     LIBGCT_SETTER( srgb )
+    LIBGCT_SETTER( linear )
     texture_descriptor normalized;
     texture_descriptor srgb;
+    texture_descriptor linear;
   };
 private:
   struct texture_state_type {

@@ -40,8 +40,8 @@ namespace gct {
     }
   private:
     graphics_create_info props;
-    std::shared_ptr< descriptor_set_layout_t > descriptor_set_layout;
-    std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
+    std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+    std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > descriptor_set;
     std::shared_ptr< pipeline_layout_t > pipeline_layout;
     std::shared_ptr< graphics_pipeline_t > pipeline;
     gct::pipeline_vertex_input_state_create_info_t vistat;

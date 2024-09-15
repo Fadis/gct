@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
@@ -13,13 +14,17 @@ namespace gct {
 class allocator_t;
 class descriptor_pool_t;
 class pipeline_cache_t;
+class descriptor_set_layout_t;
 class descriptor_set_t;
+class pipeline_layout_t;
 struct compute_create_info {
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( descriptor_pool )
   LIBGCT_SETTER( pipeline_cache )
   LIBGCT_SETTER( shader )
+  LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( external_descriptor_set )
+  LIBGCT_SETTER( external_pipeline_layout )
   LIBGCT_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   LIBGCT_SETTER( ignore_unused_descriptor )
@@ -29,11 +34,26 @@ struct compute_create_info {
   compute_create_info &clear_resource(
     const named_resource &n
   );
+  compute_create_info &set_external_descriptor_set(
+    const std::shared_ptr< descriptor_set_t > &v
+  ) {
+    external_descriptor_set.insert( std::make_pair( 0u, v ) );
+    return *this;
+  }
+  compute_create_info &add_external_descriptor_set(
+    unsigned int id,
+    const std::shared_ptr< descriptor_set_t > &v
+  ) {
+    external_descriptor_set.insert( std::make_pair( id, v ) );
+    return *this;
+  }
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
   std::filesystem::path shader;
-  std::shared_ptr< descriptor_set_t > external_descriptor_set;
+  std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+  std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
+  std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
   bool ignore_unused_descriptor = false;

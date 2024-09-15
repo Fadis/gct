@@ -358,8 +358,8 @@ namespace gct {
       const vk::ImageSubresourceRange &range
     );
     std::vector< vk::ImageMemoryBarrier > barrier(
-      vk::AccessFlagBits,
-      vk::AccessFlagBits,
+      vk::AccessFlags,
+      vk::AccessFlags,
       vk::PipelineStageFlagBits,
       vk::PipelineStageFlagBits,
       vk::DependencyFlagBits,

@@ -1,6 +1,7 @@
 #ifndef GCT_SPV_MEMBER_POINTER_HPP
 #define GCT_SPV_MEMBER_POINTER_HPP
 #include <cstdint>
+#include <optional>
 #include <variant>
 #include <unordered_map>
 #include <string>
@@ -49,6 +50,7 @@ public:
     return stride;
   }
   const numeric_type_t &get_numeric() const;
+  std::optional< spv_member_pointer > get_maybe( const std::string &name ) const;
   const spv_member_pointer &operator[]( const std::string &name ) const;
   spv_member_pointer operator[]( int ) const;
   spv_member_pointer begin() const;

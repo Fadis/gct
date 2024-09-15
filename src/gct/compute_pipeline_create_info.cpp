@@ -1,3 +1,4 @@
+#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -140,6 +141,21 @@ namespace gct {
           .add_push_constant_range(
             m
           )
+      )
+    );
+  }
+  compute_pipeline_create_info_t &compute_pipeline_create_info_t::set_layout(
+    const std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > &l,
+    const std::shared_ptr< shader_module_t > &m
+  ) {
+    gct::pipeline_layout_create_info_t ci;
+    for( const auto &e: l ) {
+      ci.add_descriptor_set_layout( e.first, e.second );
+    }
+    ci.add_push_constant_range( m );
+    return set_layout(
+      get_device( *m ).get_pipeline_layout(
+        std::move( ci )
       )
     );
   }

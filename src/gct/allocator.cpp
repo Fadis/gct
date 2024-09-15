@@ -263,7 +263,12 @@ namespace gct {
       auto mapped = temporary_buffer->map< std::uint8_t >();
       if( spec.nchannels == 3 ) {
         std::vector< uint8_t > temp( spec.width * spec.height * 4u );
-        texture_file->read_image( TypeDesc::UINT8, temp.data() );
+        texture_file->read_image(
+#if OIIO_VERSION_MAJOR >= 2
+          0, 0, 0, -1,
+#endif
+          TypeDesc::UINT8, temp.data()
+        );
         for( size_t i = spec.width * spec.height - 1; i; --i ) {
           temp[ i * 4 ] = temp[ i * spec.nchannels ];
           temp[ i * 4 + 1 ] = temp[ i * spec.nchannels + 1 ];
@@ -273,7 +278,12 @@ namespace gct {
         std::copy( temp.begin(), temp.end(), mapped.begin() );
       }
       else {
-        texture_file->read_image( TypeDesc::UINT8, mapped.begin() );
+        texture_file->read_image(
+#if OIIO_VERSION_MAJOR >= 2
+          0, 0, 0, -1,
+#endif
+          TypeDesc::UINT8, mapped.begin()
+        );
       }
     }
     return temporary_buffer;

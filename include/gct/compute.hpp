@@ -2,7 +2,7 @@
 #define GCT_CUBEMAP_COMPUTE_HPP
 #include <memory>
 #include <vector>
-#include <filesystem>
+#include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/compute_create_info.hpp>
 
@@ -36,8 +36,8 @@ namespace gct {
     const shader_module_reflection_t &get_reflection() const;
   private:
     compute_create_info props;
-    std::shared_ptr< descriptor_set_layout_t > descriptor_set_layout;
-    std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
+    std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+    std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > descriptor_set;
     std::shared_ptr< compute_pipeline_t > pipeline;
   };
   void to_json( nlohmann::json&, const compute& );

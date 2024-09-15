@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <unordered_map>
 #include <filesystem>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
@@ -11,6 +12,7 @@
 #include <gct/pipeline_cache_create_info.hpp>
 
 namespace gct {
+  class device_t;
   class compute_pipeline_t;
   class compute_pipeline_create_info_t;
   class graphics_pipeline_t;
@@ -59,6 +61,14 @@ namespace gct {
     >
     get_pipeline(
       const std::string &path
+    );
+    std::pair<
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
+      std::shared_ptr< compute_pipeline_t >
+    >
+    get_pipeline2(
+      const std::string &path,
+      std::vector< std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout
     );
     void dump( const std::filesystem::path &filename ) const;
   private:

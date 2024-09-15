@@ -63,4 +63,5 @@ subdirs(
   radix_sort
   onesweep
   restir
+  wide_color
 )

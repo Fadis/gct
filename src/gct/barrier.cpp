@@ -7,12 +7,13 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/format.hpp>
 #include <gct/get_device.hpp>
+#include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
 namespace gct {
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::barrier(
-    vk::AccessFlagBits src_access_mask,
-    vk::AccessFlagBits dest_access_mask,
+    vk::AccessFlags src_access_mask,
+    vk::AccessFlags dest_access_mask,
     vk::PipelineStageFlagBits src_stage,
     vk::PipelineStageFlagBits dest_stage,
     vk::DependencyFlagBits dependency,
@@ -100,8 +101,8 @@ namespace gct {
     const std::vector< std::shared_ptr< image_t > > &image
   ) {
     return barrier(
-      vk::AccessFlagBits::eMemoryRead,
-      vk::AccessFlagBits::eMemoryWrite,
+      vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
+      vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
       vk::PipelineStageFlagBits::eAllCommands,
       vk::PipelineStageFlagBits::eAllCommands,
       vk::DependencyFlagBits( 0 ),

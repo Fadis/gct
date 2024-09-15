@@ -209,6 +209,7 @@ add_library( gct SHARED
   gct/dpi.cpp
   gct/html_color.cpp
   gct/eotf.cpp
+  gct/color_space.cpp
   gct/shadow_map.cpp
   gct/cubemap.cpp
   gct/gbuffer.cpp

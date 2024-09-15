@@ -11,6 +11,9 @@
 #include <gct/buffer.hpp>
 #include <gct/format.hpp>
 #include <gct/image.hpp>
+#include <gct/compute.hpp>
+#include <gct/compute_pipeline.hpp>
+#include <gct/pipeline_layout.hpp>
 #include <gct/allocator.hpp>
 #include <gct/mappable_buffer.hpp>
 #include <gct/get_device.hpp>
@@ -61,9 +64,8 @@ image_pool::views image_pool::state_type::allocate() {
   vk::Format primary_format = vk::Format::eUndefined;
   std::vector< vk::Format > secondary_formats;
   const auto attr = integer_attribute_t::normalized;
-  constexpr static std::array< integer_attribute_t, 2u > attrs{
-    integer_attribute_t::normalized,
-    integer_attribute_t::srgb
+  constexpr static std::array< integer_attribute_t, 1u > attrs{
+    integer_attribute_t::normalized
   };
   for( const auto a: attrs ) {
     nt.attr = a;
@@ -90,7 +92,7 @@ image_pool::views image_pool::state_type::allocate() {
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
           .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage( vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled )
+          .setUsage( vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage )
           .setSharingMode( vk::SharingMode::eExclusive )
           .setQueueFamilyIndexCount( 0 )
           .setPQueueFamilyIndices( nullptr )
@@ -153,30 +155,25 @@ image_pool::views image_pool::state_type::allocate() {
   );
   used_on_gpu.push_back( normalized_desc );
 
-  write_request_list.push_back(
-    write_request()
-      .set_index( srgb_index )
-      .set_mipmap( false )
-      .set_staging_buffer( b )
-      .set_final_image( srgb )
-  );
-  image_state[ srgb_index ] =
-    image_state_type()
-      .set_valid( true )
-      .set_image( srgb )
-      .set_write_request_index( write_request_list.size() - 1u );
-
-  image_descriptor srgb_desc(
-    new image_index_t( srgb_index ),
-    [self=shared_from_this()]( const image_index_t *p ) {
-      if( p ) {
-        self->release( *p );
-        delete p;
+  image_descriptor srgb_desc;
+  if( srgb ) {
+    image_state[ srgb_index ] =
+      image_state_type()
+        .set_valid( true )
+        .set_image( srgb )
+        .set_write_request_index( write_request_list.size() - 1u );
+ 
+    srgb_desc = image_descriptor(
+      new image_index_t( srgb_index ),
+      [self=shared_from_this()]( const image_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
       }
-    }
-  );
-  used_on_gpu.push_back( srgb_desc );
-
+    );
+    used_on_gpu.push_back( srgb_desc );
+  }
   return views()
     .set_normalized( normalized_desc )
     .set_srgb( srgb_desc );
@@ -189,19 +186,22 @@ image_pool::views image_pool::state_type::allocate(
     throw exception::runtime_error( "image_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
   const image_index_t normalized_index = allocate_index();
-  const image_index_t srgb_index = allocate_index();
+  image_index_t srgb_index = 0u;
+  image_index_t linear_index = 0u;
 
   auto &device = get_device( *props.allocator );
 
-  const auto [b,i] = create_image_from_file(
+  const auto [b,i,l] = create_image_from_file(
     props.allocator,
     ci.filename,
     ci.usage,
     ci.mipmap,
     ci.attr,
-    ci.max_channels_per_layer
+    ci.max_channels_per_layer,
+    !( props.enable_linear && ci.enable_linear )
   );
 
+  std::shared_ptr< image_view_t > linear;
   std::shared_ptr< image_view_t > normalized;
   std::shared_ptr< image_view_t > srgb;
 
@@ -223,12 +223,46 @@ image_pool::views image_pool::state_type::allocate(
         )
         .rebuild_chain()
     );
-    if( is_normalized( f ) ) {
+    if( i->get_props().get_profile().gamma == color_gamma::srgb ) {
+      if( is_normalized( f ) ) {
+        normalized = view;
+      }
+      else if( is_srgb( f ) ) {
+        srgb = view;
+      }
+    }
+    else {
       normalized = view;
     }
-    else if( is_srgb( f ) ) {
-      srgb = view;
-    }
+  }
+
+  const unsigned int channels = format_to_channels( i->get_props().get_basic().format );
+  const bool enable_linear =
+    props.enable_linear &&
+    ci.enable_linear &&
+    i->get_props().get_basic().arrayLayers == 1 &&
+    ( channels == 3u || channels == 4u );
+
+  if( enable_linear ) {
+    linear_index = allocate_index();
+    linear =
+      l->get_view(
+        image_view_create_info_t()
+          .set_basic(
+            vk::ImageViewCreateInfo()
+              .setSubresourceRange(
+                vk::ImageSubresourceRange()
+                  .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                  .setBaseMipLevel( 0 )
+                  .setLevelCount( l->get_props().get_basic().mipLevels )
+                  .setBaseArrayLayer( 0 )
+                  .setLayerCount( l->get_props().get_basic().arrayLayers )
+              )
+              .setViewType( to_image_view_type( l->get_props().get_basic().imageType, l->get_props().get_basic().arrayLayers ) )
+              .setFormat( l->get_props().get_basic().format )
+          )
+          .rebuild_chain()
+      );
   }
 
   write_request_list.push_back(
@@ -255,33 +289,57 @@ image_pool::views image_pool::state_type::allocate(
   );
   used_on_gpu.push_back( normalized_desc );
 
-  write_request_list.push_back(
-    write_request()
-      .set_index( srgb_index )
-      .set_mipmap( ci.mipmap )
-      .set_staging_buffer( b )
-      .set_final_image( srgb )
-  );
-  image_state[ srgb_index ] =
-    image_state_type()
-      .set_valid( true )
-      .set_image( srgb )
-      .set_write_request_index( write_request_list.size() - 1u );
-
-  image_descriptor srgb_desc(
-    new image_index_t( srgb_index ),
-    [self=shared_from_this()]( const image_index_t *p ) {
-      if( p ) {
-        self->release( *p );
-        delete p;
+  image_descriptor srgb_desc;
+  if( srgb ) {
+    srgb_index = allocate_index();
+    image_state[ srgb_index ] =
+      image_state_type()
+        .set_valid( true )
+        .set_image( srgb )
+        .set_write_request_index( write_request_list.size() - 1u );
+ 
+    srgb_desc = image_descriptor(
+      new image_index_t( srgb_index ),
+      [self=shared_from_this()]( const image_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
       }
-    }
-  );
-  used_on_gpu.push_back( srgb_desc );
+    );
+    used_on_gpu.push_back( srgb_desc );
+  }
+  image_descriptor linear_desc;
+  if( enable_linear ) {
+    rgb_to_xyz_request_list.push_back(
+      rgb_to_xyz_request()
+        .set_rgb( normalized_index )
+        .set_xyz( linear_index )
+        .set_rgb_image( normalized )
+        .set_xyz_image( linear )
+    );
+    image_state[ linear_index ] =
+      image_state_type()
+        .set_valid( true )
+        .set_image( linear )
+        .set_write_request_index( write_request_list.size() - 1u );
+ 
+    linear_desc = image_descriptor(
+      new image_index_t( linear_index ),
+      [self=shared_from_this()]( const image_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+    used_on_gpu.push_back( linear_desc );
+  }
 
   return views()
     .set_normalized( normalized_desc )
-    .set_srgb( srgb_desc );
+    .set_srgb( srgb_desc )
+    .set_linear( linear_desc );
 }
 
 void image_pool::state_type::release( image_index_t index ) {
@@ -294,9 +352,9 @@ void image_pool::state_type::release( image_index_t index ) {
     removed = image_state[ index ];
     image_state[ index ] = image_state_type();
     release_index( index );
-    if( props.descriptor_set ) {
+    /*if( props.descriptor_set ) {
       const auto target = (*props.descriptor_set)[ props.descriptor_name ];
-      /*std::vector< write_descriptor_set_t > updates;
+      std::vector< write_descriptor_set_t > updates;
       updates.push_back(
         write_descriptor_set_t()
           .set_basic(
@@ -307,8 +365,8 @@ void image_pool::state_type::release( image_index_t index ) {
       );
       props.descriptor_set->update(
         std::move( updates )
-      );*/
-    }
+      );
+    }*/
   }
 }
 
@@ -320,11 +378,11 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     rec.buffer_to_image( req.mipmap, req.staging_buffer, req.final_image->get_factory() );
   }
   for( const auto &req: write_request_list ) {
-    rec.convert_image( req.final_image->get_factory(), props.layout );
+    rec.convert_image( req.final_image->get_factory(), vk::ImageLayout::eGeneral );
   }
-  if( props.descriptor_set ) {
+  if( props.external_descriptor_set.find( props.image_descriptor_set_id ) != props.external_descriptor_set.end() ) {
     std::vector< write_descriptor_set_t > updates;
-    const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+    const auto target = (*props.external_descriptor_set[ props.image_descriptor_set_id ])[ props.descriptor_name ];
     for( const auto &req: write_request_list ) {
       updates.push_back(
         write_descriptor_set_t()
@@ -333,12 +391,114 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
               .setDstArrayElement( req.index )
               .setDescriptorCount( 1u )
           )
-          .add_image( req.final_image, props.layout )
+          .add_image( req.final_image, vk::ImageLayout::eGeneral )
+          .set_index( req.index )
       );
     }
-    props.descriptor_set->update(
+    for( const auto &req: rgb_to_xyz_request_list ) {
+      updates.push_back(
+        write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet( target )
+              .setDstArrayElement( req.xyz )
+              .setDescriptorCount( 1u )
+          )
+          .add_image( req.xyz_image, vk::ImageLayout::eGeneral )
+          .set_index( req.xyz )
+      );
+    }
+    props.external_descriptor_set[ props.image_descriptor_set_id ]->update(
       std::move( updates )
     );
+  }
+  for( const auto &req: rgb_to_xyz_request_list ) {
+    rec.convert_image( req.xyz_image->get_factory(), vk::ImageLayout::eGeneral );
+    rec.barrier( {}, { req.rgb_image->get_factory() } );
+  }
+  for( const auto &req: rgb_to_xyz_request_list ) {
+    //rec.blit( req.rgb_image->get_factory(), req.xyz_image->get_factory() );
+    rec.fill( req.xyz_image->get_factory(), std::array< float, 4u >{ 1.0, 0.0, 0.0, 1.0 } );
+    rec.barrier( {}, { req.xyz_image->get_factory() } );
+  }
+  for( const auto &req: rgb_to_xyz_request_list ) {
+  //if( !rgb_to_xyz_request_list.empty() ) {
+  //  const auto &req = rgb_to_xyz_request_list[ 0 ];
+    const auto &color_prof =  req.rgb_image->get_factory()->get_props().get_profile();
+    const auto mat = props.csmat.from.find( color_prof.space );
+    auto shader = rgba8;
+    if( req.rgb_image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm ) {
+      shader = rgba8;
+    }
+    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Unorm ) {
+      shader = rgba16;
+    }
+    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Sfloat ) {
+      shader = rgba16f;
+    }
+    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat ) {
+      shader = rgba32f;
+    }
+    else {
+      throw -1;
+    }
+    const auto pc_head = shader->get_reflection().get_push_constant_member_pointer( "PushConstants" );
+    const auto from = pc_head.get_maybe( "from" );
+    const auto to = pc_head.get_maybe( "to" );
+    const auto gamma = pc_head.get_maybe( "gamma" );
+    const auto oetf = pc_head.get_maybe( "oetf" );
+    const auto csmat_p = pc_head.get_maybe( "csmat" );
+    const auto pc_size = std::max(
+        std::max(
+          std::max(
+            std::max(
+              from ? ( from->get_offset() + from->get_aligned_size() ) : 0u,
+              to ? ( to->get_offset() + to->get_aligned_size() ) : 0u
+            ),
+            gamma ? ( gamma->get_offset() + gamma->get_aligned_size() ) : 0u
+          ),
+          oetf ? ( oetf->get_offset() + oetf->get_aligned_size() ) : 0u
+        ),
+        csmat_p ? ( csmat_p->get_offset() + csmat_p->get_aligned_size() ) : 0u
+      );
+    std::vector< std::uint8_t > pc( pc_size, std::uint8_t( 0u ) );
+    if( from ) {
+      pc.data()->*(*from) = req.rgb;
+    }
+    if( to ) {
+      pc.data()->*(*to) = req.xyz;
+    }
+    if( gamma ) {
+      pc.data()->*(*gamma) = get_gamma_value( color_prof.gamma );
+    }
+    if( oetf ) {
+      pc.data()->*(*oetf) = std::uint32_t( color_prof.gamma );
+    }
+    if( csmat_p ) {
+      pc.data()->*(*csmat_p) = *mat->second;
+    }
+    rec->pushConstants(
+        **shader->get_pipeline()->get_props().get_layout(),
+        vk::ShaderStageFlagBits::eCompute,
+        0u,
+        pc.size(),
+        reinterpret_cast< void* >( pc.data() )
+    );
+    rec.barrier( {}, { req.xyz_image->get_factory() } );
+    (*shader)(
+      rec,
+      0u,
+      req.xyz_image->get_factory()->get_props().get_basic().extent.width,
+      req.xyz_image->get_factory()->get_props().get_basic().extent.height,
+      1u
+    );
+    //rec.create_mipmap( req.xyz_image->get_factory(), vk::ImageLayout::eGeneral, props.layout );
+  }
+  for( const auto &req: rgb_to_xyz_request_list ) {
+    rec.barrier( {}, { req.xyz_image->get_factory() } );
+    rec.convert_image( req.xyz_image->get_factory(), props.layout );
+  }
+  for( const auto &req: write_request_list ) {
+    rec.convert_image( req.final_image->get_factory(), props.layout );
   }
   for( const auto &req: dump_request_list ) {
     rec.dump_image(
@@ -362,6 +522,7 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
           }
         }
         self->write_request_list.clear();
+        self->rgb_to_xyz_request_list.clear();
         used_on_gpu = std::move( self->used_on_gpu );
         self->used_on_gpu.clear();
         self->execution_pending = false;
@@ -390,6 +551,60 @@ void image_pool::state_type::dump( const image_descriptor &desc, const image_dum
 image_pool::state_type::state_type( const image_pool_create_info &ci ) :
   props( ci ),
   index_allocator( linear_allocator_create_info().set_max( ci.max_image_count ) ) {
+  if( props.enable_linear ) {
+    rgba8.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator( props.allocator )
+        .set_descriptor_pool( props.descriptor_pool )
+        .set_pipeline_cache( props.pipeline_cache )
+        .set_shader( props.rgba8_shader )
+        .set_swapchain_image_count( 1u )
+        .set_descriptor_set_layout( props.descriptor_set_layout )
+        .set_external_descriptor_set( props.external_descriptor_set )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
+        .set_ignore_unused_descriptor( true )
+    ) );
+    rgba16.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator( props.allocator )
+        .set_descriptor_pool( props.descriptor_pool )
+        .set_pipeline_cache( props.pipeline_cache )
+        .set_shader( props.rgba16_shader )
+        .set_swapchain_image_count( 1u )
+        .set_descriptor_set_layout( props.descriptor_set_layout )
+        .set_external_descriptor_set( props.external_descriptor_set )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
+        .set_ignore_unused_descriptor( true )
+    ) );
+    rgba16f.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator( props.allocator )
+        .set_descriptor_pool( props.descriptor_pool )
+        .set_pipeline_cache( props.pipeline_cache )
+        .set_shader( props.rgba16f_shader )
+        .set_swapchain_image_count( 1u )
+        .set_descriptor_set_layout( props.descriptor_set_layout )
+        .set_external_descriptor_set( props.external_descriptor_set )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
+        .set_ignore_unused_descriptor( true )
+    ) );
+    rgba32f.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator( props.allocator )
+        .set_descriptor_pool( props.descriptor_pool )
+        .set_pipeline_cache( props.pipeline_cache )
+        .set_shader( props.rgba32f_shader )
+        .set_swapchain_image_count( 1u )
+        .set_descriptor_set_layout( props.descriptor_set_layout )
+        .set_external_descriptor_set( props.external_descriptor_set )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
+        .set_ignore_unused_descriptor( true )
+    ) );
+  }
 }
 
 image_pool::image_pool( const image_pool_create_info &ci ) :

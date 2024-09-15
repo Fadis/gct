@@ -33,7 +33,8 @@ int main( int argc, const char *argv[] ) {
   // 以下の拡張を使う
   const std::vector< const char* > exts{
     "VK_KHR_surface", // 表示する為の描画を行う
-    "VK_KHR_display" // ディスプレイの操作を行う
+    "VK_KHR_display", // ディスプレイの操作を行う
+    "VK_EXT_swapchain_colorspace"
   };
   // インスタンスを作成
   auto instance = vk::createInstanceUnique(

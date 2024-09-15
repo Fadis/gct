@@ -1,3 +1,4 @@
+#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -18,6 +19,7 @@
 #include <gct/gltf2.hpp>
 #include <gct/gltf.hpp>
 #include <gct/to_matrix.hpp>
+#include <gct/image.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
 namespace gct::gltf {
@@ -120,6 +122,7 @@ void gltf2::load_image(
         image_load_info()
           .set_filename( image_path )
           .set_usage( vk::ImageUsageFlagBits::eSampled )
+          .set_enable_linear( props.graph->get_image()->get_props().enable_linear )
       )
     );
   }
@@ -367,11 +370,53 @@ scene_graph::primitive gltf2::create_primitive(
   const auto bct = material.pbrMetallicRoughness.baseColorTexture.index;
   if( bct >= 0 ) {
     if( texture.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-    p.descriptor.set_base_color_texture( texture[ bct ].srgb );
-    ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].srgb;
+    auto view = props.graph->get_resource()->texture->get( texture[ bct ].normalized ).first;
+    const auto &profile = view->get_factory()->get_props().get_profile();
+    std::cout << nlohmann::json( profile ) << " " << bool( texture[ bct ].srgb ) << std::endl;
+    if( profile.gamma == color_gamma::srgb && texture[ bct ].srgb ) {
+      std::cout << "srgb" << std::endl;
+      p.descriptor.set_base_color_texture( texture[ bct ].srgb );
+      ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].srgb;
+    }
+    else if( texture[ bct ].linear ) {
+      std::cout << "linear" << " " << *texture[ bct ].linear << std::endl;
+      p.descriptor.set_base_color_texture( texture[ bct ].linear );
+      ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].linear;
+    }
+    else {
+      std::cout << "normalized" << std::endl;
+      p.descriptor.set_base_color_texture( texture[ bct ].normalized );
+      ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].normalized;
+    }
+    if( rimp.has( "base_color_gamma" ) ) {
+      ri.data()->*rimp[ "base_color_gamma" ] = std::uint32_t( profile.gamma );
+    }
+    if( rimp.has( "base_color_max_intensity" ) ) {
+      ri.data()->*rimp[ "base_color_max_intensity" ] = profile.max_intensity;
+    }
+    const auto rgb_to_xyz = props.graph->get_resource()->csmat.from.find( profile.space );
+    if( rgb_to_xyz == props.graph->get_resource()->csmat.from.end() ) {
+      throw -1;
+    }
+    if( rimp.has( "base_color_rgb_to_xyz" ) ) { //////
+      ri.data()->*rimp[ "base_color_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
+    }
   }
   else {
     ri.data()->*rimp[ "base_color_texture" ] = 0u;
+    if( rimp.has( "base_color_gamma" ) ) {
+      ri.data()->*rimp[ "base_color_gamma" ] = std::uint32_t( color_gamma::srgb );
+    }
+    if( rimp.has( "base_color_max_intensity" ) ) {
+      ri.data()->*rimp[ "base_color_max_intensity" ] = 100.0f;
+    }
+    const auto rgb_to_xyz = props.graph->get_resource()->csmat.from.find( color_space::bt709 );
+    if( rgb_to_xyz == props.graph->get_resource()->csmat.from.end() ) {
+      throw -1;
+    }
+    if( rimp.has( "base_color_rgb_to_xyz" ) ) { //////
+      ri.data()->*rimp[ "base_color_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
+    }
   }
   const auto mrt = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
   if( mrt >= 0 ) {
@@ -403,11 +448,52 @@ scene_graph::primitive gltf2::create_primitive(
   const auto emt = material.emissiveTexture.index;
   if( emt >= 0 ) {
     if( texture.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-    p.descriptor.set_emissive_texture( texture[ emt ].normalized );
-    ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].normalized;
+    auto view = props.graph->get_resource()->image->get( texture[ emt ].normalized );
+    const auto &profile = view->get_factory()->get_props().get_profile();
+    if( profile.gamma == color_gamma::srgb && texture[ emt ].srgb ) {
+      std::cout << "srgb" << std::endl;
+      p.descriptor.set_emissive_texture( texture[ emt ].srgb );
+      ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].srgb;
+    }
+    else if( texture[ emt ].linear ) {
+      std::cout << "linear" << std::endl;
+      p.descriptor.set_emissive_texture( texture[ emt ].linear );
+      ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].linear;
+    }
+    else {
+      std::cout << "normalized" << std::endl;
+      p.descriptor.set_emissive_texture( texture[ emt ].normalized );
+      ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].normalized;
+    }
+    if( rimp.has( "emissive_gamma" ) ) {
+      ri.data()->*rimp[ "emissive_gamma" ] = std::uint32_t( profile.gamma );
+    }
+    if( rimp.has( "emissive_max_intensity" ) ) {
+      ri.data()->*rimp[ "emissive_max_intensity" ] = profile.max_intensity;
+    }
+    const auto rgb_to_xyz = props.graph->get_resource()->csmat.from.find( profile.space );
+    if( rgb_to_xyz == props.graph->get_resource()->csmat.from.end() ) {
+      throw -1;
+    }
+    if( rimp.has( "emissive_rgb_to_xyz" ) ) { //////
+      ri.data()->*rimp[ "emissive_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
+    }
   }
   else {
     ri.data()->*rimp[ "emissive_texture" ] = 0u;
+    if( rimp.has( "emissive_gamma" ) ) {
+      ri.data()->*rimp[ "emissive_gamma" ] = std::uint32_t( color_gamma::srgb );
+    }
+    if( rimp.has( "emissive_max_intensity" ) ) {
+      ri.data()->*rimp[ "emissive_max_intensity" ] = 100.0f;
+    }
+    const auto rgb_to_xyz = props.graph->get_resource()->csmat.from.find( color_space::bt709 );
+    if( rgb_to_xyz == props.graph->get_resource()->csmat.from.end() ) {
+      throw -1;
+    }
+    if( rimp.has( "emissive_rgb_to_xyz" ) ) { //////
+      ri.data()->*rimp[ "emissive_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
+    }
   }
   p.aabb.set_min( glm::vec4(
     min[ 0 ],

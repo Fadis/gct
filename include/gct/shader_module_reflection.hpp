@@ -1,5 +1,6 @@
 #ifndef GCT_SHADER_MODULE_REFLECTION_HPP
 #define GCT_SHADER_MODULE_REFLECTION_HPP
+#include <unordered_set>
 #include <string>
 #include <optional>
 #include <memory>
@@ -33,6 +34,7 @@ namespace gct {
     std::vector< std::uint32_t > get_descriptor_set_id() const;
   private:
     SpvReflectShaderModule reflect;
+    std::unordered_set< unsigned int > descriptor_set_ids;
   };
 }
 #endif

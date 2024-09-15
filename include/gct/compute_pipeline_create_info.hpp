@@ -1,6 +1,7 @@
 #ifndef GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #define GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #include <memory>
+#include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
@@ -50,6 +51,10 @@ namespace gct {
     compute_pipeline_create_info_t &set_layout(
       const std::shared_ptr< descriptor_set_layout_t >&,
       const std::shared_ptr< shader_module_t >&
+    );
+    compute_pipeline_create_info_t &set_layout(
+      const std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > &l,
+      const std::shared_ptr< shader_module_t > &m
     );
     compute_pipeline_create_info_t &clear_layout();
     const std::shared_ptr< pipeline_layout_t > &get_layout() const {

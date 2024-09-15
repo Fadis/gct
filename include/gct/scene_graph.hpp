@@ -16,6 +16,7 @@
 #include <gct/pool.hpp>
 #include <gct/array_of.hpp>
 #include <gct/raw_resource_pair_type.hpp>
+#include <gct/color_space.hpp>
 
 namespace gct {
 
@@ -50,6 +51,8 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( inst_pool_size )
   LIBGCT_SETTER( descriptor_set_id )
   LIBGCT_SETTER( texture_descriptor_set_id )
+  LIBGCT_SETTER( image_descriptor_set_id )
+  LIBGCT_SETTER( enable_linear )
   scene_graph_create_info();
   scene_graph_create_info &add_master_shader( const std::filesystem::path &p ) {
     master_shader.push_back( p );
@@ -74,6 +77,8 @@ struct scene_graph_create_info {
   std::uint32_t inst_pool_size = 65536u;
   std::uint32_t descriptor_set_id = 0u;
   std::uint32_t texture_descriptor_set_id = 2u;
+  std::uint32_t image_descriptor_set_id = 3u;
+  bool enable_linear = false;
 };
 
 void to_json( nlohmann::json&, const scene_graph_create_info& );
@@ -100,12 +105,15 @@ struct scene_graph_resource {
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
   LIBGCT_SETTER( texture_descriptor_set )
+  LIBGCT_SETTER( image_descriptor_set )
   LIBGCT_SETTER( descriptor_set_id )
   LIBGCT_SETTER( texture_descriptor_set_id )
+  LIBGCT_SETTER( image_descriptor_set_id )
   LIBGCT_SETTER( pipeline_layout )
   LIBGCT_SETTER( push_constant_mp )
   LIBGCT_SETTER( prim )
   LIBGCT_SETTER( inst )
+  LIBGCT_SETTER( csmat )
   std::shared_ptr< matrix_pool > matrix;
   std::shared_ptr< aabb_pool > aabb;
   std::shared_ptr< image_pool > image;
@@ -120,14 +128,17 @@ struct scene_graph_resource {
   std::shared_ptr< light_pool > light;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::shared_ptr< descriptor_set_t > descriptor_set;
+  std::shared_ptr< descriptor_set_t > image_descriptor_set;
   std::shared_ptr< descriptor_set_t > texture_descriptor_set;
   std::uint32_t descriptor_set_id = 0u;
   std::uint32_t texture_descriptor_set_id = 2u;
+  std::uint32_t image_descriptor_set_id = 3u;
   std::shared_ptr< pipeline_layout_t > pipeline_layout;
   std::unordered_map< std::string, uint32_t > attr2index;
   std::optional< spv_member_pointer > push_constant_mp;
   pool< std::shared_ptr< primitive > > prim;
   pool< std::shared_ptr< instance > > inst;
+  color_space_matrix csmat;
 };
 
 void to_json( nlohmann::json&, const scene_graph_resource& );

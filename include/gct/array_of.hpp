@@ -1,9 +1,11 @@
 #ifndef GCT_ARRAY_OF_HPP
 #define GCT_ARRAY_OF_HPP
 
+#include <vulkan/vulkan.h>
 #include <gct/type_traits/has_rebuild_chain.hpp>
 #include <gct/type_traits/is_lifted.hpp>
 #include <gct/type_traits/is_dereferenceable.hpp>
+#include <gct/type_traits/is_vulkan_handle.hpp>
 #include <gct/deep_copy.hpp>
 #include <gct/voider.hpp>
 
@@ -241,7 +243,7 @@
       node \
         .set ## pointer_name ( name .data() ); \
     }
-
+#if 1
 #define LIBGCT_ARRAY_OF_REBUILD_CHAIN_WRAPPED( node, count_name, pointer_name, name ) \
     if( ! name .empty() ) { \
       if( ! has_ ## node () ) { \
@@ -255,15 +257,75 @@
         name .end(), \
         std::back_inserter( raw_ ## name ), \
         []( const auto &v ) { \
-          decltype(auto) r = gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ); \
-          gct::detail::rebuild_chain_if_available( r ); \
-          return gct::detail::get_raw( r ); \
+          if constexpr( std::is_constructible_v< bool, std::remove_cvref_t< decltype( v ) > > ) { \
+            if( v ) { \
+              decltype(auto) r = gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ); \
+              gct::detail::rebuild_chain_if_available( r ); \
+              return gct::detail::get_raw( r ); \
+            } \
+            else { \
+              using result_type = std::remove_cvref_t< decltype( gct::detail::get_raw( gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ) ) ) >; \
+              if constexpr( type_traits::is_vulkan_hpp_handle_v< result_type > ) { \
+                return result_type( VK_NULL_HANDLE ); \
+              } \
+              else if constexpr ( std::is_pointer_v< result_type > ) { \
+                return result_type( nullptr ); \
+              } \
+              else { \
+                return result_type(); \
+              } \
+            } \
+          } \
+          else { \
+            decltype(auto) r = gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ); \
+            gct::detail::rebuild_chain_if_available( r ); \
+            return gct::detail::get_raw( r ); \
+          } \
         } \
       ); \
       node \
         .set ## count_name ( raw_ ## name .size() ) \
         .set ## pointer_name ( raw_ ## name .data() ); \
     }
+#else
+#define LIBGCT_ARRAY_OF_REBUILD_CHAIN_WRAPPED( node, count_name, pointer_name, name ) \
+    if( ! name .empty() ) { \
+      if( ! has_ ## node () ) { \
+        set_ ## node (); \
+      } \
+      auto & node = get_writable_ ## node (); \
+      raw_ ## name .clear(); \
+      raw_ ## name .reserve( name .size() ); \
+      std::transform( \
+        name .begin(), \
+        name .end(), \
+        std::back_inserter( raw_ ## name ), \
+        []( const auto &v ) { \
+          if( v ) { \
+            decltype(auto) r = gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ); \
+            gct::detail::rebuild_chain_if_available( r ); \
+            return gct::detail::get_raw( r ); \
+          } \
+          else { \
+            using result_type = std::remove_cvref_t< decltype( gct::detail::get_raw( gct::detail::unwrap_pointer< wrapped_ ## name ## _t >( v ) ) ) >; \
+            if constexpr( type_traits::is_vulkan_hpp_handle_v< result_type > ) { \
+              return result_type( VK_NULL_HANDLE ); \
+            } \
+            else if constexpr ( std::is_pointer_v< result_type > ) { \
+              return result_type( nullptr ); \
+            } \
+            else { \
+              return result_type(); \
+            } \
+          } \
+        } \
+      ); \
+      node \
+        .set ## count_name ( raw_ ## name .size() ) \
+        .set ## pointer_name ( raw_ ## name .data() ); \
+    }
+#endif
+
 
 namespace gct::detail {
   template< typename T, typename Enable = void >
@@ -282,7 +344,39 @@ namespace gct::detail {
     }
     else if constexpr( type_traits::is_dereferenceable_v< T > ) {
       if constexpr( type_traits::is_dereferenceable_v< decltype( *std::declval< T >() ) > ) {
-        return get_raw( *v );
+        if constexpr( std::is_constructible_v< bool, decltype( std::declval< T >() ) > ) {
+          using result_type = std::remove_cvref_t< decltype( get_raw( *std::declval< T >() ) ) >;
+          if constexpr( type_traits::is_vulkan_hpp_handle_v< decltype( std::declval< T >() ) > ) {
+            if( v ) {
+              return get_raw( *v );
+            }
+            else {
+              return VK_NULL_HANDLE;
+            }
+          }
+          else if constexpr( std::is_pointer_v< decltype( std::declval< T >() ) > ) {
+            if( v ) {
+              return get_raw( *v );
+            }
+            else {
+              return nullptr;
+            }
+          }
+          else if constexpr( std::is_constructible_v< result_type > ) {
+            if( v ) {
+              return get_raw( *v );
+            }
+            else {
+              throw -1;
+            }
+          }
+          else {
+            return get_raw( *v );
+          }
+        }
+        else {
+          return get_raw( *v );
+        }
       }
       else {
         return v;

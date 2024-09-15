@@ -4,6 +4,7 @@
 #include <vulkan2json/DescriptorImageInfo.hpp>
 #include <gct/descriptor_image_info.hpp>
 #include <gct/image_view.hpp>
+#include <gct/image.hpp>
 #include <gct/sampler.hpp>
 
 namespace gct {
@@ -42,6 +43,7 @@ void to_json( nlohmann::json &root, const descriptor_image_info_t &v ) {
   root[ "basic" ] = v.get_basic();
   if( v.get_image_view() ) {
     root[ "basic" ][ "imageView" ] = *v.get_image_view();
+    root[ "basic" ][ "image" ] = *v.get_image_view()->get_factory();
   }
   if( v.get_sampler() ) {
     root[ "basic" ][ "sampler" ] = *v.get_sampler();

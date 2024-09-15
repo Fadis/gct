@@ -25,6 +25,10 @@ namespace gct {
     pipeline_layout_create_info_t &add_push_constant_range(
       const shader_module_reflection_t &v
     );
+    pipeline_layout_create_info_t &add_descriptor_set_layout(
+      unsigned int id,
+      const std::shared_ptr< descriptor_set_layout_t > &v
+    );
   };
   void to_json( nlohmann::json &root, const pipeline_layout_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_layout_create_info_t &v );

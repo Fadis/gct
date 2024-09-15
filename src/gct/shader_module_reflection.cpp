@@ -20,6 +20,10 @@ namespace gct {
     if( reflect_result != SPV_REFLECT_RESULT_SUCCESS ) {
       throw exception::invalid_argument( "spvReflectCreateShaderModule failed", __FILE__, __LINE__ );
     }
+    for( unsigned int i = 0u; i != reflect.descriptor_binding_count; ++i ) {
+      auto &spv_binding = reflect.descriptor_bindings[ i ];
+      descriptor_set_ids.insert(spv_binding.set );
+    }
   }
   shader_module_reflection_t::shader_module_reflection_t(
     const std::vector< std::uint8_t > &code

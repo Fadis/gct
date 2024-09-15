@@ -1,0 +1,13 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+#include "scene_graph.h"
+#include "global_uniforms.h"
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main() {
+}
+

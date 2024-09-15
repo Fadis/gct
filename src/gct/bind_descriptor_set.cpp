@@ -53,7 +53,7 @@ namespace gct {
       descriptor_set.begin(),
       descriptor_set.end(),
       std::back_inserter( temp ),
-      []( const auto &v ) { return **v; }
+      []( const auto &v ) { return v ? **v : vk::DescriptorSet( VK_NULL_HANDLE ); }
     );
     (*get_factory())->bindDescriptorSets(
       bind_point,

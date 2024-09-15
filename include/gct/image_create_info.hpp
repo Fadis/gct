@@ -6,6 +6,8 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/array_of.hpp>
+#include <gct/setter.hpp>
+#include <gct/color_space.hpp>
 
 namespace gct {
   class image_create_info_t : public chained_t {
@@ -78,13 +80,20 @@ namespace gct {
 #if VK_KHR_VIDEO_QUEUE_SPEC_VERSION < 5
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileKHR , video_profile )
     LIBGCT_EXTENSION_SETTER( vk::VideoProfilesKHR , video_profiles )
-    LIBGCT_ARRAY_OF( vk::VideoProfileKHR, profile )
+    LIBGCT_ARRAY_OF( vk::VideoProfileKHR, video_profile_info )
 #else
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileInfoKHR , video_profile ) 
     LIBGCT_EXTENSION_SETTER( vk::VideoProfileListInfoKHR , video_profiles )
-    LIBGCT_ARRAY_OF( vk::VideoProfileInfoKHR, profile )
+    LIBGCT_ARRAY_OF( vk::VideoProfileInfoKHR, video_profile_info )
 #endif
 #endif
+  public:
+    LIBGCT_SETTER( profile );
+    const color_profile &get_profile() const {
+      return profile;
+    }
+  private:
+    color_profile profile;
   };
   vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );
   vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );
