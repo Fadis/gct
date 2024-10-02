@@ -349,10 +349,14 @@ scene_graph::scene_graph(
   }
   resource->descriptor_set = props->descriptor_pool->allocate( resource->descriptor_set_layout[ props->descriptor_set_id ] );
   resource->descriptor_set_id = props->descriptor_set_id;
-  resource->texture_descriptor_set = props->descriptor_pool->allocate( resource->descriptor_set_layout[ props->texture_descriptor_set_id ], props->texture.max_texture_count );
-  resource->texture_descriptor_set_id = props->texture_descriptor_set_id;
-  resource->image_descriptor_set = props->descriptor_pool->allocate( resource->descriptor_set_layout[ props->image_descriptor_set_id ], props->image.max_image_count );
-  resource->image_descriptor_set_id = props->image_descriptor_set_id;
+  if( resource->descriptor_set_layout.size() > props->texture_descriptor_set_id ) {
+    resource->texture_descriptor_set = props->descriptor_pool->allocate( resource->descriptor_set_layout[ props->texture_descriptor_set_id ], props->texture.max_texture_count );
+    resource->texture_descriptor_set_id = props->texture_descriptor_set_id;
+  }
+  if( props->enable_linear && resource->descriptor_set_layout.size() > props->image_descriptor_set_id ) {
+    resource->image_descriptor_set = props->descriptor_pool->allocate( resource->descriptor_set_layout[ props->image_descriptor_set_id ], props->image.max_image_count );
+    resource->image_descriptor_set_id = props->image_descriptor_set_id;
+  }
   
   resource->pipeline_layout = device.get_pipeline_layout( pipeline_layout_create_info );
   if( vertex_attributes.find( vertex_attribute_usage_t::POSITION ) != vertex_attributes.end() ) {
@@ -395,21 +399,29 @@ scene_graph::scene_graph(
       .set_allocator( props->allocator )
   ) );
   resource->csmat = allocate_color_space_matrix( *resource->matrix );
-  resource->image.reset( new image_pool(
-    image_pool_create_info( props->image )
-      .set_allocator( props->allocator )
-      .set_descriptor_pool( props->descriptor_pool )
-      .set_pipeline_cache( props->pipeline_cache )
-      .set_descriptor_set_layout( resource->descriptor_set_layout )
-      .add_external_descriptor_set( props->descriptor_set_id, resource->descriptor_set )
-      .add_external_descriptor_set( props->image_descriptor_set_id, resource->image_descriptor_set )
-      .add_external_descriptor_set( props->texture_descriptor_set_id, resource->texture_descriptor_set )
+  image_pool_create_info ipci = props->image;
+  ipci
+    .set_allocator( props->allocator )
+    .set_descriptor_pool( props->descriptor_pool )
+    .set_pipeline_cache( props->pipeline_cache )
+    .set_descriptor_set_layout( resource->descriptor_set_layout )
+    .add_external_descriptor_set( props->descriptor_set_id, resource->descriptor_set )
+    .add_external_descriptor_set( props->texture_descriptor_set_id, resource->texture_descriptor_set )
+    .set_external_pipeline_layout( resource->pipeline_layout )
+    .set_matrix_pool( resource->matrix->get_buffer() )
+    .set_csmat( resource->csmat )
+    .set_enable_linear( props->enable_linear );
+  if( resource->descriptor_set_layout.size() > props->image_descriptor_set_id ) {
+    ipci
       .set_image_descriptor_set_id( props->image_descriptor_set_id )
-      .set_external_pipeline_layout( resource->pipeline_layout )
-      .set_matrix_pool( resource->matrix->get_buffer() )
-      .set_csmat( resource->csmat )
-      .set_enable_linear( props->enable_linear )
-  ) );
+      .add_external_descriptor_set( props->image_descriptor_set_id, resource->image_descriptor_set );
+  }
+  if( resource->descriptor_set_layout.size() > props->texture_descriptor_set_id ) {
+    ipci
+      .add_external_descriptor_set( props->texture_descriptor_set_id, resource->texture_descriptor_set );
+  }
+
+  resource->image.reset( new image_pool( ipci ) );
   resource->texture.reset( new texture_pool(
     texture_pool_create_info( props->texture )
       .set_allocator( props->allocator )

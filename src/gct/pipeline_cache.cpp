@@ -89,12 +89,6 @@ namespace gct {
     auto shader = device.get_shader_module( path );
     std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
     for( const auto id: shader->get_props().get_reflection().get_descriptor_set_id() ) {
-      if( external_descriptor_set_layout.size() <= id ) {
-        std::cout << "use internal descriptor_set_layout for " << id << std::endl;
-      }
-      else {
-        std::cout << "use external descriptor_set_layout for " << id << std::endl;
-      }
       auto descriptor_set_layout = ( external_descriptor_set_layout.size() <= id ) ? device.get_descriptor_set_layout(
         shader->get_props().get_reflection(), id
       ) : external_descriptor_set_layout[ id ];

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/spirv_reflect.h>
@@ -108,6 +107,22 @@ namespace gct {
           throw exception::invalid_argument( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " has no type information.", __FILE__, __LINE__ );
         }
       }
+      else if( reflect.push_constant_blocks[ i ].type_description ) {
+        if( reflect.push_constant_blocks[ i ].type_description->type_name == name ) { 
+          auto mp = spv_member_pointer(
+            reflect.push_constant_blocks[ i ].absolute_offset,
+            *reflect.push_constant_blocks[ i ].type_description,
+            memory_layout::std140
+          );
+          if( mp.get_aligned_size() > reflect.push_constant_blocks[ i ].padded_size ) {
+            throw exception::logic_error( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " doesn't have enough space to store members.", __FILE__, __LINE__ );
+          }
+          return mp;
+        }
+        else {
+          throw exception::invalid_argument( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " has no type information.", __FILE__, __LINE__ );
+        }
+      }
     }
     throw exception::invalid_argument( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " does not exist.", __FILE__, __LINE__ );
   }
@@ -115,6 +130,22 @@ namespace gct {
     for( std::uint32_t i = 0u; i != reflect.push_constant_block_count; ++i ) {
       if( reflect.push_constant_blocks[ i ].name == name ) {
         if( reflect.push_constant_blocks[ i ].type_description ) {
+          auto mp = spv_member_pointer(
+            reflect.push_constant_blocks[ i ].absolute_offset,
+            *reflect.push_constant_blocks[ i ].type_description,
+            memory_layout::std140
+          );
+          if( mp.get_aligned_size() > reflect.push_constant_blocks[ i ].padded_size ) {
+            throw exception::logic_error( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " doesn't have enough space to store members.", __FILE__, __LINE__ );
+          }
+          return mp;
+        }
+        else {
+          throw exception::invalid_argument( std::string( "shader_module_reflection_t::get_push_constant_member_pointer : Push constant " ) + name + " has no type information.", __FILE__, __LINE__ );
+        }
+      }
+      else if( reflect.push_constant_blocks[ i ].type_description ) {
+        if( reflect.push_constant_blocks[ i ].type_description->type_name == name ) { 
           auto mp = spv_member_pointer(
             reflect.push_constant_blocks[ i ].absolute_offset,
             *reflect.push_constant_blocks[ i ].type_description,

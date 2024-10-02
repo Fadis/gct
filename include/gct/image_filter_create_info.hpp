@@ -3,10 +3,12 @@
 
 #include <memory>
 #include <vector>
+#include <optional>
 #include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/image_create_info.hpp>
 
 namespace gct {
 
@@ -21,6 +23,7 @@ struct image_filter_create_info {
   LIBGCT_SETTER( shader )
   LIBGCT_SETTER( input )
   LIBGCT_SETTER( input_name )
+  LIBGCT_SETTER( output_create_info )
   LIBGCT_SETTER( output )
   LIBGCT_SETTER( output_name )
   LIBGCT_SETTER( resources )
@@ -37,6 +40,7 @@ struct image_filter_create_info {
   std::filesystem::path shader;
   std::vector< std::shared_ptr< image_view_t > > input;
   std::string input_name = "src_image";
+  std::optional< image_create_info_t > output_create_info;
   std::vector< std::shared_ptr< image_view_t > > output;
   std::string output_name = "dest_image";
   std::vector< named_resource > resources;

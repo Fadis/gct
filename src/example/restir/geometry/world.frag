@@ -21,7 +21,6 @@ void main()  {
     texture( texture_pool[ nonuniformEXT(prim.base_color_texture) ], input_texcoord ) :
     prim.base_color;
   const vec3 emissive =
-    
     ( prim.emissive_texture != 0 ) ?
     texture( texture_pool[ nonuniformEXT(prim.emissive_texture) ], input_texcoord ).rgb :
     prim.emissive.rgb;
@@ -42,16 +41,10 @@ void main()  {
     1.0;
 
 
-  vec4 screen_pos =
-    //matrix_pool[ global_uniforms.projection_matrix ] *
-    //matrix_pool[ global_uniforms.camera_matrix ] *
-    input_optflow;
+  vec4 screen_pos = input_optflow;
   vec3 screen_pos_ = screen_pos.xyz / screen_pos.w;
   
-  vec4 previous_screen_pos =
-    //matrix_pool[ global_uniforms.previous_projection_matrix ] *
-    //matrix_pool[ global_uniforms.previous_camera_matrix ] *
-    input_previous_position;
+  vec4 previous_screen_pos = input_previous_position;
   vec3 previous_screen_pos_ = previous_screen_pos.xyz / previous_screen_pos.w;
   vec3 optflow = screen_pos_.xyz - previous_screen_pos_.xyz;
 

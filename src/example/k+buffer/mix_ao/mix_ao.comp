@@ -1,0 +1,92 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, r32f) readonly uniform image2D occlusion;
+layout (binding = 2, rgba32f) readonly uniform image2DArray diffuse_image;
+layout (binding = 3, rgba32f) readonly uniform image2DArray specular_image;
+layout (binding = 4, rgba32f) writeonly uniform image2D dest_image;
+layout (binding = 5, rgba32f) writeonly uniform image2D bloom_image;
+layout (binding = 9) uniform sampler2D skyview;
+layout (binding = 10, rgba32f) readonly uniform image2D scattering;
+
+#include "push_constants.h"
+#include "constants.h"
+#include "sky.h"
+
+layout (std430, binding = 6) buffer Output {
+  uint value;
+  float scale;
+} tone;
+
+layout(binding = 11,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+struct punctual_light_parameter {
+  vec4 local_position;
+  vec4 world_position;
+  vec4 local_direction;
+  vec4 world_direction;
+  vec4 energy;
+  uint type;
+  float light_size;
+  float theta;
+  float phi;
+  float falloff;
+  uint matrix;
+  uint reserved[ 2 ];
+};
+
+layout(binding = 12,std430) buffer LightPool {
+  punctual_light_parameter light_pool[];
+};
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const mat3 bt709_to_xyz = mat3(
+    0.4124079, 0.2126478, 0.0193316,
+    0.3575896, 0.7151791, 0.1191965,
+    0.1804326, 0.0721730, 0.9502783
+  );
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint nearest_layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
+  vec3 pos = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 0 ) ).xyz;
+  const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 2 ) ).xyz;
+  const vec3 optflow = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 5 ) ).xyz;
+  bool background =( dot( normal, normal ) == 0.0 );
+  vec4 pos_ = matrix_pool[ global_uniforms.screen_to_world_matrix ] * vec4( vec2( screen_pos )/vec2( gl_NumWorkGroups * gl_WorkGroupSize ) * 2.0 - 1.0, 0.0, 1.0 );
+  pos_ /= pos_.w;
+  pos = background ? pos_.xyz : pos;
+  vec4 pos_in_screen = matrix_pool[ global_uniforms.projection_matrix ] * matrix_pool[ global_uniforms.camera_matrix ] * vec4( pos, 1.0 );
+  pos_in_screen /= pos_in_screen.w;
+  const vec3 pos_in_froxel = pos_in_screen.xyz * 0.5 + 0.5;
+  const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 1 ) );
+  
+  const vec3 eye_dir = normalize( pos - global_uniforms.eye_pos.xyz );
+  const vec2 latitude_longitude = world_to_llar( eye_dir );
+  const vec2 skyview_texcoord = vec2(
+    ( latitude_longitude.y + pi ) / ( 2.0 * pi ),
+    1.0 - skyview_latitude_to_texcoord( latitude_longitude.x )
+  );
+  const vec3 skyview_color = bt709_to_xyz * texture( skyview, skyview_texcoord ).rgb;
+  bool has_surface = dot( normal, normal ) != 0.0;
+
+  const vec3 ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * albedo.rgb;
+  const vec4 diffuse = imageLoad( diffuse_image, ivec3( screen_pos, nearest_layer ) );
+  const vec3 specular = imageLoad( specular_image, ivec3( screen_pos, nearest_layer ) ).rgb;
+  const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
+  const vec3 total = (
+    has_surface ?
+    ( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb ) :
+    skyview_color
+  ) / tone.scale;
+  const vec3 bloom = max( total - vec3( 1.0, 1.0, 1.0 ), vec3( 0.0, 0.0, 0.0 ) );
+  
+  imageStore( dest_image, screen_pos, vec4( total, albedo.a ) );
+  imageStore( bloom_image, screen_pos, vec4( bloom, 1.0 ) );
+}
+

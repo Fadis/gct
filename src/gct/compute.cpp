@@ -1,4 +1,3 @@
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
@@ -52,14 +51,12 @@ namespace gct {
       const auto ext = props.external_descriptor_set.find( d.first );
       if( ext != props.external_descriptor_set.end() ) {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          std::cout << "use external for " << d.first <<std::endl;
           descriptor_set[ i ][ d.first ] = ext->second;
           descriptor_set_layout[ d.first ] = ext->second->get_props().get_layout()[ 0 ];
         }
       }
       else {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          std::cout << "use internal for " << d.first <<std::endl;
           descriptor_set[ i ][ d.first ] = props.descriptor_pool->allocate(
             d.second
           );

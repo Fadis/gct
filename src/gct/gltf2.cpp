@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -354,6 +353,9 @@ scene_graph::primitive gltf2::create_primitive(
     std::pow( material.emissiveFactor[ 2 ], 2.2 ),
     material.emissiveFactor[ 3 ]
   );
+  if( props.graph->get_image()->get_props().enable_linear ) {
+    p.emissive = get_rgb_to_xyz( color_space::bt709 ) * p.emissive;
+  }
   ri.data()->*rimp[ "emissive" ] = p.emissive;
   p.emplace_base_color(
     std::pow( material.pbrMetallicRoughness.baseColorFactor[ 0 ], 2.2 ),
@@ -361,6 +363,9 @@ scene_graph::primitive gltf2::create_primitive(
     std::pow( material.pbrMetallicRoughness.baseColorFactor[ 2 ], 2.2 ),
     material.pbrMetallicRoughness.baseColorFactor[ 3 ]
   );
+  if( props.graph->get_image()->get_props().enable_linear ) {
+    p.base_color = get_rgb_to_xyz( color_space::bt709 ) * p.base_color;
+  }
   ri.data()->*rimp[ "base_color" ] = p.base_color;
   p.set_normal_scale( material.normalTexture.scale );
   ri.data()->*rimp[ "normal_scale" ] = p.normal_scale;
@@ -372,19 +377,15 @@ scene_graph::primitive gltf2::create_primitive(
     if( texture.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
     auto view = props.graph->get_resource()->texture->get( texture[ bct ].normalized ).first;
     const auto &profile = view->get_factory()->get_props().get_profile();
-    std::cout << nlohmann::json( profile ) << " " << bool( texture[ bct ].srgb ) << std::endl;
     if( profile.gamma == color_gamma::srgb && texture[ bct ].srgb ) {
-      std::cout << "srgb" << std::endl;
       p.descriptor.set_base_color_texture( texture[ bct ].srgb );
       ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].srgb;
     }
     else if( texture[ bct ].linear ) {
-      std::cout << "linear" << " " << *texture[ bct ].linear << std::endl;
       p.descriptor.set_base_color_texture( texture[ bct ].linear );
       ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].linear;
     }
     else {
-      std::cout << "normalized" << std::endl;
       p.descriptor.set_base_color_texture( texture[ bct ].normalized );
       ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].normalized;
     }
@@ -451,17 +452,14 @@ scene_graph::primitive gltf2::create_primitive(
     auto view = props.graph->get_resource()->image->get( texture[ emt ].normalized );
     const auto &profile = view->get_factory()->get_props().get_profile();
     if( profile.gamma == color_gamma::srgb && texture[ emt ].srgb ) {
-      std::cout << "srgb" << std::endl;
       p.descriptor.set_emissive_texture( texture[ emt ].srgb );
       ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].srgb;
     }
     else if( texture[ emt ].linear ) {
-      std::cout << "linear" << std::endl;
       p.descriptor.set_emissive_texture( texture[ emt ].linear );
       ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].linear;
     }
     else {
-      std::cout << "normalized" << std::endl;
       p.descriptor.set_emissive_texture( texture[ emt ].normalized );
       ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].normalized;
     }

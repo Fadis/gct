@@ -108,12 +108,7 @@ namespace gct {
       distance.begin(),
       std::min_element( distance.begin(), distance.end() )
     );
-    for( auto &v: projection_box ) {
-      std::cout << glm::to_string( v ) << " ";
-    }
-    std::cout << std::endl;
     if( distance[nearest] < 0.001f ) {
-      std::cout << __FILE__ << " " << __LINE__ << " " << distance[ nearest ] << " " << glm::to_string( projection_box[ nearest ] ) << " " << glm::to_string( light_pos ) << std::endl;
       return std::nullopt;
     }
     const auto farest = std::distance(
@@ -154,11 +149,6 @@ namespace gct {
       }
     );
     if( back != dots.end() ) {
-      for( const auto &d: dots ) {
-        std::cout << d << " ";
-      }
-      std::cout << std::endl;
-      std::cout << __FILE__ << " " << __LINE__ <<  std::endl;
       return std::nullopt;
     }
     const auto max_angle = std::accumulate(

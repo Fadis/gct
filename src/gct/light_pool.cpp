@@ -201,12 +201,14 @@ void light_pool::state_type::set( const light_descriptor &desc, const light_type
   }
   auto staging = staging_light->map< light_type >();
   auto &s = light_state[ *desc ];
+  auto value_ = value;
+  value_.set_matrix( *s.matrix );
   if( s.staging_index && s.write_request_index ) {
-    staging[ *s.staging_index ] = value;
+    staging[ *s.staging_index ] = value_;
   }
   else if( s.staging_index ) {
     auto write_requests = write_request_buffer->map< write_request >();
-    staging[ *s.staging_index ] = value;
+    staging[ *s.staging_index ] = value_;
     const request_index_t write_request_index = write_request_index_allocator.allocate();
     write_requests[ write_request_index ] =
       write_request()
@@ -217,7 +219,7 @@ void light_pool::state_type::set( const light_descriptor &desc, const light_type
   else {
     auto write_requests = write_request_buffer->map< write_request >();
     const light_index_t staging_index = staging_index_allocator.allocate();
-    staging[ staging_index ] = value;
+    staging[ staging_index ] = value_;
     const request_index_t write_request_index = write_request_index_allocator.allocate();
     write_requests[ write_request_index ] =
       write_request()
@@ -429,6 +431,7 @@ void light_pool::state_type::flush( command_buffer_recorder_t &rec ) {
             }
             s.write_request_index = std::nullopt;
             s.read_request_index = std::nullopt;
+            s.update_request_index = std::nullopt;
             s.staging_index = std::nullopt;
           }
         }

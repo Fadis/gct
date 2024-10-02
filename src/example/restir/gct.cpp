@@ -86,6 +86,7 @@ struct dynamic_uniforms_t {
   LIBGCT_SETTER( frame_counter )
   LIBGCT_SETTER( light_count )
   LIBGCT_SETTER( ambient )
+  LIBGCT_SETTER( light )
   glm::vec4 eye_pos;
   glm::ivec4 voxel_proj;
   std::int32_t projection_matrix;
@@ -98,6 +99,7 @@ struct dynamic_uniforms_t {
   std::int32_t frame_counter;
   std::int32_t light_count;
   float ambient;
+  std::int32_t light;
 };
 
 int main( int argc, const char *argv[] ) {
@@ -761,8 +763,7 @@ int main( int argc, const char *argv[] ) {
       .set_ambient( res.ambient_level )
       .set_frame_counter( frame_counter )
       .set_voxel_proj( glm::ivec4( *voxel_proj_desc[ 0 ], *voxel_proj_desc[ 1 ], *voxel_proj_desc[ 2 ], 0u ) );
-    auto jittered = projection;
-    sg->get_resource()->matrix->set( proj_desc, jittered );
+    sg->get_resource()->matrix->set( proj_desc, projection );
     sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
     sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
     {

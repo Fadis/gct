@@ -64,4 +64,6 @@ subdirs(
   onesweep
   restir
   wide_color
+  wide_color2
+  k+buffer
 )

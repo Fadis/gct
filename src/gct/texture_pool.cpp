@@ -79,7 +79,6 @@ texture_pool::views texture_pool::state_type::allocate(
   }
 
   if( iid.srgb ) {
-    std::cout << "texture srgb active" << std::endl;
     const auto srgb = props.image->get( iid.srgb ); 
     write_request_list.push_back(
       write_request()
@@ -107,7 +106,6 @@ texture_pool::views texture_pool::state_type::allocate(
   }
   
   if( iid.linear ) {
-    std::cout << "texture linear active " << *iid.linear << std::endl;
     const auto linear = props.image->get( iid.linear );
     write_request_list.push_back(
       write_request()

@@ -380,7 +380,7 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   for( const auto &req: write_request_list ) {
     rec.convert_image( req.final_image->get_factory(), vk::ImageLayout::eGeneral );
   }
-  if( props.external_descriptor_set.find( props.image_descriptor_set_id ) != props.external_descriptor_set.end() ) {
+  if( props.enable_linear && props.external_descriptor_set.find( props.image_descriptor_set_id ) != props.external_descriptor_set.end() ) {
     std::vector< write_descriptor_set_t > updates;
     const auto target = (*props.external_descriptor_set[ props.image_descriptor_set_id ])[ props.descriptor_name ];
     for( const auto &req: write_request_list ) {

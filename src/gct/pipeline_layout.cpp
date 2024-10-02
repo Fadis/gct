@@ -11,7 +11,6 @@ namespace gct {
     created_from< device_t >( device ),
     props( create_info ) {
     props.rebuild_chain();
-    std::cout << "pl " << nlohmann::json( props ) << std::endl;
     handle = (*device)->createPipelineLayoutUnique( props.get_basic() );
   }
 }

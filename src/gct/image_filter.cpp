@@ -26,6 +26,8 @@ namespace gct {
       for( unsigned int i = 0u; i != props.input.size(); ++i ) {
         if( !props.output[ i ] ) {
           props.output[ i ] = props.allocator->create_image(
+            props.output_create_info ?
+            *props.output_create_info :
             props.input[ i ]->get_factory()->get_props(),
             VMA_MEMORY_USAGE_GPU_ONLY
           )->get_view();
