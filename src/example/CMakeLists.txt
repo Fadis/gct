@@ -66,4 +66,6 @@ subdirs(
   wide_color
   wide_color2
   k+buffer
+  gauss_dof
+  gauss_dof2
 )

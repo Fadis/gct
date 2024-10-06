@@ -1,0 +1,85 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, r32f) readonly uniform image2D occlusion;
+layout (binding = 2, rgba32f) readonly uniform image2D diffuse_image;
+layout (binding = 3, rgba32f) readonly uniform image2D specular_image;
+layout (binding = 4, rgba32f) writeonly uniform image2DArray dest_image;
+layout (binding = 5, r32f) writeonly uniform image2D coc_image;
+layout (binding = 10, rgba32f) readonly uniform image2D scattering;
+
+#include "push_constants.h"
+#include "constants.h"
+
+layout(binding = 11,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+struct punctual_light_parameter {
+  vec4 local_position;
+  vec4 world_position;
+  vec4 local_direction;
+  vec4 world_direction;
+  vec4 energy;
+  uint type;
+  float light_size;
+  float theta;
+  float phi;
+  float falloff;
+  uint matrix;
+  uint reserved[ 2 ];
+};
+
+layout(binding = 12,std430) buffer LightPool {
+  punctual_light_parameter light_pool[];
+};
+
+layout (std430, binding = 13) buffer Output {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float lens_size;
+  float sensor_size;
+} af_state;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+float decode_depth(float d,float zNear,float zFar)
+{
+  return zNear * zFar / (zFar + d * (zNear - zFar));
+}
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
+  const vec3 pos = pos_depth.xyz;
+  const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+
+  const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
+
+  bool has_surface = dot( normal, normal ) != 0.0;
+
+  const vec3 ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * albedo.rgb;
+  const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
+  const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;
+  const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
+  const vec4 total = (
+    has_surface ?
+    vec4( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb, albedo.a ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 )
+  );
+
+  const float linear_depth = has_surface ? decode_depth( pos_depth.w, af_state.znear, af_state.zfar ) : af_state.depth;
+  const bool near = linear_depth < af_state.depth;
+  const float coc_r = max( af_state.lens_size * abs( ( af_state.depth - linear_depth )/( af_state.depth ) ) /** 0.1*/ /* af_state.sensor_size*/, 0.0 );
+  
+  imageStore( dest_image, ivec3( screen_pos, 0 ), near ? total : vec4( 0.0, 0.0, 0.0, 0.0 ) );
+  imageStore( dest_image, ivec3( screen_pos, 1 ), total );
+  imageStore( coc_image, screen_pos, vec4( coc_r, 0.0, 0.0, 0.0 ) );
+}
+
