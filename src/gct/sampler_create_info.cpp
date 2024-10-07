@@ -147,6 +147,27 @@ namespace gct {
         );
     return instance;
   }
+  const sampler_create_info_t &get_basic_unnormalized_sampler_create_info() {
+    static const sampler_create_info_t instance =
+      sampler_create_info_t()
+        .set_basic(
+          vk::SamplerCreateInfo()
+            .setMagFilter( vk::Filter::eLinear )
+            .setMinFilter( vk::Filter::eLinear )
+            .setMipmapMode( vk::SamplerMipmapMode::eNearest )
+            .setAddressModeU( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeV( vk::SamplerAddressMode::eClampToEdge )
+            .setAddressModeW( vk::SamplerAddressMode::eClampToEdge )
+            .setAnisotropyEnable( false )
+            .setCompareEnable( false )
+            .setMipLodBias( 0.f )
+            .setMinLod( 0.f )
+            .setMaxLod( 0.f )
+            .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+            .setUnnormalizedCoordinates( true )
+        );
+    return instance;
+  }
   const sampler_create_info_t &get_basic_cubic_sampler_create_info() {
     static const sampler_create_info_t instance =
       sampler_create_info_t()

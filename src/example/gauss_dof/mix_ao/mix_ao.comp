@@ -43,8 +43,10 @@ layout (std430, binding = 13) buffer Output {
   float depth;
   float znear;
   float zfar;
+  float focal_distance;
   float lens_size;
   float sensor_size;
+  float apeture_rotation;
 } af_state;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
@@ -56,6 +58,7 @@ float decode_depth(float d,float zNear,float zFar)
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( gbuffer ).xy;
   const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
   const vec3 pos = pos_depth.xyz;
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
@@ -76,7 +79,7 @@ void main()  {
 
   const float linear_depth = has_surface ? decode_depth( pos_depth.w, af_state.znear, af_state.zfar ) : af_state.depth;
   const bool near = linear_depth < af_state.depth;
-  const float coc_r = max( af_state.lens_size * abs( ( af_state.depth - linear_depth )/( af_state.depth ) ) /** 0.1*/ /* af_state.sensor_size*/, 0.0 );
+  const float coc_r = max( af_state.lens_size * abs( af_state.focal_distance / ( af_state.depth - af_state.focal_distance ) ) * abs( 1 - af_state.depth / linear_depth ) / af_state.sensor_size * image_size.x, 0.0 );
   
   imageStore( dest_image, ivec3( screen_pos, 0 ), near ? total : vec4( 0.0, 0.0, 0.0, 0.0 ) );
   imageStore( dest_image, ivec3( screen_pos, 1 ), total );

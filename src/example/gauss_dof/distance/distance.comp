@@ -12,8 +12,10 @@ layout (std430, binding = 1) buffer Output {
   float depth;
   float znear;
   float zfar;
+  float focal_distance;
   float lens_size;
   float sensor_size;
+  float apeture_rotation;
 } af_state;
 
 layout(push_constant) uniform PushConstants {

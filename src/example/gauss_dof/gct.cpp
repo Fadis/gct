@@ -58,6 +58,7 @@
 #include <gct/kdtree.hpp>
 #include <gct/skyview.hpp>
 #include <gct/skyview_froxel.hpp>
+#include <gct/af_state.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -94,23 +95,6 @@ struct global_uniforms_t {
   std::int32_t light_count;
   float ambient;
   std::int32_t light;
-};
-
-struct af_state {
-  LIBGCT_SETTER( history )
-  LIBGCT_SETTER( max_history )
-  LIBGCT_SETTER( depth )
-  LIBGCT_SETTER( znear )
-  LIBGCT_SETTER( zfar )
-  LIBGCT_SETTER( lens_size )
-  LIBGCT_SETTER( sensor_size )
-  std::uint32_t history = 0u;
-  std::uint32_t max_history = 60u;
-  float depth = 0.0f;
-  float znear = 0.0f;
-  float zfar = 0.0f;
-  float lens_size = 0.050f/11.0f; // 50mm lens with F11
-  float sensor_size = 0.036f;
 };
 
 int main( int argc, const char *argv[] ) {
@@ -472,7 +456,7 @@ int main( int argc, const char *argv[] ) {
 
   std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
     res.allocator->create_mappable_buffer(
-      sizeof( af_state ),
+      sizeof( gct::af_state ),
       vk::BufferUsageFlagBits::eStorageBuffer
     );
   
@@ -601,7 +585,7 @@ int main( int argc, const char *argv[] ) {
     auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      af_state state = af_state()
+      gct::af_state state = gct::af_state()
         .set_znear( std::min(0.1f*scale,0.5f) )
         .set_zfar( scale );
       recorder.copy( state, af_state_buffer );

@@ -39,7 +39,7 @@ void main() {
   barrier();
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
-  const uint gauss_head = min( get_filter_by_size( imageLoad( coc, screen_pos ).r * image_size.x ), 57 ) * adaptive_gauss8_16_size;
+  const uint gauss_head = min( get_filter_by_size( imageLoad( coc, screen_pos ).r ), 57 ) * adaptive_gauss8_16_size;
   for( uint i = 0; i != adaptive_gauss8_16_size; i++ ) {
     sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + gauss_head ];
     scale += adaptive_gauss8_16[ i + gauss_head ];

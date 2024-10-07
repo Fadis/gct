@@ -68,4 +68,6 @@ subdirs(
   k+buffer
   gauss_dof
   gauss_dof2
+  gauss_dof3
+  hex_dof
 )

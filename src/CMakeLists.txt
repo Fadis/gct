@@ -313,6 +313,7 @@ add_library( gct SHARED
   gct/similar_matrix.cpp
   gct/generate_random_matrix.cpp
   gct/gltf2.cpp
+  gct/af_state.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
