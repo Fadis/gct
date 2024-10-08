@@ -68,6 +68,33 @@ namespace gct {
   std::shared_ptr< image_view_t > allocated_image_t::get_view() {
     return get_view( format_to_aspect( get_props().get_basic().format ) );
   }
+  std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
+    vk::ImageAspectFlags aspect
+  ) {
+    std::vector< std::shared_ptr< image_view_t > > temp;
+    for( unsigned int l = 0u; l != get_props().get_basic().arrayLayers; ++l ) {
+      temp.push_back( get_view(
+        image_view_create_info_t()
+          .set_basic(
+            vk::ImageViewCreateInfo()
+              .setSubresourceRange(
+                vk::ImageSubresourceRange()
+                  .setAspectMask( aspect )
+                  .setBaseMipLevel( 0 )
+                  .setLevelCount( get_props().get_basic().mipLevels )
+                  .setBaseArrayLayer( l )
+                  .setLayerCount( 1 )
+              )
+              .setViewType( to_image_view_type( get_props().get_basic().imageType, 1 ) )
+          )
+          .rebuild_chain()
+      ) );
+    }
+    return temp;
+  }
+  std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views() {
+    return get_thin_views( format_to_aspect( get_props().get_basic().format ) );
+  }
   std::shared_ptr< device_t > allocated_image_t::get_device() const {
     return get_factory()->get_factory();
   }

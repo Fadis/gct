@@ -1,6 +1,6 @@
 #ifndef GCT_SCENE_GRAPH_HPP
 #define GCT_SCENE_GRAPH_HPP
-
+#include <iostream>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/matrix_pool.hpp>
@@ -261,6 +261,21 @@ struct node {
       local_matrix
     ) );
     return child.back();
+  }
+  void update_matrix( const glm::mat4 &m ) {
+    resource->matrix->set( matrix, m );
+    for( const auto &v: child ) {
+      v->touch();
+    }
+  }
+  void touch() {
+    for( auto &v: child ) {
+      v->touch();
+    }
+    for( auto &v: inst ) {
+      const auto &i = resource->inst.get( v );
+      resource->aabb->touch( i->descriptor.aabb );
+    }
   }
   std::optional< aabb4 > get_initial_world_aabb() const;
   void to_json( nlohmann::json& ) const;

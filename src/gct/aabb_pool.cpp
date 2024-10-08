@@ -137,7 +137,8 @@ void aabb_pool::state_type::touch( const aabb_descriptor &desc ) {
   }
   const auto &s = aabb_state[ *desc ];
   if( s.local ) {
-    update_request_buffer->map< update_request >()[ *desc ] =
+    const request_index_t update_request_index = update_request_index_allocator.allocate();
+    update_request_buffer->map< update_request >()[ update_request_index ] =
       update_request()
         .set_matrix( *s.matrix )
         .set_local( *s.local )
@@ -372,6 +373,7 @@ void aabb_pool::state_type::flush( command_buffer_recorder_t &rec ) {
               }
             }
             s.write_request_index = std::nullopt;
+            s.update_request_index = std::nullopt;
             s.read_request_index = std::nullopt;
             s.staging_index = std::nullopt;
           }

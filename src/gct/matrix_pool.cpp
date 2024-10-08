@@ -78,7 +78,8 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
     matrix_state_type()
       .set_valid( true )
       .set_staging_index( staging_index )
-      .set_write_request_index( write_request_index );
+      .set_write_request_index( write_request_index )
+      .set_update_requested( true );
 
   matrix_descriptor desc(
     new matrix_index_t( index ),
@@ -145,7 +146,8 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     matrix_state_type()
       .set_valid( true )
       .set_staging_index( staging_index )
-      .set_write_request_index( write_request_index );
+      .set_write_request_index( write_request_index )
+      .set_update_requested( true );
   matrix_descriptor local_desc(
     new matrix_index_t( local_index ),
     [self=shared_from_this()]( const matrix_index_t *p ) {
@@ -192,7 +194,8 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
       .set_valid( true )
       .set_level( level )
       .set_local( local_desc )
-      .set_parent( parent );
+      .set_parent( parent )
+      .set_update_requested( true );
 
   update_request_list[ level ].push_back(
     update_request()
@@ -228,6 +231,8 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     matrix_state[ history_index ].set_self( history_desc.get_weak() );
     matrix_state[ index ].set_history( history_desc );
   }
+  edge.insert( std::make_pair( *parent, index ) );
+
   return desc;
 }
 
@@ -245,6 +250,16 @@ void matrix_pool::state_type::release( matrix_index_t index ) {
     local = matrix_state[ index ].local;
     history = matrix_state[ index ].history;
     matrix_state[ index ] = matrix_state_type();
+    edge.erase( index );
+    auto iter = edge.begin();
+    while( iter != edge.end() ) {
+      if( iter->second == index ) {
+        iter = edge.erase( iter );
+      }
+      else {
+        ++iter;
+      }
+    }
   }
 }
 
@@ -255,11 +270,14 @@ void matrix_pool::state_type::touch( const matrix_descriptor &desc ) {
   if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
     return;
   }
-  if( update_requested.find( *desc ) != update_requested.end() ) {
-    return;
+  if( matrix_state[ *desc ].update_requested ) {
+    if( update_requested.find( *desc ) != update_requested.end() ) {
+      return;
+    }
   }
   const auto &s = matrix_state[ *desc ];
   if( s.local ) {
+    update_request_list.resize( std::max( update_request_list.size(), std::size_t( s.level + 1u ) ) );
     update_request_list[ s.level ].push_back(
       update_request()
         .set_parent( *s.parent )
@@ -279,8 +297,10 @@ void matrix_pool::state_type::touch( matrix_index_t index ) {
   if( matrix_state.size() <= index || !matrix_state[ index ].valid ) {
     return;
   }
-  if( update_requested.find( index ) != update_requested.end() ) {
-    return;
+  if( matrix_state[ index ].update_requested ) {
+    if( update_requested.find( index ) != update_requested.end() ) {
+      return;
+    }
   }
   const auto &s = matrix_state[ index ];
   auto desc = matrix_descriptor( s.self );
@@ -674,14 +694,17 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
                   delayed_copy.push_back( s.self );
                 }
               }
-              if( self->update_requested.find( *desc ) != self->update_requested.end() ) {
-                if( s.history ) {
-                  delayed_copy.push_back( s.self );
+              if( s.update_requested ) {
+                if( self->update_requested.find( *desc ) != self->update_requested.end() ) {
+                  if( s.history ) {
+                    delayed_copy.push_back( s.self );
+                  }
                 }
               }
             }
             s.write_request_index = std::nullopt;
             s.read_request_index = std::nullopt;
+            s.update_requested = false;
             s.staging_index = std::nullopt;
           }
         }

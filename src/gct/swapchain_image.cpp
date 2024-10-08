@@ -60,6 +60,16 @@ namespace gct {
   std::shared_ptr< image_view_t > swapchain_image_t::get_view() {
     return get_view( format_to_aspect( get_props().get_basic().format ) );
   }
+  std::vector< std::shared_ptr< image_view_t > > swapchain_image_t::get_thin_views(
+    vk::ImageAspectFlags aspect
+  ) {
+    return std::vector< std::shared_ptr< image_view_t > >{
+      get_view( aspect )
+    };
+  }
+  std::vector< std::shared_ptr< image_view_t > > swapchain_image_t::get_thin_views() {
+    return get_thin_views( format_to_aspect( get_props().get_basic().format ) );
+  }
   std::shared_ptr< device_t > swapchain_image_t::get_device() const {
     return get_factory()->get_factory();
   }

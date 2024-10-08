@@ -38,6 +38,7 @@ private:
     LIBGCT_SETTER( history )
     LIBGCT_SETTER( parent )
     LIBGCT_SETTER( self )
+    LIBGCT_SETTER( update_requested )
     bool valid = false;
     std::optional< matrix_index_t > staging_index;
     std::optional< request_index_t > write_request_index;
@@ -47,6 +48,7 @@ private:
     matrix_descriptor history;
     matrix_descriptor parent;
     weak_matrix_descriptor self;
+    bool update_requested = false;
   };
   struct copy_request {
     LIBGCT_SETTER( source )
