@@ -287,6 +287,7 @@ void matrix_pool::state_type::touch( const matrix_descriptor &desc ) {
     update_requested.insert( *desc );
     used_on_gpu.push_back( desc );
   }
+  matrix_state[ *desc ].update_requested = true;
   const auto [begin,end] = edge.equal_range( *desc );
   for( auto iter = begin; iter != end; ++iter ) {
     touch( iter->second );
