@@ -234,7 +234,7 @@ int main( int argc, const char *argv[] ) {
 
   gct::gltf::gltf2 wheel(
     gct::gltf::gltf2_create_info()
-      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/wheel.gltf" )
+      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/fan.gltf" )
       .set_graph( sg )
       .set_root( node )
       .set_aspect_ratio( float( res.width )/float( res.height ) )

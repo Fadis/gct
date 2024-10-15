@@ -1,0 +1,143 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+
+layout(binding = 1,std430) buffer FragmentList {
+  uint fragment_list[];
+};
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+struct fragment_info {
+  ivec2 offset;
+  uint layer;
+  float depth;
+  bool valid;
+};
+
+const uint null_fragment_info = 0xfff;
+const uint time_steps = 32;
+
+fragment_info decode_fragment_info( uint encoded ) {
+  fragment_info temp;
+  temp.offset = ivec2(
+    int( ( encoded >> 22 ) & 0x3FF ) - 511,
+    int( ( encoded >> 12 ) & 0x3FF ) - 511
+  );
+  temp.depth = float( ( encoded >> 2 ) & 0x3FF )/1023.0;
+  temp.layer = ( encoded ) & 0x3;
+  temp.valid = encoded != null_fragment_info;
+  return temp;
+}
+
+float decode_fragment_depth( uint encoded ) {
+  return encoded != null_fragment_info ?
+    float( ( encoded >> 2 ) & 0x3FF )/1023.0 :
+    2.0;
+}
+
+uint encode_fragment_info( fragment_info v ) {
+  const bool valid =
+    v.offset.x > -512 && v.offset.x <= 512 &&
+    v.offset.y > -512 && v.offset.y <= 512 &&
+    v.depth >= 0.0 && v.depth <= 1.0 &&
+    v.layer < 4 &&
+    v.valid;
+  return valid ?
+    ( uint( v.offset.x + 511 ) << 22 ) +
+    ( uint( v.offset.y + 511 ) << 12 ) +
+    ( uint( v.depth * 1023.0 ) << 2 ) +
+    v.layer :
+    null_fragment_info;
+}
+
+uint get_fragment_list_index( ivec2 pos, uint t ) {
+  const ivec2 image_size = imageSize( gbuffer ).xy;
+  const bool valid =
+    pos.x >= 0 && pos.x < image_size.x &&
+    pos.y >= 0 && pos.y < image_size.y &&
+    t >= 0 && t < time_steps;
+  return valid ? pos.y * image_size.x * time_steps + pos.x * time_steps + t : 0xFFFFFFFF;
+}
+
+uint load_fragment_info( uint index ) {
+  return ( index != 0xFFFFFFFF ) ? fragment_list[ index ] : null_fragment_info;
+}
+
+bool cas_fragment_info( ivec2 pos, uint t, fragment_info v ) {
+  const uint index = get_fragment_list_index( pos, t );
+  if( index == 0xFFFFFFFF ) return false;
+  uint existing = load_fragment_info( index );
+  //float existing_depth = decode_fragment_depth( existing );
+  fragment_info decoded_existing = decode_fragment_info( existing );
+  float existing_depth = decoded_existing.valid ? imageLoad( gbuffer, ivec3( pos + decoded_existing.offset, decoded_existing.layer * 8 + 0 ) ).w : 2.0;
+  if( v.depth >= existing_depth ) return false;
+  const uint encoded = encode_fragment_info( v );
+  for( uint i = 0; i != 4; i++ ) {
+    const uint original = atomicCompSwap( fragment_list[ index ], existing, encoded );
+    if( original == existing ) return true;
+    existing = original;
+    //existing_depth = decode_fragment_depth( existing );
+    fragment_info decoded_existing = decode_fragment_info( existing );
+    existing_depth = decoded_existing.valid ? imageLoad( gbuffer, ivec3( pos + decoded_existing.offset, decoded_existing.layer * 8 + 0 ) ).w : 2.0;
+    if( v.depth >= existing_depth ) return false;
+  }
+  return false;
+}
+
+float decode_depth(float d,float zNear,float zFar)
+{
+  return zNear * zFar / (zFar + d * (zNear - zFar));
+}
+
+void main()  {
+  const ivec2 current_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint layer = gl_GlobalInvocationID.z;
+  const vec2 normal = imageLoad( gbuffer, ivec3( current_pos, layer * 8 + 2 ) ).xy;
+  const bool has_surface = dot( normal, normal ) != 0.0;
+  if( !has_surface ) return;
+  const ivec2 image_size = imageSize( gbuffer ).xy;
+  const vec4 layer_order = imageLoad( gbuffer, ivec3( current_pos, 32 ) );
+  const float depth = imageLoad( gbuffer, ivec3( current_pos, layer * 8 + 0 ) ).w;
+  const vec2 optflow = imageLoad( gbuffer, ivec3( current_pos, layer * 8 + 5 ) ).xy;
+  const ivec2 diff = ivec2( image_size * optflow * 0.5 );
+  const ivec2 previous_pos = ivec2( current_pos - optflow * image_size * 0.5 );
+  const bool flip_xy = diff.y > diff.x;
+  
+  const uint begin = flip_xy ? previous_pos.y : previous_pos.x;
+  const uint end = flip_xy ? current_pos.y : current_pos.x;
+  const float tangent = flip_xy ? float(diff.x)/float(diff.y) : float(diff.y)/float(diff.x);
+
+  fragment_info new_fragment;
+  new_fragment.layer = layer;
+  new_fragment.depth = depth;
+  new_fragment.valid = true;
+
+  const uint count = min( uint(abs( end - begin )) + ( ( end == begin ) ? 1 : 0 ), 128 );
+  const bool moved = distance( previous_pos, current_pos ) >= 2.0;
+
+  for( uint i = 0; i != 32; i++ ) {
+    const ivec2 p = ivec2( mix( vec2( current_pos ), vec2( previous_pos ), float( i )/float( 32 ) ) );
+    new_fragment.offset = moved ? current_pos - p : ivec2( 0, 0 );
+    cas_fragment_info( current_pos - new_fragment.offset, i, new_fragment );
+  }
+  /*
+  for( uint i = 0; i != count; i++ ) {
+    const vec2 p = mix( vec2( previous_pos ), vec2( current_pos ), float( i )/float( count - 1 ) );
+    const ivec2 pi = ivec2( p );
+    const uint t = uint( float( i ) / float( count ) * time_steps );
+    const uint tbegin = uint( max( ( float( i ) - 0.5 ) / float( count ) * time_steps, 0 ) );
+    uint tend = uint( min( ( float( i ) + 0.5 ) / float( count ) * time_steps, time_steps ) );
+    tend = ( tbegin == tend ) ? tend + 1 : tend;
+    new_fragment.offset = pi - current_pos;
+    cas_fragment_info( pi, 31, new_fragment );
+    for( uint t = 0; t != 32; t++ ) {
+      cas_fragment_info( pi, t, new_fragment );
+    }
+  }*/
+}
+
+

@@ -52,7 +52,7 @@ vec4 directional_blur1( vec2 uv, vec2 direction ) {
   uv += direction * 0.5;
   float len = length( direction );
   float local_coc = texture( coc, uv ).r;
-  for( uint i = 0; i < 128; i++ ) {
+  for( uint i = 0; i < 256; i++ ) {
     float weight = ( local_coc >= i ) ? 1.0 : 0.0;
     vec4 color = texture( src_image1, uv + direction * i ) * weight;
     blur_amount += color.a;

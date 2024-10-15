@@ -1,0 +1,74 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, r32f) readonly uniform image2D occlusion;
+layout (binding = 2, rgba32f) readonly uniform image2DArray diffuse_image;
+layout (binding = 3, rgba32f) readonly uniform image2DArray specular_image;
+layout (binding = 4, rgba32f) writeonly uniform image2DArray dest_image;
+layout (binding = 10, rgba32f) readonly uniform image2D scattering;
+
+#include "push_constants.h"
+#include "constants.h"
+#include "sky.h"
+
+layout(binding = 11,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+struct punctual_light_parameter {
+  vec4 local_position;
+  vec4 world_position;
+  vec4 local_direction;
+  vec4 world_direction;
+  vec4 energy;
+  uint type;
+  float light_size;
+  float theta;
+  float phi;
+  float falloff;
+  uint matrix;
+  uint reserved[ 2 ];
+};
+
+layout(binding = 12,std430) buffer LightPool {
+  punctual_light_parameter light_pool[];
+};
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint layer = gl_GlobalInvocationID.z;
+      
+  vec3 pos = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) ).xyz;
+  const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 2 ) ).xyz;
+  const vec3 optflow = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 5 ) ).xyz;
+  bool background =( dot( normal, normal ) == 0.0 );
+  vec4 pos_ = matrix_pool[ global_uniforms.screen_to_world_matrix ] * vec4( vec2( screen_pos )/vec2( gl_NumWorkGroups * gl_WorkGroupSize ) * 2.0 - 1.0, 0.0, 1.0 );
+  pos_ /= pos_.w;
+  pos = background ? pos_.xyz : pos;
+  vec4 pos_in_screen = matrix_pool[ global_uniforms.projection_matrix ] * matrix_pool[ global_uniforms.camera_matrix ] * vec4( pos, 1.0 );
+  pos_in_screen /= pos_in_screen.w;
+  const vec3 pos_in_froxel = pos_in_screen.xyz * 0.5 + 0.5;
+  const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 1 ) );
+  
+  bool has_surface = dot( normal, normal ) != 0.0;
+
+  const float occlusion_level = imageLoad( occlusion, screen_pos ).r;
+
+  const vec3 ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * occlusion_level * albedo.rgb;
+  const vec4 diffuse = imageLoad( diffuse_image, ivec3( screen_pos, layer ) );
+  const vec3 specular = imageLoad( specular_image, ivec3( screen_pos, layer ) ).rgb;
+  const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
+  const vec4 total = (
+    has_surface ?
+    vec4( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb, albedo.a ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 )
+  );
+  
+  imageStore( dest_image, ivec3( screen_pos, layer ), total );
+}
+

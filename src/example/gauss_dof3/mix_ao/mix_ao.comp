@@ -166,8 +166,8 @@ void main()  {
     vec4( ( far_ambient + ( far_diffuse.rgb + far_specular ) ) * scat.w + scat.rgb, far_albedo.a ) :
     vec4( 0.0, 0.0, 0.0, 0.0 )
   );
-  const float near_coc = max( af_state.lens_size * abs( af_state.focal_distance / ( af_state.depth - af_state.focal_distance ) ) * abs( 1 - af_state.depth / near_depth ) / af_state.sensor_size * image_size.x, 0.0 );
-  const float far_coc = max( af_state.lens_size * abs( af_state.focal_distance / ( af_state.depth - af_state.focal_distance ) ) * abs( 1 - af_state.depth / far_depth ) / af_state.sensor_size * image_size.x, 0.0 );
+  const float near_coc = min( max( af_state.lens_size * abs( near_depth - af_state.depth )/near_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
+  const float far_coc = min( max( af_state.lens_size * abs( far_depth - af_state.depth )/far_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
   
   imageStore( dest_image, ivec3( screen_pos, 0 ), near_total );
   imageStore( dest_image, ivec3( screen_pos, 1 ), far_total );
