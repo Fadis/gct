@@ -26,10 +26,11 @@ namespace gct {
       vk::ImageAspectFlags aspect
     ) = 0;
     virtual std::vector< std::shared_ptr< image_view_t > > get_thin_views(
-      vk::ImageAspectFlags aspect
+      vk::ImageAspectFlags aspect,
+      std::uint32_t layer
     ) = 0;
     virtual std::shared_ptr< image_view_t > get_view() = 0;
-    virtual std::vector< std::shared_ptr< image_view_t > > get_thin_views() = 0;
+    virtual std::vector< std::shared_ptr< image_view_t > > get_thin_views( std::uint32_t layer ) = 0;
     virtual vk::Image &operator*() = 0;
     virtual const vk::Image &operator*() const = 0;
     virtual vk::Image *operator->() = 0;

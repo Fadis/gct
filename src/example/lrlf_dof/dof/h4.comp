@@ -1,0 +1,54 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1, rgba32f) readonly uniform image2DArray src_image;
+layout (binding = 2, r32f) readonly uniform image2DArray coc;
+layout (binding = 3, rgba32f) writeonly uniform image2DArray dest_image;
+
+layout(local_size_x = 256, local_size_y = 1 ) in;
+
+int lrlfilter_size = 65;
+float lrlfilter[65*33] = float[](
+#include "h4.inc"
+);
+
+const int kernel_size = 32;
+shared vec4[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+shared uint[gl_WorkGroupSize.x+kernel_size*2+1] cocs;
+
+uint get_lrlfilter_by_size( float s ) {
+  return uint( 0.0983607 * ( -47.0+100.0*sqrt( max( s, 0 ) ) ) );
+}
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint layer = gl_GlobalInvocationID.z;
+  const uint lcpos = gl_LocalInvocationID.x;
+  const uint hcpos = lcpos + gl_WorkGroupSize.x;
+  const ivec2 image_size = imageSize( src_image ).xy;
+  ivec2 lsample_pos = screen_pos;
+  lsample_pos.x = lsample_pos.x - kernel_size;
+  ivec2 hsample_pos = lsample_pos;
+  hsample_pos.x += int( gl_WorkGroupSize.x );
+  lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
+  lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
+  hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
+  hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
+  cache[ lcpos ] = imageLoad( src_image, ivec3( lsample_pos, layer ) );
+  cocs[ lcpos ] = min( uint( imageLoad( coc, ivec3( lsample_pos, layer ) ).r ), 32u ) * lrlfilter_size;
+  if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
+    cache[ hcpos ] = imageLoad( src_image, ivec3( hsample_pos, layer ) );
+    cocs[ hcpos ] = min( uint( imageLoad( coc, ivec3( hsample_pos, layer ) ).r ), 32u ) * lrlfilter_size;
+  }
+  barrier();
+  float scale = 0.0;
+  vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  for( uint i = 0; i != lrlfilter_size; i++ ) {
+    sum += cache[ lcpos + i ] * lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
+    scale += lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
+  }
+  imageStore( dest_image, ivec3( screen_pos, layer ), sum );
+}
+

@@ -70,6 +70,7 @@ subdirs(
   gauss_dof2
   gauss_dof3
   hex_dof
+  lrlf_dof
   motion_blur
   ppfl_motion_blur
 )

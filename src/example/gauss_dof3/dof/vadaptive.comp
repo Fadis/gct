@@ -43,8 +43,8 @@ void main() {
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   for( uint i = 0; i != adaptive_gauss8_16_size; i++ ) {
-    sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + cocs[ lcpos + i ] ];
-    scale += adaptive_gauss8_16[ i + cocs[ lcpos + i ] ];
+    sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
+    scale += adaptive_gauss8_16[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
   }
   if( scale > 0.0 ) {
     sum /= scale;

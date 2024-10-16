@@ -69,10 +69,11 @@ namespace gct {
     return get_view( format_to_aspect( get_props().get_basic().format ) );
   }
   std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
-    vk::ImageAspectFlags aspect
+    vk::ImageAspectFlags aspect,
+    std::uint32_t layer
   ) {
     std::vector< std::shared_ptr< image_view_t > > temp;
-    for( unsigned int l = 0u; l != get_props().get_basic().arrayLayers; ++l ) {
+    for( unsigned int l = 0u; l != get_props().get_basic().arrayLayers / layer; ++l ) {
       temp.push_back( get_view(
         image_view_create_info_t()
           .set_basic(
@@ -82,18 +83,20 @@ namespace gct {
                   .setAspectMask( aspect )
                   .setBaseMipLevel( 0 )
                   .setLevelCount( get_props().get_basic().mipLevels )
-                  .setBaseArrayLayer( l )
-                  .setLayerCount( 1 )
+                  .setBaseArrayLayer( l * layer )
+                  .setLayerCount( layer )
               )
-              .setViewType( to_image_view_type( get_props().get_basic().imageType, 1 ) )
+              .setViewType( to_image_view_type( get_props().get_basic().imageType, layer ) )
           )
           .rebuild_chain()
       ) );
     }
     return temp;
   }
-  std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views() {
-    return get_thin_views( format_to_aspect( get_props().get_basic().format ) );
+  std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
+    std::uint32_t layer
+  ) {
+    return get_thin_views( format_to_aspect( get_props().get_basic().format ), layer );
   }
   std::shared_ptr< device_t > allocated_image_t::get_device() const {
     return get_factory()->get_factory();

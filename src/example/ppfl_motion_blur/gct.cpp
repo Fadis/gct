@@ -378,7 +378,7 @@ int main( int argc, const char *argv[] ) {
     rgba32ici4,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  const auto splited_mixed = mixed->get_factory()->get_thin_views();
+  const auto splited_mixed = mixed->get_factory()->get_thin_views( 1u );
   const auto blured = res.allocator->create_image_view(
     rgba32ici4,
     VMA_MEMORY_USAGE_GPU_ONLY

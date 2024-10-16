@@ -717,7 +717,7 @@ int main( int argc, const char *argv[] ) {
       gct::af_state state = gct::af_state()
         .set_znear( std::min(0.1f*scale,0.5f) )
         .set_zfar( scale )
-        .set_lens_size( 0.05f/2.0f );
+        .set_lens_size( 0.05f/2.8f );
       recorder.copy( state, af_state_buffer );
     }
     command_buffer->execute_and_wait();
