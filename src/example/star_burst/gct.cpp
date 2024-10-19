@@ -5,8 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
 #include <gct/get_extensions.hpp>
 #include <gct/instance.hpp>
 #include <gct/glfw.hpp>
@@ -379,38 +377,6 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
   );
 
-  const auto flare_image_desc = sg->get_resource()->image->allocate(
-    gct::image_load_info()
-      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/flare_200.png" )
-      .set_enable_linear( true )
-  );
-  const auto flare_sampler_desc = sg->get_resource()->sampler->allocate(
-    gct::get_basic_linear_sampler_create_info()
-  );
-
-  const auto flare_texture_desc = sg->get_resource()->texture->allocate(
-    flare_sampler_desc,
-    flare_image_desc
-  );
-  
-  gct::lens_flare flare(
-    gct::lens_flare_create_info()
-      .set_allocator( res.allocator )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_width( res.width )
-      .set_height( res.height )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/flare/" )
-      .set_texture( flare_texture_desc.linear )
-      .set_matrix_count( 36 )
-      .set_lens_size( 0.025 / 2.8 )
-      .set_descriptor_set_layout( sg->get_resource()->descriptor_set_layout )
-      .add_external_descriptor_set( sg->get_props().descriptor_set_id, sg->get_resource()->descriptor_set )
-      .add_external_descriptor_set( sg->get_props().texture_descriptor_set_id, sg->get_resource()->texture_descriptor_set )
-      .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "gbuffer", gbuffer.get_image_views(), vk::ImageLayout::eGeneral } )
-  );
-
   gct::hbao hbao(
     gct::hbao_create_info()
       .set_allocator( res.allocator )
@@ -498,7 +464,6 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
       .add_resource( { "sb_image", sb.get_image_view(), vk::ImageLayout::eGeneral } )
-      .add_resource( { "flare_image", flare.get_image_view(), vk::ImageLayout::eGeneral } )
       .add_resource( { "global_uniforms", global_uniform } )
       .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
@@ -751,9 +716,6 @@ int main( int argc, const char *argv[] ) {
         }
         if( walk.light_moved() || walk.camera_moved() || frame_counter <= 2u ) {
           lighting( rec, 0, res.width, res.height, 1u );
-          rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
-          flare( rec );
-          rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
           rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
           sb( rec );
           rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
@@ -771,7 +733,6 @@ int main( int argc, const char *argv[] ) {
               hbao.get_output()[ 0 ]->get_factory(),
               diffuse->get_factory(),
               specular->get_factory(),
-              flare.get_image_view()->get_factory(),
               sb.get_image_view()->get_factory()
             }
           );

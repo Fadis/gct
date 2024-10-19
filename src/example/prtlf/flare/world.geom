@@ -43,7 +43,7 @@ layout (location = 2) out vec4 output_energy;
 void main() {
   vec4 light_pos_in_screen = gl_in[ 0 ].gl_Position;
   light_pos_in_screen/=light_pos_in_screen.w;
-  ivec2 screen_pos = ivec2( imageSize( gbuffer ).xy * ( light_pos_in_screen.xy * vec2( 0.5, -0.5 ) + 0.5 ) );
+  ivec2 screen_pos = ivec2( imageSize( gbuffer ).xy * ( light_pos_in_screen.xy * vec2( 0.5, 0.5 ) + 0.5 ) );
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
   const float depth = dot( normal, normal ) > 0.0 ? imageLoad( gbuffer, ivec3( screen_pos, 0 ) ).w : 10.0;
   if(
@@ -65,7 +65,6 @@ void main() {
     const vec4 energy = vec4(
       light_pool[ global_uniforms.light ].energy.xyz *
       min( (push_constants.lens_radius*push_constants.lens_radius)/max(radius*radius,0.0000001), 10000.0 ) *
-      //1.0/(1920*1080)
       0.05,
       1.0
     );
