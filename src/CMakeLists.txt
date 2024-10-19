@@ -261,6 +261,8 @@ add_library( gct SHARED
   gct/nohc_benchmark.cpp
   gct/occlusion_query_create_info.cpp
   gct/occlusion_query.cpp
+  gct/lens_flare_create_info.cpp
+  gct/lens_flare.cpp
   gct/draw_line_create_info.cpp
   gct/draw_line.cpp
   gct/generate_projection_matrix.cpp

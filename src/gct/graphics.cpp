@@ -49,12 +49,17 @@ namespace gct {
         }
       }
       for( const auto id: set_ids ) {
-        gct::descriptor_set_layout_create_info_t dslci;
-        for( const auto &s: props.pipeline_create_info.get_stage() ) {
-          dslci.add_binding( s.get_shader_module()->get_props().get_reflection(), id );
+        if( props.descriptor_set_layout.size() <= id ) {
+          gct::descriptor_set_layout_create_info_t dslci;
+          for( const auto &s: props.pipeline_create_info.get_stage() ) {
+            dslci.add_binding( s.get_shader_module()->get_props().get_reflection(), id );
+          }
+          auto descriptor_set_layout = device.get_descriptor_set_layout( dslci );
+          set_layouts.insert( std::make_pair( id, descriptor_set_layout ) );
         }
-        auto descriptor_set_layout = device.get_descriptor_set_layout( dslci );
-        set_layouts.insert( std::make_pair( id, descriptor_set_layout ) );
+        else {
+          set_layouts.insert( std::make_pair( id, props.descriptor_set_layout[ id ] ) );
+        }
       }
       descriptor_set_layout = set_layouts;
      

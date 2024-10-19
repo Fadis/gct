@@ -1,0 +1,12 @@
+[
+  { "radius": 30.810, "thickness": 7.700, "refractive index": 1.652 },
+  { "radius": -89.350, "thickness": 1.850, "refractive index": 1.603 },
+  { "radius": 580.380, "thickness": 3.520, "refractive index": 1.000 },
+  { "radius": -80.630, "thickness": 1.850, "refractive index": 1.643 },
+  { "radius": 28.340, "thickness": 4.180, "refractive index": 1.000 },
+  { "thickness": 3.000, "refractive index": 1.000 },
+  { "thickness": 1.850, "refractive index": 1.581 },
+  { "radius": 32.190, "thickness": 7.270, "refractive index": 1.694 },
+  { "radius": -52.990, "thickness": 81.857, "refractive index": 1.000 }
+]
+

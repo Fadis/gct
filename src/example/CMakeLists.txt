@@ -73,4 +73,5 @@ subdirs(
   lrlf_dof
   motion_blur
   ppfl_motion_blur
+  prtlf
 )
