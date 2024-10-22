@@ -1,0 +1,88 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 1, r32f) readonly uniform image2D occlusion;
+layout (binding = 2, rgba32f) readonly uniform image2D diffuse_image;
+layout (binding = 3, rgba32f) readonly uniform image2D specular_image;
+layout (binding = 4, rgba32f) writeonly uniform image2D dest_image;
+layout (binding = 9) uniform sampler2D skyview;
+layout (binding = 10, rgba32f) readonly uniform image2D scattering;
+layout (binding = 13, rgba32f) readonly uniform image2D sb_image;
+
+#include "push_constants.h"
+#include "constants.h"
+#include "sky.h"
+
+layout(binding = 11,std430) buffer MatrixPool {
+  mat4 matrix_pool[];
+};
+
+struct punctual_light_parameter {
+  vec4 local_position;
+  vec4 world_position;
+  vec4 local_direction;
+  vec4 world_direction;
+  vec4 energy;
+  uint type;
+  float light_size;
+  float theta;
+  float phi;
+  float falloff;
+  uint matrix;
+  uint reserved[ 2 ];
+};
+
+layout(binding = 12,std430) buffer LightPool {
+  punctual_light_parameter light_pool[];
+};
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const mat3 bt709_to_xyz = mat3(
+    0.4124079, 0.2126478, 0.0193316,
+    0.3575896, 0.7151791, 0.1191965,
+    0.1804326, 0.0721730, 0.9502783
+  );
+  
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( gbuffer ).xy;
+  vec4 pos = matrix_pool[ global_uniforms.screen_to_world_matrix ] * vec4( vec2( screen_pos )/vec2( gl_NumWorkGroups * gl_WorkGroupSize ) * 2.0 - 1.0, 0.0, 1.0 );
+  pos /= pos.w;
+
+
+  //const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, 0 ) );
+  //const vec3 pos = pos_depth.xyz;
+  const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
+
+  const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
+
+  bool has_surface = dot( normal, normal ) != 0.0;
+
+  const vec3 ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * albedo.rgb;
+  const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
+  const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;
+  const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
+  const vec3 sb = imageLoad( sb_image, screen_pos ).rgb;
+  
+  const vec3 eye_dir = normalize( pos.xyz - global_uniforms.eye_pos.xyz );
+  const vec2 latitude_longitude = world_to_llar( eye_dir );
+  const vec2 skyview_texcoord = vec2(
+    ( latitude_longitude.y + pi ) / ( 2.0 * pi ),
+    1.0 - skyview_latitude_to_texcoord( latitude_longitude.x )
+  );
+  vec3 total = bt709_to_xyz * texture( skyview, skyview_texcoord ).rgb;
+
+  const vec4 surface = (
+    has_surface ?
+    vec4( ( ambient + ( diffuse.rgb + specular ) ) * scat.w + scat.rgb, albedo.a ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 )
+  );
+  total = mix( total, surface.rgb, surface.a ) + sb;
+
+  imageStore( dest_image, screen_pos, vec4( total, 1.0 ) );
+}
+

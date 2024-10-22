@@ -64,6 +64,9 @@ void main()  {
   uint far_layer = 5;
   float near_depth = af_state.depth;
   float far_depth = af_state.depth;
+  // k+bufferに記録した4つのフラグメントのうち
+  // フォーカルプレーンより手前にあり, かつ最も手前にある物をレイヤー0に
+  // フォーカルプレーンより奥にあり, かつ最も手前にある物をレイヤー1に送る
   {
     const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x != 0;
     const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
@@ -137,6 +140,7 @@ void main()  {
       far_layer;
   }
 
+  // 手前のフラグメントと奥のフラグメントで別々にシェーディング結果を足し合わせる
   const vec3 near_normal = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 2 ) ).xyz;
   const vec3 near_optflow = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 5 ) ).xyz;
   const vec4 near_albedo = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 1 ) );
@@ -148,11 +152,15 @@ void main()  {
   const vec3 far_normal = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 2 ) ).xyz;
   const vec3 far_optflow = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 5 ) ).xyz;
   const vec4 far_albedo = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 1 ) );
+  // HBAOは最も近いフラグメントのアンビエントオクルージョンしか計算できないので
+  // 不正確ではあるが奥のレイヤーでも手前のHBAOの結果を使う
   const vec3 far_ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * far_albedo.rgb;
   
   const vec4 far_diffuse = imageLoad( diffuse_image, ivec3( screen_pos, far_layer ) );
   const vec3 far_specular = imageLoad( specular_image, ivec3( screen_pos, far_layer ) ).rgb;
 
+  // 大気中での光の散乱は最も近いフラグメントの距離でしか計算していないが
+  // 短距離では値は大きく変化しないので手前で計算した物を奥でも使う
   const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
   
   const vec4 near_total = (
@@ -166,6 +174,8 @@ void main()  {
     vec4( ( far_ambient + ( far_diffuse.rgb + far_specular ) ) * scat.w + scat.rgb, far_albedo.a ) :
     vec4( 0.0, 0.0, 0.0, 0.0 )
   );
+
+  // 手前のレイヤーのCoCと奥のレイヤーのCoCを別々に求める
   const float near_coc = min( max( af_state.lens_size * abs( near_depth - af_state.depth )/near_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
   const float far_coc = min( max( af_state.lens_size * abs( far_depth - af_state.depth )/far_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
   

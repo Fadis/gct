@@ -65,7 +65,7 @@ void main() {
     const vec4 energy = vec4(
       light_pool[ global_uniforms.light ].energy.xyz *
       min( (push_constants.lens_radius*push_constants.lens_radius)/max(radius*radius,0.0000001), 10000.0 ) *
-      0.05,
+      0.05*0.05,
       1.0
     );
     gl_Position = vec4( v0, 0.0, 1.0 );

@@ -180,7 +180,6 @@ int main( int argc, const char *argv[] ) {
       .set_color_buffer_count( gbuf_count )
       .set_format( vk::Format::eR32G32B32A32Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
-      //.set_external_depth( depth_gbuffer.get_depth_views() )
   );
 
   constexpr std::size_t egbuf_count = 8u * 4u + 1u;
@@ -521,8 +520,6 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
   );
 
-  ////////////////////////
-
   const auto bloom_gauss = gct::image_filter(
     gct::image_filter_create_info()
       .set_allocator( res.allocator )
@@ -731,8 +728,6 @@ int main( int argc, const char *argv[] ) {
           const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
             .set_camera_matrix( *camera_desc )
-            //.set_previous_projection_matrix( * previous_proj_desc )
-            //.set_previous_camera_matrix( *previous_camera_desc )
             .set_screen_to_world_matrix( *screen_to_world_desc )
             .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
             .set_light_count( res.light_count )

@@ -545,9 +545,7 @@ int main( int argc, const char *argv[] ) {
     }
   );
   const auto proj_desc = sg->get_resource()->matrix->allocate( projection );
-  //const auto previous_proj_desc = sg->get_resource()->matrix->get_history( proj_desc );
   const auto camera_desc = sg->get_resource()->matrix->allocate( walk.get_lookat() );
-  //const auto previous_camera_desc = sg->get_resource()->matrix->get_history( camera_desc );
   const auto screen_to_world_desc = sg->get_resource()->matrix->allocate( glm::inverse( projection * walk.get_lookat() ) );
   const auto light_desc = sg->get_resource()->light->allocate(
     sg->get_root_node()->matrix,
@@ -585,8 +583,6 @@ int main( int argc, const char *argv[] ) {
     const auto global_data = global_uniforms_t()
       .set_projection_matrix( *proj_desc )
       .set_camera_matrix( *camera_desc )
-      //.set_previous_projection_matrix( * previous_proj_desc )
-      //.set_previous_camera_matrix( *previous_camera_desc )
       .set_screen_to_world_matrix( *screen_to_world_desc )
       .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
       .set_light_count( res.light_count )
@@ -678,8 +674,6 @@ int main( int argc, const char *argv[] ) {
           const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
             .set_camera_matrix( *camera_desc )
-            //.set_previous_projection_matrix( * previous_proj_desc )
-            //.set_previous_camera_matrix( *previous_camera_desc )
             .set_screen_to_world_matrix( *screen_to_world_desc )
             .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
             .set_light_count( res.light_count )

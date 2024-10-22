@@ -1,0 +1,43 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 1, rgba32f) readonly uniform image2D src_image;
+layout (binding = 2, rgba32f) writeonly uniform image2D dest_image;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+const float pi = 3.141592653589793;
+
+const float ghost_spacing = 0.3;
+const uint ghost_count = 4;
+
+layout (std430, binding = 13) buffer Output {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+} af_state;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( dest_image ).xy;
+  const float aspect_ratio = float( image_size.x )/float( image_size.y );
+  const float factor = ( af_state.sensor_size/aspect_ratio )/af_state.focal_distance;
+  const float f2 = factor * factor;
+  const vec2 uv = vec2( screen_pos )/vec2( image_size );
+  const vec2 d = abs( uv - vec2( 0.5f, 0.5f ) ) * vec2( 2.0f * aspect_ratio, 2.0f );
+  const float r2 = dot( d, d );
+  const float cos_theta = 1.0f / sqrt( f2 * r2 + 1.0f);
+  const float vignetting_factor = 1.0 - max( 1.0 - cos_theta * cos_theta * cos_theta * cos_theta, 0.0 ) * 1.4;
+  const vec4 color = imageLoad( src_image, screen_pos );
+  imageStore( dest_image, screen_pos, vec4( color.rgb * vignetting_factor, color.a ) );
+  //imageStore( dest_image, screen_pos, vec4( vignetting_factor, vignetting_factor, vignetting_factor, color.a ) );
+}
+

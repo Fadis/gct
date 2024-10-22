@@ -29,6 +29,8 @@ uint get_filter_by_size( float s ) {
   return uint( 0.0983607 * ( -47.0+100.0*sqrt( max( s, 0 ) ) ) );
 }
 
+// uvを視点として, directionで指定された方向に最大256点のサンプリングを行い, 平均を求める
+// サンプリング点の数はCoCの径で決める
 vec4 directional_blur( vec2 uv, vec2 direction, out float max_coc ) {
   const ivec2 image_size = imageSize( dest_image0 ).xy;
   vec4 final_color = vec4( 0.0, 0.0, 0.0, 0.0 );
@@ -59,7 +61,9 @@ void main() {
 
   float max_coc0 = 0.0;
   float max_coc1 = 0.0;
+  // 画像の下方向に向かってdirectional_blurをかける
   const vec4 color0 = directional_blur( vec2( screen_pos ), vec2( cos( pi*90/180 + af_state.apeture_rotation ), sin( pi*90/180 + af_state.apeture_rotation ) ), max_coc0 );
+  // 画像の左上方向に向かってdirectional_blurをかける
   const vec4 color1 = directional_blur( vec2( screen_pos ), vec2( cos( pi*210/180 + af_state.apeture_rotation ), sin( pi*210/180 + af_state.apeture_rotation ) ), max_coc1 );
   max_coc0 = max( max_coc0, max_coc1 );
 

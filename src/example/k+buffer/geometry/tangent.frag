@@ -75,17 +75,19 @@ void main() {
 
   if( albedo.a <= 0.0 ) discard;
   output_position = vec4( pos, gl_FragCoord.z );
-  /*output_albedo = albedo;
-  output_normal = vec4( normal.x, normal.y, normal.z, 1.0 );
-  output_emissive = vec4( emissive, occlusion );
-  output_material = vec4( metallic, roughness, 0.0, 0.0 );
-  output_optflow = vec4( optflow, 0.0 );
-  output_shadow = vec4( shadow_level0, shadow_level1, shadow_level2, shadow_level3 );*/
   const uint visibility_index = instance_resource_index[ push_constants.instance ].visibility;
   visibility_pool[ visibility_index ] = 1;
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
+
+  // ここからendInvocationInterlockARBまでの間の処理は
+  // 同じピクセルに重なるフラグメントを処理する複数のスレッド間で排他的に処理される
   beginInvocationInterlockARB();
+  // 既に記録されているフラグメントのインデックスを読む
+  // このベクトルにはフラグメントの情報を記録したレイヤーのオフセット+1が
+  // 近い方から順にソートされて記録される
+  // 0はまだフラグメントが記録されていない事を表す
   ivec4 sample_index = ivec4( imageLoad( extended_gbuffer, ivec3( image_pos, 32 ) ) );
+  // 有効なフラグメントが記録されていたらその深度値を取り出す
   const vec4 sample_depth = vec4(
     sample_index.x != 0 ?
       imageLoad( extended_gbuffer, ivec3( image_pos, ( sample_index.x - 1 ) * 8 ) ).w :
@@ -100,20 +102,29 @@ void main() {
       imageLoad( extended_gbuffer, ivec3( image_pos, ( sample_index.w - 1 ) * 8 ) ).w :
       2.0
   );
+  // 既に記録されていた有効なフラグメントの数
   const uint existing_sample_count =
     ( sample_index.x != 0 ? 1 : 0 ) +
     ( sample_index.y != 0 ? 1 : 0 ) +
     ( sample_index.z != 0 ? 1 : 0 ) +
     ( sample_index.w != 0 ? 1 : 0 );
+  // 新しいフラグメントを記録するレイヤーのオフセット+1
+  // もしフラグメントが記録されていないレイヤーがあったらそれを使う
+  // 全てのレイヤーが埋まっていたら最も奥のフラグメントが使っていたレイヤーを使う
   uint new_sample_index =
     ( existing_sample_count >= 4 ) ?
       uint( sample_index.w ) :
       existing_sample_count + 1;
+  // 新しいフラグメントより手前にあるフラグメントの数
   const uint new_sample_pos =
     ( gl_FragCoord.z > sample_depth.x ? 1 : 0 ) +
     ( gl_FragCoord.z > sample_depth.y ? 1 : 0 ) +
     ( gl_FragCoord.z > sample_depth.z ? 1 : 0 ) +
     ( gl_FragCoord.z > sample_depth.w ? 1 : 0 );
+  // new_sample_posの値に基づいて新しいフラグメントが使うレイヤーのオフセット+1を
+  // sample_indexに挿入する
+  // 新しいフラグメントより手前に4つ既存のフラグメントがあったら
+  // 新しいフラグメントは記録しない
   sample_index = (
     new_sample_pos == 0 ?
     ivec4( new_sample_index, sample_index.x, sample_index.y, sample_index.z ) :
@@ -132,6 +143,7 @@ void main() {
     )
   );
   if( new_sample_pos < 4 ) {
+    // new_sample_indexで求めたレイヤーに新しいフラグメントの値を記録する
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 0 ), vec4( pos, gl_FragCoord.z ) );
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 1 ), albedo );
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 2 ), vec4( normal.x, normal.y, normal.z, 1.0 ) );
@@ -139,6 +151,7 @@ void main() {
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 4 ), vec4( metallic, roughness, input_id.x, input_id.y ) );
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 5 ), vec4( optflow, 0.0 ) );
     imageStore( extended_gbuffer, ivec3( image_pos, ( new_sample_index - 1 ) * 8 + 6 ), vec4( shadow_level0, shadow_level1, shadow_level2, shadow_level3 ) );
+    // 更新したsample_indexを記録する
     imageStore( extended_gbuffer, ivec3( image_pos, 32 ), vec4( sample_index ) );
   }
   endInvocationInterlockARB();

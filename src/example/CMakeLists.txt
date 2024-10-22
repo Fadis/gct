@@ -73,6 +73,7 @@ subdirs(
   lrlf_dof
   motion_blur
   ppfl_motion_blur
+  natural_vignetting
   star_burst
   sslf
   prtlf

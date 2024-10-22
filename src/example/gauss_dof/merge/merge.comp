@@ -35,7 +35,8 @@ void main()  {
   vec4 pos_in_screen = matrix_pool[ global_uniforms.projection_matrix ] * matrix_pool[ global_uniforms.camera_matrix ] * pos;
   pos_in_screen /= pos_in_screen.w;
   const vec3 pos_in_froxel = pos_in_screen.xyz * 0.5 + 0.5;
-  
+
+  // 空の色を求める
   const vec3 eye_dir = normalize( pos.xyz - global_uniforms.eye_pos.xyz );
   const vec2 latitude_longitude = world_to_llar( eye_dir );
   const vec2 skyview_texcoord = vec2(
@@ -44,8 +45,10 @@ void main()  {
   );
   vec3 total = bt709_to_xyz * texture( skyview, skyview_texcoord ).rgb;
 
+  // フォーカルプレーンより奥のシェーディング結果にガウシアンフィルタをかけた物を重ねる
   vec4 far = imageLoad( src_image, ivec3( screen_pos, 1 ) );
   total = mix( total, far.rgb, far.a );
+  // フォーカルプレーンより手前のシェーディング結果にガウシアンフィルタをかけた物を重ねる
   vec4 near = imageLoad( src_image, ivec3( screen_pos, 0 ) );
   total = mix( total, near.rgb, near.a );
   

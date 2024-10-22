@@ -27,6 +27,7 @@ void main() {
   ivec2 lsample_pos = screen_pos;
   lsample_pos.y = lsample_pos.y - kernel_size;
   ivec2 hsample_pos = lsample_pos;
+  // 縦256ピクセルのガウシアンブラーを計算するのに必要な範囲を共有メモリにロードする
   hsample_pos.y += int( gl_WorkGroupSize.y );
   lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
   lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
@@ -39,7 +40,10 @@ void main() {
   barrier();
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  // 分散が異なるガウスフィルタの係数を事前に複数求めておく
+  // CoCの範囲での積分が0.8を超える最も分散が小さいフィルタを選ぶ
   const uint gauss_head = min( get_filter_by_size( imageLoad( coc, screen_pos ).r ), 57 ) * adaptive_gauss8_16_size;
+  // フィルタをかける
   for( uint i = 0; i != adaptive_gauss8_16_size; i++ ) {
     sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + gauss_head ];
     scale += adaptive_gauss8_16[ i + gauss_head ];

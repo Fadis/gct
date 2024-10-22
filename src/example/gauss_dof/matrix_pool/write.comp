@@ -33,6 +33,5 @@ void main() {
   if( index < push_constants.count ) {
     matrix[ request[ index + push_constants.offset ].destination ] =
       staging[ request[ index + push_constants.offset ].staging ];
-    //matrix[ request[ index + push_constants.offset ].destination ][ 1 ][ 0 ] = 42;
   }
 }

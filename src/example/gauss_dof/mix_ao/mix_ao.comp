@@ -65,8 +65,10 @@ void main()  {
 
   const vec4 albedo = imageLoad( gbuffer, ivec3( screen_pos, 1 ) );
 
+  // Gバッファに有効な値があるかどうかを確認する
   bool has_surface = dot( normal, normal ) != 0.0;
 
+  // シェーディング結果を足し合わせる
   const vec3 ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * albedo.rgb;
   const vec4 diffuse = imageLoad( diffuse_image, screen_pos );
   const vec3 specular = imageLoad( specular_image, screen_pos ).rgb;
@@ -77,8 +79,12 @@ void main()  {
     vec4( 0.0, 0.0, 0.0, 0.0 )
   );
 
+  // 深度から距離を求める
   const float linear_depth = has_surface ? decode_depth( pos_depth.w, af_state.znear, af_state.zfar ) : af_state.depth;
+  // 現在のフォーカルプレーンより手前ならdest_imageのレイヤー0に、奥ならdest_imageのレイヤー1にシェーディング結果を送る
   const bool near = linear_depth < af_state.depth;
+
+  // CoCの直径を求める
   const float coc_r = min( max( af_state.lens_size * abs( linear_depth - af_state.depth )/linear_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
   
   imageStore( dest_image, ivec3( screen_pos, 0 ), near ? total : vec4( 0.0, 0.0, 0.0, 0.0 ) );
