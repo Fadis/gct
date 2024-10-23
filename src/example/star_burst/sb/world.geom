@@ -30,6 +30,7 @@ layout (location = 1) out vec2 output_texcoord;
 layout (location = 2) out vec4 output_energy;
 
 void main() {
+  // 頂点シェーダから渡ってきた座標を中心とするビルボードを生成してラスタライザに渡す
   vec4 light_pos_in_screen = gl_in[ 0 ].gl_Position;
   light_pos_in_screen/=light_pos_in_screen.w;
   ivec2 screen_pos = ivec2( imageSize( gbuffer ).xy * ( light_pos_in_screen.xy * vec2( 0.5,  0.5 ) + 0.5 ) );

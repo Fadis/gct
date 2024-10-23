@@ -10,6 +10,7 @@ layout (binding = 3, rgba32f) writeonly uniform image2DArray dest_image;
 layout(local_size_x = 256, local_size_y = 1 ) in;
 
 int lrlfilter_size = 65;
+// 特異値分解で求めた分離可能なフィルタのパラメータ
 float lrlfilter[65*33] = float[](
 #include "h0.inc"
 );
@@ -32,6 +33,7 @@ void main() {
   lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
   hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
   hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
+  // 横256ピクセルのフィルタを計算するのに必要な範囲のピクセルとCoCを共有メモリにロードする
   cache[ lcpos ] = imageLoad( src_image, ivec3( lsample_pos, layer ) );
   cocs[ lcpos ] = min( uint( imageLoad( coc, ivec3( lsample_pos, layer ) ).r ), 32u ) * lrlfilter_size;
   if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
@@ -42,6 +44,7 @@ void main() {
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   for( uint i = 0; i != lrlfilter_size; i++ ) {
+    // CoCの大きさに対応する係数を使ってフィルタをかける
     sum += cache[ lcpos + i ] * lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
     scale += lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size )] ];
   }

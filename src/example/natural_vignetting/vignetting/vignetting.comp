@@ -29,15 +29,22 @@ void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const ivec2 image_size = imageSize( dest_image ).xy;
   const float aspect_ratio = float( image_size.x )/float( image_size.y );
+  // イメージセンサーの縦方向の長さと焦点距離の比の2乗を求める
   const float factor = ( af_state.sensor_size/aspect_ratio )/af_state.focal_distance;
   const float f2 = factor * factor;
   const vec2 uv = vec2( screen_pos )/vec2( image_size );
+  // イメージセンサーの中心からピクセルまでの距離の2乗を求める
   const vec2 d = abs( uv - vec2( 0.5f, 0.5f ) ) * vec2( 2.0f * aspect_ratio, 2.0f );
   const float r2 = dot( d, d );
+  // f2 * r2でtan^2θが求まる
+  // θはレンズの軸とこのピクセルに映る物体の向きを表すベクトルのなす角
+  // cosθ = 1/sqrt( tan^2θ + 1 )
   const float cos_theta = 1.0f / sqrt( f2 * r2 + 1.0f);
+  // コサイン4乗則
+  // 1.4はビネッティングの効果の強さを指定する係数
   const float vignetting_factor = 1.0 - max( 1.0 - cos_theta * cos_theta * cos_theta * cos_theta, 0.0 ) * 1.4;
+  // 入力画像の値にvignetting_factorを掛けて出力画像に書く
   const vec4 color = imageLoad( src_image, screen_pos );
   imageStore( dest_image, screen_pos, vec4( color.rgb * vignetting_factor, color.a ) );
-  //imageStore( dest_image, screen_pos, vec4( vignetting_factor, vignetting_factor, vignetting_factor, color.a ) );
 }
 

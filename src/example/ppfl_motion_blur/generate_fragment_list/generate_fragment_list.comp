@@ -5,6 +5,7 @@
 
 layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
 
+// スクリーンの横のピクセル数 * スクリーンの縦のピクセル数 * 32要素の配列
 layout(binding = 1,std430) buffer FragmentList {
   uint fragment_list[];
 };
@@ -69,18 +70,22 @@ uint load_fragment_info( uint index ) {
 
 bool cas_fragment_info( ivec2 pos, uint t, fragment_info v ) {
   const uint index = get_fragment_list_index( pos, t );
+  // 時刻tにフラグメントがあった位置がスクリーンの外なら何も記録しない
   if( index == 0xFFFFFFFF ) return false;
+  // 既にfragment listに記録されているオフセットとレイヤーを読む
   uint existing = load_fragment_info( index );
-  //float existing_depth = decode_fragment_depth( existing );
   fragment_info decoded_existing = decode_fragment_info( existing );
   float existing_depth = decoded_existing.valid ? imageLoad( gbuffer, ivec3( pos + decoded_existing.offset, decoded_existing.layer * 8 + 0 ) ).w : 2.0;
+  // 深度テスト
   if( v.depth >= existing_depth ) return false;
+  // フラグメントのオフセットとレイヤーを32bit整数にエンコード
   const uint encoded = encode_fragment_info( v );
   for( uint i = 0; i != 4; i++ ) {
+    // fragment listを更新
     const uint original = atomicCompSwap( fragment_list[ index ], existing, encoded );
     if( original == existing ) return true;
+    // casに失敗したら深度テストからやり直す
     existing = original;
-    //existing_depth = decode_fragment_depth( existing );
     fragment_info decoded_existing = decode_fragment_info( existing );
     existing_depth = decoded_existing.valid ? imageLoad( gbuffer, ivec3( pos + decoded_existing.offset, decoded_existing.layer * 8 + 0 ) ).w : 2.0;
     if( v.depth >= existing_depth ) return false;
@@ -119,25 +124,14 @@ void main()  {
   const uint count = min( uint(abs( end - begin )) + ( ( end == begin ) ? 1 : 0 ), 128 );
   const bool moved = distance( previous_pos, current_pos ) >= 2.0;
 
+  // 前のフレームから現在のフレームまでの間の時間を32等分する
   for( uint i = 0; i != 32; i++ ) {
+    // 現在のフレームの時点でcurrent_posにあるフラグメントが時刻iの時点でどこにあったかを求める
     const ivec2 p = ivec2( mix( vec2( current_pos ), vec2( previous_pos ), float( i )/float( 32 ) ) );
     new_fragment.offset = moved ? current_pos - p : ivec2( 0, 0 );
+    // 今処理しているフラグメントが時刻iの時点でpの位置にあった最も手前のフラグメントなら, fragment_listの内容を更新する
     cas_fragment_info( current_pos - new_fragment.offset, i, new_fragment );
   }
-  /*
-  for( uint i = 0; i != count; i++ ) {
-    const vec2 p = mix( vec2( previous_pos ), vec2( current_pos ), float( i )/float( count - 1 ) );
-    const ivec2 pi = ivec2( p );
-    const uint t = uint( float( i ) / float( count ) * time_steps );
-    const uint tbegin = uint( max( ( float( i ) - 0.5 ) / float( count ) * time_steps, 0 ) );
-    uint tend = uint( min( ( float( i ) + 0.5 ) / float( count ) * time_steps, time_steps ) );
-    tend = ( tbegin == tend ) ? tend + 1 : tend;
-    new_fragment.offset = pi - current_pos;
-    cas_fragment_info( pi, 31, new_fragment );
-    for( uint t = 0; t != 32; t++ ) {
-      cas_fragment_info( pi, t, new_fragment );
-    }
-  }*/
 }
 
 

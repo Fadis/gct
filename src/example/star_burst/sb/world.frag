@@ -12,6 +12,7 @@ layout (location = 0) out vec4 output_color;
 #include "global_uniforms.h"
 
 void main()  {
+  // diffractsimで求めた回折パターンをビルボードに貼り付ける
   const vec3 flare = texture( texture_pool[ push_constants.texture_id ], input_texcoord ).rgb;
   output_color = vec4( max( flare - vec3( 0.01, 0.01, 0.01 ), vec3( 0.0, 0.0, 0.0 ) ) * input_energy.rgb, 1.0 );
 }

@@ -14,6 +14,7 @@ out gl_PerVertex
 };
 
 void main() {
+  // 光源の座標をスクリーン空間の座標に変換してジオメトリシェーダに送る
   const vec3 pos = light_pool[ global_uniforms.light ].world_position.xyz;
   gl_Position =
     matrix_pool[ global_uniforms.projection_matrix ] *

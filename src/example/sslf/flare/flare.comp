@@ -10,20 +10,26 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 const float pi = 3.141592653589793;
 
+// レンズフレアが現れる間隔
 const float ghost_spacing = 0.3;
+// レンズフレアの個数
 const uint ghost_count = 4;
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const ivec2 image_size = imageSize( dest_image ).xy;
   const vec2 vuv = vec2( screen_pos )/vec2( image_size );
+  // π回転させた画像の座標
   const vec2 uv = vec2( 1.0, 1.0 ) - vuv;
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
+  // この向きに移動しながら入力画像を4回サンプリングし
+  // サンプリングした箇所が明るかったら現在のピクセルにレンズフレアを描く
   vec2 ghost_vec = ( vec2( 0.5, 0.5 ) - uv ) * ghost_spacing;
   for( uint i = 0; i < ghost_count; i++ ) {
     const vec2 suv = fract( uv + ghost_vec * i );
     const float d = distance( suv, vec2( 0.5, 0.5 ) );
     const float weight = 1.0 - mix( 0.0, 0.75, d );
+    // 光のエネルギーが 3.0以上のピクセルを明るいと見做す
     const vec3 s = max( texture( src_image, suv * image_size ).rgb - vec3( 3.0, 3.0, 3.0 ), vec3( 0.0, 0.0, 0.0 ) );
     sum += s * weight;
   }

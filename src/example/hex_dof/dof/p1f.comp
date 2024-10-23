@@ -70,9 +70,13 @@ void main() {
   const uint hcpos = lcpos + gl_WorkGroupSize.x;
   const ivec2 image_size = imageSize( dest_image ).xy;
 
+  // 画像の左上方向に向かってレイヤー0の内容にdirectional_blurをかける
   const vec4 color0 = directional_blur0( vec2( screen_pos ), vec2( cos( pi*210/180 + af_state.apeture_rotation ), sin( pi*210/180 + af_state.apeture_rotation ) ) );
+  // 画像の右上方向に向かってレイヤー0の内容にdirectional_blurをかける
   const vec4 color1 = directional_blur0( vec2( screen_pos ), vec2( cos( pi*330/180 + af_state.apeture_rotation ), sin( pi*330/180 + af_state.apeture_rotation ) ) );
+  // 画像の右上方向に向かってレイヤー1の内容にdirectional_blurをかける
   const vec4 color2 = directional_blur1( vec2( screen_pos ), vec2( cos( pi*330/180 + af_state.apeture_rotation ), sin( pi*330/180 + af_state.apeture_rotation ) ) );
+  // 全てのdirectional_blurの結果を足し合わせる
   vec4 mixed = color0 + color1 + color2;
   mixed /= max( mixed.a, 1.0 );
 

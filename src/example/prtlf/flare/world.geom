@@ -17,6 +17,7 @@ layout (set = 1, binding = 19, rgba32f) uniform image2DArray gbuffer;
 
 
 const uint flare_matrix_count = 36;
+// 事前に求めた36種類のレンズフレアの経路の行列
 const mat2 flare_matrices[36]=mat2[](
 #include "flare.inc"
 );
@@ -46,6 +47,7 @@ void main() {
   ivec2 screen_pos = ivec2( imageSize( gbuffer ).xy * ( light_pos_in_screen.xy * vec2( 0.5, 0.5 ) + 0.5 ) );
   const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, 2 ) ).xyz;
   const float depth = dot( normal, normal ) > 0.0 ? imageLoad( gbuffer, ivec3( screen_pos, 0 ) ).w : 10.0;
+  // 光源がクリッピング空間の外または遮蔽物より奥だった場合レンズフレアを描かない
   if(
     light_pos_in_screen.x < -1.0 || light_pos_in_screen.x > 1.0 ||
     light_pos_in_screen.y < -1.0 || light_pos_in_screen.y > 1.0 ||
@@ -55,13 +57,18 @@ void main() {
   {
     const float r0 = ( flare_matrices[ i ] * input_light0[ 0 ] ).x;
     const float r1 = ( flare_matrices[ i ] * input_light1[ 0 ] ).x;
+    // レンズフレアの中心座標と半径を求める
     const float center = ( r0 + r1 )*0.5;
     const float radius = abs( r0 - r1 )*0.5;
+    // レンズフレアが現れる範囲にビルボードを作る
     const vec2 center_pos = input_flare_direction[ 0 ] * center;
     const vec2 v0 = ( center_pos + vec2( -radius,  radius ) ) / push_constants.sensor_size;
     const vec2 v1 = ( center_pos + vec2( -radius, -radius ) ) / push_constants.sensor_size;
     const vec2 v2 = ( center_pos + vec2(  radius,  radius ) ) / push_constants.sensor_size;
     const vec2 v3 = ( center_pos + vec2(  radius, -radius ) ) / push_constants.sensor_size;
+    // レンズフレアでイメージセンサーの各ピクセルに届く光のエネルギーを求める
+    // レンズを通る光のエネルギーは一定なので、それが広範囲に散らばるほど1ピクセルあたりのエネルギーは小さくなる
+    // 1回の反射でエネルギーが5%になる為, 2回反射した光のエネルギーは元の0.05*0.05倍になる
     const vec4 energy = vec4(
       light_pool[ global_uniforms.light ].energy.xyz *
       min( (push_constants.lens_radius*push_constants.lens_radius)/max(radius*radius,0.0000001), 10000.0 ) *
