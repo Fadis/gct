@@ -17,7 +17,6 @@ float lrlfilter[65*33] = float[](
 
 const int kernel_size = 32;
 shared vec4[gl_WorkGroupSize.y+kernel_size*2+1] cache;
-shared uint[gl_WorkGroupSize.y+kernel_size*2+1] cocs;
 
 uint get_lrlfilter_by_size( float s ) {
   return uint( 0.0983607 * ( -47.0+100.0*sqrt( max( s, 0 ) ) ) );
@@ -39,18 +38,15 @@ void main() {
   hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
   // 縦256ピクセルのフィルタを計算するのに必要な範囲のピクセルとCoCを共有メモリにロードする
   cache[ lcpos ] = imageLoad( src_image, ivec3( lsample_pos, layer ) );
-  cocs[ lcpos ] = min( uint( imageLoad( coc, ivec3( lsample_pos, layer ) ).r ), 32u ) * lrlfilter_size;
   if( hcpos < gl_WorkGroupSize.y+kernel_size*2+1 ) {
     cache[ hcpos ] = imageLoad( src_image, ivec3( hsample_pos, layer ) );
-    cocs[ hcpos ] = min( uint( imageLoad( coc, ivec3( hsample_pos, layer ) ).r ), 32u ) * lrlfilter_size;
   }
   barrier();
-  float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  const uint coc_ = min( uint( imageLoad( coc, ivec3( screen_pos, layer ) ).r ), 32u ) * lrlfilter_size;
   for( uint i = 0; i != lrlfilter_size; i++ ) {
     // CoCの大きさに対応する係数を使ってフィルタをかける
-    sum += cache[ lcpos + i ] * lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
-    scale += lrlfilter[ i + cocs[ lcpos + ( layer == 0 ? i : kernel_size ) ] ];
+    sum += cache[ lcpos + i ] * lrlfilter[ i + coc_ ];
   }
   imageStore( dest_image, ivec3( screen_pos, layer ), sum );
 }

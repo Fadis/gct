@@ -96,3 +96,5 @@ add_shader( gauss_dof dof/vadaptive.comp )
 
 add_shader( gauss_dof merge/merge.comp )
 
+add_shader( gauss_dof coc_gauss/h12_32.comp )
+add_shader( gauss_dof coc_gauss/v12_32.comp )

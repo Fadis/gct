@@ -64,6 +64,9 @@ void main()  {
   uint far_layer = 5;
   float near_depth = af_state.depth;
   float far_depth = af_state.depth;
+  // 手前のイメージと奥のイメージを少しだけオーバーラップさせる
+  // これによってフィルタをかけても手前と奥の境界線が目立たなくなる
+  const float far_threshold = af_state.depth - 0.1;
   // k+bufferに記録した4つのフラグメントのうち
   // フォーカルプレーンより手前にあり, かつ最も手前にある物をレイヤー0に
   // フォーカルプレーンより奥にあり, かつ最も手前にある物をレイヤー1に送る
@@ -75,11 +78,11 @@ void main()  {
     const bool has_surface = dot( normal, normal ) != 0.0;
     const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
     far_layer =
-      ( has_layer && has_surface && linear_depth >= af_state.depth ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold ) ?
       layer :
       far_layer;
     far_depth =
-      ( has_layer && has_surface && linear_depth >= af_state.depth ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold ) ?
       linear_depth :
       far_depth;
     near_layer =
@@ -99,11 +102,11 @@ void main()  {
     const bool has_surface = dot( normal, normal ) != 0.0;
     const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
     far_depth =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       linear_depth :
       far_depth;
     far_layer =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       layer :
       far_layer;
   }
@@ -115,11 +118,11 @@ void main()  {
     const bool has_surface = dot( normal, normal ) != 0.0;
     const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
     far_depth =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       linear_depth :
       far_depth;
     far_layer =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       layer :
       far_layer;
   }
@@ -131,11 +134,11 @@ void main()  {
     const bool has_surface = dot( normal, normal ) != 0.0;
     const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
     far_depth =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       linear_depth :
       far_depth;
     far_layer =
-      ( has_layer && has_surface && linear_depth >= af_state.depth && far_layer == 5 ) ?
+      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
       layer :
       far_layer;
   }

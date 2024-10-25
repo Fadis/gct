@@ -99,3 +99,5 @@ add_shader( hex_dof dof/p1f.comp )
 
 add_shader( hex_dof merge/merge.comp )
 
+add_shader( hex_dof coc_gauss/h12_32.comp )
+add_shader( hex_dof coc_gauss/v12_32.comp )

@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 layout (binding = 1, rgba32f) readonly uniform image2DArray src_image;
-layout (binding = 2, r32f) readonly uniform image2D coc;
+layout (binding = 2, r32f) readonly uniform image2DArray coc;
 layout (binding = 3, rgba32f) writeonly uniform image2DArray dest_image;
 
 layout(local_size_x = 1, local_size_y = 256 ) in;
@@ -42,7 +42,7 @@ void main() {
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
   // 分散が異なるガウスフィルタの係数を事前に複数求めておく
   // CoCの範囲での積分が0.8を超える最も分散が小さいフィルタを選ぶ
-  const uint gauss_head = min( get_filter_by_size( imageLoad( coc, screen_pos ).r ), 57 ) * adaptive_gauss8_16_size;
+  const uint gauss_head = min( get_filter_by_size( imageLoad( coc, ivec3( screen_pos, layer ) ).r ), 57 ) * adaptive_gauss8_16_size;
   // フィルタをかける
   for( uint i = 0; i != adaptive_gauss8_16_size; i++ ) {
     sum += cache[ lcpos + i ] * adaptive_gauss8_16[ i + gauss_head ];

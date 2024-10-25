@@ -105,3 +105,5 @@ add_shader( lrlf_dof dof/v4.comp )
 
 add_shader( lrlf_dof merge/merge.comp )
 
+add_shader( lrlf_dof coc_gauss/h12_32.comp )
+add_shader( lrlf_dof coc_gauss/v12_32.comp )

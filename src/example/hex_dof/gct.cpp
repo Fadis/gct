@@ -395,63 +395,39 @@ int main( int argc, const char *argv[] ) {
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
-  const auto near_dof = res.allocator->create_image_view(
-    rgba32ici,
+  const auto dof = res.allocator->create_image_view(
+    rgba32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
+  const auto dof_thin = dof->get_factory()->get_thin_views( 1u );
+ 
+  const auto dof0 = res.allocator->create_image_view(
+    rgba32ici2,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
+  const auto dof0_thin = dof0->get_factory()->get_thin_views( 1u );
   
-  const auto far_dof = res.allocator->create_image_view(
-    rgba32ici,
+  const auto dof1 = res.allocator->create_image_view(
+    rgba32ici2,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
+  const auto dof1_thin = dof1->get_factory()->get_thin_views( 1u );
+  
+  const auto dof2 = res.allocator->create_image_view(
+    rgba32ici2,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
+  const auto dof2_thin = dof2->get_factory()->get_thin_views( 1u );
+  
+  const auto coc = res.allocator->create_image_view(
+    r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
-  const auto near_dof0 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  
-  const auto far_dof0 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
+  const auto coc_thin = coc->get_factory()->get_thin_views( 1u );
 
-  const auto near_dof1 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  
-  const auto far_dof1 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-
-  const auto near_dof2 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  
-  const auto far_dof2 = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-
-  const auto near_coc = res.allocator->create_image_view(
-    r32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  
-  const auto far_coc = res.allocator->create_image_view(
-    r32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-
-  const auto near_max_coc = res.allocator->create_image_view(
-    r32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-  
-  const auto far_max_coc = res.allocator->create_image_view(
-    r32ici,
+  const auto coc_temporary = res.allocator->create_image_view(
+    r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
@@ -461,18 +437,12 @@ int main( int argc, const char *argv[] ) {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( diffuse, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( specular, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_dof, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_dof, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_dof0, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_dof0, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_dof1, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_dof1, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_dof2, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_dof2, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_coc, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_coc, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( near_max_coc, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( far_max_coc, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( dof, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( dof0, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( dof1, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( dof2, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( coc, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( coc_temporary, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -597,11 +567,9 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "diffuse_image", diffuse } )
       .add_resource( { "specular_image", specular } )
       .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "near_coc_image", near_coc, vk::ImageLayout::eGeneral } )
-      .add_resource( { "far_coc_image", far_coc, vk::ImageLayout::eGeneral } )
+      .add_resource( { "coc_image", coc, vk::ImageLayout::eGeneral } )
       .add_resource( { "af_state", af_state_buffer } )
-      .add_resource( { "near_dest_image", near_dof, vk::ImageLayout::eGeneral } )
-      .add_resource( { "far_dest_image", far_dof, vk::ImageLayout::eGeneral } )
+      .add_resource( { "dest_image", dof, vk::ImageLayout::eGeneral } )
       .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
   );
@@ -613,11 +581,10 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/p0n.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", unnormalized_sampler, near_dof, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image0", near_dof0, vk::ImageLayout::eGeneral } )
-      .add_resource( { "dest_image1", near_dof1, vk::ImageLayout::eGeneral } )
-      .add_resource( { "coc", unnormalized_sampler, near_coc, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "max_coc", near_max_coc, vk::ImageLayout::eGeneral } )
+      .add_resource( { "src_image", unnormalized_sampler, dof_thin[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "dest_image0", dof0_thin[ 0 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "dest_image1", dof1_thin[ 0 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "coc", unnormalized_sampler, coc_thin[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "af_state", af_state_buffer } )
   );
   
@@ -628,11 +595,10 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/p0f.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", unnormalized_sampler, far_dof, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image0", far_dof0, vk::ImageLayout::eGeneral } )
-      .add_resource( { "dest_image1", far_dof1, vk::ImageLayout::eGeneral } )
-      .add_resource( { "coc", unnormalized_sampler, far_coc, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "max_coc", far_max_coc, vk::ImageLayout::eGeneral } )
+      .add_resource( { "src_image", unnormalized_sampler, dof_thin[ 1 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "dest_image0", dof0_thin[ 1 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "dest_image1", dof1_thin[ 1 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "coc", unnormalized_sampler, coc_thin[ 1 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "af_state", af_state_buffer } )
   );
 
@@ -644,10 +610,10 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/p1n.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image0", unnormalized_sampler, near_dof0, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "src_image1", unnormalized_sampler, near_dof1, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", near_dof2, vk::ImageLayout::eGeneral } )
-      .add_resource( { "coc", unnormalized_sampler, near_max_coc, vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "src_image0", unnormalized_sampler, dof0_thin[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "src_image1", unnormalized_sampler, dof1_thin[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "dest_image", dof2_thin[ 0 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "coc", unnormalized_sampler, coc_thin[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "af_state", af_state_buffer } )
   );
 
@@ -658,11 +624,33 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/p1f.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image0", unnormalized_sampler, far_dof0, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "src_image1", unnormalized_sampler, far_dof1, vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", far_dof2, vk::ImageLayout::eGeneral } )
-      .add_resource( { "coc", unnormalized_sampler, far_max_coc, vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "src_image0", unnormalized_sampler, dof0_thin[ 1 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "src_image1", unnormalized_sampler, dof1_thin[ 1 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
+      .add_resource( { "dest_image", dof2_thin[ 1 ], vk::ImageLayout::eGeneral } )
+      .add_resource( { "coc", unnormalized_sampler, coc_thin[ 1 ], vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "af_state", af_state_buffer } )
+  );
+  
+  const auto coc_hgauss = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/h12_32.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .add_resource( { "src_image", coc } )
+      .add_resource( { "dest_image", coc_temporary } )
+  );
+
+  const auto coc_vgauss = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/v12_32.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .add_resource( { "src_image", coc_temporary } )
+      .add_resource( { "dest_image", coc } )
   );
 
   const auto bloom_gauss = gct::image_filter(
@@ -671,11 +659,10 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
-      .set_input_name( "near_src_image" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ near_dof2 } )
+      .set_input_name( "src_image" )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ dof2 } )
       .set_output_create_info( rgba32ici )
       .set_output_name( "bloom_image" )
-      .add_resource( { "far_src_image", far_dof2, vk::ImageLayout::eGeneral } )
       .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
@@ -999,33 +986,26 @@ int main( int argc, const char *argv[] ) {
         update_af( rec, 0, 16, 16, 1u );
         rec.compute_barrier( { af_state_buffer->get_buffer() }, {} );
         mix_ao( rec, 0, res.width, res.height, 1u );
-        rec.convert_image( near_dof->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( far_dof->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( near_coc->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( far_coc->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( near_max_coc->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( far_max_coc->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( near_dof0->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( near_dof1->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( far_dof0->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( far_dof1->get_factory(), vk::ImageLayout::eGeneral );
+        rec.compute_barrier( {}, { coc->get_factory() } );
+        coc_hgauss( rec, 0, res.width, res.height, 2u );
+        rec.compute_barrier( {}, { coc_temporary->get_factory() } );
+        coc_vgauss( rec, 0, res.width, res.height, 2u );
+        rec.compute_barrier( {}, { coc->get_factory() } );
+        rec.convert_image( dof->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
+        rec.convert_image( coc->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
+        rec.convert_image( dof0->get_factory(), vk::ImageLayout::eGeneral );
+        rec.convert_image( dof1->get_factory(), vk::ImageLayout::eGeneral );
         dof_p0n( rec, 0, res.width, res.height, 1u );
         dof_p0f( rec, 0, res.width, res.height, 1u );
-        rec.convert_image( near_dof0->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( near_dof1->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( far_dof0->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( far_dof1->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( near_max_coc->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
-        rec.convert_image( far_max_coc->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
+        rec.convert_image( dof0->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
+        rec.convert_image( dof1->get_factory(), vk::ImageLayout::eShaderReadOnlyOptimal );
         dof_p1n( rec, 0, res.width, res.height, 1u );
         dof_p1f( rec, 0, res.width, res.height, 1u );
-        rec.convert_image( near_dof->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( far_dof->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( near_coc->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( far_coc->get_factory(), vk::ImageLayout::eGeneral );
+        rec.convert_image( dof->get_factory(), vk::ImageLayout::eGeneral );
+        rec.convert_image( dof->get_factory(), vk::ImageLayout::eGeneral );
+        rec.convert_image( coc->get_factory(), vk::ImageLayout::eGeneral );
         rec.compute_barrier( {}, {
-          near_dof2->get_factory(),
-          far_dof2->get_factory()
+          dof2->get_factory()
         } );
         bloom_gauss( rec, 0 );
         rec.compute_barrier( {}, { mixed_out->get_factory() } );

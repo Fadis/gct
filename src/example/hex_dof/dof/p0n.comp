@@ -7,7 +7,6 @@ layout (binding = 1) uniform sampler2D src_image;
 layout (binding = 2) uniform sampler2D coc;
 layout (binding = 3, rgba32f) writeonly uniform image2D dest_image0;
 layout (binding = 4, rgba32f) writeonly uniform image2D dest_image1;
-layout (binding = 5, r32f) writeonly uniform image2D max_coc;
 
 layout (std430, binding = 13) buffer Output {
   uint history;
@@ -29,25 +28,20 @@ uint get_filter_by_size( float s ) {
   return uint( 0.0983607 * ( -47.0+100.0*sqrt( max( s, 0 ) ) ) );
 }
 
-vec4 directional_blur( vec2 uv, vec2 direction, out float max_coc ) {
+vec4 directional_blur( vec2 uv, vec2 direction ) {
   const ivec2 image_size = imageSize( dest_image0 ).xy;
   vec4 final_color = vec4( 0.0, 0.0, 0.0, 0.0 );
   float blur_amount = 0.0;
   uv += direction * 0.5;
-  float max_coc_ = 0.0;
   float len = length( direction );
   float local_coc = texture( coc, uv ).r;
-  max_coc_ = max( max_coc_, local_coc );
   for( uint i = 0; i < 256; i++ ) {
-    //float local_coc = texture( coc, uv + direction * i ).r;
-    //max_coc_ = max( max_coc_, local_coc );
     float weight = ( local_coc >= i ) ? 1.0 : 0.0;
     vec4 color = texture( src_image, uv + direction * i ) * weight;
     blur_amount += color.a;
     color *= color.a;
     final_color += color;
   }
-  max_coc = max_coc_;
   return final_color/max( blur_amount, 1.0 );
 }
 
@@ -59,14 +53,10 @@ void main() {
   const uint hcpos = lcpos + gl_WorkGroupSize.x;
   const ivec2 image_size = imageSize( dest_image0 ).xy;
 
-  float max_coc0 = 0.0;
-  float max_coc1 = 0.0;
-  const vec4 color0 = directional_blur( vec2( screen_pos ), vec2( cos( pi*90/180 + af_state.apeture_rotation ), sin( pi*90/180 + af_state.apeture_rotation ) ), max_coc0 );
-  const vec4 color1 = directional_blur( vec2( screen_pos ), vec2( cos( pi*210/180 + af_state.apeture_rotation ), sin( pi*210/180 + af_state.apeture_rotation ) ), max_coc1 );
-  max_coc0 = max( max_coc0, max_coc1 );
+  const vec4 color0 = directional_blur( vec2( screen_pos ), vec2( cos( pi*90/180 + af_state.apeture_rotation ), sin( pi*90/180 + af_state.apeture_rotation ) ) );
+  const vec4 color1 = directional_blur( vec2( screen_pos ), vec2( cos( pi*210/180 + af_state.apeture_rotation ), sin( pi*210/180 + af_state.apeture_rotation ) ) );
 
   imageStore( dest_image0, screen_pos, color0 );
   imageStore( dest_image1, screen_pos, color1 );
-  imageStore( max_coc, screen_pos, vec4( max_coc0, 0.0, 0.0, 0.0 ) );
 }
 

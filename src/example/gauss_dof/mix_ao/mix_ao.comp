@@ -8,7 +8,7 @@ layout (binding = 1, r32f) readonly uniform image2D occlusion;
 layout (binding = 2, rgba32f) readonly uniform image2D diffuse_image;
 layout (binding = 3, rgba32f) readonly uniform image2D specular_image;
 layout (binding = 4, rgba32f) writeonly uniform image2DArray dest_image;
-layout (binding = 5, r32f) writeonly uniform image2D coc_image;
+layout (binding = 5, r32f) writeonly uniform image2DArray coc_image;
 layout (binding = 10, rgba32f) readonly uniform image2D scattering;
 
 #include "push_constants.h"
@@ -88,7 +88,8 @@ void main()  {
   const float coc_r = min( max( af_state.lens_size * abs( linear_depth - af_state.depth )/linear_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 15 );
   
   imageStore( dest_image, ivec3( screen_pos, 0 ), near ? total : vec4( 0.0, 0.0, 0.0, 0.0 ) );
-  imageStore( dest_image, ivec3( screen_pos, 1 ), total );
-  imageStore( coc_image, screen_pos, vec4( coc_r, 0.0, 0.0, 0.0 ) );
+  imageStore( dest_image, ivec3( screen_pos, 1 ), near ? vec4( 0.0, 1.0, 0.0, 1.0 ) : total );
+  imageStore( coc_image, ivec3( screen_pos, 0 ), vec4( near ? coc_r : 0.0, 0.0, 0.0, 0.0 ) );
+  imageStore( coc_image, ivec3( screen_pos, 1 ), vec4( near ? 0.0 : coc_r, 0.0, 0.0, 0.0 ) );
 }
 

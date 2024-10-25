@@ -315,6 +315,15 @@ int main( int argc, const char *argv[] ) {
           .setUsage( vk::ImageUsageFlagBits::eStorage )
           .setFormat( vk::Format::eR32Sfloat )
       );
+  
+  const auto r32ici2 =
+    gct::image_create_info_t()
+      .set_basic(
+        gct::basic_2d_image( res.width, res.height )
+          .setFormat( vk::Format::eR32Sfloat )
+          .setUsage( vk::ImageUsageFlagBits::eStorage )
+          .setArrayLayers( 2 )
+      );
 
   std::vector< fb_resources_t > framebuffers;
   for( std::size_t i = 0u; i != res.swapchain_images.size(); ++i ) {
@@ -348,12 +357,12 @@ int main( int argc, const char *argv[] ) {
   );
 
   const auto coc = res.allocator->create_image_view(
-    r32ici,
+    r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
   const auto coc_temporary = res.allocator->create_image_view(
-    r32ici,
+    r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   {
@@ -521,7 +530,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv" )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/h12_32.comp.spv" )
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", coc } )
       .add_resource( { "dest_image", coc_temporary } )
@@ -532,7 +541,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv" )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/v12_32.comp.spv" )
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", coc_temporary } )
       .add_resource( { "dest_image", coc } )
@@ -864,9 +873,9 @@ int main( int argc, const char *argv[] ) {
         rec.compute_barrier( { af_state_buffer->get_buffer() }, {} );
         mix_ao( rec, 0, res.width, res.height, 1u );
         rec.compute_barrier( {}, { dof->get_factory(), coc->get_factory() } );
-        coc_hgauss( rec, 0, res.width, res.height, 1u );
+        coc_hgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { coc_temporary->get_factory() } );
-        coc_vgauss( rec, 0, res.width, res.height, 1u );
+        coc_vgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { coc->get_factory() } );
         dof_hgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { dof_temporary->get_factory() } );

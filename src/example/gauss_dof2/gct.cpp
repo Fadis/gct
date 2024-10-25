@@ -916,9 +916,9 @@ int main( int argc, const char *argv[] ) {
         rec.compute_barrier( { af_state_buffer->get_buffer() }, {} );
         mix_ao( rec, 0, res.width, res.height, 1u );
         rec.compute_barrier( {}, { dof->get_factory(), coc->get_factory() } );
-        coc_hgauss( rec, 0, res.width, res.height, 1u );
+        coc_hgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { coc_temporary->get_factory() } );
-        coc_vgauss( rec, 0, res.width, res.height, 1u );
+        coc_vgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { coc->get_factory() } );
         dof_hgauss( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( {}, { dof_temporary->get_factory() } );
