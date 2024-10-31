@@ -6,25 +6,37 @@
 
 namespace gct::input {
 
+namespace {
+#ifdef GCT_SDBUSCPP_STRONG_TYPE
+  using error_type = std::optional< sdbus::Error >;
+#else
+  using error_type = sdbus::Error*;
+#endif
+}
+
 xkb_rule_names get_ssytem_keymap() {
+#ifdef GCT_SDBUSCPP_STRONG_TYPE
+  auto dbus_locale = sdbus::createProxy( sdbus::ServiceName("org.freedesktop.locale1"), sdbus::ObjectPath( "/org/freedesktop/locale1") );
+#else
   auto dbus_locale = sdbus::createProxy( "org.freedesktop.locale1", "/org/freedesktop/locale1" );
+#endif
   auto [layout,model,variant,options] = sched::wait(
-    gct::dbus::call< sdbus::Variant >(
+    gct::dbus::call< error_type, sdbus::Variant >(
       dbus_locale->callMethodAsync( "Get" )
         .onInterface( "org.freedesktop.DBus.Properties" )
         .withArguments( "org.freedesktop.locale1", "X11Layout" )
     ) &
-    gct::dbus::call< sdbus::Variant >(
+    gct::dbus::call< error_type, sdbus::Variant >(
       dbus_locale->callMethodAsync( "Get" )
         .onInterface( "org.freedesktop.DBus.Properties" )
         .withArguments( "org.freedesktop.locale1", "X11Model" )
     ) &
-    gct::dbus::call< sdbus::Variant >(
+    gct::dbus::call< error_type, sdbus::Variant >(
       dbus_locale->callMethodAsync( "Get" )
         .onInterface( "org.freedesktop.DBus.Properties" )
         .withArguments( "org.freedesktop.locale1", "X11Variant" )
     ) &
-    gct::dbus::call< sdbus::Variant >(
+    gct::dbus::call< error_type, sdbus::Variant >(
       dbus_locale->callMethodAsync( "Get" )
         .onInterface( "org.freedesktop.DBus.Properties" )
         .withArguments( "org.freedesktop.locale1", "X11Options" )

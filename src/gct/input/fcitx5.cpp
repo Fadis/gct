@@ -15,11 +15,23 @@
 
 namespace gct::input {
 
+namespace {
+#ifdef GCT_SDBUSCPP_STRONG_TYPE
+  using error_type = std::optional< sdbus::Error >;
+#else
+  using error_type = sdbus::Error*;
+#endif
+}
+
 fcitx5::fcitx5_internal::fcitx5_internal(
   const std::shared_ptr< sched::thread_pool_t > &tp
 ) : thread_pool( tp ) {
  conn = sdbus::createSessionBusConnection();
+#ifdef GCT_SDBUSCPP_STRONG_TYPE
+ input_method = sdbus::createProxy( *conn, sdbus::ServiceName( "org.fcitx.Fcitx5" ), sdbus::ObjectPath( "/org/freedesktop/portal/inputmethod" ) );
+#else
  input_method = sdbus::createProxy( *conn, "org.fcitx.Fcitx5", "/org/freedesktop/portal/inputmethod" );
+#endif
  conn->enterEventLoopAsync();
 }
 void fcitx5::fcitx5_internal::run() {
@@ -31,7 +43,7 @@ void fcitx5::fcitx5_internal::run() {
 }
 void fcitx5::fcitx5_internal::poll() {
   auto [version] = sched::wait(
-    gct::dbus::call< std::uint32_t >(
+    gct::dbus::call< error_type, std::uint32_t >(
       input_method->callMethodAsync( "Version" )
         .onInterface( "org.fcitx.Fcitx.InputMethod1" )
         .withArguments()
@@ -43,13 +55,17 @@ void fcitx5::fcitx5_internal::poll() {
     sdbus::make_struct( std::string( "display" ), std::string( "x11:" ) )
   };
   auto [path,wtf] = sched::wait(
-    gct::dbus::call< sdbus::ObjectPath, std::vector< std::uint8_t > >(
+    gct::dbus::call< error_type, sdbus::ObjectPath, std::vector< std::uint8_t > >(
       input_method->callMethodAsync( "CreateInputContext" )
         .onInterface( "org.fcitx.Fcitx.InputMethod1" )
         .withArguments( args )
     )
   );
+#ifdef GCT_SDBUSCPP_STRONG_TYPE
+  input_context = sdbus::createProxy( *conn, sdbus::ServiceName( "org.fcitx.Fcitx5" ), sdbus::ObjectPath( path ) );
+#else
   input_context = sdbus::createProxy( *conn, "org.fcitx.Fcitx5", path );
+#endif
   input_context->uponSignal( "CommitString" )
     .onInterface( "org.fcitx.Fcitx.InputContext1" )
     .call( [self=shared_from_this()]( const std::string &s ) {
@@ -170,23 +186,25 @@ void fcitx5::fcitx5_internal::poll() {
         p->set_value( v );
       }
     } );
+#ifndef GCT_SDBUSCPP_STRONG_TYPE
   input_context->finishRegistration();
+#endif
   sched::wait(
-    gct::dbus::call<>(
+    gct::dbus::call< error_type >(
       input_context->callMethodAsync( "SetCursorRect" )
         .onInterface( "org.fcitx.Fcitx.InputContext1" )
         .withArguments( 128, 128, 8, 17 )
     )
   );
   sched::wait(
-    gct::dbus::call<>(
+    gct::dbus::call< error_type >(
       input_context->callMethodAsync( "SetCapability" )
         .onInterface( "org.fcitx.Fcitx.InputContext1" )
         .withArguments( 962081063026u )
     )
   );
   sched::wait(
-    gct::dbus::call<>(
+    gct::dbus::call< error_type >(
       input_context->callMethodAsync( "FocusIn" )
         .onInterface( "org.fcitx.Fcitx.InputContext1" )
     )
@@ -211,7 +229,7 @@ void fcitx5::fcitx5_internal::key_event(
     [self=shared_from_this(),e=e,key_state=key_state]() {
       if( self->input_context ) {
         auto [result] = sched::wait(
-          gct::dbus::call< bool >(
+          gct::dbus::call< error_type, bool >(
             self->input_context->callMethodAsync( "ProcessKeyEvent" )
               .onInterface( "org.fcitx.Fcitx.InputContext1" )
               .withArguments( std::uint32_t( e.sym ), std::uint32_t( e.code ), std::uint32_t( key_state ), bool( e.state == key_state::released ), std::uint32_t( e.relative_time.count() ) )

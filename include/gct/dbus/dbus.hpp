@@ -8,14 +8,14 @@
 
 namespace gct::dbus {
 
-template< typename ...T >
+template< typename ErrorType, typename ...T >
 future< std::tuple< T... > > call(
   sdbus::AsyncMethodInvoker &async
 ) {
   std::shared_ptr< promise< std::tuple< T... > > > p( new promise< std::tuple< T... > >() );
   auto f = p->get_future();
   async.uponReplyInvoke(
-    [p=std::move(p)]( const sdbus::Error* error, const T & ... v ) {
+    [p=std::move(p)]( const ErrorType error, const T & ... v ) {
       if( error ) {
         try {
           throw *error;
