@@ -38,9 +38,11 @@ namespace gct {
       bool ignore_unused = false
     );
     bool has( const std::string &name ) const;
+    bool has( std::uint32_t index ) const;
     const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const;
     const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const;
     vk::WriteDescriptorSet operator[]( const std::string & ) const;
+    vk::WriteDescriptorSet operator[]( std::uint32_t ) const;
   private:
     descriptor_set_allocate_info_t props;
     vk::UniqueHandle< vk::DescriptorSet, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;

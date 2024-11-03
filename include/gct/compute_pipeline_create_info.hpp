@@ -1,12 +1,14 @@
 #ifndef GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #define GCT_COMPUTE_PIPELINE_CREATE_INFO_HPP
 #include <memory>
+#include <glm/vec3.hpp>
 #include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
 #include <gct/array_of.hpp>
+#include <gct/specialization_map.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
@@ -40,9 +42,11 @@ namespace gct {
   private:
     pipeline_shader_stage_create_info_t stage;
     std::shared_ptr< pipeline_layout_t > layout;
+    glm::ivec3 dim = glm::ivec3( 0, 0, 0 );
   public:
     compute_pipeline_create_info_t &set_stage( const pipeline_shader_stage_create_info_t& );
     compute_pipeline_create_info_t &set_stage( const std::shared_ptr< shader_module_t >& );
+    compute_pipeline_create_info_t &set_stage( const std::shared_ptr< shader_module_t >&, const specialization_map& );
     const pipeline_shader_stage_create_info_t &get_stage() const {
       return stage;
     }
@@ -59,6 +63,21 @@ namespace gct {
     compute_pipeline_create_info_t &clear_layout();
     const std::shared_ptr< pipeline_layout_t > &get_layout() const {
       return layout;
+    }
+    compute_pipeline_create_info_t &set_dim( const glm::vec3 &v ) {
+      dim = v;
+      return *this;
+    }
+    compute_pipeline_create_info_t &set_dim(
+      std::int32_t x,
+      std::int32_t y,
+      std::int32_t z
+    ) {
+      dim = glm::ivec3( x, y, z );
+      return *this;
+    }
+    const glm::ivec3 &get_dim() const {
+      return dim;
     }
   };
   void to_json( nlohmann::json &root, const compute_pipeline_create_info_t &v );

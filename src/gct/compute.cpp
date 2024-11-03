@@ -33,13 +33,14 @@ namespace gct {
       }
       pipeline = props.pipeline_cache->get_pipeline(
         compute_pipeline_create_info_t()
-          .set_stage( shader )
+          .set_dim( props.dim )
+          .set_stage( shader, props.specs )
           .set_layout( props.external_pipeline_layout )
       );
       descriptor_set_layout = set_layouts;
     }
     else {
-      std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout );
+      std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout, props.specs, props.dim );
     }
     descriptor_set.resize( props.swapchain_image_count );
     for( auto &d: descriptor_set_layout ) {

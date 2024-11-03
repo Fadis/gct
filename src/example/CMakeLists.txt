@@ -78,4 +78,5 @@ subdirs(
   star_burst
   sslf
   prtlf
+  cl
 )

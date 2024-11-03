@@ -6,10 +6,12 @@
 #include <utility>
 #include <unordered_map>
 #include <filesystem>
+#include <glm/vec3.hpp>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/created_from.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
+#include <gct/specialization_map.hpp>
 
 namespace gct {
   class device_t;
@@ -69,6 +71,16 @@ namespace gct {
     get_pipeline2(
       const std::string &path,
       std::vector< std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout
+    );
+    std::pair<
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
+      std::shared_ptr< compute_pipeline_t >
+    >
+    get_pipeline2(
+      const std::string &path,
+      std::vector< std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout,
+      const specialization_map &specs,
+      const glm::ivec3 &dim
     );
     void dump( const std::filesystem::path &filename ) const;
   private:

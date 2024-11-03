@@ -292,6 +292,9 @@ namespace gct {
   ) {
     set_name( r.get_name() );
     set_index( r.get_index() );
+    if( r.get_id() ) {
+      set_id( *r.get_id() );
+    }
     if( r.is_uniform() ) {
       if( r.is_buffer() ) {
         add_buffer( r.get_uniform_buffer() );

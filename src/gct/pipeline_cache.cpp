@@ -101,6 +101,33 @@ namespace gct {
     ); 
     return std::make_pair( set_layouts, pipeline );
   }
+  std::pair<
+    std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
+    std::shared_ptr< compute_pipeline_t >
+  >
+  pipeline_cache_t::get_pipeline2(
+    const std::string &path,
+    std::vector< std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout,
+    const specialization_map &specs,
+    const glm::ivec3 &dim
+  ) {
+    auto &device = get_device( *this );
+    auto shader = device.get_shader_module( path );
+    std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
+    for( const auto id: shader->get_props().get_reflection().get_descriptor_set_id() ) {
+      auto descriptor_set_layout = ( external_descriptor_set_layout.size() <= id ) ? device.get_descriptor_set_layout(
+        shader->get_props().get_reflection(), id
+      ) : external_descriptor_set_layout[ id ];
+      set_layouts.insert( std::make_pair( id, descriptor_set_layout ) );
+    }
+    auto pipeline = get_pipeline(
+      gct::compute_pipeline_create_info_t()
+        .set_dim( dim )
+        .set_stage( shader, specs )
+        .set_layout( set_layouts, shader )
+    ); 
+    return std::make_pair( set_layouts, pipeline );
+  }
   void pipeline_cache_t::dump( const std::filesystem::path &filename ) const {
     auto &device = get_device( *this );
     auto data = device->getPipelineCacheData( *handle );

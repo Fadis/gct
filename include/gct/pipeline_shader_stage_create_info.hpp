@@ -46,7 +46,12 @@ namespace gct {
     pipeline_shader_stage_create_info_t &clear_specialization_info();
     template< typename T >
     pipeline_shader_stage_create_info_t &set_specialization_info( const T &v ) {
-      spec = std::shared_ptr< T >( new T( v ) );
+      if( !v.empty() ) {
+        spec = std::shared_ptr< T >( new T( v ) );
+      }
+      else {
+        spec.reset();
+      }
       chained = false;
       return *this;
     }

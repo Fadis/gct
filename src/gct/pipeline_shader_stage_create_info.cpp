@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/shader_module_reflection.hpp>

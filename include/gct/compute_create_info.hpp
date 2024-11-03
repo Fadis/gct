@@ -6,8 +6,10 @@
 #include <unordered_map>
 #include <filesystem>
 #include <nlohmann/json_fwd.hpp>
+#include <glm/vec3.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/specialization_map.hpp>
 
 namespace gct {
 
@@ -28,6 +30,8 @@ struct compute_create_info {
   LIBGCT_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   LIBGCT_SETTER( ignore_unused_descriptor )
+  LIBGCT_SETTER( specs )
+  LIBGCT_SETTER( dim )
   compute_create_info &add_resource(
     const named_resource &n
   );
@@ -47,6 +51,21 @@ struct compute_create_info {
     external_descriptor_set.insert( std::make_pair( id, v ) );
     return *this;
   }
+  compute_create_info &add_spec(
+    std::uint32_t id,
+    const specialization_value_type &v
+  ) {
+    specs.insert( std::make_pair( id, v ) );
+    return *this;
+  }
+  compute_create_info &set_dim(
+    std::int32_t x,
+    std::int32_t y,
+    std::int32_t z
+  ) {
+    dim = glm::ivec3( x, y, z );
+    return *this;
+  }
   std::shared_ptr< allocator_t > allocator;
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
@@ -57,6 +76,8 @@ struct compute_create_info {
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
   bool ignore_unused_descriptor = false;
+  specialization_map specs;
+  glm::ivec3 dim = glm::ivec3( 0, 0, 0 );
 };
 
 void to_json( nlohmann::json&, const compute_create_info& );

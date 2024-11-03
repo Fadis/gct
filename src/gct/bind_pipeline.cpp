@@ -19,21 +19,16 @@ namespace gct {
       **pipeline
     );
     local_size_is_available = false;
-    const auto shader_module = pipeline->get_props().get_stage().get_shader_module();
-    if( shader_module ) {
-      const SpvReflectEntryPoint *entry_point = shader_module->get_props().get_reflection()->entry_points;
-      if( entry_point ) {
-        if(
-          entry_point->local_size.x != 0 &&
-          entry_point->local_size.y != 0 &&
-          entry_point->local_size.z != 0
-        ) {
-          local_size_is_available = true;
-          local_size[ 0 ] = entry_point->local_size.x;
-          local_size[ 1 ] = entry_point->local_size.y;
-          local_size[ 2 ] = entry_point->local_size.z;
-        }
-      }
+    const auto dim = pipeline->get_props().get_dim();
+    if(
+      dim.x != 0 &&
+      dim.y != 0 &&
+      dim.z != 0
+    ) {
+      local_size_is_available = true;
+      local_size[ 0 ] = dim.x;
+      local_size[ 1 ] = dim.y;
+      local_size[ 2 ] = dim.z;
     }
     get_factory()->unbound()->keep.push_back( pipeline );
   }

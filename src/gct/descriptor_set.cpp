@@ -46,6 +46,19 @@ namespace gct {
           v.set_basic( (*this)[ name ] );
         }
       }
+      else if( v.get_id() ) {
+        if( ignore_unused ) {
+          if( has( *v.get_id() ) ) {
+            v.set_basic( (*this)[ *v.get_id() ] );
+          }
+          else {
+            continue;
+          }
+        }
+        else {
+          v.set_basic( (*this)[ *v.get_id() ] );
+        }
+      }
       v.rebuild_chain();
       auto basic = v.get_basic();
       basic.setDstArrayElement( v.get_index() );
@@ -78,6 +91,21 @@ namespace gct {
     const auto found = name_to_binding.find( name );
     return found != name_to_binding.end();
   }
+  bool descriptor_set_t::has( std::uint32_t index ) const {
+    vk::DescriptorSetLayoutBinding key;
+    key.setBinding( index );
+    const auto &binding = get_binding();
+    auto existing = std::lower_bound(
+      binding.begin(),
+      binding.end(),
+      key,
+      []( const auto &l, const auto &r ) {
+        return l.binding < r.binding;
+      }
+    );
+    if( existing == binding.end() || existing->binding != key.binding ) return false;
+    return true;
+  }
   vk::WriteDescriptorSet descriptor_set_t::operator[]( const std::string &name ) const {
     const auto &name_to_binding = get_name_to_binding();
     const auto found = name_to_binding.find( name );
@@ -85,6 +113,24 @@ namespace gct {
       throw exception::invalid_argument( "No such name in the descriptor set", __FILE__, __LINE__ );
     vk::DescriptorSetLayoutBinding key;
     key.setBinding( found->second );
+    const auto &binding = get_binding();
+    auto existing = std::lower_bound(
+      binding.begin(),
+      binding.end(),
+      key,
+      []( const auto &l, const auto &r ) {
+        return l.binding < r.binding;
+      }
+    );
+    if( existing == binding.end() || existing->binding != key.binding )
+      throw exception::invalid_argument( "No such name in the descriptor set", __FILE__, __LINE__ );
+    return vk::WriteDescriptorSet()
+      .setDstBinding( existing->binding )
+      .setDescriptorType( existing->descriptorType );
+  }
+  vk::WriteDescriptorSet descriptor_set_t::operator[]( std::uint32_t index ) const {
+    vk::DescriptorSetLayoutBinding key;
+    key.setBinding( index );
     const auto &binding = get_binding();
     auto existing = std::lower_bound(
       binding.begin(),

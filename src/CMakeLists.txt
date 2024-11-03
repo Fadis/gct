@@ -68,6 +68,7 @@ add_library( gct SHARED
   gct/descriptor_set_allocate_info.cpp
   gct/descriptor_set.cpp
   gct/specialized_info.cpp
+  gct/specialized_map.cpp
   gct/pipeline_cache_create_info.cpp
   gct/pipeline_cache.cpp
   gct/pipeline_layout_create_info.cpp

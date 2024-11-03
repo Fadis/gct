@@ -2,6 +2,7 @@
 #define GCT_WRITE_DESCRIPTOR_SET_HPP
 #include <memory>
 #include <vector>
+#include <optional>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
@@ -40,8 +41,9 @@ namespace gct {
     std::vector< std::shared_ptr< gct::acceleration_structure_t > > acceleration_structure_handles;
     std::vector< vk::AccelerationStructureKHR > raw_acceleration_structure;
     std::string name;
-    std::uint32_t index = 0;
 #endif
+    std::uint32_t index = 0;
+    std::optional< std::uint32_t > id;
   public:
     write_descriptor_set_t() {}
     write_descriptor_set_t(
@@ -144,12 +146,19 @@ namespace gct {
     const std::string &get_name() const {
       return name;
     }
+    write_descriptor_set_t &set_id( std::uint32_t i ) {
+      id = i;
+      return *this;
+    }
     write_descriptor_set_t &set_index( std::uint32_t i ) {
       index = i;
       return *this;
     }
     std::uint32_t get_index() const {
       return index;
+    }
+    std::optional< std::uint32_t > get_id() const {
+      return id;
     }
   };
 void to_json( nlohmann::json&, const write_descriptor_set_t& );

@@ -25,6 +25,7 @@ void to_json( nlohmann::json &root, const SpvReflectBlockVariable &v );
 void to_json( nlohmann::json &root, const SpvReflectDescriptorBinding &v );
 void to_json( nlohmann::json &root, const SpvReflectShaderModule &v );
 void to_json( nlohmann::json &root, const SpvReflectBindingArrayTraits &v );
+void to_json( nlohmann::json &root, const SpvReflectSpecializationConstant &v );
 
 #endif
 

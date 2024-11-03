@@ -1,4 +1,3 @@
-#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -9,6 +8,8 @@
 #include <gct/compute_pipeline_create_info.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/get_device.hpp>
+#include <gct/specialization_map.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <vulkan2json/ComputePipelineCreateInfo.hpp>
 #ifdef VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME
 #include <vulkan2json/PipelineCompilerControlCreateInfoAMD.hpp>
@@ -111,6 +112,47 @@ namespace gct {
         .set_shader_module( v )
         .rebuild_chain()
     );
+    const SpvReflectEntryPoint *entry_point = v->get_props().get_reflection()->entry_points;
+    if( entry_point ) {
+      if(
+        entry_point->local_size.x != 0 &&
+        entry_point->local_size.y != 0 &&
+        entry_point->local_size.z != 0
+      ) {
+        set_dim( glm::ivec3(
+          entry_point->local_size.x,
+          entry_point->local_size.y,
+          entry_point->local_size.z
+        ) );
+      }
+    }
+    return *this;
+  }
+  compute_pipeline_create_info_t &compute_pipeline_create_info_t::set_stage( const std::shared_ptr< shader_module_t > &v, const specialization_map &m ) {
+    if( !v->get_props().has_reflection() )
+      throw exception::invalid_argument( "Reflection is required to set shader directly to pipeline", __FILE__, __LINE__ );
+    set_stage(
+      pipeline_shader_stage_create_info_t()
+        .set_shader_module( v )
+        .set_specialization_info(
+          encode( m )
+        )
+        .rebuild_chain()
+    );
+    const SpvReflectEntryPoint *entry_point = v->get_props().get_reflection()->entry_points;
+    if( entry_point ) {
+      if(
+        entry_point->local_size.x != 0 &&
+        entry_point->local_size.y != 0 &&
+        entry_point->local_size.z != 0
+      ) {
+        set_dim( glm::ivec3(
+          entry_point->local_size.x,
+          entry_point->local_size.y,
+          entry_point->local_size.z
+        ) );
+      }
+    }
     return *this;
   }
   compute_pipeline_create_info_t &compute_pipeline_create_info_t::set_layout( const std::shared_ptr< pipeline_layout_t > &v ) {

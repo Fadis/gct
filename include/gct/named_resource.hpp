@@ -5,6 +5,7 @@
 #include <tuple>
 #include <string>
 #include <variant>
+#include <optional>
 #include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
@@ -172,11 +173,172 @@ namespace gct {
         vk::ImageLayout
       > > &r
     );
+
+
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< buffer_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< buffer_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< mappable_buffer_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< mappable_buffer_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< image_view_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< image_view_t > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< sampler_t > &s,
+      const std::shared_ptr< image_view_t > &i
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< sampler_t > &s,
+      const std::shared_ptr< image_view_t > &v
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< image_view_t > &i,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< image_view_t > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< sampler_t > &s,
+      const std::shared_ptr< image_view_t > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< sampler_t > &s,
+      const std::shared_ptr< image_view_t > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::shared_ptr< buffer_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::shared_ptr< buffer_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::shared_ptr< mappable_buffer_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::shared_ptr< mappable_buffer_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::shared_ptr< image_view_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::shared_ptr< image_view_t > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::shared_ptr< image_view_t > > &i,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::shared_ptr< image_view_t > > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< sampler_t > &s,
+      const std::vector< std::shared_ptr< image_view_t > > &v
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< sampler_t > &s,
+      const std::vector< std::shared_ptr< image_view_t > > &v
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::tuple<
+        std::shared_ptr< sampler_t >,
+        std::shared_ptr< image_view_t >
+      > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::tuple<
+        std::shared_ptr< sampler_t >,
+        std::shared_ptr< image_view_t >
+      > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::shared_ptr< sampler_t > &s,
+      const std::vector< std::shared_ptr< image_view_t > > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::shared_ptr< sampler_t > &s,
+      const std::vector< std::shared_ptr< image_view_t > > &v,
+      vk::ImageLayout l
+    );
+    named_resource(
+      std::uint32_t id,
+      const std::vector< std::tuple<
+        std::shared_ptr< sampler_t >,
+        std::shared_ptr< image_view_t >,
+        vk::ImageLayout
+      > > &r
+    );
+    named_resource(
+      std::uint32_t id,
+      std::uint32_t i,
+      const std::vector< std::tuple<
+        std::shared_ptr< sampler_t >,
+        std::shared_ptr< image_view_t >,
+        vk::ImageLayout
+      > > &r
+    );
+
     named_resource &set_name( const std::string &n );
     named_resource &set_name( std::string &&n );
     const std::string &get_name() const { return name; }
     named_resource &set_index( std::uint32_t n );
+    named_resource &set_id( std::uint32_t n );
     std::uint32_t get_index() const { return index; }
+    std::optional< std::uint32_t > get_id() const { return id; }
     named_resource &set_resource( const std::shared_ptr< buffer_t > &r );
     named_resource &set_resource( const std::shared_ptr< mappable_buffer_t > &r );
     named_resource &set_resource( const std::shared_ptr< image_view_t > &r );
@@ -251,6 +413,7 @@ namespace gct {
   private:
     std::string name;
     std::uint32_t index = 0u;
+    std::optional< std::uint32_t > id;
     std::variant<
       std::vector< std::shared_ptr< buffer_t > >,
       std::vector< std::shared_ptr< image_view_t > >,

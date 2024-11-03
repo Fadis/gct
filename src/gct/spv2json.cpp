@@ -2196,6 +2196,15 @@ void to_json( nlohmann::json &root, const SpvReflectDescriptorBinding &v ) {
     root[ "type_description" ] = *v.type_description;
 }
 
+void to_json( nlohmann::json &root, const SpvReflectSpecializationConstant &v ) {
+  root = nlohmann::json::object();
+  root[ "spirv_id" ] = v.spirv_id;
+  root[ "constant_id" ] = v.constant_id;
+  if( v.name ) {
+    root[ "name" ] = v.name;
+  }
+}
+
 void to_json( nlohmann::json &root, const SpvReflectShaderModule &v ) {
   root = nlohmann::json::object();
   root[ "generator" ] = v.generator;
@@ -2250,6 +2259,12 @@ void to_json( nlohmann::json &root, const SpvReflectShaderModule &v ) {
     root[ "push_constant_blocks" ] = nlohmann::json::array();
     for( unsigned int i = 0u; i != v.push_constant_block_count; ++i )
       root[ "push_constant_blocks" ].push_back( nlohmann::json( v.push_constant_blocks[ i ] ) );
+  }
+  if( v.spec_constant_count ) {
+    root[ "spec_constant_count" ] = v.spec_constant_count;
+    root[ "spec_constants" ] = nlohmann::json::array();
+    for( unsigned int i = 0u; i != v.spec_constant_count; ++i )
+      root[ "spec_constants" ].push_back( nlohmann::json( v.spec_constants[ i ] ) );
   }
 }
 
