@@ -73,12 +73,8 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/test.comp.spv" )
-      .add_resource( { 0, output_data } )
-      .add_resource( { 1, input_data } )
-      .add_spec( 0, 256 )
-      .add_spec( 1, 1 )
-      .add_spec( 2, 1 )
-      .set_dim( 256, 1, 1 )
+      .add_resource( { "a", output_data } )
+      .add_resource( { "b", input_data } )
   );
   {
     auto mapped = input_data->map< float >();
@@ -93,14 +89,6 @@ int main( int argc, const char *argv[] ) {
       auto rec = command_buffer->begin();
       rec.sync_to_device( input_data );
       rec.transfer_to_compute_barrier( { input_data->get_buffer() }, {} );
-      glm::ivec3 offset( 0, 0, 0 );
-      rec->pushConstants(
-        **comp.get_pipeline()->get_props().get_layout(),
-        comp.get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-        0u,
-        sizeof( glm::ivec3 ),
-        &offset
-      );
       comp( rec, 0, 256, 1, 1 );
       rec.sync_to_host( output_data );
     }

@@ -17,8 +17,5 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
-#add_shader( cl cl32/local_sum.comp )
-#add_shader( cl cl32/global_sum.comp )
-#add_shader( cl cl32/sort.comp )
-#add_shader( cl cl32/small_sort.comp )
+add_shader( cl test.cl )
 

@@ -78,5 +78,19 @@ subdirs(
   star_burst
   sslf
   prtlf
+)
+if( DXC_FOUND )
+subdirs(
+  hlsl
+)
+endif()
+if( CLSPV_FOUND )
+subdirs(
   cl
 )
+endif()
+if( VCC_FOUND )
+subdirs(
+  vcc
+)
+endif()

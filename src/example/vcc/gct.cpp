@@ -52,7 +52,8 @@ int main( int argc, const char *argv[] ) {
       )
       .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 64 )
       .rebuild_chain(),
-    false
+    false,
+    true
   );
 
   const auto input_data =
@@ -73,12 +74,6 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/test.comp.spv" )
-      .add_resource( { 0, output_data } )
-      .add_resource( { 1, input_data } )
-      .add_spec( 0, 256 )
-      .add_spec( 1, 1 )
-      .add_spec( 2, 1 )
-      .set_dim( 256, 1, 1 )
   );
   {
     auto mapped = input_data->map< float >();
@@ -86,6 +81,8 @@ int main( int argc, const char *argv[] ) {
       mapped[ i ] = i;
     }
   }
+  const auto input_data_addr = input_data->get_buffer()->get_address(); 
+  const auto output_data_addr = output_data->get_buffer()->get_address(); 
   auto command_buffer = res.queue->get_command_pool()->allocate();
   const auto begin = std::chrono::high_resolution_clock::now();
   {
@@ -93,13 +90,16 @@ int main( int argc, const char *argv[] ) {
       auto rec = command_buffer->begin();
       rec.sync_to_device( input_data );
       rec.transfer_to_compute_barrier( { input_data->get_buffer() }, {} );
-      glm::ivec3 offset( 0, 0, 0 );
+      std::array< vk::DeviceAddress, 2u > addrs{
+        *output_data_addr,
+        *input_data_addr
+      };
       rec->pushConstants(
         **comp.get_pipeline()->get_props().get_layout(),
         comp.get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
         0u,
-        sizeof( glm::ivec3 ),
-        &offset
+        sizeof( vk::DeviceAddress ) * addrs.size(),
+        addrs.data()
       );
       comp( rec, 0, 256, 1, 1 );
       rec.sync_to_host( output_data );

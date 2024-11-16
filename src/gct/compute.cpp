@@ -80,10 +80,12 @@ namespace gct {
         }
       }
       else {
-        if( descriptor_set[ i ][ 0 ] ) {
-          const auto ext = props.external_descriptor_set.find( 0u );
-          if( ext == props.external_descriptor_set.end() ) {
-            descriptor_set[ i ][ 0 ]->update( temp, props.ignore_unused_descriptor );
+        if( !descriptor_set[ i ].empty() ) {
+          if( descriptor_set[ i ][ 0 ] ) {
+            const auto ext = props.external_descriptor_set.find( 0u );
+            if( ext == props.external_descriptor_set.end() ) {
+              descriptor_set[ i ][ 0 ]->update( temp, props.ignore_unused_descriptor );
+            }
           }
         }
       }

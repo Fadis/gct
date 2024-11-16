@@ -27,7 +27,8 @@ common_sample_setup::common_sample_setup(
   const char *argv[],
   const std::vector< const char* > &device_extensions,
   const descriptor_pool_create_info_t &dpci,
-  bool enable_glfw
+  bool enable_glfw,
+  bool enable_device_address
 ) {
   namespace po = boost::program_options;
   po::options_description desc( "Options" );
@@ -166,6 +167,9 @@ common_sample_setup::common_sample_setup(
   pipeline_cache = device->get_pipeline_cache();
 
   VmaAllocatorCreateInfo allocator_create_info{};
+  if( enable_device_address ) {
+    allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  }
   allocator = device->get_allocator(
     allocator_create_info
   );
