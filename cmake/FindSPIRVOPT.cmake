@@ -1,0 +1,10 @@
+if(NOT SPIRVOPT_ROOT)
+  find_program( SPIRVOPT spirv-opt )
+else()
+  find_program( SPIRVOPT spirv-opt NO_DEFAULT_PATH PATHS ${SPIRVOPT_ROOT}/ ${SPIRVOPT_ROOT}/bin/ )
+endif()
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(
+  SPIRVOPT
+  REQUIRED_VARS SPIRVOPT
+)
+
