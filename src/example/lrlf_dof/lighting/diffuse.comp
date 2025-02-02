@@ -10,7 +10,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 #include "constants.h"
 #include "push_constants.h"
-#include "lighting.h"
+#include <gct/lighting.h>
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );

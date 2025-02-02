@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/stacktrace.hpp>
 #include <nlohmann/json.hpp>
 #include <vulkan2json/DebugUtilsMessageSeverityFlagsEXT.hpp>
 #include <gct/get_extensions.hpp>
@@ -181,6 +182,8 @@ namespace gct {
             const vk::DebugUtilsMessengerCallbackDataEXT &data
           ) {
             std::cout << std::string( nlohmann::json( severity ) ) << " : " << ( data.pMessageIdName ? data.pMessageIdName : "(none)" ) << "[" <<  data.messageIdNumber << "]" << ( data.pMessage ? data.pMessage : "(none)" ) << std::endl;
+            std::cout << "From : " << std::endl;
+            std::cout << boost::stacktrace::stacktrace();
 	    if( int( severity ) & int( vk::DebugUtilsMessageSeverityFlagBitsEXT::eError ) ) {
               std::abort();
 	    }

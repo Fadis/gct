@@ -5,7 +5,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 #include "global_uniforms.h"
-#include "scene_graph.h"
+#include <gct/scene_graph.h>
 
 layout(binding = 6,set=1,std430) buffer Condition {
   uint condition[];

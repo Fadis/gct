@@ -9,9 +9,9 @@ layout (binding = 2, rgba32f) writeonly uniform image2DArray specular_image;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
-#include "constants.h"
+#include <gct/constants.h>
 #include "push_constants.h"
-#include "lighting.h"
+#include <gct/lighting.h>
 
 
 struct punctual_light_parameter {

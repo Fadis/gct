@@ -7,8 +7,11 @@
 
 #include "io.h"
 #include "global_uniforms.h"
-#include "scene_graph.h"
-#include "omnishadow.h"
+#include <gct/scene_graph.h>
+
+layout(set=1, binding = 18) uniform samplerCube shadow;
+
+#include <gct/omnishadow.h>
 
 //layout(early_fragment_tests) in;
 

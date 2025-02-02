@@ -17,5 +17,5 @@ target_link_libraries(
   ${pkgcfg_lib_GLFW_glfw3}
 )
 
-add_shader( cooperative_matrix shader.comp )
+add_shader( cooperative_matrix shader.comp NOOPT TRUE )
 

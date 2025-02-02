@@ -174,7 +174,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_width( res.width )
       .set_height( res.height )
-      .set_layer( 1u )
+      .set_layer( 0u )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( gbuf_count )
       .set_format( vk::Format::eR32G32B32A32Sfloat ) 
@@ -213,7 +213,7 @@ int main( int argc, const char *argv[] ) {
       .set_height( res.height )
       .set_layer( 0u )
       .set_swapchain_image_count( 1u )
-      .set_color_buffer_count( 1u )
+      .set_color_buffer_count( 0u )
       .set_format( vk::Format::eR32G32B32A32Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_external_depth( depth_gbuffer.get_depth_views() )
@@ -447,7 +447,7 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/ao/" )
       .set_input_name( "gbuffer" )
-      .set_input( gbuffer.get_image_views() )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ extended_gbuffer } ) ////
       .add_resource( { "global_uniforms", global_uniform } ) 
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
   );

@@ -6,7 +6,7 @@
 layout (location = 0) in vec3 input_position;
 layout (location = 0) out vec4 output_position;
 
-#include "scene_graph.h"
+#include <gct/scene_graph.h>
 
 out gl_PerVertex
 {

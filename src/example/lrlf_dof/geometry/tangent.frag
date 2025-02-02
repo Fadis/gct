@@ -6,9 +6,12 @@
 #extension GL_ARB_fragment_shader_interlock : enable
 
 #include "io_with_tangent.h"
-#include "scene_graph.h"
+#include <gct/scene_graph.h>
 #include "global_uniforms.h"
-#include "omnishadow.h"
+
+layout(set=1, binding = 18) uniform samplerCube shadow;
+
+#include <gct/omnishadow.h>
 
 //layout(early_fragment_tests) in;
 

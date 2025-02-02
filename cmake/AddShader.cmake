@@ -11,6 +11,7 @@ function(add_shader TARGET SHADER)
       set( USE_SPIRV_OPT TRUE )
   endif()
 
+  set( SHADER_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/gct/shader" )
   if(USE_SPIRV_OPT)
     set(current-shader-path ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER})
     set(current-before_opt-path ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/intermediate_spirv/before_opt/${SHADER}.spv)
@@ -33,7 +34,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".comp.hlsl.spv" ".comp.spv" current-output-path "${current-output-path}" )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T cs_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T cs_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -43,7 +44,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".vert.hlsl.spv" ".vert.spv" current-output-path "${current-output-path}" )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${cuurrent-shader-path} -T vs_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${cuurrent-shader-path} -T vs_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -53,7 +54,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".tesc.hlsl.spv" ".tesc.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T hs_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T hs_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -73,7 +74,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".geom.hlsl.spv" ".geom.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T gs_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T gs_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -83,7 +84,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".frag.hlsl.spv" ".frag.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T ps_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T ps_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -93,7 +94,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".mesh.hlsl.spv" ".mesh.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T ms_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T ms_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -103,7 +104,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".task.hlsl.spv" ".task.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${DXC} -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T as_6_8 -Fo ${current-before_opt-path}
+      COMMAND ${DXC} -I${SHADER_INCLUDE_DIR}/hlsl -spirv -fspv-target-env=vulkan1.3 ${current-shader-path} -T as_6_8 -Fo ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling HLSL ${SHADER} ..."
@@ -113,7 +114,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".comp.cpp.spv" ".comp.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${VCC} -std=c++20 --execution-model Compute --target spirv ${current-shader-path} -o ${current-before_opt-path} --entry-point main
+      COMMAND ${VCC} -I${SHADER_INCLUDE_DIR}/cpp -std=c++20 --execution-model Compute --target spirv ${current-shader-path} -o ${current-before_opt-path} --entry-point main
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling CXX Shader ${SHADER} ..."
@@ -123,7 +124,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".vert.cpp.spv" ".vert.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${VCC} -std=c++20 --execution-model Vertex --target spirv ${cuurrent-shader-path} -o ${current-before_opt-path} --entry-point main
+      COMMAND ${VCC} -I${SHADER_INCLUDE_DIR}/cpp -std=c++20 --execution-model Vertex --target spirv ${cuurrent-shader-path} -o ${current-before_opt-path} --entry-point main
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling CXX Shader ${SHADER} ..."
@@ -133,7 +134,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".frag.cpp.spv" ".frag.spv" current-output-path "${current-output-path}"  )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${VCC} -std=c++20 --execution-model Fragment --target spirv ${current-shader-path} -o ${current-before_opt-path} --entry-point main
+      COMMAND ${VCC} -I${SHADER_INCLUDE_DIR}/cpp -std=c++20 --execution-model Fragment --target spirv ${current-shader-path} -o ${current-before_opt-path} --entry-point main
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling CXX Shader ${SHADER} ..."
@@ -143,7 +144,7 @@ function(add_shader TARGET SHADER)
     string(REPLACE ".cl.spv" ".comp.spv" current-output-path "${current-output-path}" )
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${CLSPV} --cl-std=CLC++2021 -inline-entry-points --spv-version=1.6 ${current-shader-path} -o ${current-before_opt-path}
+      COMMAND ${CLSPV} -I${SHADER_INCLUDE_DIR}/cl --cl-std=CLC++2021 -inline-entry-points --spv-version=1.6 ${current-shader-path} -o ${current-before_opt-path}
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling OpenCL ${SHADER} ..."
@@ -151,7 +152,7 @@ function(add_shader TARGET SHADER)
   else()
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${GLSLC} -o ${current-before_opt-path} ${current-shader-path} --target-env=vulkan1.3
+      COMMAND ${GLSLC} -I${SHADER_INCLUDE_DIR}/glsl -o ${current-before_opt-path} ${current-shader-path} --target-env=vulkan1.3
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling GLSL ${SHADER} ..."
