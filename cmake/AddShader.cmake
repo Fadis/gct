@@ -152,7 +152,7 @@ function(add_shader TARGET SHADER)
   else()
     add_custom_command(
       OUTPUT ${current-before_opt-path}
-      COMMAND ${GLSLC} -I${SHADER_INCLUDE_DIR}/glsl -o ${current-before_opt-path} ${current-shader-path} --target-env=vulkan1.3
+      COMMAND ${GLSLC} -I${SHADER_INCLUDE_DIR}/glsl -o ${current-before_opt-path} ${current-shader-path} --target-env=vulkan1.3 -w -Werror
       DEPENDS ${current-shader-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Compiling GLSL ${SHADER} ..."
