@@ -18,16 +18,16 @@ namespace gct {
     acceleration_structure_geometry_instances_data_t &set_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_instances_data_t &clear_data();
     void to_json( nlohmann::json &j ) const;
-    vk::AccelerationStructureGeometryInstancesDataKHR &operator*() {
+    [[nodiscard]] vk::AccelerationStructureGeometryInstancesDataKHR &operator*() {
       return basic;
     }
-    const vk::AccelerationStructureGeometryInstancesDataKHR &operator*() const {
+    [[nodiscard]] const vk::AccelerationStructureGeometryInstancesDataKHR &operator*() const {
       return basic;
     }
-    vk::AccelerationStructureGeometryInstancesDataKHR *operator->() {
+    [[nodiscard]] vk::AccelerationStructureGeometryInstancesDataKHR *operator->() {
       return &basic;
     }
-    const vk::AccelerationStructureGeometryInstancesDataKHR *operator->() const {
+    [[nodiscard]] const vk::AccelerationStructureGeometryInstancesDataKHR *operator->() const {
       return &basic;
     }
   private:

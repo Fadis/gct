@@ -8,11 +8,11 @@
 namespace gct {
 
   template< typename T >
-  auto tuplise( T &&v ) -> std::enable_if_t< gct::type_traits::is_lifted_by_v< T, std::tuple >, T > {
+  [[nodiscard]] auto tuplise( T &&v ) -> std::enable_if_t< gct::type_traits::is_lifted_by_v< T, std::tuple >, T > {
     return std::forward< T >( v );
   }
   template< typename T >
-  auto tuplise( T &&v ) -> std::enable_if_t< !gct::type_traits::is_lifted_by_v< T, std::tuple >, std::tuple< T > > {
+  [[nodiscard]] auto tuplise( T &&v ) -> std::enable_if_t< !gct::type_traits::is_lifted_by_v< T, std::tuple >, std::tuple< T > > {
     return std::make_tuple( std::forward< T >( v ) );
   }
 

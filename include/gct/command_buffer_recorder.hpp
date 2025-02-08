@@ -22,6 +22,7 @@
 #include <gct/future.hpp>
 #include <gct/type_traits/is_lifted.hpp>
 #include <gct/type_traits/nth_type.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -54,8 +55,10 @@ namespace gct {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
   class conditional_rendering_begin_info_t;
 #endif
-  std::uint32_t get_pot( std::uint32_t v );
-  class command_buffer_recorder_t : public created_from< bound_command_buffer_t > {
+  [[nodiscard]] std::uint32_t get_pot( std::uint32_t v );
+  class command_buffer_recorder_t :
+    public property< command_buffer_begin_info_t >,
+    public created_from< bound_command_buffer_t > {
   public:
     command_buffer_recorder_t(
       const std::shared_ptr< bound_command_buffer_t >&,
@@ -66,7 +69,7 @@ namespace gct {
     command_buffer_recorder_t( command_buffer_recorder_t&& ) = default;
     command_buffer_recorder_t &operator=( const command_buffer_recorder_t& ) = delete;
     command_buffer_recorder_t &operator=( command_buffer_recorder_t&& ) = default;
-    std::shared_ptr< buffer_t > load_buffer(
+    [[nodiscard]] std::shared_ptr< buffer_t > load_buffer(
       const std::shared_ptr< allocator_t > &allocator,
       const void * addr,
       std::size_t size,
@@ -77,7 +80,7 @@ namespace gct {
       const std::vector< uint8_t > &data,
       vk::BufferUsageFlags usage
     );
-    std::shared_ptr< buffer_t > load_buffer_from_file(
+    [[nodiscard]] std::shared_ptr< buffer_t > load_buffer_from_file(
       const std::shared_ptr< allocator_t > &allocator,
       const std::string &filename,
       vk::BufferUsageFlags usage
@@ -93,7 +96,7 @@ namespace gct {
       const std::vector< uint8_t > &data,
       const std::shared_ptr< buffer_t > &dest
     );
-    std::shared_ptr< image_t > load_image(
+    [[nodiscard]] std::shared_ptr< image_t > load_image(
       const std::shared_ptr< allocator_t > &allocator,
       const std::string &filename,
       vk::ImageUsageFlagBits usage,
@@ -101,32 +104,34 @@ namespace gct {
       integer_attribute_t attr = integer_attribute_t::srgb,
       unsigned int max_channels_per_layer = 4
     );
-    future< std::vector< std::uint8_t > > dump_buffer(
+    [[nodiscard]] future< std::vector< std::uint8_t > > dump_buffer(
       const std::shared_ptr< allocator_t > &allocator,
       const std::shared_ptr< buffer_t > &buffer
     );
-    future< std::vector< std::uint8_t > > dump_buffer(
+    [[nodiscard]] future< std::vector< std::uint8_t > > dump_buffer(
       const std::shared_ptr< buffer_t > &buffer,
       const std::shared_ptr< buffer_t > &staging_buffer
     );
-    future< std::vector< std::uint8_t > > dump_buffer(
+    [[nodiscard]] future< std::vector< std::uint8_t > > dump_buffer(
       const std::shared_ptr< mappable_buffer_t > &buffer
     );
     template< typename T >
-    auto dump_buffer_as(
+    [[nodiscard]] auto dump_buffer_as(
       const std::shared_ptr< mappable_buffer_t > &buffer
     ) -> std::enable_if_t<
       !type_traits::is_lifted_by_v< T, std::vector >,
       future< T >
     > {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-rvalue-reference-param-not-moved)
       return dump_buffer( buffer ).then(
         []( std::vector< std::uint8_t > &&v ) -> T {
           return *reinterpret_cast< T* >( v.data() );
         }
       );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-rvalue-reference-param-not-moved)
     }
     template< typename T >
-    auto dump_buffer_as(
+    [[nodiscard]] auto dump_buffer_as(
       const std::shared_ptr< mappable_buffer_t > &buffer
     ) -> std::enable_if_t<
       type_traits::is_lifted_by_v< T, std::vector >,
@@ -134,15 +139,17 @@ namespace gct {
     > {
       return dump_buffer( buffer ).then(
         []( std::vector< std::uint8_t > &&v ) -> T {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
           T temp(
             reinterpret_cast< typename T::value_type* >( v.data() ),
             std::next( reinterpret_cast< typename T::value_type* >( v.data() ), v.size()/sizeof( typename T::value_type ) )
           );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
           return temp;
         }
       );
     }
-    nnef_data_t
+    [[nodiscard]] nnef_data_t
     load_nnef_data(
       const std::shared_ptr< allocator_t > &allocator,
       const std::filesystem::path &path,
@@ -167,7 +174,7 @@ namespace gct {
       const std::optional< double > &clamp_min = std::nullopt,
       const std::optional< double > &clamp_max = std::nullopt
     );
-    std::shared_ptr< image_t > load_astc(
+    [[nodiscard]] std::shared_ptr< image_t > load_astc(
       const std::shared_ptr< allocator_t > &allocator,
       const std::vector< std::string > &filename,
       vk::ImageUsageFlagBits usage,
@@ -194,6 +201,7 @@ namespace gct {
       const std::shared_ptr< buffer_t > &staging,
       const std::shared_ptr< buffer_t > &dest
     ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
       copy(
         boost::make_iterator_range(
           reinterpret_cast< const std::uint8_t* >( &src ),
@@ -202,6 +210,7 @@ namespace gct {
         staging,
         dest
       );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
     void copy(
       const boost::iterator_range< const std::uint8_t* >&,
@@ -212,6 +221,7 @@ namespace gct {
       const T &src,
       const std::shared_ptr< mappable_buffer_t > &dest
     ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
       copy(
         boost::make_iterator_range(
           reinterpret_cast< const std::uint8_t* >( &src ),
@@ -219,6 +229,7 @@ namespace gct {
         ),
         dest
       );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
   private:
     void copy(
@@ -554,13 +565,13 @@ namespace gct {
       const std::vector< vk::DeviceSize > &stride
     );
 #endif
-    std::shared_ptr< void > begin(
+    [[nodiscard]] std::shared_ptr< void > begin(
       const std::shared_ptr< query_pool_t > &query_pool,
       std::uint32_t query,
       vk::QueryControlFlags flags
     );
 #ifdef VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME
-    std::shared_ptr< void > begin(
+    [[nodiscard]] std::shared_ptr< void > begin(
       const std::shared_ptr< query_pool_t > &query_pool,
       std::uint32_t query,
       vk::QueryControlFlags flags,
@@ -568,7 +579,7 @@ namespace gct {
     );
 #endif
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
-    std::shared_ptr< void > begin(
+    [[nodiscard]] std::shared_ptr< void > begin(
       const conditional_rendering_begin_info_t&
     );
 #endif
@@ -593,16 +604,16 @@ namespace gct {
       std::uint32_t
     );
 #endif
-    std::shared_ptr< void > begin_render_pass(
+    [[nodiscard]] std::shared_ptr< void > begin_render_pass(
       const render_pass_begin_info_t &begin_info,
       vk::SubpassContents subpass_contents
     );
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-    std::shared_ptr< void > begin_rendering(
+    [[nodiscard]] std::shared_ptr< void > begin_rendering(
       const rendering_info_t&
     );
 #endif
-    std::tuple<
+    [[nodiscard]] std::tuple<
       std::shared_ptr< buffer_t >,
       pipeline_vertex_input_state_create_info_t,
       std::uint32_t
@@ -611,7 +622,7 @@ namespace gct {
       const std::shared_ptr< allocator_t >&
     );
 
-    font load_font(
+    [[nodiscard]] font load_font(
       std::filesystem::path path,
       const std::shared_ptr< allocator_t > &allocator
     );
@@ -633,7 +644,6 @@ namespace gct {
       vk::ImageLayout layout
     );
 
-    const command_buffer_begin_info_t &get_props() const { return props; }
     vk::CommandBuffer &operator*();
     const vk::CommandBuffer &operator*() const;
     vk::CommandBuffer *operator->();
@@ -673,7 +683,6 @@ namespace gct {
    );
   private:
     void update_framebuffer_image_layout();
-    command_buffer_begin_info_t props;
     bool local_size_is_available;
     std::array< std::uint32_t, 3u > local_size;
   };

@@ -21,7 +21,7 @@ namespace gct {
 #endif
   public:
     acceleration_structure_create_info_t &set_buffer( const std::shared_ptr< buffer_t >& );
-    const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }
   private:
     std::shared_ptr< buffer_t > buffer;
   };

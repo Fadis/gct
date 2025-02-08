@@ -24,16 +24,16 @@ namespace gct {
     acceleration_structure_geometry_triangles_data_t &clear_index_data();
     acceleration_structure_geometry_triangles_data_t &set_transform_data( const device_or_host_address_const_t& );
     acceleration_structure_geometry_triangles_data_t &clear_transform_data();
-    vk::AccelerationStructureGeometryTrianglesDataKHR &operator*() {
+    [[nodiscard]] vk::AccelerationStructureGeometryTrianglesDataKHR &operator*() {
       return basic;
     }
-    const vk::AccelerationStructureGeometryTrianglesDataKHR &operator*() const {
+    [[nodiscard]] const vk::AccelerationStructureGeometryTrianglesDataKHR &operator*() const {
       return basic;
     }
-    vk::AccelerationStructureGeometryTrianglesDataKHR *operator->() {
+    [[nodiscard]] vk::AccelerationStructureGeometryTrianglesDataKHR *operator->() {
       return &basic;
     }
-    const vk::AccelerationStructureGeometryTrianglesDataKHR *operator->() const {
+    [[nodiscard]] const vk::AccelerationStructureGeometryTrianglesDataKHR *operator->() const {
       return &basic;
     }
   private:

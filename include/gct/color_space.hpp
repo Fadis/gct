@@ -70,11 +70,11 @@ struct color_space_matrix {
   color_space_matrix_map to;
 };
 
-glm::mat4 get_rgb_to_xyz( color_space );
-glm::mat4 get_xyz_to_rgb( color_space );
-color_profile parse_color_space( const std::string_view &name );
-color_space_matrix allocate_color_space_matrix( matrix_pool &pool );
-float get_gamma_value( color_gamma );
+[[nodiscard]] glm::mat4 get_rgb_to_xyz( color_space );
+[[nodiscard]] glm::mat4 get_xyz_to_rgb( color_space );
+[[nodiscard]] color_profile parse_color_space( const std::string_view &name );
+[[nodiscard]] color_space_matrix allocate_color_space_matrix( matrix_pool &pool );
+[[nodiscard]] float get_gamma_value( color_gamma );
 void to_json( nlohmann::json &to, color_space from );
 void to_json( nlohmann::json &to, color_gamma from );
 void to_json( nlohmann::json &to, const color_profile &from );

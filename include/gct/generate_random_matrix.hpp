@@ -6,7 +6,7 @@
 
 namespace gct {
 
-glm::mat4 generate_random_matrix(
+[[nodiscard]] glm::mat4 generate_random_matrix(
   std::uniform_real_distribution<float> &dist,
   std::mt19937 &engine
 );

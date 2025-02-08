@@ -5,12 +5,14 @@
 #include <gct/deep_copy.hpp>
 #include <gct/exception.hpp>
 
+// NOLINTBEGIN(bugprone-macro-parentheses,bugprone-branch-clone)
+
 #define LIBGCT_BASIC_SETTER_INDIRECT( member ) \
   private: \
-    basic2_t &get_writable_basic2() { \
+    [[nodiscard]] basic2_t &get_writable_basic2() { \
       return basic ; \
     } \
-    basic_t &get_writable_basic() { \
+    [[nodiscard]] basic_t &get_writable_basic() { \
       return basic. member ; \
     } \
   public: \
@@ -30,7 +32,7 @@
       basic. member = v; \
       return *this; \
     } \
-    self_type &operator=( basic_t &&v ) { \
+    self_type &operator=( basic_t &&v ) noexcept { \
       basic. member = std::move( v ); \
       return *this; \
     } \
@@ -39,27 +41,27 @@
       chained = false; \
       return *this; \
     } \
-    self_type &operator=( basic2_t &&v ) { \
+    self_type &operator=( basic2_t &&v ) noexcept { \
       basic = std::move( v ); \
       chained = false; \
       return *this; \
     } \
-    const basic2_t &get_basic2() const { \
+    [[nodiscard]] const basic2_t &get_basic2() const { \
       return basic; \
     } \
-    const basic_t &get_basic () const { \
+    [[nodiscard]] const basic_t &get_basic () const { \
       return basic. member ; \
     } \
-    constexpr bool has_basic() const { \
+    [[nodiscard]] constexpr bool has_basic() const { \
       return true; \
     } \
-    constexpr bool has_basic2() const { \
+    [[nodiscard]] constexpr bool has_basic2() const { \
       return true; \
     }
 
 #define LIBGCT_BASIC_SETTER_DIRECT \
   private: \
-    basic_t &get_writable_basic() { \
+    [[nodiscard]] basic_t &get_writable_basic() { \
       return basic; \
     } \
   public: \
@@ -87,10 +89,10 @@
       chained = false; \
       return *this; \
     } \
-    const basic_t &get_basic () const { \
+    [[nodiscard]] const basic_t &get_basic () const { \
       return basic; \
     } \
-    constexpr bool has_basic() const { \
+    [[nodiscard]] constexpr bool has_basic() const { \
       return true; \
     }
 
@@ -105,7 +107,7 @@ public: \
 private: \
     using name ## _t = type; \
     deep_copy_unique_ptr< type > name ; \
-    type &get_writable_ ## name () { \
+    [[nodiscard]] type &get_writable_ ## name () { \
       return * name ; \
     } \
 public: \
@@ -139,18 +141,20 @@ public: \
       chained = false; \
       return *this; \
     } \
-    bool has_ ## name () const { \
+    [[nodiscard]] bool has_ ## name () const { \
       return bool( name ); \
     } \
-    const type &get_ ## name () const { \
+    [[nodiscard]] const type &get_ ## name () const { \
       return * name ; \
     }
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-const-cast)
 #define LIBGCT_EXTENSION_REBUILD_CHAIN( name ) \
     if( name ) { \
       *prev = &* name ; \
       prev = const_cast< void** >( & name ->pNext ); \
     }
+// NOLINTEND(cppcoreguidelines-pro-type-const-cast)
 
 #define LIBGCT_EXTENSION_CREATE_IF_EXT( name, extname ) \
     if( ext.find( extname ) != ext.end() ) { \
@@ -178,58 +182,73 @@ public: \
       v.set_ ## name ( root[ # name ] ); \
     }
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-const-cast)
+
 #define LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN \
     if( chained ) return *this; \
     head = &basic; \
     void **prev = const_cast< void** >( &basic.pNext );
+
+// NOLINTEND(cppcoreguidelines-pro-type-const-cast)
 
 #define LIBGCT_EXTENSION_END_REBUILD_CHAIN \
     *prev = nullptr; \
     chained = true; \
     return *this;
 
+// NOLINTEND(bugprone-macro-parentheses,bugprone-branch-clone)
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-const-cast)
+
 #define LIBGCT_EXTENSION_REBUILD_CHAIN_DEF \
 public: \
     self_type &rebuild_chain(); \
     self_type &rebuild_chain() const { \
       return const_cast< self_type* >( this )->rebuild_chain(); \
-    } \
+    }
+
+/*
     self_type copy() const { \
       return *this; \
     }
+*/
+
+// NOLINTEND(cppcoreguidelines-pro-type-const-cast)
+
+// NOLINTBEGIN(bugprone-macro-parentheses)
 
 #define LIBGCT_EXTENSION_CHECK_SUBSET( name ) \
     if( sub. name && ! name ) { \
         throw gct::exception::runtime_error( "physical_device_features_t::check_subset : " #name " is not available.", __FILE__, __LINE__ ); \
     }
 
+// NOLINTEND(bugprone-macro-parentheses)
+
 class chained_t {
 public:
-  chained_t() :
-    head( nullptr ),
-    chained( false ) {}
-  chained_t( const chained_t & ) :
-    head( nullptr ),
-    chained( false ) {}
-  chained_t( chained_t && ) :
-    head( nullptr ),
-    chained( false ) {}
+  constexpr chained_t() noexcept = default;
+  chained_t( const chained_t & ) {}
+  chained_t( chained_t && ) noexcept {}
+// NOLINTBEGIN(bugprone-unhandled-self-assignment,cert-oop54-cpp)
   chained_t &operator=( const chained_t & ) {
     head = nullptr;
     chained = false;
     return *this;
   }
-  chained_t &operator=( chained_t && ) {
+// NOLINTEND(bugprone-unhandled-self-assignment,cert-oop54-cpp)
+  chained_t &operator=( chained_t && ) noexcept {
     head = nullptr;
     chained = false;
     return *this;
   }
-  const void *get_head() const {
+  [[nodiscard]] constexpr const void *get_head() const noexcept {
     return head;
   }
+// NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 protected:
   void *head = nullptr;
   bool chained = false;
+// NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 };
 
 struct chainable_t {
@@ -238,9 +257,8 @@ struct chainable_t {
 };
 
 namespace gct {
-  void **get_chain_tail( const void *v );
+  [[nodiscard]] void **get_chain_tail( const void *v );
   LIBGCT_EXCEPTION( invalid_argument, incompatible_json, "incompatible JSON" )
 }
- 
 
 #endif

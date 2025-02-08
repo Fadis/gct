@@ -12,8 +12,8 @@ namespace gct {
     const std::shared_ptr< buffer_t > &buffer,
     const acceleration_structure_create_info_t &create_info
   ) :
-    created_from< buffer_t >( buffer ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< buffer_t >( buffer ) {
     props.set_buffer( buffer ).rebuild_chain();
     handle = (*get_factory()->get_device())->createAccelerationStructureKHRUnique(
       props.get_basic()

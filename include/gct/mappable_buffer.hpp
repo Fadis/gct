@@ -29,53 +29,53 @@ namespace gct {
     mappable_buffer_t( mappable_buffer_t&& ) = default;
     mappable_buffer_t &operator=( const mappable_buffer_t& ) = delete;
     mappable_buffer_t &operator=( mappable_buffer_t&& ) = default;
-    const buffer_create_info_t &get_props() const { return get_buffer()->get_props(); }
-    vk::BufferView &get_view() { return get_buffer()->get_view(); }
-    const vk::BufferView &get_view() const { return get_buffer()->get_view(); }
-    vk::Buffer &operator*() { return **get_buffer(); }
-    const vk::Buffer &operator*() const { return **get_buffer(); }
-    vk::Buffer *operator->() { return get_buffer()->operator->(); }
-    const vk::Buffer *operator->() const { return get_buffer()->operator->(); }
+    [[nodiscard]] const buffer_create_info_t &get_props() const { return get_buffer()->get_props(); }
+    [[nodiscard]] vk::BufferView &get_view() { return get_buffer()->get_view(); }
+    [[nodiscard]] const vk::BufferView &get_view() const { return get_buffer()->get_view(); }
+    [[nodiscard]] vk::Buffer &operator*() { return **get_buffer(); }
+    [[nodiscard]] const vk::Buffer &operator*() const { return **get_buffer(); }
+    [[nodiscard]] vk::Buffer *operator->() { return get_buffer()->operator->(); }
+    [[nodiscard]] const vk::Buffer *operator->() const { return get_buffer()->operator->(); }
     template< typename T >
-    buffer_range_t< T > map() {
+    [[nodiscard]] buffer_range_t< T > map() {
       return get_staging_buffer()->map< T >();
     }
     template< typename T >
-    buffer_range_t< const T > map() const {
+    [[nodiscard]] buffer_range_t< const T > map() const {
       return get_staging_buffer()->map< T >();
     }
-    const std::shared_ptr< buffer_t > &get_staging_buffer() const {
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_staging_buffer() const {
       return staging;
     }
-    const std::shared_ptr< buffer_t > &get_buffer() const {
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_buffer() const {
       return device;
     }
-    std::shared_ptr< buffer_view_t > get_view(
+    [[nodiscard]] std::shared_ptr< buffer_view_t > get_view(
       const buffer_view_create_info_t &ci
     ) {
       return get_buffer()->get_view( ci );
     }
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
-    std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
+    [[nodiscard]] std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
       const acceleration_structure_create_info_t &ci
     ) {
       return get_buffer()->create_acceleration_structure( ci );
     }
-    std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
+    [[nodiscard]] std::shared_ptr< acceleration_structure_t > create_acceleration_structure(
       const vk::AccelerationStructureTypeKHR &ci
     ) {
       return get_buffer()->create_acceleration_structure( ci );
     }
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-    device_address_t get_address( const buffer_device_address_info_t &ci ) {
+    [[nodiscard]] device_address_t get_address( const buffer_device_address_info_t &ci ) {
       return get_buffer()->get_address( ci );
     }
-    device_address_t get_address() {
+    [[nodiscard]] device_address_t get_address() {
       return get_buffer()->get_address();
     }
 #endif
-    const std::shared_ptr< device_t > &get_device() const {
+    [[nodiscard]] const std::shared_ptr< device_t > &get_device() const {
       return get_buffer()->get_device();
     }
   private:

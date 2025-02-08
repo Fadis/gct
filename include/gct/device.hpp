@@ -10,6 +10,7 @@
 #include <gct/physical_device.hpp>
 #include <gct/queue.hpp>
 #include <gct/created_from.hpp>
+#include <gct/vulkan_handle.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
 #include <gct/acceleration_structure_build_sizes_info.hpp>
 #endif
@@ -63,7 +64,10 @@ namespace gct {
   class validation_cache_t;
   class validation_cache_create_info_t;
 #endif
-  class device_t : public created_from< instance_t >, public std::enable_shared_from_this< device_t > {
+  class device_t :
+    public vulkan_handle< vk::Device >,
+    public created_from< instance_t >,
+    public std::enable_shared_from_this< device_t > {
   public:
     device_t(
       const device_group_t &group_,
@@ -71,70 +75,58 @@ namespace gct {
       const activated_queue_family_counts_t &queue_family_counts_,
       const device_create_info_t &create_info_
     );
-    vk::Device &operator*() {
-      return *handle;
-    }
-    const vk::Device &operator*() const {
-      return *handle;
-    }
-    vk::Device* operator->() {
-      return &handle.get();
-    }
-    const vk::Device* operator->() const {
-      return &handle.get();
-    }
-    std::shared_ptr< queue_t > get_queue( std::uint32_t );
-    std::shared_ptr< allocator_t > get_allocator();
-    std::shared_ptr< allocator_t > get_allocator( const VmaAllocatorCreateInfo& );
-    std::shared_ptr< swapchain_t > get_swapchain( const swapchain_create_info_t& );
-    std::shared_ptr< swapchain_t > get_swapchain( const std::shared_ptr< surface_t > &surface );
-    std::shared_ptr< descriptor_pool_t > get_descriptor_pool( const descriptor_pool_create_info_t& );
-    std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const descriptor_set_layout_create_info_t& );
-    std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const shader_module_reflection_t &reflection, std::uint32_t set_id = 0u );
-    std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const std::vector< std::filesystem::path > &path, std::uint32_t set_id = 0u );
-    std::shared_ptr< query_pool_t > get_query_pool( const query_pool_create_info_t& );
-    std::shared_ptr< pipeline_cache_t > get_pipeline_cache( const pipeline_cache_create_info_t& );
-    std::shared_ptr< pipeline_cache_t > get_pipeline_cache();
-    std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );
-    std::shared_ptr< render_pass_t > get_render_pass( const render_pass_create_info_t& );
+    [[nodiscard]] std::shared_ptr< queue_t > get_queue( std::uint32_t );
+    [[nodiscard]] std::shared_ptr< allocator_t > get_allocator();
+    [[nodiscard]] std::shared_ptr< allocator_t > get_allocator( const VmaAllocatorCreateInfo& );
+    [[nodiscard]] std::shared_ptr< swapchain_t > get_swapchain( const swapchain_create_info_t& );
+    [[nodiscard]] std::shared_ptr< swapchain_t > get_swapchain( const std::shared_ptr< surface_t > &surface );
+    [[nodiscard]] std::shared_ptr< descriptor_pool_t > get_descriptor_pool( const descriptor_pool_create_info_t& );
+    [[nodiscard]] std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const descriptor_set_layout_create_info_t& );
+    [[nodiscard]] std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const shader_module_reflection_t &reflection, std::uint32_t set_id = 0u );
+    [[nodiscard]] std::shared_ptr< descriptor_set_layout_t > get_descriptor_set_layout( const std::vector< std::filesystem::path > &path, std::uint32_t set_id = 0u );
+    [[nodiscard]] std::shared_ptr< query_pool_t > get_query_pool( const query_pool_create_info_t& );
+    [[nodiscard]] std::shared_ptr< pipeline_cache_t > get_pipeline_cache( const pipeline_cache_create_info_t& );
+    [[nodiscard]] std::shared_ptr< pipeline_cache_t > get_pipeline_cache();
+    [[nodiscard]] std::shared_ptr< pipeline_layout_t > get_pipeline_layout( const pipeline_layout_create_info_t& );
+    [[nodiscard]] std::shared_ptr< render_pass_t > get_render_pass( const render_pass_create_info_t& );
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)
-    std::shared_ptr< render_pass2_t > get_render_pass( const render_pass_create_info2_t& );
+    [[nodiscard]] std::shared_ptr< render_pass2_t > get_render_pass( const render_pass_create_info2_t& );
 #endif
-    std::shared_ptr< render_pass_t > get_render_pass(
+    [[nodiscard]] std::shared_ptr< render_pass_t > get_render_pass(
       vk::Format color_format,
       vk::Format depth_format
     );
-    std::shared_ptr< shader_module_t > get_shader_module( const shader_module_create_info_t& );
-    std::shared_ptr< shader_module_t > get_shader_module( const std::string& );
+    [[nodiscard]] std::shared_ptr< shader_module_t > get_shader_module( const shader_module_create_info_t& );
+    [[nodiscard]] std::shared_ptr< shader_module_t > get_shader_module( const std::string& );
 #if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_OBJECT_EXTENSION_NAME)
-    std::shared_ptr< shader_t > get_shader( const shader_create_info_t &create_info );
+    [[nodiscard]] std::shared_ptr< shader_t > get_shader( const shader_create_info_t &create_info );
 #endif
-    std::shared_ptr< sampler_t > get_sampler( const sampler_create_info_t& );
-    std::shared_ptr< semaphore_t > get_semaphore( const semaphore_create_info_t& );
-    std::shared_ptr< semaphore_t > get_semaphore();
-    std::shared_ptr< fence_t > get_fence( const fence_create_info_t& );
-    std::shared_ptr< fence_t > get_fence();
+    [[nodiscard]] std::shared_ptr< sampler_t > get_sampler( const sampler_create_info_t& );
+    [[nodiscard]] std::shared_ptr< semaphore_t > get_semaphore( const semaphore_create_info_t& );
+    [[nodiscard]] std::shared_ptr< semaphore_t > get_semaphore();
+    [[nodiscard]] std::shared_ptr< fence_t > get_fence( const fence_create_info_t& );
+    [[nodiscard]] std::shared_ptr< fence_t > get_fence();
 #ifdef VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
-    std::shared_ptr< deferred_operation_t > get_deferred_operation();
+    [[nodiscard]] std::shared_ptr< deferred_operation_t > get_deferred_operation();
 #endif
-    const device_group_t &get_physical_device_group() const { return group; }
-    std::vector< std::uint32_t > to_queue_family_list(
+    [[nodiscard]] const device_group_t &get_physical_device_group() const { return group; }
+    [[nodiscard]] std::vector< std::uint32_t > to_queue_family_list(
       const std::vector< std::uint32_t > &logical_queue_index
     );
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
-    acceleration_structure_build_sizes_info_t get_acceleration_structure_build_size(
+    [[nodiscard]] acceleration_structure_build_sizes_info_t get_acceleration_structure_build_size(
       vk::AccelerationStructureBuildTypeKHR build_type,
       const acceleration_structure_build_geometry_info_t &build_info,
       const std::vector< std::uint32_t > &max_primitive_counts
     );
 #endif
-    std::uint32_t get_api_version() const;
-    const extension_map_t &get_activated_extensions() const;
-    const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
+    [[nodiscard]] std::uint32_t get_api_version() const;
+    [[nodiscard]] const extension_map_t &get_activated_extensions() const;
+    [[nodiscard]] const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
       return group.devices[ 0 ]->get_vertex_buffer_formats();
     }
 #ifdef VK_EXT_VALIDATION_CACHE_EXTENSION_NAME
-    std::shared_ptr< validation_cache_t > get_validation_cache(
+    [[nodiscard]] std::shared_ptr< validation_cache_t > get_validation_cache(
       const validation_cache_create_info_t &ci
     );
 #endif
@@ -143,7 +135,6 @@ namespace gct {
     device_group_t group;
     activated_queue_mappings_t queue_mappings;
     activated_queue_family_counts_t queue_family_counts;
-    vk::UniqueHandle< vk::Device, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
     std::vector< std::shared_ptr< command_pool_t > > command_pools;
     std::unordered_set< vk::Format > vertex_buffer_formats;
   };

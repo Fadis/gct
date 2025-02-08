@@ -32,11 +32,11 @@ namespace gct {
     std::uint32_t rows = 0u;
     std::uint32_t cols = 0u;
   };
-  bool operator==( const numeric_type_t&, const numeric_type_t& );
-  bool operator!=( const numeric_type_t&, const numeric_type_t& );
-  numeric_type_t spv2numeric_type( const SpvReflectTypeDescription& );
-  const std::vector< vk::Format > &get_compatible_format( const numeric_type_t &v );
-  std::uint64_t get_one( const numeric_type_t &v );
+  [[nodiscard]] bool operator==( const numeric_type_t&, const numeric_type_t& );
+  [[nodiscard]] bool operator!=( const numeric_type_t&, const numeric_type_t& );
+  [[nodiscard]] numeric_type_t spv2numeric_type( const SpvReflectTypeDescription& );
+  [[nodiscard]] const std::vector< vk::Format > &get_compatible_format( const numeric_type_t &v );
+  [[nodiscard]] std::uint64_t get_one( const numeric_type_t &v );
   void to_json( nlohmann::json &dest, const numeric_component_type_t &src );
   void from_json( const nlohmann::json &src, numeric_component_type_t &dest );
   void to_json( nlohmann::json &dest, const integer_attribute_t &src );

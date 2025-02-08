@@ -88,15 +88,15 @@ std::vector< glm::vec4 > to_vertices( const aabb& );
 std::vector< glm::vec4 > to_vertices( const aabb4& );
 aabb from_vertices( const std::vector< glm::vec4 >& );
 
-aabb get_unit_aabb();
-aabb4 get_unit_aabb4();
+[[nodiscard]] aabb get_unit_aabb();
+[[nodiscard]] aabb4 get_unit_aabb4();
 
 float area( const aabb3 &a );
 float area( const aabb4 &a );
 float surface_area( const aabb3 &a );
 float surface_area( const aabb4 &a );
-float get_inner_sphere_radius( const aabb3 &a );
-float get_inner_sphere_radius( const aabb4 &a );
+[[nodiscard]] float get_inner_sphere_radius( const aabb3 &a );
+[[nodiscard]] float get_inner_sphere_radius( const aabb4 &a );
 bool operator&&( const aabb3 &l, const aabb3 &r );
 bool operator&&( const aabb4 &l, const aabb4 &r );
 
@@ -105,7 +105,7 @@ aabb4 create_cube_area(
   float size
 );
 
-glm::vec3 get_center( const aabb3& );
+[[nodiscard]] glm::vec3 get_center( const aabb3& );
 std::pair< float, float > intersect(
   const aabb &box,
   const glm::vec3 &p0,

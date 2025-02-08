@@ -9,6 +9,8 @@
 #include <gct/deep_copy.hpp>
 #include <gct/voider.hpp>
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
+
 #define LIBGCT_ARRAY_OF_SMALL( type, name ) \
   private: \
     std::vector< type > name ; \
@@ -45,7 +47,7 @@
       chained = false; \
       return *this; \
     } \
-    const std::vector< type > &get_ ## name () const { return name ; }
+    [[nodiscard]] const std::vector< type > &get_ ## name () const { return name ; }
 
 #define LIBGCT_ARRAY_OF( type, name ) \
   private: \
@@ -88,7 +90,7 @@
       chained = false; \
       return *this; \
     } \
-    const std::vector< type > &get_ ## name () const { return name ; }
+    [[nodiscard]] const std::vector< type > &get_ ## name () const { return name ; }
 
 #define LIBGCT_ARRAY_OF_WRAPPED_INDIRECT( type, value_type, name ) \
   private: \
@@ -133,7 +135,7 @@
       chained = false; \
       return *this; \
     } \
-    const std::vector< std::shared_ptr< type > > &get_ ## name () const { return name ; }
+    [[nodiscard]] const std::vector< std::shared_ptr< type > > &get_ ## name () const { return name ; }
 
 #define LIBGCT_ARRAY_OF_WRAPPED( type, value_type, name ) \
   private: \
@@ -178,7 +180,7 @@
       chained = false; \
       return *this; \
     } \
-    const std::vector< type > &get_ ## name () const { return name ; }
+    [[nodiscard]] const std::vector< type > &get_ ## name () const { return name ; }
 
 #define LIBGCT_ARRAY_OF_TO_JSON( node , json_name , name ) \
     if( root.find( #node ) == root.end() ) { \
@@ -338,7 +340,7 @@ namespace gct::detail {
   template< typename T >
   constexpr bool has_get_basic_v = has_get_basic< T >::value;
   template< typename T >
-  decltype(auto) get_raw( const T &v ) {
+  [[nodiscard]] decltype(auto) get_raw( const T &v ) {
     if constexpr( has_get_basic_v< T > ) {
       return v.get_basic();
     }
@@ -346,6 +348,7 @@ namespace gct::detail {
       if constexpr( type_traits::is_dereferenceable_v< decltype( *std::declval< T >() ) > ) {
         if constexpr( std::is_constructible_v< bool, decltype( std::declval< T >() ) > ) {
           using result_type = std::remove_cvref_t< decltype( get_raw( *std::declval< T >() ) ) >;
+// NOLINTBEGIN(bugprone-branch-clone)
           if constexpr( type_traits::is_vulkan_hpp_handle_v< decltype( std::declval< T >() ) > ) {
             if( v ) {
               return get_raw( *v );
@@ -362,6 +365,7 @@ namespace gct::detail {
               return nullptr;
             }
           }
+// NOLINTEND(bugprone-branch-clone)
           else if constexpr( std::is_constructible_v< result_type > ) {
             if( v ) {
               return get_raw( *v );
@@ -403,24 +407,27 @@ namespace gct::detail {
   }
   template< typename T, typename U >
   decltype(auto) wrap_pointer( U &&v ) {
+// NOLINTBEGIN(bugprone-branch-clone)
     if constexpr( std::is_convertible_v< std::remove_cvref_t< U >, std::remove_cvref_t< T > > ) {
-      return std::move( v );
+      return std::forward< U >( v );
     }
     else if constexpr ( type_traits::is_lifted_by_v< T, std::shared_ptr > ) {
-      return T( new U( wrap_poiinter( std::move( v ) ) ) );
+      return T( new U( wrap_poiinter( std::forward< U >( v ) ) ) );
     }
     else if constexpr ( type_traits::is_lifted_by_v< U, std::unique_ptr > ) {
-      return T( new U( wrap_pointer( std::move( v ) ) ) );
+      return T( new U( wrap_pointer( std::forward< U >( v ) ) ) );
     }
     else if constexpr ( type_traits::is_lifted_by_v< U, deep_copy_unique_ptr > ) {
-      return T( new U( wrap_pointer( std::move( v ) ) ) );
+      return T( new U( wrap_pointer( std::forward< U >( v ) ) ) );
     }
     else {
       static_assert( "wrap_pointer : unsupported conversion" );
     }
+// NOLINTEND(bugprone-branch-clone)
   }
   template< typename T, typename U >
   decltype(auto) wrap_pointer( const U &v ) {
+// NOLINTBEGIN(bugprone-branch-clone)
     if constexpr( std::is_convertible_v< std::remove_cvref_t< U >, std::remove_cvref_t< T > > ) {
       return v;
     }
@@ -436,8 +443,11 @@ namespace gct::detail {
     else {
       static_assert( "wrap_pointer : unsupported conversion" );
     }
+// NOLINTEND(bugprone-branch-clone)
   }
 }
+
+// NOLINTEND(bugprone-macro-parentheses)
 
 #endif
 

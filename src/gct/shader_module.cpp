@@ -8,8 +8,8 @@ namespace gct {
     const std::shared_ptr< device_t > &device,
     const shader_module_create_info_t &create_info
   ) :
-    created_from< device_t >( device ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< device_t >( device ) {
     props.rebuild_chain();
     handle = (*device)->createShaderModuleUnique( props.get_basic() );
   }

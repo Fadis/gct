@@ -48,7 +48,7 @@ public:
     command_buffer_recorder_t&,
     const skyview_froxel_param&
   ) const;
-  const std::shared_ptr< image_view_t > &get_output() const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_output() const {
     return rendered;
   }
 private:

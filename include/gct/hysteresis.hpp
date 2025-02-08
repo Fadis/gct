@@ -24,7 +24,7 @@ public:
       value = ( new_value + value * ( down_samples - 1u ) ) / ( down_samples );
     }
   }
-  T get() const {
+  [[nodiscard]] T get() const {
     return value;
   }
 private:

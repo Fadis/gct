@@ -482,10 +482,10 @@ namespace gct {
     vk::PhysicalDevice &pdev,
     const std::vector< const char* > &layers,
     const std::vector< const char* > &exts
-  ) {
+  ) :
+    activated_layer_names( layers ),
+    activated_extension_names( exts ) {
     available_layers = get_device_layers( pdev );
-    activated_layer_names = layers;
-    activated_extension_names = exts;
     for( const auto &l: layers ) {
       auto found = available_layers.find( l );
       if( found != available_layers.end() ) {
@@ -771,7 +771,7 @@ namespace gct {
         );
         display.back().basic = d;
         for( const auto &m: pdev.getDisplayModePropertiesKHR( d.display ) ) {
-          display.back().modes.push_back(
+          display.back().modes.emplace_back(
             display_mode_properties_t()
           );
           display.back().modes.back().basic = m;
@@ -801,11 +801,13 @@ namespace gct {
       }
     }
 #endif
+// NOLINTBEGIN(modernize-make-unique)
     memory_props.reset( new physical_device_memory_properties_t(
       instance,
       pdev,
       activated_extensions
     ) );
+// NOLINTEND(modernize-make-unique)
   }
   
   physical_device_properties_t &physical_device_properties_t::rebuild_chain() {

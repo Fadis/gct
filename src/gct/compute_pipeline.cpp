@@ -12,8 +12,8 @@ namespace gct {
     const std::shared_ptr< pipeline_cache_t > &cache,
     const compute_pipeline_create_info_t &create_info
   ) :
-    pipeline_t( cache ),
-    props( create_info ) {
+    property_type( create_info ),
+    pipeline_t( cache ) {
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     const auto &exts = get_device( *this ).get_activated_extensions();
     std::vector< vk::PipelineCreationFeedbackEXT > feedback_;

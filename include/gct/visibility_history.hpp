@@ -45,7 +45,7 @@ public:
       }
     }
   }
-  const std::unordered_map< unsigned int, state_type > &get() const {
+  [[nodiscard]] const std::unordered_map< unsigned int, state_type > &get() const {
     return state;
   }
 private:

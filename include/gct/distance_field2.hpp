@@ -11,7 +11,8 @@ namespace gct {
 class command_buffer_recorder_t;
 class compute;
 class image_view_t;
-class distance_field2 {
+class distance_field2 :
+  public property< distance_field2_create_info > {
 public:
   distance_field2(
     const distance_field2_create_info &ci
@@ -22,17 +23,13 @@ public:
   void operator()(
     command_buffer_recorder_t &rec
   ) const;
-  const distance_field2_create_info &get_props() const {
-    return props;
-  }
-  const voxel_image &get_working_image() const {
+  [[nodiscard]] const voxel_image &get_working_image() const {
     return working_image;
   }
-  const voxel_image &get_distance_field_image() const {
+  [[nodiscard]] const voxel_image &get_distance_field_image() const {
     return distance_field_image;
   }
 private:
-  distance_field2_create_info props;
   voxel_image working_image;
   voxel_image distance_field_image;
   std::shared_ptr< compute > voronoi;

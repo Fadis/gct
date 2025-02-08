@@ -45,7 +45,7 @@ public:
   void insert( const aabb &r, const std::vector< T > &v ) {
     insert( std::shared_ptr< node_type >(), root, axis_type::x_begin, r, v );
   }
-  std::vector< std::shared_ptr< leaf_type > > find( const aabb &r ) const {
+  [[nodiscard]] std::vector< std::shared_ptr< leaf_type > > find( const aabb &r ) const {
     std::vector< std::shared_ptr< leaf_type > > temp;
     find( root, r, temp );
     return temp;
@@ -56,7 +56,7 @@ public:
   ) const {
     find( root, r, dest );
   }
-  std::vector< std::shared_ptr< leaf_type > > find( const std::vector< aabb > &r ) const {
+  [[nodiscard]] std::vector< std::shared_ptr< leaf_type > > find( const std::vector< aabb > &r ) const {
     std::vector< std::shared_ptr< leaf_type > > temp;
     for( const auto &v: r ) {
       find( root, v, temp );
@@ -76,10 +76,10 @@ public:
     std::sort( dest.begin(), dest.end() );
     dest.erase( std::unique( dest.begin(), dest.end() ), dest.end() );
   }
-  std::string to_string() const {
+  [[nodiscard]] std::string to_string() const {
     return to_string( root );
   }
-  std::vector< std::shared_ptr< leaf_type > > get() const {
+  [[nodiscard]] std::vector< std::shared_ptr< leaf_type > > get() const {
     std::vector< std::shared_ptr< leaf_type > > temp;
     get( root, temp );
     return temp;
@@ -93,13 +93,13 @@ public:
   void clear() {
     root.reset();
   }
-  bool empty() const {
+  [[nodiscard]] bool empty() const {
     return !root;
   }
-  bool is_leaf() const {
+  [[nodiscard]] bool is_leaf() const {
     return root && root->leaf;
   }
-  std::pair< kdtree, kdtree > subtree() const {
+  [[nodiscard]] std::pair< kdtree, kdtree > subtree() const {
     if( !root ) {
       return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
     }
@@ -115,14 +115,14 @@ public:
     }
     return std::pair< kdtree, kdtree >{ kdtree(), kdtree() };
   }
-  aabb4 get_aabb() const {
+  [[nodiscard]] aabb4 get_aabb() const {
     if( !root ) return aabb4{};
     return root->range;
   }
-  std::size_t size() const {
+  [[nodiscard]] std::size_t size() const {
     return get_size( root );
   }
-  std::unordered_set< aabb > get_all_aabb() const {
+  [[nodiscard]] std::unordered_set< aabb > get_all_aabb() const {
     std::unordered_set< aabb > temp;
     get_all_aabb( root, temp );
     return temp;
@@ -133,10 +133,10 @@ public:
   void for_each_leaf_node( const std::function< void( std::shared_ptr< node_type >& ) > &f ) {
     for_each_node( root, f, true );
   }
-  const node_type &get_root_node() const {
+  [[nodiscard]] const node_type &get_root_node() const {
     return *root;
   }
-  node_type &get_root_node() {
+  [[nodiscard]] node_type &get_root_node() {
     return *root;
   }
   void get_leaf_node(
@@ -166,12 +166,12 @@ private:
     get_all_aabb( node->less_than, v );
     get_all_aabb( node->greater_equal, v );
   }
-  static std::size_t get_size( const std::shared_ptr< node_type > &node ) {
+  [[nodiscard]] static std::size_t get_size( const std::shared_ptr< node_type > &node ) {
     if( !node ) return 0u;
     if( node->leaf ) return node->leaf->value.size();
     return get_size( node->less_than ) + get_size( node->greater_equal );
   }
-  const std::shared_ptr< node_type > &get_branch( const std::shared_ptr< node_type > &node ) const {
+  [[nodiscard]] const std::shared_ptr< node_type > &get_branch( const std::shared_ptr< node_type > &node ) const {
     if( !node ) {
       return node;
     }
@@ -189,7 +189,7 @@ private:
     }
     return node;
   }
-  std::string to_string( const std::shared_ptr< node_type > &node ) const {
+  [[nodiscard]] std::string to_string( const std::shared_ptr< node_type > &node ) const {
     if( !node ) return "null";
     else if( node->leaf ) {
       return "{\"range\":\"" + gct::to_string( node->leaf->range ) + "\"}";
@@ -207,7 +207,7 @@ private:
       return temp;
     }
   }
-  axis_type next( axis_type axis ) {
+  [[nodiscard]] axis_type next( axis_type axis ) {
     if( axis == axis_type::z_end ) {
       return axis_type::x_begin;
     }
@@ -215,7 +215,7 @@ private:
       return axis_type( int( axis ) + 1 );
     }
   }
-  static float get_axis_value( axis_type axis, const aabb &r ) {
+  [[nodiscard]] static float get_axis_value( axis_type axis, const aabb &r ) {
     if( axis == axis_type::x_begin ) {
       return r.min.x;
     }
@@ -667,7 +667,7 @@ void frustum_culling(
   }
 }
 
-bool test_kdtree();
+[[nodiscard]] bool test_kdtree();
 
 }
 

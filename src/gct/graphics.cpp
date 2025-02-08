@@ -20,7 +20,7 @@ namespace gct {
   graphics::graphics(
     const graphics_create_info &ci
   ) :
-    props( ci ) {
+    property_type( ci ) {
     auto &device = get_device( *props.pipeline_cache );
     for( const auto &s: props.shaders ) {
       props.pipeline_create_info.add_stage( device.get_shader_module( s ) );

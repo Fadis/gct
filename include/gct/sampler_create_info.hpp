@@ -39,10 +39,10 @@ namespace gct {
   };
   void to_json( nlohmann::json &root, const sampler_create_info_t &v );
   void from_json( const nlohmann::json &root, sampler_create_info_t &v );
-  const sampler_create_info_t &get_basic_linear_sampler_create_info();
-  const sampler_create_info_t &get_basic_nearest_sampler_create_info();
-  const sampler_create_info_t &get_basic_unnormalized_sampler_create_info();
-  const sampler_create_info_t &get_basic_cubic_sampler_create_info();
+  [[nodiscard]] const sampler_create_info_t &get_basic_linear_sampler_create_info();
+  [[nodiscard]] const sampler_create_info_t &get_basic_nearest_sampler_create_info();
+  [[nodiscard]] const sampler_create_info_t &get_basic_unnormalized_sampler_create_info();
+  [[nodiscard]] const sampler_create_info_t &get_basic_cubic_sampler_create_info();
 }
 
 #endif

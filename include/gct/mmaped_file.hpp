@@ -37,14 +37,14 @@ namespace gct {
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     mmaped_file( const std::filesystem::path& );
-    const_iterator begin() const { return head.get(); }
-    const_iterator end() const { return std::next( head.get(), file_size ); }
-    const_iterator cbegin() const { return head.get(); }
-    const_iterator cend() const { return std::next( head.get(), file_size ); }
-    size_type size() const { return file_size; }
-    bool empty() const { return file_size == 0u; }
-    reference at( size_type i ) const;
-    reference operator[]( size_type i ) const {
+    [[nodiscard]] const_iterator begin() const { return head.get(); }
+    [[nodiscard]] const_iterator end() const { return std::next( head.get(), file_size ); }
+    [[nodiscard]] const_iterator cbegin() const { return head.get(); }
+    [[nodiscard]] const_iterator cend() const { return std::next( head.get(), file_size ); }
+    [[nodiscard]] size_type size() const { return file_size; }
+    [[nodiscard]] bool empty() const { return file_size == 0u; }
+    [[nodiscard]] reference at( size_type i ) const;
+    [[nodiscard]] reference operator[]( size_type i ) const {
       return head.get()[ i ];
     }
   private:

@@ -36,10 +36,10 @@ namespace gct {
     std::uint8_t dim_y[3];
     std::uint8_t dim_z[3];
   };
-  bool is_astc( const astc_header &header );
-  vk::Format get_format( const astc_header &header, bool srgb );
-  std::pair< std::uint32_t, std::uint32_t > get_dims( const astc_header &header );
-  std::uint32_t get_size( const astc_header &header );
+  [[nodiscard]] bool is_astc( const astc_header &header );
+  [[nodiscard]] vk::Format get_format( const astc_header &header, bool srgb );
+  [[nodiscard]] std::pair< std::uint32_t, std::uint32_t > get_dims( const astc_header &header );
+  [[nodiscard]] std::uint32_t get_size( const astc_header &header );
 }
 #endif
 

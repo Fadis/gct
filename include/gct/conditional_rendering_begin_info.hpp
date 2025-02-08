@@ -16,7 +16,7 @@ namespace gct {
       buf = b;
       return *this;
     }
-    const std::shared_ptr< buffer_t > &get_buffer() const {
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_buffer() const {
       return buf;
     }
   private:

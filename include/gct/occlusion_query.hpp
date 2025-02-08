@@ -32,9 +32,9 @@ public:
     command_buffer_recorder_t&,
     const glm::mat4 &matrix
   );
-  std::uint32_t operator[]( occlusion_query_id_t ) const;
+  [[nodiscard]] std::uint32_t operator[]( occlusion_query_id_t ) const;
   void reset();
-  const std::shared_ptr< image_view_t > &get_image_view() const;
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_view() const;
   bool empty() const {
     return pushed.empty();
   }

@@ -17,8 +17,8 @@ namespace gct {
     const std::shared_ptr< command_pool_t > &pool,
     const command_buffer_allocate_info_t &create_info
   ) :
-    created_from< command_pool_t >( pool ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< command_pool_t >( pool ) {
     auto basic = props.get_basic();
     basic
       .setCommandPool( **pool )

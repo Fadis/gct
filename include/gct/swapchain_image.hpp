@@ -11,7 +11,10 @@ namespace gct {
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
   image_create_info_t to_image_create_info( const vk::SwapchainCreateInfoKHR& );
   class swapchain_t;
-  class swapchain_image_t : public image_t, public created_from< swapchain_t >, public std::enable_shared_from_this< swapchain_image_t > {
+  class swapchain_image_t :
+    public image_t,
+    public created_from< swapchain_t >,
+    public std::enable_shared_from_this< swapchain_image_t > {
   public:
     swapchain_image_t(
       const std::shared_ptr< swapchain_t >&,
@@ -21,34 +24,34 @@ namespace gct {
     swapchain_image_t( swapchain_image_t&& ) = default;
     swapchain_image_t &operator=( const swapchain_image_t& ) = delete;
     swapchain_image_t &operator=( swapchain_image_t&& ) = default;
-    const image_create_info_t &get_props() const { return props; }
-    std::shared_ptr< image_view_t > get_view(
+    [[nodiscard]] const image_create_info_t &get_props() const { return props; }
+    [[nodiscard]] std::shared_ptr< image_view_t > get_view(
       const image_view_create_info_t&
     );
-    std::shared_ptr< image_view_t > get_view(
+    [[nodiscard]] std::shared_ptr< image_view_t > get_view(
       vk::ImageAspectFlags aspect
     );
-    std::vector< std::shared_ptr< image_view_t > > get_thin_views(
+    [[nodiscard]] std::vector< std::shared_ptr< image_view_t > > get_thin_views(
       vk::ImageAspectFlags aspect,
       std::uint32_t layer
     );
-    std::shared_ptr< image_view_t > get_view();
-    std::vector< std::shared_ptr< image_view_t > > get_thin_views(
+    [[nodiscard]] std::shared_ptr< image_view_t > get_view();
+    [[nodiscard]] std::vector< std::shared_ptr< image_view_t > > get_thin_views(
       std::uint32_t layer
     );
-    vk::Image &operator*() {
+    [[nodiscard]] vk::Image &operator*() {
       return handle;
     }
-    const vk::Image &operator*() const {
+    [[nodiscard]] const vk::Image &operator*() const {
       return handle;
     }
-    vk::Image *operator->() {
+    [[nodiscard]] vk::Image *operator->() {
       return &handle;
     }
-    const vk::Image *operator->() const {
+    [[nodiscard]] const vk::Image *operator->() const {
       return &handle;
     }
-    std::shared_ptr< device_t > get_device() const;
+    [[nodiscard]] std::shared_ptr< device_t > get_device() const;
   private:
     vk::Image handle;
   };

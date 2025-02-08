@@ -23,20 +23,20 @@ namespace gct {
       vk::DeviceSize size_
     );
     strided_device_address_region_t();
-    vk::StridedDeviceAddressRegionKHR &operator*() {
+    [[nodiscard]] vk::StridedDeviceAddressRegionKHR &operator*() {
       return raw;
     }
-    const vk::StridedDeviceAddressRegionKHR &operator*() const {
+    [[nodiscard]] const vk::StridedDeviceAddressRegionKHR &operator*() const {
       return raw;
     }
-    vk::StridedDeviceAddressRegionKHR *operator->() {
+    [[nodiscard]] vk::StridedDeviceAddressRegionKHR *operator->() {
       return &raw;
     }
-    const vk::StridedDeviceAddressRegionKHR *operator->() const {
+    [[nodiscard]] const vk::StridedDeviceAddressRegionKHR *operator->() const {
       return &raw;
     }
     void to_json( nlohmann::json& ) const;
-    operator bool() const {
+    [[nodiscard]] operator bool() const {
       return raw.deviceAddress != 0u;
     }
   private:

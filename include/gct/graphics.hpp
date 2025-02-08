@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <gct/graphics_create_info.hpp>
 #include <gct/vertex_attributes.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class allocator_t;
@@ -14,7 +15,9 @@ namespace gct {
   class descriptor_set_t;
   class graphic_pipeline_t;
   class command_buffer_recorder_t;
-  class graphics : std::enable_shared_from_this< graphics > {
+  class graphics :
+    public property< graphics_create_info >,
+    public std::enable_shared_from_this< graphics > {
   public:
     graphics(
       const graphics_create_info &ci
@@ -23,23 +26,19 @@ namespace gct {
       command_buffer_recorder_t &rec,
       unsigned int image_index
     ) const;
-    const graphics_create_info &get_props() const {
-      return props;
-    }
-    const std::shared_ptr< graphics_pipeline_t > &get_pipeline() const {
+    [[nodiscard]] const std::shared_ptr< graphics_pipeline_t > &get_pipeline() const {
       return pipeline;
     }
-    const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > get_vamap() const {
+    [[nodiscard]] const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > get_vamap() const {
       return vamap;
     }
-    std::uint32_t get_stride() const {
+    [[nodiscard]] std::uint32_t get_stride() const {
       return stride;
     }
-    const std::shared_ptr< pipeline_layout_t > get_layout() const {
+    [[nodiscard]] const std::shared_ptr< pipeline_layout_t > get_layout() const {
       return pipeline_layout;
     }
   private:
-    graphics_create_info props;
     std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
     std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > descriptor_set;
     std::shared_ptr< pipeline_layout_t > pipeline_layout;

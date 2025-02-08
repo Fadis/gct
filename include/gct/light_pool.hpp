@@ -99,29 +99,29 @@ public:
   void touch( const light_descriptor& );
   void set( const light_descriptor&, const light_type& );
   void get( const light_descriptor&, const std::function< void( vk::Result, const light_type& ) >& );
-  const light_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] const light_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
-  std::shared_ptr< buffer_t > get_buffer() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_buffer() const {
     return state->light;
   }
-  std::shared_ptr< buffer_t > get_active_light_buffer() const;
-  std::uint32_t get_active_light_count() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_active_light_buffer() const;
+  [[nodiscard]] std::uint32_t get_active_light_count() const {
     return state->get_active_light_count();
   }
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const light_pool_create_info & );
-    light_index_t allocate_index();
+    [[nodiscard]] light_index_t allocate_index();
     void release_index( light_index_t );
-    light_descriptor allocate( const matrix_pool::matrix_descriptor &matrix, const light_type& );
+    [[nodiscard]] light_descriptor allocate( const matrix_pool::matrix_descriptor &matrix, const light_type& );
     void release( light_index_t );
     void touch( const light_descriptor& );
     void touch( light_index_t );
     void set( const light_descriptor&, const light_type& );
     void get( const light_descriptor&, const std::function< void( vk::Result, const light_type& ) >& );
     void flush( command_buffer_recorder_t& );
-    std::uint32_t get_active_light_count() const;
+    [[nodiscard]] std::uint32_t get_active_light_count() const;
     light_pool_create_info props;
     std::vector< light_state_type > light_state;
     linear_allocator index_allocator;

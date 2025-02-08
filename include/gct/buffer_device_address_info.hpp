@@ -20,7 +20,7 @@ namespace gct {
   public:
     buffer_device_address_info_t &set_buffer( const std::shared_ptr< buffer_t >& );
     buffer_device_address_info_t &clear_buffer();
-    const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_buffer() const { return buffer; }
     void to_json( nlohmann::json& ) const;
   private:
     std::shared_ptr< buffer_t > buffer;

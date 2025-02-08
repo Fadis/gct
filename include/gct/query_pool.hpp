@@ -5,29 +5,20 @@
 #include <gct/created_from.hpp>
 #include <gct/query_pool_create_info.hpp>
 #include <vulkan/vulkan_enums.hpp>
+#include <gct/vulkan_handle.hpp>
+#include <gct/property.hpp>
 namespace gct {
   struct device_t;
-  class query_pool_t : public created_from< device_t >, public std::enable_shared_from_this< query_pool_t > {
+  class query_pool_t :
+    public vulkan_handle< vk::QueryPool >,
+    public property< query_pool_create_info_t >,
+    public created_from< device_t >,
+    public std::enable_shared_from_this< query_pool_t > {
   public:
     query_pool_t(
       const std::shared_ptr< device_t >&,
       const query_pool_create_info_t&
     );
-    vk::QueryPool &operator*() {
-      return *handle;
-    }
-    const vk::QueryPool &operator*() const {
-      return *handle;
-    }
-    vk::QueryPool* operator->() {
-      return &handle.get();
-    }
-    const vk::QueryPool* operator->() const {
-      return &handle.get();
-    }
-    const query_pool_create_info_t &get_props() const {
-      return props;
-    }
     void get_result(
       std::uint32_t offset,
       std::uint32_t count,
@@ -37,7 +28,7 @@ namespace gct {
       vk::QueryResultFlags flags
     ) const;
     template< typename T >
-    std::vector< T > get_result(
+    [[nodiscard]] std::vector< T > get_result(
       std::uint32_t offset,
       std::uint32_t count,
       vk::QueryResultFlags flags
@@ -56,7 +47,7 @@ namespace gct {
     void reset() const;
     void reset( std::uint32_t, std::uint32_t ) const;
     template< typename T >
-    std::vector< T > get_result(
+    [[nodiscard]] std::vector< T > get_result(
       vk::QueryResultFlags flags
     ) const {
       return get_result< T >(
@@ -66,14 +57,11 @@ namespace gct {
       );
     }
     template< typename T >
-    std::vector< T > get_result() const {
+    [[nodiscard]] std::vector< T > get_result() const {
       return get_result< T >(
         vk::QueryResultFlags( vk::QueryResultFlagBits::eWait | vk::QueryResultFlagBits::ePartial )
       );
     }
-  private:
-    query_pool_create_info_t props;
-    vk::UniqueHandle< vk::QueryPool, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
   void to_json( nlohmann::json &dest, const query_pool_t &src );
 }

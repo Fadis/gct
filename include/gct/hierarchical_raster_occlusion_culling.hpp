@@ -66,16 +66,16 @@ public:
     const glm::mat4 &camera,
     const glm::vec4 &eye_pos
   );
-  const std::shared_ptr< mappable_buffer_t > &get_sort_input() const {
+  [[nodiscard]] const std::shared_ptr< mappable_buffer_t > &get_sort_input() const {
     return sort_input;
   }
-  const std::shared_ptr< mappable_buffer_t > &get_sort_output() const {
+  [[nodiscard]] const std::shared_ptr< mappable_buffer_t > &get_sort_output() const {
     return sort_output;
   }
-  const std::shared_ptr< mappable_buffer_t > &get_bvh() const {
+  [[nodiscard]] const std::shared_ptr< mappable_buffer_t > &get_bvh() const {
     return bvh;
   }
-  const std::shared_ptr< mappable_buffer_t > &get_visibility() const {
+  [[nodiscard]] const std::shared_ptr< mappable_buffer_t > &get_visibility() const {
     return visibility;
   }
 private:

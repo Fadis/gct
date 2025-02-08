@@ -13,10 +13,10 @@ namespace gct {
     LIBGCT_BASIC_SETTER( vk::SpecializationInfo )
     bool empty() const { return map.empty(); }
   protected:
-    virtual void *get_head() {
+    [[nodiscard]] virtual void *get_head() {
       return nullptr;
     }
-    virtual size_t get_size() {
+    [[nodiscard]] virtual size_t get_size() {
       return 0u;
     }
     std::vector< vk::SpecializationMapEntry > map;
@@ -30,10 +30,10 @@ namespace gct {
     encoded_specialization_info_t &rebuild_chain();
     using self_type = encoded_specialization_info_t;
   private:
-    virtual void *get_head() {
+    [[nodiscard]] virtual void *get_head() {
       return data.data();
     }
-    virtual size_t get_size() {
+    [[nodiscard]] virtual size_t get_size() {
       return data.size();
     }
     std::vector< std::uint8_t > data;
@@ -55,10 +55,10 @@ namespace gct {
     }
     using self_type = specialization_info_t;
   private:
-    virtual void *get_head() {
+    [[nodiscard]] virtual void *get_head() {
       return data.get();
     }
-    virtual size_t get_size() {
+    [[nodiscard]] virtual size_t get_size() {
       return sizeof( T );
     }
     std::shared_ptr< T > data;

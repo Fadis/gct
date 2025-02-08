@@ -4,7 +4,7 @@
 #include <glm/mat4x4.hpp>
 namespace gct {
 
-bool similar_matrix(
+[[nodiscard]] bool similar_matrix(
   const glm::mat4 &a,
   const glm::mat4 &b
 );

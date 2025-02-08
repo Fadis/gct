@@ -53,7 +53,7 @@ public:
     const compiled_scene_graph_create_info &ci,
     const scene_graph &graph
   );
-  const std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, compiled_primitive >&
+  [[nodiscard]] const std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, compiled_primitive >&
   get_primitive() const {
     return prim;
   }
@@ -61,12 +61,12 @@ private:
   void load_graph(
     const scene_graph &graph
   );
-  compiled_primitive load_primitive(
+  [[nodiscard]] compiled_primitive load_primitive(
     const scene_graph &graph,
     const std::shared_ptr< primitive > &p,
     const std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > >&
   );
-  std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > > load_shader(
+  [[nodiscard]] std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > > load_shader(
     const scene_graph &graph
   );
   compiled_scene_graph_create_info props;

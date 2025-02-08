@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.hpp>
 namespace gct {
   class deferred_operation_t;
-  std::future< vk::Result > async(
+  [[nodiscard]] std::future< vk::Result > async(
     const std::shared_ptr< deferred_operation_t > &
   );
   void async(

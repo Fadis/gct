@@ -10,12 +10,12 @@
 
 namespace gct {
 
-std::tuple< float, float > generate_cube_projection_distance(
+[[nodiscard]] std::tuple< float, float > generate_cube_projection_distance(
   const glm::vec3 &camera_pos,
   const std::vector< aabb > &aabbs
 );
 
-std::tuple< glm::mat4, float, float > generate_projection_matrix(
+[[nodiscard]] std::tuple< glm::mat4, float, float > generate_projection_matrix(
   const glm::mat4 &camera_matrix,
   float fovy,
   std::uint32_t width,

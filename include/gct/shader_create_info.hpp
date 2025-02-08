@@ -30,13 +30,13 @@ namespace gct {
   public:
     shader_create_info_t &load( const std::string& );
     shader_create_info_t &load_from_memory( const std::vector< std::uint8_t >& );
-    const std::vector< std::uint8_t > &get_code() const { return code; }
-    pipeline_layout_create_info_t get_pipeline_layout_create_info() const;
+    [[nodiscard]] const std::vector< std::uint8_t > &get_code() const { return code; }
+    [[nodiscard]] pipeline_layout_create_info_t get_pipeline_layout_create_info() const;
   private:
     std::shared_ptr< shader_module_reflection_t > reflect;
   public:
-    bool has_reflection() const { return reflect.get(); }
-    const shader_module_reflection_t &get_reflection() const;
+    [[nodiscard]] bool has_reflection() const { return reflect.get(); }
+    [[nodiscard]] const shader_module_reflection_t &get_reflection() const;
   };
   void to_json( nlohmann::json &root, const shader_create_info_t &v );
   void from_json( const nlohmann::json &root, shader_create_info_t &v );

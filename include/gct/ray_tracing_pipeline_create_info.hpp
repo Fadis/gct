@@ -50,8 +50,8 @@ namespace gct {
     ray_tracing_pipeline_create_info_t &add_stage( const pipeline_shader_stage_create_info_t& );
     ray_tracing_pipeline_create_info_t &add_stage( const std::shared_ptr< shader_module_t >& );
     ray_tracing_pipeline_create_info_t &clear_stage();
-    std::vector< pipeline_shader_stage_create_info_t > get_stage() const { return stage; }
-    std::vector< ray_tracing_shader_group_create_info_t > get_group() const { return group; }
+    [[nodiscard]] std::vector< pipeline_shader_stage_create_info_t > get_stage() const { return stage; }
+    [[nodiscard]] std::vector< ray_tracing_shader_group_create_info_t > get_group() const { return group; }
     ray_tracing_pipeline_create_info_t &set_library( const pipeline_library_create_info_t& );
     ray_tracing_pipeline_create_info_t &clear_library();
     ray_tracing_pipeline_create_info_t &set_library_interface( const ray_tracing_pipeline_interface_create_info_t& );
@@ -61,7 +61,7 @@ namespace gct {
     ray_tracing_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     ray_tracing_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     ray_tracing_pipeline_create_info_t &clear_layout();
-    const std::shared_ptr< pipeline_layout_t > &get_layout() const {
+    [[nodiscard]] const std::shared_ptr< pipeline_layout_t > &get_layout() const {
       return layout;
     }
   };

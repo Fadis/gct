@@ -89,14 +89,14 @@ namespace gct {
 #endif
   public:
     LIBGCT_SETTER( profile );
-    const color_profile &get_profile() const {
+    [[nodiscard]] const color_profile &get_profile() const {
       return profile;
     }
   private:
     color_profile profile;
   };
-  vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );
-  vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );
+  [[nodiscard]] vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );
+  [[nodiscard]] vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );
   void to_json( nlohmann::json &root, const image_create_info_t &v );
   void from_json( const nlohmann::json &root, image_create_info_t &v );
 }

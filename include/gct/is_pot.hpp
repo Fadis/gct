@@ -4,8 +4,8 @@
 #include <cstdint>
 
 namespace gct {
-  std::uint32_t get_pot( std::uint32_t v );
-  bool is_pot( std::uint32_t v );
+  [[nodiscard]] std::uint32_t get_pot( std::uint32_t v );
+  [[nodiscard]] bool is_pot( std::uint32_t v );
 }
 
 #endif

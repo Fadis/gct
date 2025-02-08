@@ -28,7 +28,7 @@ public:
   void operator()(
     command_buffer_recorder_t&
   );
-  const std::shared_ptr< image_view_t > &get_image_view() const;
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_view() const;
 private:
   lens_flare_create_info props;
   std::shared_ptr< gbuffer > output;

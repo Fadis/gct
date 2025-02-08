@@ -34,7 +34,7 @@ namespace gct {
   template< typename T >
   struct future_shared_resource final : public basic_future_shared_resource {
     using then_type = non_copyable_function< void( std::variant< std::exception_ptr, T >&& ) >;
-    future_shared_resource() {};
+    future_shared_resource() = default;
     ~future_shared_resource() {
       try {
         cancel();
@@ -74,7 +74,9 @@ namespace gct {
     void clear() {
       cancel_ = cancel_type();
       then = then_type();
+// NOLINTBEGIN(bugprone-throw-keyword-missing)
       value = std::exception_ptr();
+// NOLINTEND(bugprone-throw-keyword-missing)
     }
     std::variant< std::exception_ptr, T > value;
     then_type then;
@@ -87,7 +89,9 @@ namespace gct {
       try {
         cancel();
       }
+// NOLINTBEGIN(bugprone-empty-catch)
       catch( ... ) {}
+// NOLINTEND(bugprone-empty-catch)
     }
     void set_value() {
       if( count.fetch_add( 1 ) == 1 ) {
@@ -156,17 +160,19 @@ namespace gct {
     using then_type = typename shared_type::then_type;
   public:
     future() : raw( nullptr ) {}
+// NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
     future( const std::shared_ptr< shared_type > &s ) : shared( s ) {
       raw = shared.get();
     }
     future( const future& ) = delete;
-    future( future &&src ) : shared( std::move( src.shared ) )  {
+    future( future &&src ) noexcept : shared( std::move( src.shared ) )  {
       raw = shared.get();
       src.shared.reset();
       src.raw = nullptr;
     }
+// NOLINTEND(cppcoreguidelines-prefer-member-initializer)
     future &operator=( const future& ) = delete;
-    future &operator=( future &&src ) {
+    future &operator=( future &&src ) noexcept {
       shared = std::move( src.shared );
       raw = shared.get();
       src.shared.reset();
@@ -184,7 +190,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
                 if( v ) {
                   p.set_exception( v );
                 }
@@ -230,7 +236,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
                 if( v ) {
                   p.set_exception( v );
                 }
@@ -261,7 +267,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
                 try {
                   auto f2 = then_( v );
                   p.link_weak( f2.shared );
@@ -302,7 +308,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
                 try {
                   if constexpr ( std::is_same_v< next_type, void > ) {
                     then_( v );
@@ -333,7 +339,7 @@ namespace gct {
             auto f = p.get_future();
             p.link_weak( shared );
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
                 if( v.index() == 0u ) {
                   p.set_exception( std::get< std::exception_ptr >( v ) );
                 }
@@ -379,7 +385,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
                 if( v.index() == 0u ) {
                   p.set_exception( std::get< std::exception_ptr >( v ) );
                 }
@@ -410,7 +416,7 @@ namespace gct {
             auto f = p.get_future();
             p.link_weak( shared );
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
                 try {
                   auto f2 = then_( std::move( v ) );
                   p.link_weak( f2.shared );
@@ -451,7 +457,7 @@ namespace gct {
             p.link_weak( shared );
             auto f = p.get_future();
             if( raw ) raw->set_then(
-              [then_=std::move( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
+              [then_=std::forward<F>( then_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
                 try {
                   if constexpr ( std::is_same_v< next_type, void > ) {
                     then_( std::move( v ) );
@@ -483,7 +489,7 @@ namespace gct {
       if( raw ) {
         if constexpr ( std::is_same_v< T, void > ) {
           raw->set_then(
-            [rescue_=std::move( rescue_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
+            [rescue_=std::forward<F>( rescue_ ),p=std::move( p )] ( std::exception_ptr v ) mutable {
               if( v ) {
                 try {
                   rescue_( v );
@@ -501,7 +507,7 @@ namespace gct {
         }
         else {
           raw->set_then(
-            [rescue_=std::move( rescue_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
+            [rescue_=std::forward<F>( rescue_ ),p=std::move( p )] ( std::variant< std::exception_ptr, T > &&v ) mutable {
               if( v.index() == 0u ) {
                 try {
                   p.set_value( rescue_( std::get< std::exception_ptr >( v ) ) );
@@ -544,7 +550,7 @@ namespace gct {
     promise() : shared( std::make_shared< shared_type >() ) {
       raw = shared.get();
     }
-    future< T > get_future() {
+    [[nodiscard]] future< T > get_future() {
       return future< T >( shared );
     }
     void set_value( const T &v ) {
@@ -586,7 +592,7 @@ namespace gct {
     promise() : shared( std::make_shared< shared_type >() ) {
       raw = shared.get();
     }
-    future< void > get_future() {
+    [[nodiscard]] future< void > get_future() {
       return future< void >( shared );
     }
     void set_value() {
@@ -682,7 +688,7 @@ namespace gct {
   };
 
   template< typename T, typename U >
-  future< future_or_result_type_t< future< T >, future< U > > >
+  [[nodiscard]] future< future_or_result_type_t< future< T >, future< U > > >
   operator|( future< T > &&l, future< U > &&r ) {
     using result_t = future_or_result_type_t< future< T >, future< U > >;
     auto shared = std::make_shared< future_or_shared_state< future< T >, future< U > > >(
@@ -701,7 +707,7 @@ namespace gct {
                 shared->p.set_value();
               }
               else {
-                shared->p.set_value( std::nullopt_t() );
+                shared->p.set_value( std::nullopt );
               }
             }
             shared->r.cancel();
@@ -736,7 +742,7 @@ namespace gct {
                 shared->p.set_value();
               }
               else {
-                shared->p.set_value( std::nullopt_t() );
+                shared->p.set_value( std::nullopt );
               }
             }
             shared->l.cancel();
@@ -869,7 +875,7 @@ namespace gct {
   };
 
   template< typename T, typename U >
-  auto operator&( future< T > &&l, future< U > &&r ) ->
+  [[nodiscard]] auto operator&( future< T > &&l, future< U > &&r ) ->
     std::enable_if_t<
       !std::is_void_v< T > && !std::is_void_v< U >,
       future< future_and_result_type_t< future< T >, future< U > > >

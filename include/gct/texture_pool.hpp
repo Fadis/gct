@@ -74,26 +74,26 @@ private:
   using request_range = index_range;
 public:
   texture_pool( const texture_pool_create_info & );
-  views allocate(
+  [[nodiscard]] views allocate(
     const sampler_pool::sampler_descriptor &s,
     const image_pool::views &i
   );
-  std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
+  [[nodiscard]] std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
     const texture_descriptor&
   ) const;
-  const texture_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] const texture_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const texture_pool_create_info & );
-    texture_index_t allocate_index();
+    [[nodiscard]] texture_index_t allocate_index();
     void release_index( texture_index_t );
-    views allocate(
+    [[nodiscard]] views allocate(
       const sampler_pool::sampler_descriptor &s,
       const image_pool::views &i
     );
-    std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
+    [[nodiscard]] std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
       const texture_descriptor&
     ) const;
     void release( texture_index_t );

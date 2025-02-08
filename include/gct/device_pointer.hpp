@@ -26,13 +26,13 @@ namespace gct {
       device_address_t::operator-=( value_size );
       return *this;
     }
-    std::int64_t operator-( const device_address_t &r ) const {
+    [[nodiscard]] std::int64_t operator-( const device_address_t &r ) const {
       return ( std::int64_t( r.offset ) - std::int64_t( offset ) ) / value_size;
     }
-    device_pointer_t operator+( std::int64_t value ) const {
+    [[nodiscard]] device_pointer_t operator+( std::int64_t value ) const {
       return device_pointer_t( get_factory(), ( offset + value ) * value_size );
     }
-    device_pointer_t operator-( std::int64_t value ) const {
+    [[nodiscard]] device_pointer_t operator-( std::int64_t value ) const {
       return device_pointer_t( get_factory(), ( offset - value ) * value_size );
     }
   };

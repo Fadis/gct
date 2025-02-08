@@ -30,20 +30,20 @@ namespace gct {
       const std::shared_ptr< command_pool_t > &p,
       std::uint32_t
     );
-    std::shared_ptr< bound_command_pool_t > get_command_pool();
-    vk::Queue &operator*() {
+    [[nodiscard]] std::shared_ptr< bound_command_pool_t > get_command_pool();
+    [[nodiscard]] vk::Queue &operator*() {
       return queue;
     }
-    const vk::Queue &operator*() const {
+    [[nodiscard]] const vk::Queue &operator*() const {
       return queue;
     }
-    vk::Queue *operator->() {
+    [[nodiscard]] vk::Queue *operator->() {
       return &queue;
     }
-    const vk::Queue *operator->() const {
+    [[nodiscard]] const vk::Queue *operator->() const {
       return &queue;
     }
-    std::uint32_t get_available_queue_family_index() const {
+    [[nodiscard]] std::uint32_t get_available_queue_family_index() const {
       return available_queue_family_index;
     }
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -100,7 +100,7 @@ namespace gct {
   void to_json( nlohmann::json&, const activated_queue_mappings_t& );
 
   struct physical_device_properties_t;
-  std::tuple<
+  [[nodiscard]] std::tuple<
     activated_queue_mappings_t,
     activated_queue_family_counts_t
   >

@@ -47,16 +47,16 @@ namespace gct {
   >;
 
 
-  std::uint32_t get_instance_version();
-  layer_map_t
+  [[nodiscard]] std::uint32_t get_instance_version();
+  [[nodiscard]] layer_map_t
   get_instance_layers();
-  extension_map_t
+  [[nodiscard]] extension_map_t
   get_instance_extensions( const std::vector< const char* > &ilayers );
-  layer_map_t
+  [[nodiscard]] layer_map_t
   get_device_layers(
     const vk::PhysicalDevice &pdev
   );
-  extension_map_t
+  [[nodiscard]] extension_map_t
   get_device_extensions(
     const vk::PhysicalDevice &pdev,
     const std::vector< const char* > &dlayers

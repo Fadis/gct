@@ -26,12 +26,12 @@ namespace gct {
     shader_module_reflection_t( shader_module_reflection_t&& ) = default;
     shader_module_reflection_t &operator=( const shader_module_reflection_t& ) = delete;
     shader_module_reflection_t &operator=( shader_module_reflection_t&& ) = default;
-    const SpvReflectShaderModule &operator*() const { return reflect; }
-    const SpvReflectShaderModule *operator->() const { return &reflect; }
-    spv_member_pointer get_member_pointer( const std::string &name, memory_layout layout ) const;
-    spv_member_pointer get_push_constant_member_pointer( const std::string &name ) const;
-    std::optional< spv_member_pointer > get_push_constant_member_pointer_maybe( const std::string &name ) const;
-    std::vector< std::uint32_t > get_descriptor_set_id() const;
+    [[nodiscard]] const SpvReflectShaderModule &operator*() const { return reflect; }
+    [[nodiscard]] const SpvReflectShaderModule *operator->() const { return &reflect; }
+    [[nodiscard]] spv_member_pointer get_member_pointer( const std::string &name, memory_layout layout ) const;
+    [[nodiscard]] spv_member_pointer get_push_constant_member_pointer( const std::string &name ) const;
+    [[nodiscard]] std::optional< spv_member_pointer > get_push_constant_member_pointer_maybe( const std::string &name ) const;
+    [[nodiscard]] std::vector< std::uint32_t > get_descriptor_set_id() const;
   private:
     SpvReflectShaderModule reflect;
     std::unordered_set< unsigned int > descriptor_set_ids;

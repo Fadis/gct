@@ -32,7 +32,7 @@ gbuffer::gbuffer(
 gbuffer::gbuffer(
   const gbuffer_create_info &ci
 ) :
-  props( ci ),
+  property_type( ci ),
   created_from< allocator_t >( ci.allocator ) {
   {
     auto rpci = render_pass_create_info_t();

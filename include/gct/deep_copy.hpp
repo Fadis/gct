@@ -19,16 +19,18 @@ namespace gct {
         T::reset( new value_type( *v ) );
     }
     deep_copy_t &operator=( const deep_copy_t &v ) {
-      if( v )
-        T::reset( new value_type( *v ) );
+      if( &v != this ) {
+        if( v )
+          T::reset( new value_type( *v ) );
+      }
       return *this;
     }
-    deep_copy_t( deep_copy_t &&v ) : T( std::move( static_cast< T&& >( v ) ) ) {}
-    deep_copy_t &operator=( deep_copy_t &&v ) {
+    deep_copy_t( deep_copy_t &&v ) noexcept : T( std::move( static_cast< T&& >( v ) ) ) {}
+    deep_copy_t &operator=( deep_copy_t &&v ) noexcept {
       static_cast< T& >( *this ) = std::move( static_cast< T&& >( v ) );
       return *this;
     }
-    explicit operator bool() const {
+    [[nodiscard]] explicit operator bool() const {
       return bool( static_cast< const T& >( *this ) );
     }
   };

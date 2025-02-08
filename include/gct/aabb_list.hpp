@@ -12,6 +12,7 @@
 #include <gct/compiled_scene_graph.hpp>
 #include <gct/compiled_aabb_scene_graph.hpp>
 #include <gct/kdtree.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class command_buffer_recorder_t;
@@ -35,7 +36,8 @@ bool operator!=( const resource_pair &l, const resource_pair &r );
 
 void to_json( nlohmann::json &dest, const resource_pair &src );
 
-class instance_list {
+class instance_list :
+  public property< instance_list_create_info > {
 public:
   instance_list(
     const instance_list_create_info &ci,
@@ -51,20 +53,16 @@ public:
     const std::shared_ptr< query_pool_t > &query_pool
   ) const;
   void to_json( nlohmann::json& ) const;
-  std::vector< resource_pair > &get_draw_list() {
+  [[nodiscard]] std::vector< resource_pair > &get_draw_list() {
     return draw_list;
   }
-  const std::vector< resource_pair > &get_draw_list() const {
+  [[nodiscard]] const std::vector< resource_pair > &get_draw_list() const {
     return draw_list;
   }
-  const std::shared_ptr< scene_graph_resource > &get_resource() const {
+  [[nodiscard]] const std::shared_ptr< scene_graph_resource > &get_resource() const {
     return resource;
   }
-  const instance_list_create_info &get_props() const {
-    return props;
-  }
 private:
-  instance_list_create_info props;
   std::shared_ptr< scene_graph_resource > resource;
   std::vector< resource_pair > draw_list;
 };

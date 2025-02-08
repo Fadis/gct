@@ -31,7 +31,7 @@ namespace gct {
 private:
     surface_formats_t formats;
 public:
-    const surface_formats_t &get_formats() const { return formats; }
+    [[nodiscard]] const surface_formats_t &get_formats() const { return formats; }
 
     using self_type = surface_capabilities_t;
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
@@ -58,7 +58,7 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::SurfaceProtectedCapabilitiesKHR , surface_protected_capabilities )
 #endif
   };
-  const surface_format_t &select_simple_surface_format( const surface_formats_t &formats );
+  [[nodiscard]] const surface_format_t &select_simple_surface_format( const surface_formats_t &formats );
 #endif
 }
 

@@ -8,8 +8,8 @@ query_pool_t::query_pool_t(
   const std::shared_ptr< device_t > &device,
   const query_pool_create_info_t &create_info
 ) :
-  created_from< device_t >( device ),
-  props( create_info ) {
+  property_type( create_info ),
+  created_from< device_t >( device ) {
   props.rebuild_chain();
   handle = (*device)->createQueryPoolUnique(
     props.get_basic()

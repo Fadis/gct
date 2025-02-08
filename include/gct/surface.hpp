@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/surface_capabilities.hpp>
+#include <gct/vulkan_handle.hpp>
 
 namespace gct {
 
@@ -15,7 +16,9 @@ namespace gct {
   struct surface_t;
   class physical_device_t;
   void to_json( nlohmann::json&, const surface_t &v );
-  struct surface_t : public created_from< instance_t > {
+  struct surface_t :
+    public vulkan_handle< vk::SurfaceKHR >,
+    public created_from< instance_t > {
   public:
     surface_t(
       const physical_device_t&,
@@ -27,23 +30,10 @@ namespace gct {
       vk::UniqueHandle< vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > &&
     );
 #endif
-    vk::SurfaceKHR &operator*() {
-      return *handle;
-    }
-    const vk::SurfaceKHR &operator*() const {
-      return *handle;
-    }
-    vk::SurfaceKHR* operator->() {
-      return &handle.get();
-    }
-    const vk::SurfaceKHR* operator->() const {
-      return &handle.get();
-    }
-    const surface_capabilities_t &get_caps() const {
+    [[nodiscard]] const surface_capabilities_t &get_caps() const {
       return caps;
     }
   private:
-    vk::UniqueHandle< vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
     surface_capabilities_t caps;
   };
 #endif

@@ -18,7 +18,7 @@ namespace gct {
       vk::DeviceAddress address_,
       std::int64_t offset_ = 0ll
     );
-    vk::DeviceAddress operator*() {
+    [[nodiscard]] vk::DeviceAddress operator*() {
       return address;
     }
     buffer_address_t &operator+=( std::int64_t value );
@@ -34,13 +34,13 @@ namespace gct {
       operator-=( 1 );
       return *this;
     }
-    std::int64_t operator-( const buffer_address_t &r ) const {
+    [[nodiscard]] std::int64_t operator-( const buffer_address_t &r ) const {
       return std::int64_t( r.offset ) - std::int64_t( offset );
     }
-    buffer_address_t operator+( std::int64_t value ) const {
+    [[nodiscard]] buffer_address_t operator+( std::int64_t value ) const {
       return buffer_address_t( get_factory(), offset + value );
     }
-    buffer_address_t operator-( std::int64_t value ) const {
+    [[nodiscard]] buffer_address_t operator-( std::int64_t value ) const {
       return buffer_address_t( get_factory(), offset - value );
     }
     void to_json( nlohmann::json& ) const;

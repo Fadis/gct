@@ -8,6 +8,7 @@
 #include <gct/created_from.hpp>
 #include <gct/render_pass_begin_info.hpp>
 #include <gct/gbuffer_create_info.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
 
@@ -16,7 +17,10 @@ class render_pass_t;
 class image_view_t;
 class image_t;
 class command_buffer_recorder_t;
-class gbuffer : public created_from< allocator_t >, public std::enable_shared_from_this< gbuffer > {
+class gbuffer :
+  public property< gbuffer_create_info >,
+  public created_from< allocator_t >,
+  public std::enable_shared_from_this< gbuffer > {
 public:
   gbuffer(
     const gbuffer_create_info &ci
@@ -28,32 +32,29 @@ public:
     unsigned int swapchain_image_count,
     unsigned int color_buffer_count
   );
-  const std::shared_ptr< render_pass_t > &get_render_pass() const {
+  [[nodiscard]] const std::shared_ptr< render_pass_t > &get_render_pass() const {
     return render_pass;
   }
-  const render_pass_begin_info_t &get_render_pass_begin_info( unsigned int i ) const {
+  [[nodiscard]] const render_pass_begin_info_t &get_render_pass_begin_info( unsigned int i ) const {
     return rpbis[ i % rpbis.size() ];
   }
-  const std::vector< render_pass_begin_info_t > &get_render_pass_begin_infos() const {
+  [[nodiscard]] const std::vector< render_pass_begin_info_t > &get_render_pass_begin_infos() const {
     return rpbis;
   }
-  const std::shared_ptr< image_view_t > &get_image_view( unsigned int i ) const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_view( unsigned int i ) const {
     return image_views[ i % image_views.size() ];
   }
-  const std::vector< std::shared_ptr< image_view_t > > &get_image_views() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_image_views() const {
     return image_views;
   }
-  const std::vector< std::shared_ptr< image_view_t > > &get_depth_views() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_depth_views() const {
     return depth_views;
   }
-  const std::shared_ptr< image_t > &get_image( unsigned int i ) const;
-  const gbuffer_create_info &get_props() const {
-    return props;
-  }
-  const vk::Viewport &get_viewport() const {
+  [[nodiscard]] const std::shared_ptr< image_t > &get_image( unsigned int i ) const;
+  [[nodiscard]] const vk::Viewport &get_viewport() const {
     return viewport;
   }
-  const vk::Rect2D &get_scissor() const {
+  [[nodiscard]] const vk::Rect2D &get_scissor() const {
     return scissor;
   }
   void clear_color(
@@ -66,7 +67,6 @@ public:
     unsigned int image_index
   );
 private:
-  gbuffer_create_info props;
   std::shared_ptr< render_pass_t > render_pass;
   std::vector< render_pass_begin_info_t > rpbis;
   std::vector< std::shared_ptr< image_view_t > > image_views;

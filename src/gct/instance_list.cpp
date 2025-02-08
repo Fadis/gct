@@ -25,7 +25,7 @@ bool operator!=( const resource_pair &l, const resource_pair &r ) {
 instance_list::instance_list(
   const instance_list_create_info &ci,
   const scene_graph &graph
-) : props( ci ), resource( graph.get_resource() ) {
+) : property_type( ci ), resource( graph.get_resource() ) {
   for( const auto &i: resource->inst.get_descriptor() ) {
     auto inst = resource->inst.get( i );
     draw_list.push_back(

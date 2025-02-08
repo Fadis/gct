@@ -7,7 +7,7 @@
 #include <gct/vertex_attributes.hpp>
 #include <gct/pipeline_input_assembly_state_create_info.hpp>
 namespace gct::primitive {
-  std::tuple<
+  [[nodiscard]] std::tuple<
     pipeline_input_assembly_state_create_info_t,
     std::vector< std::uint8_t >,
     std::uint32_t
@@ -15,7 +15,7 @@ namespace gct::primitive {
     const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &detail,
     std::uint32_t stride
   );
-  std::tuple<
+  [[nodiscard]] std::tuple<
     pipeline_input_assembly_state_create_info_t,
     std::vector< std::uint8_t >,
     std::uint32_t
@@ -24,7 +24,7 @@ namespace gct::primitive {
     std::uint32_t stride,
     bool positive
   );
-  std::tuple<
+  [[nodiscard]] std::tuple<
     pipeline_input_assembly_state_create_info_t,
     std::vector< std::uint8_t >,
     std::uint32_t
@@ -32,7 +32,7 @@ namespace gct::primitive {
     const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &detail,
     std::uint32_t stride
   );
-  std::tuple<
+  [[nodiscard]] std::tuple<
     pipeline_input_assembly_state_create_info_t,
     std::vector< std::uint8_t >,
     std::uint32_t
@@ -42,7 +42,7 @@ namespace gct::primitive {
     std::uint32_t segment_count,
     std::uint32_t ring_count
   );
-  std::tuple<
+  [[nodiscard]] std::tuple<
     pipeline_input_assembly_state_create_info_t,
     std::vector< std::uint8_t >,
     std::uint32_t

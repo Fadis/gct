@@ -37,10 +37,10 @@ public:
   gltf2(
     const gltf2_create_info &ci
   );
-  const std::vector< image_pool::views > &get_image() const {
+  [[nodiscard]] const std::vector< image_pool::views > &get_image() const {
     return image;
   }
-  const std::vector< texture_pool::views > &get_texture() const {
+  [[nodiscard]] const std::vector< texture_pool::views > &get_texture() const {
     return texture;
   }
 private:
@@ -60,11 +60,11 @@ private:
   void load_texture(
     const fx::gltf::Document &doc
   );
-  scene_graph::primitive create_primitive(
+  [[nodiscard]] scene_graph::primitive create_primitive(
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive
   );
-  std::shared_ptr< mesh > create_mesh(
+  [[nodiscard]] std::shared_ptr< mesh > create_mesh(
     const fx::gltf::Document &doc,
     const fx::gltf::Mesh &mesh
   );
@@ -82,7 +82,7 @@ private:
   void load_node(
     const fx::gltf::Document &doc
   );
-  graphics_pipeline_create_info_t create_pipeline(
+  [[nodiscard]] graphics_pipeline_create_info_t create_pipeline(
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &doc_primitive,
     const scene_graph::primitive &primitive_

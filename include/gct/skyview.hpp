@@ -97,13 +97,13 @@ public:
     command_buffer_recorder_t&,
     const skyview_parameter &
   ) const;
-  const std::shared_ptr< image_view_t > &get_output() const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_output() const {
     return output;
   }
-  const std::shared_ptr< image_view_t > &get_transmittance() const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_transmittance() const {
     return transmittance;
   }
-  const std::shared_ptr< image_view_t > &get_multiscat() const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_multiscat() const {
     return multiscat;
   }
 private:

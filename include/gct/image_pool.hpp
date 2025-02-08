@@ -98,19 +98,19 @@ public:
   image_pool( const image_pool_create_info & );
   views allocate( const image_load_info& );
   views allocate();
-  const image_pool_create_info &get_props() const { return state->props; }
-  std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
+  [[nodiscard]] const image_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
   void dump( const image_descriptor&, const image_dump_info& );
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const image_pool_create_info & );
-    image_index_t allocate_index();
+    [[nodiscard]] image_index_t allocate_index();
     void release_index( image_index_t );
-    views allocate( const image_load_info& );
-    views allocate();
-    std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
+    [[nodiscard]] views allocate( const image_load_info& );
+    [[nodiscard]] views allocate();
+    [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
     void dump( const image_descriptor&, const image_dump_info& );
     void release( image_index_t );
     void flush( command_buffer_recorder_t& );

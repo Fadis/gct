@@ -277,7 +277,7 @@ struct node {
       resource->aabb->touch( i->descriptor.aabb );
     }
   }
-  std::optional< aabb4 > get_initial_world_aabb() const;
+  [[nodiscard]] std::optional< aabb4 > get_initial_world_aabb() const;
   void to_json( nlohmann::json& ) const;
   std::string name;
   std::vector< std::shared_ptr< node > > child;
@@ -297,25 +297,25 @@ public:
   scene_graph(
     const scene_graph_create_info &ci
   );
-  const scene_graph_create_info &get_props() const {
+  [[nodiscard]] const scene_graph_create_info &get_props() const {
     return *props;
   }
-  std::shared_ptr< node > get_root_node() const {
+  [[nodiscard]] std::shared_ptr< node > get_root_node() const {
     return root_node;
   }
-  const std::shared_ptr< vertex_buffer_pool > &get_vertex() const {
+  [[nodiscard]] const std::shared_ptr< vertex_buffer_pool > &get_vertex() const {
     return resource->vertex;
   }
-  const std::shared_ptr< image_pool > &get_image() const {
+  [[nodiscard]] const std::shared_ptr< image_pool > &get_image() const {
     return resource->image;
   }
-  const std::shared_ptr< texture_pool > &get_texture() const {
+  [[nodiscard]] const std::shared_ptr< texture_pool > &get_texture() const {
     return resource->texture;
   }
-  const std::shared_ptr< sampler_pool > &get_sampler() const {
+  [[nodiscard]] const std::shared_ptr< sampler_pool > &get_sampler() const {
     return resource->sampler;
   }
-  const std::shared_ptr< scene_graph_resource > &get_resource() const {
+  [[nodiscard]] const std::shared_ptr< scene_graph_resource > &get_resource() const {
     return resource;
   }
   void to_json( nlohmann::json& ) const;

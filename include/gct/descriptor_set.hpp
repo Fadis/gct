@@ -9,43 +9,30 @@
 #include <gct/created_from.hpp>
 #include <gct/descriptor_set_allocate_info.hpp>
 #include <gct/write_descriptor_set.hpp>
+#include <gct/vulkan_handle.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class descriptor_pool_t;
-  class descriptor_set_t : public created_from< descriptor_pool_t > {
+  class descriptor_set_t :
+    public vulkan_handle< vk::DescriptorSet >,
+    public property< descriptor_set_allocate_info_t >,
+    public created_from< descriptor_pool_t > {
   public:
     descriptor_set_t(
       const std::shared_ptr< descriptor_pool_t >&,
       const descriptor_set_allocate_info_t&
     );
-    vk::DescriptorSet &operator*() {
-      return *handle;
-    }
-    const vk::DescriptorSet &operator*() const {
-      return *handle;
-    }
-    vk::DescriptorSet* operator->() {
-      return &handle.get();
-    }
-    const vk::DescriptorSet* operator->() const {
-      return &handle.get();
-    }
-    const descriptor_set_allocate_info_t &get_props() const {
-      return props;
-    }
     void update(
       const std::vector< write_descriptor_set_t >&,
       bool ignore_unused = false
     );
-    bool has( const std::string &name ) const;
-    bool has( std::uint32_t index ) const;
-    const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const;
-    const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const;
-    vk::WriteDescriptorSet operator[]( const std::string & ) const;
-    vk::WriteDescriptorSet operator[]( std::uint32_t ) const;
-  private:
-    descriptor_set_allocate_info_t props;
-    vk::UniqueHandle< vk::DescriptorSet, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
+    [[nodiscard]] bool has( const std::string &name ) const;
+    [[nodiscard]] bool has( std::uint32_t index ) const;
+    [[nodiscard]] const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const;
+    [[nodiscard]] const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const;
+    [[nodiscard]] vk::WriteDescriptorSet operator[]( const std::string & ) const;
+    [[nodiscard]] vk::WriteDescriptorSet operator[]( std::uint32_t ) const;
   };
   void to_json( nlohmann::json&, const descriptor_set_t& );
 }

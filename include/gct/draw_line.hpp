@@ -28,8 +28,8 @@ public:
     const glm::mat4 &matrix
   );
   void reset();
-  const std::shared_ptr< image_view_t > &get_image_view() const;
-  bool empty() const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_view() const;
+  [[nodiscard]] bool empty() const {
     return pushed.empty();
   }
 private:

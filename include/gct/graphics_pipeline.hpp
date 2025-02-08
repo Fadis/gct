@@ -4,10 +4,14 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/pipeline.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class device_t;
-  class graphics_pipeline_t : public pipeline_t, public std::enable_shared_from_this< graphics_pipeline_t > {
+  class graphics_pipeline_t :
+    public property< graphics_pipeline_create_info_t >,
+    public pipeline_t,
+    public std::enable_shared_from_this< graphics_pipeline_t > {
   public:
     graphics_pipeline_t(
       const std::shared_ptr< pipeline_cache_t >&,
@@ -17,9 +21,6 @@ namespace gct {
     graphics_pipeline_t( graphics_pipeline_t&& ) = default;
     graphics_pipeline_t &operator=( const graphics_pipeline_t& ) = delete;
     graphics_pipeline_t &operator=( graphics_pipeline_t&& ) = default;
-    const graphics_pipeline_create_info_t &get_props() const { return props; }
-  private:
-    graphics_pipeline_create_info_t props;
   };
   void to_json( nlohmann::json &root, const graphics_pipeline_t &v );
 }

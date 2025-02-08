@@ -14,8 +14,8 @@ namespace gct {
     const std::shared_ptr< pipeline_cache_t > &cache,
     const ray_tracing_pipeline_create_info_t &create_info
   ) :
-    pipeline_t( cache ),
-    props( create_info ) {
+    property_type( create_info ),
+    pipeline_t( cache ) {
     auto deferred_operation = get_device( *this ).get_deferred_operation();
 #ifdef VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME
     const auto &exts = get_device( *this ).get_activated_extensions();

@@ -14,10 +14,10 @@ namespace gct {
     boost::rational< int > ydpmm = 0;
   };
   class display_properties_t;
-  display_dpi get_dpi(
+  [[nodiscard]] display_dpi get_dpi(
     const display_properties_t &props
   );
-  std::tuple< float, float > pt_to_px( const display_dpi &dpi, float pt );
+  [[nodiscard]] std::tuple< float, float > pt_to_px( const display_dpi &dpi, float pt );
   void to_json( nlohmann::json &dest, const display_dpi &src );
   void from_json( const nlohmann::json &src, display_dpi &dest );
 }

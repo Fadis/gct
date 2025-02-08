@@ -35,7 +35,7 @@
   } \
   template< typename ArgType > \
   decltype(auto) set_ ## name ( ArgType &&v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) > sizeof( void* ) && !std::is_array_v< std::remove_cvref_t< ArgType > > ) >* = nullptr ) { \
-    this -> name = std::move( v ); \
+    this -> name = std::forward< ArgType >( v ); \
     return *this; \
   } \
   template< typename ArgType > \
@@ -45,7 +45,7 @@
   } \
   template< typename ...ArgType > \
   decltype(auto) emplace_ ## name ( ArgType&&... v ) { \
-    this -> name = std::remove_reference_t< std::remove_cv_t< decltype( this-> name ) > >( std::move( v )... ); \
+    this -> name = std::remove_reference_t< std::remove_cv_t< decltype( this-> name ) > >( std::forward< ArgType >( v )... ); \
     return *this; \
   }
 #endif

@@ -28,7 +28,7 @@ namespace gct {
     descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     descriptor_set_allocate_info_t &add_layout( const std::shared_ptr< descriptor_set_layout_t >&, std::uint32_t );
     descriptor_set_allocate_info_t &clear_layout();
-    const std::vector< std::shared_ptr< descriptor_set_layout_t > > &get_layout() const { return layout; }
+    [[nodiscard]] const std::vector< std::shared_ptr< descriptor_set_layout_t > > &get_layout() const { return layout; }
   };
   void to_json( nlohmann::json &root, const descriptor_set_allocate_info_t &v );
   void from_json( const nlohmann::json &root, descriptor_set_allocate_info_t &v );

@@ -4,8 +4,8 @@
 #include <gct/spirv_reflect.h>
 
 namespace gct {
-  vk::ShaderStageFlagBits spv2vk( SpvReflectShaderStageFlagBits v );
-  vk::DescriptorType spv2vk( SpvReflectDescriptorType v );
+  [[nodiscard]] vk::ShaderStageFlagBits spv2vk( SpvReflectShaderStageFlagBits v );
+  [[nodiscard]] vk::DescriptorType spv2vk( SpvReflectDescriptorType v );
 }
 
 #endif

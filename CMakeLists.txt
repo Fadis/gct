@@ -65,6 +65,14 @@ set(CMAKE_C_FLAGS_RELEASE "-march=native -O2 ${ADDITIONAL_COMPILER_FLAGS}")
 #if you don't want the full compiler output, remove the following line
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
+option( ENABLE_CLANG_TIDY "use clang tidy" OFF )
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY NAMES "clang-tidy" REQUIRED)
+  set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY} -checks=-*,clang-analyzer-*,boost-*,-boost-use-ranges,bugprone-*,cert-*,concurrency-*,cppcoreguidelines-*,-cppcoreguidelines-special-member-functions,-cppcoreguidelines-macro-usage,-cppcoreguidelines-owning-memory,modernize-*,-modernize-use-trailing-return-type,portability-* -header-filter=${CMAKE_SOURCE_DIR}/include)
+else()
+  unset(CMAKE_CXX_CLANG_TIDY)
+endif()
+
 find_package(Threads REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
 find_package(Boost 1.68.0 COMPONENTS program_options context system REQUIRED )

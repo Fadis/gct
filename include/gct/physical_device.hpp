@@ -30,22 +30,22 @@ namespace gct {
       const std::vector< const char* > &device_layers,
       const std::vector< const char* > &device_ext
     );
-    vk::PhysicalDevice &operator*() { return handle; } 
-    const vk::PhysicalDevice &operator*() const { return handle; } 
-    vk::PhysicalDevice *operator->() { return &handle; } 
-    const vk::PhysicalDevice *operator->() const { return &handle; }
-    const physical_device_properties_t &get_props() const { return props; }
-    const physical_device_features_t &get_features() const { return features; }
-    physical_device_features_t &get_features() { return features; }
-    physical_device_t with_extensions(
+    [[nodiscard]] vk::PhysicalDevice &operator*() { return handle; } 
+    [[nodiscard]] const vk::PhysicalDevice &operator*() const { return handle; } 
+    [[nodiscard]] vk::PhysicalDevice *operator->() { return &handle; } 
+    [[nodiscard]] const vk::PhysicalDevice *operator->() const { return &handle; }
+    [[nodiscard]] const physical_device_properties_t &get_props() const { return props; }
+    [[nodiscard]] const physical_device_features_t &get_features() const { return features; }
+    [[nodiscard]] physical_device_features_t &get_features() { return features; }
+    [[nodiscard]] physical_device_t with_extensions(
       const std::vector< const char* > &exts
     ) const;
-    physical_device_t with_features( const physical_device_features_t& ) const;
-    const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
+    [[nodiscard]] physical_device_t with_features( const physical_device_features_t& ) const;
+    [[nodiscard]] const std::unordered_set< vk::Format > &get_vertex_buffer_formats() const {
       return vertex_buffer_formats;
     }
 #if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
-    std::shared_ptr< surface_t > get_surface(
+    [[nodiscard]] std::shared_ptr< surface_t > get_surface(
       const display_surface_create_info_t &
     );
 #endif
@@ -65,16 +65,16 @@ namespace gct {
   class device_create_info_t;
   struct device_group_t {
   public:
-    device_group_t with_extensions(
+    [[nodiscard]] device_group_t with_extensions(
       const std::vector< const char* > &exts
     ) const;
-    device_group_t with_features( const physical_device_features_t& ) const;
+    [[nodiscard]] device_group_t with_features( const physical_device_features_t& ) const;
     std::shared_ptr< device_t > create_device(
       const std::vector< queue_requirement_t > &queue_requirements,
       const device_create_info_t &create_info
     );
     physical_devices_t devices;
-    bool subset_allocation;
+    bool subset_allocation = false;
   };
   using device_groups_t =
     std::vector< device_group_t >;

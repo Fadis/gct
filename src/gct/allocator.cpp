@@ -16,7 +16,8 @@ namespace gct {
     const std::shared_ptr< device_t > &device,
     const VmaAllocatorCreateInfo &create_info
   ) :
-    created_from< device_t >( device ), props( create_info ) {
+    property_type( create_info ),
+    created_from< device_t >( device ) {
     props.instance = VkInstance( **device->get_factory() );
     props.physicalDevice = VkPhysicalDevice( **device->get_physical_device_group().devices[ 0 ] );
     props.device = VkDevice( **device );

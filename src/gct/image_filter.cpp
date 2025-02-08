@@ -17,7 +17,7 @@ namespace gct {
   image_filter::image_filter_impl::image_filter_impl(
     const image_filter_create_info &ci
   ) :
-    props( ci ) {
+    property_type( ci ) {
     std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline( ci.shader );
 
     props.reusable = true;
@@ -65,7 +65,7 @@ namespace gct {
     const std::shared_ptr< image_filter::image_filter_impl > &prev_,
     const image_filter_create_info &ci
   ) :
-    props( ci ),
+    property_type( ci ),
     prev( prev_ ) {
     props.allocator = prev_->props.allocator;
     props.descriptor_pool = prev_->props.descriptor_pool;

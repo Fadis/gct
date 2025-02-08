@@ -6,7 +6,7 @@
 
 namespace gct {
 
-std::array< float, 4u > html_color( std::uint32_t v );
+[[nodiscard]] std::array< float, 4u > html_color( std::uint32_t v );
 
 }
 #endif

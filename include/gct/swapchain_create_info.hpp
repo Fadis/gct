@@ -25,7 +25,7 @@ namespace gct {
 private:
     std::shared_ptr< surface_t > surface;
 public:
-    const std::shared_ptr< surface_t > &get_surface() const { return surface; }
+    [[nodiscard]] const std::shared_ptr< surface_t > &get_surface() const { return surface; }
 
     LIBGCT_EXTENSION_REBUILD_CHAIN_DEF
     LIBGCT_BASIC_SETTER( vk::SwapchainCreateInfoKHR )

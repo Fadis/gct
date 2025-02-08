@@ -104,12 +104,12 @@ namespace gct {
       const glm::vec3 &center_,
       float scale_
     );
-    const glm::vec3 &get_camera_pos() const { return camera_pos; }
-    const glm::mat4 &get_lookat() const { return lookat; }
+    [[nodiscard]] const glm::vec3 &get_camera_pos() const { return camera_pos; }
+    [[nodiscard]] const glm::mat4 &get_lookat() const { return lookat; }
     void set_camera_pos( const glm::vec3 &v );
     void to_json( nlohmann::json& ) const;
     void from_json( const nlohmann::json& );
-    bool camera_moved() const { return camera_pos_changed; }
+    [[nodiscard]] bool camera_moved() const { return camera_pos_changed; }
     void update(
       const std::unordered_set< int >&
     );
@@ -142,10 +142,10 @@ namespace gct {
     ); 
     void operator()( glfw_window&, int key, int scancode, int action, int mods );
     void operator++();
-    const glm::vec3 &get_camera_pos() const;
-    const glm::vec3 &get_light_pos() const { return light_pos; }
-    float get_light_energy() const { return light_energy; }
-    const glm::mat4 &get_lookat() const;
+    [[nodiscard]] const glm::vec3 &get_camera_pos() const;
+    [[nodiscard]] const glm::vec3 &get_light_pos() const { return light_pos; }
+    [[nodiscard]] float get_light_energy() const { return light_energy; }
+    [[nodiscard]] const glm::mat4 &get_lookat() const;
     void set_camera_pos( const glm::vec3 &v );
     void set_light_pos( const glm::vec3 &v ) {
       light_pos = v;
@@ -162,19 +162,19 @@ namespace gct {
     void to_json( nlohmann::json& );
     void from_json( const nlohmann::json& );
     void save( const std::string &filename_ );
-    bool light_moved() const { return light_pos_changed; }
-    bool camera_moved() const;
+    [[nodiscard]] bool light_moved() const { return light_pos_changed; }
+    [[nodiscard]] bool camera_moved() const;
     void reset_flags();
-    const std::vector< glfw_walk_camera > get_camera() const {
+    [[nodiscard]] const std::vector< glfw_walk_camera > get_camera() const {
       return camera;
     }
-    std::uint32_t get_current_camera() const {
+    [[nodiscard]] std::uint32_t get_current_camera() const {
       return current_camera;
     }
-    bool get_grid() const {
+    [[nodiscard]] bool get_grid() const {
       return grid;
     }
-    bool get_grid_changed() const {
+    [[nodiscard]] bool get_grid_changed() const {
       return grid_changed;
     }
   private:

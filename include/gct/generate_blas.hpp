@@ -10,7 +10,7 @@ namespace gct {
   class allocator_t;
   class pipeline_vertex_input_state_create_info_t;
   namespace gltf {
-    std::tuple<
+    [[nodiscard]] std::tuple<
       std::vector< std::shared_ptr< acceleration_structure_t > >,
       std::vector< std::shared_ptr< gct::buffer_t > >,
       std::vector< std::uint32_t >
@@ -21,7 +21,7 @@ namespace gct {
       const std::shared_ptr< allocator_t > &allocator
     );
 
-    std::shared_ptr< acceleration_structure_t >
+    [[nodiscard]] std::shared_ptr< acceleration_structure_t >
     generate_blas(
       const std::shared_ptr< buffer_t > &vertex,
       std::uint32_t vertex_offset,

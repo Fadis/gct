@@ -10,7 +10,7 @@
 #include <gct/vertex_attributes.hpp>
 
 namespace gct {
-std::tuple<
+[[nodiscard]] std::tuple<
   std::vector< std::uint8_t >,
   std::uint32_t,
   aabb

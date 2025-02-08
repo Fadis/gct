@@ -17,7 +17,8 @@ namespace gct {
 
   instance_t::instance_t(
     const instance_create_info_t &create_info
-  ) : props( create_info ) {
+  ) :
+    property_type( create_info ) {
     props.rebuild_chain();
     vulkanhpp::init();
     thread_pool::init();
@@ -50,6 +51,7 @@ namespace gct {
   ) {
     if( activated_extensions.find( VK_EXT_DEBUG_UTILS_EXTENSION_NAME ) != activated_extensions.end() ) {
       debug_callback = cb;
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
       debug_message = handle->createDebugUtilsMessengerEXTUnique(
         vk::DebugUtilsMessengerCreateInfoEXT()
           .setMessageSeverity( severity )
@@ -57,6 +59,7 @@ namespace gct {
           .setPfnUserCallback( instance_t::call_debug_callback )
           .setPUserData( reinterpret_cast< void* >( this ) )
       );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
     else {
       throw exception::runtime_error( "instance_t::set_debug_callback : Required instance extension VK_EXT_debug_utils is not enabled.", __FILE__, __LINE__ );
@@ -68,7 +71,9 @@ namespace gct {
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData
   ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     const auto instance = reinterpret_cast< instance_t* >( pUserData );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     if( !instance ) {
       std::cerr << "instance_t::call_debug_callback : invalid user data." << std::endl;
       std::abort();
@@ -78,11 +83,13 @@ namespace gct {
       std::abort();
     }
     if( instance->debug_callback ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
       instance->debug_callback(
         vk::DebugUtilsMessageSeverityFlagBitsEXT( messageSeverity ),
         vk::DebugUtilsMessageTypeFlagsEXT( messageTypes ),
         *reinterpret_cast< const vk::DebugUtilsMessengerCallbackDataEXT* >( pCallbackData )
       );
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
     return VK_FALSE;
   }
@@ -115,7 +122,9 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroups() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index)
           auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
+// NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index)
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );
@@ -129,7 +138,9 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroups() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index)
           auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
+// NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index)
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );
@@ -144,7 +155,9 @@ namespace gct {
       for( auto &group: handle->enumeratePhysicalDeviceGroupsKHR() ) {
         device_group_t group_;
         for( std::uint32_t i = 0u; i != group.physicalDeviceCount; ++i ) {
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index)
           auto detailed = devices.find( VkPhysicalDevice( group.physicalDevices[ i ] ) );
+// NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index)
           if( detailed == devices.end() )
             throw -1;
           group_.devices.push_back( detailed->second );

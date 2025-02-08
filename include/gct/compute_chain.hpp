@@ -29,13 +29,13 @@ namespace gct {
       const std::shared_ptr< allocator_t >&,
       const std::filesystem::path &
     );
-    const std::unordered_map< std::string, descriptor_buffer_info_t > &get_buffer() const {
+    [[nodiscard]] const std::unordered_map< std::string, descriptor_buffer_info_t > &get_buffer() const {
       return buffer;
     }
-    const std::unordered_map< std::string, descriptor_image_info_t > &get_image() const {
+    [[nodiscard]] const std::unordered_map< std::string, descriptor_image_info_t > &get_image() const {
       return image;
     }
-    const nlohmann::json &get_config() const {
+    [[nodiscard]] const nlohmann::json &get_config() const {
       return config;
     }
     void load( command_buffer_recorder_t& ) const;

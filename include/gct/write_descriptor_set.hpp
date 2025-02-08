@@ -143,7 +143,7 @@ namespace gct {
       name = n;
       return *this;
     }
-    const std::string &get_name() const {
+    [[nodiscard]] const std::string &get_name() const {
       return name;
     }
     write_descriptor_set_t &set_id( std::uint32_t i ) {
@@ -154,10 +154,10 @@ namespace gct {
       index = i;
       return *this;
     }
-    std::uint32_t get_index() const {
+    [[nodiscard]] std::uint32_t get_index() const {
       return index;
     }
-    std::optional< std::uint32_t > get_id() const {
+    [[nodiscard]] std::optional< std::uint32_t > get_id() const {
       return id;
     }
   };

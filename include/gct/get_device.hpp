@@ -38,7 +38,7 @@ namespace gct {
 #endif
       >
     > {
-      decltype(auto) operator()( T &v ) const {
+      [[nodiscard]] decltype(auto) operator()( T &v ) const {
         return get_device< decltype( *std::declval< T >().get_factory() ) >()( *v.get_factory() );
       }
     };
@@ -55,7 +55,7 @@ namespace gct {
 #endif
       >
     > {
-      decltype(auto) operator()( T &v ) const {
+      [[nodiscard]] decltype(auto) operator()( T &v ) const {
         return get_device< decltype( *std::declval< T >().get_device() ) >()( *v.get_device() );
       }
     };
@@ -70,13 +70,13 @@ namespace gct {
 #endif
       >
     > {
-      decltype(auto) operator()( T &v ) const {
+      [[nodiscard]] decltype(auto) operator()( T &v ) const {
         return v;
       }
     };
   }
   template< typename T >
-  decltype(auto) get_device( T &v ) {
+  [[nodiscard]] decltype(auto) get_device( T &v ) {
     return detail::get_device< T >()( v );
   }
 }

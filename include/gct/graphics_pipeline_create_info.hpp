@@ -110,7 +110,7 @@ namespace gct {
     graphics_pipeline_create_info_t &set_viewport( const pipeline_viewport_state_create_info_t& );
     graphics_pipeline_create_info_t &set_viewport();
     graphics_pipeline_create_info_t &clear_viewport();
-    const pipeline_viewport_state_create_info_t &get_viewport() const;
+    [[nodiscard]] const pipeline_viewport_state_create_info_t &get_viewport() const;
     graphics_pipeline_create_info_t &set_rasterization( const pipeline_rasterization_state_create_info_t& );
     graphics_pipeline_create_info_t &set_rasterization();
     graphics_pipeline_create_info_t &clear_rasterization();
@@ -122,16 +122,16 @@ namespace gct {
     graphics_pipeline_create_info_t &clear_depth_stencil();
     graphics_pipeline_create_info_t &set_color_blend( const pipeline_color_blend_state_create_info_t& );
     graphics_pipeline_create_info_t &set_color_blend();
-    const pipeline_color_blend_state_create_info_t &get_color_blend() const;
+    [[nodiscard]] const pipeline_color_blend_state_create_info_t &get_color_blend() const;
     graphics_pipeline_create_info_t &clear_color_blend();
     graphics_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
     graphics_pipeline_create_info_t &set_dynamic();
     graphics_pipeline_create_info_t &clear_dynamic();
-    const pipeline_dynamic_state_create_info_t &get_dynamic() const;
+    [[nodiscard]] const pipeline_dynamic_state_create_info_t &get_dynamic() const;
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< pipeline_layout_t >& );
     graphics_pipeline_create_info_t &set_layout( const std::shared_ptr< descriptor_set_layout_t >& );
     graphics_pipeline_create_info_t &clear_layout();
-    const std::shared_ptr< pipeline_layout_t > &get_layout() const {
+    [[nodiscard]] const std::shared_ptr< pipeline_layout_t > &get_layout() const {
       return layout;
     }
     graphics_pipeline_create_info_t &set_render_pass( const std::shared_ptr< render_pass_t >&, std::uint32_t );

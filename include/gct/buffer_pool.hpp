@@ -63,30 +63,30 @@ public:
   void clear();
   void get( const buffer_descriptor&, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) >& );
   bool is_valid( const buffer_descriptor& ) const;
-  const buffer_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] const buffer_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
-  std::shared_ptr< buffer_t > get_buffer() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_buffer() const {
     return state->buffer;
   }
-  spv_member_pointer get_member_pointer() const;
-  std::uint32_t size() const;
+  [[nodiscard]] spv_member_pointer get_member_pointer() const;
+  [[nodiscard]] std::uint32_t size() const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const buffer_pool_create_info& );
-    buffer_index_t allocate_index();
+    [[nodiscard]] buffer_index_t allocate_index();
     void release_index( buffer_index_t );
-    buffer_descriptor allocate( const std::uint8_t *begin, const std::uint8_t *end ); // standalone
-    buffer_descriptor allocate();
+    [[nodiscard]] buffer_descriptor allocate( const std::uint8_t *begin, const std::uint8_t *end ); // standalone
+    [[nodiscard]] buffer_descriptor allocate();
     void release( buffer_index_t );
     void set( const buffer_descriptor&, const std::uint8_t *begin, const std::uint8_t *end );
     void clear( const buffer_descriptor& );
     void clear();
     void get( const buffer_descriptor&, const std::function< void( vk::Result, std::vector< std::uint8_t >&& ) >& );
-    bool is_valid( const buffer_descriptor& ) const;
+    [[nodiscard]] bool is_valid( const buffer_descriptor& ) const;
     void flush( command_buffer_recorder_t& );
-    std::uint32_t size() const;
-    std::vector< request_range > build_update_request_range();
+    [[nodiscard]] std::uint32_t size() const;
+    [[nodiscard]] std::vector< request_range > build_update_request_range();
     buffer_pool_create_info props;
     std::vector< buffer_state_type > buffer_state;
     linear_allocator index_allocator;

@@ -18,14 +18,14 @@
 
 namespace gct {
 template< typename T, typename Enable = void >
-struct numeryc_type_match {
-  bool operator()( const numeric_type_t& ) const {
+struct numeric_type_match {
+  [[nodiscard]] bool operator()( const numeric_type_t& ) const {
     return false;
   };
 };
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< std::is_same_v< std::remove_cvref_t< T >, bool > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< std::is_same_v< std::remove_cvref_t< T >, bool > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     return
       v.component == numeric_component_type_t::bool_ &&
       v.composite == numeric_composite_type_t::scalar &&
@@ -33,8 +33,8 @@ struct numeryc_type_match< T, std::enable_if_t< std::is_same_v< std::remove_cvre
   }
 };
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_cvref_t< T > > && !std::is_same_v< std::remove_cvref_t< T >, bool > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_cvref_t< T > > && !std::is_same_v< std::remove_cvref_t< T >, bool > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     return
       v.component == numeric_component_type_t::int_ &&
       v.composite == numeric_composite_type_t::scalar &&
@@ -44,8 +44,8 @@ struct numeryc_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_
 };
 
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< std::is_floating_point_v< std::remove_cvref_t< T > > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< std::is_floating_point_v< std::remove_cvref_t< T > > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     return
       v.component == numeric_component_type_t::float_ &&
       v.composite == numeric_composite_type_t::scalar &&
@@ -54,8 +54,8 @@ struct numeryc_type_match< T, std::enable_if_t< std::is_floating_point_v< std::r
 };
 
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< std::is_void_v< std::remove_cvref_t< T > > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< std::is_void_v< std::remove_cvref_t< T > > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     return
       v.component == numeric_component_type_t::void_ &&
       v.composite == numeric_composite_type_t::scalar;
@@ -121,8 +121,8 @@ using glm_mat_component_type_t = typename glm_mat_component_type< T >::type;
 }
 
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< detail::is_glm_vec_v< std::remove_cvref_t< T > > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< detail::is_glm_vec_v< std::remove_cvref_t< T > > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     if( v.composite != numeric_composite_type_t::vector ) {
       return false;
     }
@@ -145,8 +145,8 @@ struct numeryc_type_match< T, std::enable_if_t< detail::is_glm_vec_v< std::remov
 };
 
 template< typename T >
-struct numeryc_type_match< T, std::enable_if_t< detail::is_glm_mat_v< std::remove_cvref_t< T > > > > {
-  bool operator()( const numeric_type_t &v ) const {
+struct numeric_type_match< T, std::enable_if_t< detail::is_glm_mat_v< std::remove_cvref_t< T > > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     if( v.composite != numeric_composite_type_t::matrix ) {
       return false;
     }

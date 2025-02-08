@@ -11,7 +11,7 @@ namespace gct {
 rtao::rtao(
   const rtao_create_info &ci
 ) :
-  props( ci ),
+  property_type( ci ),
   width(
     ci.output->get_factory()->get_props().get_basic().extent.width
   ),

@@ -8,8 +8,8 @@ namespace gct {
     const std::shared_ptr< device_t > &device,
     const render_pass_create_info2_t &create_info
   ) :
-    created_from< device_t >( device ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< device_t >( device ) {
     props.rebuild_chain();
 #ifdef VK_VERSION_1_2
     handle = (*device)->createRenderPass2Unique(

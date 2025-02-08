@@ -38,11 +38,11 @@ namespace gct {
     descriptor_set_layout_create_info_t &add_binding( const vk::DescriptorSetLayoutBinding &v, bool = false );
     descriptor_set_layout_create_info_t &add_binding( const shader_module_reflection_t &v, std::uint32_t set_id = 0u );
     descriptor_set_layout_create_info_t &clear_binding();
-    const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const { return binding; }
-    const std::vector< bool > &get_indexable() const { return indexable; }
-    const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const { return name_to_binding; }
+    [[nodiscard]] const std::vector< vk::DescriptorSetLayoutBinding > &get_binding() const { return binding; }
+    [[nodiscard]] const std::vector< bool > &get_indexable() const { return indexable; }
+    [[nodiscard]] const std::unordered_map< std::string, std::uint32_t > &get_name_to_binding() const { return name_to_binding; }
     descriptor_set_layout_create_info_t &set_indexing( bool );
-    bool get_indexing() const { return indexing; }
+    [[nodiscard]] bool get_indexing() const { return indexing; }
   };
   void to_json( nlohmann::json &root, const descriptor_set_layout_create_info_t &v );
   void from_json( const nlohmann::json &root, descriptor_set_layout_create_info_t &v );

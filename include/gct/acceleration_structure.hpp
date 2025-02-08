@@ -6,6 +6,8 @@
 #include <gct/acceleration_structure_create_info.hpp>
 #include <gct/created_from.hpp>
 #include <gct/device_address.hpp>
+#include <gct/vulkan_handle.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class device_t;
@@ -13,25 +15,21 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
   class acceleration_structure_device_address_info_t;
 #endif
-  class acceleration_structure_t : public created_from< buffer_t >, public std::enable_shared_from_this< acceleration_structure_t > {
+  class acceleration_structure_t :
+    public vulkan_handle< vk::AccelerationStructureKHR >,
+    public property< acceleration_structure_create_info_t >,
+    public created_from< buffer_t >,
+    public std::enable_shared_from_this< acceleration_structure_t > {
   public:
     acceleration_structure_t(
       const std::shared_ptr< buffer_t >&,
       const acceleration_structure_create_info_t&
     );
     virtual ~acceleration_structure_t() {}
-    const acceleration_structure_create_info_t &get_props() const { return props; }
-    virtual vk::AccelerationStructureKHR &operator*() { return *handle; }
-    virtual const vk::AccelerationStructureKHR &operator*() const { return *handle; }
-    virtual vk::AccelerationStructureKHR *operator->() { return &handle.get(); }
-    virtual const vk::AccelerationStructureKHR *operator->() const { return &handle.get(); }
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-    device_address_t get_address( const acceleration_structure_device_address_info_t& );
-    device_address_t get_address();
+    [[nodiscard]] device_address_t get_address( const acceleration_structure_device_address_info_t& );
+    [[nodiscard]] device_address_t get_address();
 #endif
-  private:
-    acceleration_structure_create_info_t props;
-    vk::UniqueHandle< vk::AccelerationStructureKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
   void to_json( nlohmann::json &root, const acceleration_structure_t &v );
 }

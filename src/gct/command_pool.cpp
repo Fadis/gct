@@ -8,14 +8,13 @@ namespace gct {
     const activated_queue_family_count_t &f
   ) : 
     created_from< device_t >( device ),
-    handle(
-      (*get_factory())->createCommandPoolUnique(
-        vk::CommandPoolCreateInfo()
-          .setQueueFamilyIndex( f.available_queue_family_index )
-          .setFlags( f.command_pool_create_flags )
-      )
-    ),
-    queue_index( f ) {}
+    queue_index( f ) {
+    handle = (*get_factory())->createCommandPoolUnique(
+      vk::CommandPoolCreateInfo()
+        .setQueueFamilyIndex( f.available_queue_family_index )
+        .setFlags( f.command_pool_create_flags )
+    );
+  }
   std::shared_ptr< command_buffer_t > command_pool_t::allocate(
     const command_buffer_allocate_info_t &create_info
   ) {

@@ -3,11 +3,13 @@
 #include <memory>
 #include <gct/compute.hpp>
 #include <gct/rtao_create_info.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class image_view_t;
   class command_buffer_recorder_t;
-  class rtao {
+  class rtao :
+    public property< rtao_create_info > {
   public:
     rtao(
       const rtao_create_info &ci
@@ -15,14 +17,10 @@ namespace gct {
     void operator()(
       command_buffer_recorder_t &rec
     ) const;
-    const std::shared_ptr< image_view_t > &get_output() const {
+    [[nodiscard]] const std::shared_ptr< image_view_t > &get_output() const {
       return props.output;
     }
-    const rtao_create_info &get_props() const {
-      return props;
-    }
   private:
-    rtao_create_info props;
     unsigned int width;
     unsigned int height;
     std::shared_ptr< image_view_t > previous_ao;

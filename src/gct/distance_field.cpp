@@ -15,7 +15,7 @@ namespace gct {
 distance_field::distance_field(
   const distance_field_create_info &ci
 ) :
-  props( ci ),
+  property_type( ci ),
   working_image(
     ci.allocator,
     ci.size_factor,

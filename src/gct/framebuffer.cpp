@@ -12,8 +12,8 @@ namespace gct {
     const std::shared_ptr< render_pass_t > &render_pass,
     const framebuffer_create_info_t &create_info
   ) :
-    created_from< device_t >( render_pass->get_factory() ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< device_t >( render_pass->get_factory() ) {
     auto basic = props.get_basic();
     basic
       .setWidth( props.get_width() )
@@ -29,8 +29,8 @@ namespace gct {
     const std::shared_ptr< render_pass2_t > &render_pass,
     const framebuffer_create_info_t &create_info
   ) :
-    created_from< device_t >( render_pass->get_factory() ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< device_t >( render_pass->get_factory() ) {
     auto basic = props.get_basic();
     basic
       .setWidth( props.get_width() )

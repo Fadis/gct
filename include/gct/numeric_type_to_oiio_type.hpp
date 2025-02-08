@@ -4,7 +4,7 @@
 #include <OpenImageIO/imageio.h>
 
 namespace gct {
-  OIIO_NAMESPACE :: TypeDesc numeric_type_to_oiio_type(
+  [[nodiscard]] OIIO_NAMESPACE :: TypeDesc numeric_type_to_oiio_type(
     const numeric_type_t &nt
   );
 }

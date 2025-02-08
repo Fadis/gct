@@ -23,10 +23,10 @@ public:
   const T &operator*() const {
     return *value;
   }
-  weak_type get_weak() const {
+  [[nodiscard]] weak_type get_weak() const {
     return value;
   }
-  operator bool() const {
+  [[nodiscard]] operator bool() const {
     return bool( value );
   }
 private:

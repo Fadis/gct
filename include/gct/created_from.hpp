@@ -8,7 +8,7 @@ namespace gct {
   struct created_from {
   public:
     created_from( const std::shared_ptr< T > &v_ ) : v( v_ ) {}
-    const std::shared_ptr< T > &get_factory() const {
+    [[nodiscard]] const std::shared_ptr< T > &get_factory() const {
       return v;
     }
   private:

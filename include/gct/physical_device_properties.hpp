@@ -42,7 +42,7 @@ public:
       vk::PhysicalDevice &pdev,
       const std::vector< const char* > &layers
     );
-    std::uint32_t get_api_version() const { return api_version; }
+    [[nodiscard]] std::uint32_t get_api_version() const { return api_version; }
 private:
     std::uint32_t api_version;
     extension_map_t available_extensions;
@@ -54,31 +54,31 @@ private:
     std::vector< queue_family_properties_t > queue_family;
     deep_copy_unique_ptr< physical_device_memory_properties_t > memory_props;
 public:
-    const extension_map_t &get_available_extensions() const {
+    [[nodiscard]] const extension_map_t &get_available_extensions() const {
       return available_extensions;
     }
-    const extension_map_t &get_activated_extensions() const {
+    [[nodiscard]] const extension_map_t &get_activated_extensions() const {
       return activated_extensions;
     }
-    const std::vector< const char* > &get_activated_extension_names() const {
+    [[nodiscard]] const std::vector< const char* > &get_activated_extension_names() const {
       return activated_extension_names;
     }
-    const layer_map_t &get_available_layers() const {
+    [[nodiscard]] const layer_map_t &get_available_layers() const {
       return available_layers;
     }
-    const layer_map_t &get_activated_layers() const {
+    [[nodiscard]] const layer_map_t &get_activated_layers() const {
       return activated_layers;
     }
-    const std::vector< const char* > &get_activated_layer_names() const {
+    [[nodiscard]] const std::vector< const char* > &get_activated_layer_names() const {
       return activated_layer_names;
     }
-    const std::vector< queue_family_properties_t > &get_queue_family() const {
+    [[nodiscard]] const std::vector< queue_family_properties_t > &get_queue_family() const {
       return queue_family;
     }
     bool has_memory_props() const {
       return memory_props.get();
     }
-    const physical_device_memory_properties_t &get_memory_props() const {
+    [[nodiscard]] const physical_device_memory_properties_t &get_memory_props() const {
       return *memory_props;
     }
 
@@ -303,7 +303,7 @@ public:
 private:
     std::vector< display_properties_t > display;
 public:
-    const std::vector< display_properties_t > &get_display() const {
+    [[nodiscard]] const std::vector< display_properties_t > &get_display() const {
       return display;
     }
 #endif

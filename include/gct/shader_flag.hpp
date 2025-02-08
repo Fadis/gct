@@ -25,7 +25,7 @@ namespace gct {
     special = ( 1 << 14 )
   };
   using shaders_t = std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > >;
-  std::optional< shader_flag_t > get_shader_flag( const std::filesystem::path &path );
+  [[nodiscard]] std::optional< shader_flag_t > get_shader_flag( const std::filesystem::path &path );
 }
 
 #endif

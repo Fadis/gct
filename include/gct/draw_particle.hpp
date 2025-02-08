@@ -24,13 +24,13 @@ public:
     unsigned int,
     const particle_buffer&
   ) const;
-  const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &get_vamap() const {
+  [[nodiscard]] const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > &get_vamap() const {
     return vamap;
   }
-  std::uint32_t get_stride() const {
+  [[nodiscard]] std::uint32_t get_stride() const {
     return stride;
   }
-  const std::shared_ptr< graphics > get_graphics() const {
+  [[nodiscard]] const std::shared_ptr< graphics > get_graphics() const {
     return draw;
   }
 private:

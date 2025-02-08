@@ -276,11 +276,11 @@ public:
   void reset();
   void add_rectangle( const vk::Rect2D &rect, const std::array< float, 4u > &color, std::uint16_t depth, bool fill, std::uint32_t border_width, std::uint16_t texid, std::uint16_t semid );
   void add_glyph( std::uint32_t font_id, std::uint32_t glyph_id, float x, float y, float size, const std::array< float, 4u > &color, std::uint16_t depth, std::uint16_t texid, std::uint16_t semid );
-  const std::shared_ptr< image_t > &get_color();
-  const std::shared_ptr< image_t > &get_semantic();
-  const std::shared_ptr< render_pass_t > &get_render_pass();
+  [[nodiscard]] const std::shared_ptr< image_t > &get_color();
+  [[nodiscard]] const std::shared_ptr< image_t > &get_semantic();
+  [[nodiscard]] const std::shared_ptr< render_pass_t > &get_render_pass();
   void operator()( command_buffer_recorder_t &recorder );
-  bool is_modified() {
+  [[nodiscard]] bool is_modified() {
     return modified;
   }
   void set_modified() {

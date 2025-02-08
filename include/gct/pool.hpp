@@ -32,15 +32,15 @@ private:
 public:
   pool( std::uint32_t size ) : state( new state_type( size ) ) {
   }
-  descriptor allocate( const T &v ) {
+  [[nodiscard]] descriptor allocate( const T &v ) {
     std::lock_guard< std::mutex > lock( state->guard );
     return state->allocate( v );
   }
-  T get( const descriptor &desc ) const {
+  [[nodiscard]] T get( const descriptor &desc ) const {
     std::lock_guard< std::mutex > lock( state->guard );
     return state->get( desc );
   }
-  std::vector< descriptor > get_descriptor() const {
+  [[nodiscard]] std::vector< descriptor > get_descriptor() const {
     std::lock_guard< std::mutex > lock( state->guard );
     std::vector< descriptor > desc;
     for( const auto &d : state->data_state ) {
@@ -50,7 +50,7 @@ public:
     }
     return desc;
   }
-  std::vector< T > get_value() const {
+  [[nodiscard]] std::vector< T > get_value() const {
     std::lock_guard< std::mutex > lock( state->guard );
     std::vector< T > v;
     for( const auto &d : state->data_state ) {
@@ -65,7 +65,7 @@ private:
     state_type( std::uint32_t size ) :
       index_allocator( linear_allocator_create_info().set_max( size ) ) {
     }
-    index_t allocate_index() {
+    [[nodiscard]] index_t allocate_index() {
       const auto index = index_allocator.allocate();
       if( index >= data_state.size() ) {
         data_state.resize( index + 1u );
@@ -79,7 +79,7 @@ private:
       data_state[ index ].valid = false;
       index_allocator.release( index );
     }
-    descriptor allocate( const T &d ) {
+    [[nodiscard]] descriptor allocate( const T &d ) {
       const index_t index = allocate_index();
       data_state[ index ]
         .set_valid( true )
@@ -97,7 +97,7 @@ private:
         .set_self( desc.get_weak() );
       return desc;
     }
-    T get( const descriptor &desc ) {
+    [[nodiscard]] T get( const descriptor &desc ) {
       if( data_state.size() <= *desc || !data_state[ *desc ].valid ) {
         throw exception::invalid_argument( "pool::get : No such sampler" );
       }

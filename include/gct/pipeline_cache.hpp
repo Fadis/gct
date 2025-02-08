@@ -12,6 +12,8 @@
 #include <gct/created_from.hpp>
 #include <gct/pipeline_cache_create_info.hpp>
 #include <gct/specialization_map.hpp>
+#include <gct/vulkan_handle.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class device_t;
@@ -25,31 +27,20 @@ namespace gct {
   class deferred_operation_t;
   class ray_tracing_pipeline_create_info_t;
 #endif
-  class pipeline_cache_t : public created_from< device_t >, public std::enable_shared_from_this< pipeline_cache_t > {
+  class pipeline_cache_t :
+    public vulkan_handle< vk::PipelineCache >,
+    public property< pipeline_cache_create_info_t >,
+    public created_from< device_t >,
+    public std::enable_shared_from_this< pipeline_cache_t > {
   public:
     pipeline_cache_t(
       const std::shared_ptr< device_t >&,
       const pipeline_cache_create_info_t&
     );
-    vk::PipelineCache &operator*() {
-      return *handle;
-    }
-    const vk::PipelineCache &operator*() const {
-      return *handle;
-    }
-    vk::PipelineCache* operator->() {
-      return &handle.get();
-    }
-    const vk::PipelineCache* operator->() const {
-      return &handle.get();
-    }
-    const pipeline_cache_create_info_t &get_props() const {
-      return props;
-    }
-    std::shared_ptr< compute_pipeline_t > get_pipeline(
+    [[nodiscard]] std::shared_ptr< compute_pipeline_t > get_pipeline(
       const compute_pipeline_create_info_t&
     );
-    std::shared_ptr< graphics_pipeline_t > get_pipeline(
+    [[nodiscard]] std::shared_ptr< graphics_pipeline_t > get_pipeline(
       const graphics_pipeline_create_info_t&
     );
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
@@ -57,14 +48,14 @@ namespace gct {
       const ray_tracing_pipeline_create_info_t&
     );
 #endif
-    std::pair<
+    [[nodiscard]] std::pair<
       std::shared_ptr< descriptor_set_layout_t >,
       std::shared_ptr< compute_pipeline_t >
     >
     get_pipeline(
       const std::string &path
     );
-    std::pair<
+    [[nodiscard]] std::pair<
       std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
       std::shared_ptr< compute_pipeline_t >
     >
@@ -72,7 +63,7 @@ namespace gct {
       const std::string &path,
       std::vector< std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout
     );
-    std::pair<
+    [[nodiscard]] std::pair<
       std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
       std::shared_ptr< compute_pipeline_t >
     >
@@ -83,9 +74,6 @@ namespace gct {
       const glm::ivec3 &dim
     );
     void dump( const std::filesystem::path &filename ) const;
-  private:
-    pipeline_cache_create_info_t props;
-    vk::UniqueHandle< vk::PipelineCache, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > handle;
   };
   void to_json( nlohmann::json &dest, const pipeline_cache_t &src );
 }

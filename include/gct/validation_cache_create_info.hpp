@@ -20,7 +20,7 @@ namespace gct {
   public:
     validation_cache_create_info_t &load( const std::string& );
     validation_cache_create_info_t &load_from_memory( const std::vector< std::uint8_t >& );
-    const std::vector< std::uint8_t > &get_data() const { return data; }
+    [[nodiscard]] const std::vector< std::uint8_t > &get_data() const { return data; }
   };
   void to_json( nlohmann::json &root, const validation_cache_create_info_t &v );
   void from_json( const nlohmann::json &root, validation_cache_create_info_t &v );

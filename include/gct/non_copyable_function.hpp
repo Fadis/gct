@@ -60,15 +60,14 @@ namespace gct {
        boost::type_erasure::any< concept_ >;
     using function_holder =
        std::pair< function_pointer, type_erased_function >;
-    non_copyable_function() noexcept {}
+    non_copyable_function() noexcept = default;
     non_copyable_function( std::nullptr_t ) noexcept {}
     non_copyable_function( const non_copyable_function& ) = delete;
-    non_copyable_function( non_copyable_function &&src ) noexcept {
-      func = std::move( src.func );
-    }
+    non_copyable_function( non_copyable_function &&src ) noexcept :
+      func( std::move( src.func ) ) {}
     template< typename F >
     non_copyable_function( F &&f ) {
-      set_function( std::move( f ) );
+      set_function( std::forward< F >( f ) );
     }
     non_copyable_function &operator=( const non_copyable_function& ) = delete;
     non_copyable_function &operator=( non_copyable_function &&f ) noexcept {
@@ -80,9 +79,9 @@ namespace gct {
     }
     template< typename F >
     void assign( F&& f ) {
-      set_function( f );
+      set_function( std::forward< F >( f ) );
     }
-    explicit operator bool() const noexcept {
+    [[nodiscard]] explicit operator bool() const noexcept {
       return func.get();
     }
     R operator()( Args... args ) const {
@@ -101,7 +100,7 @@ namespace gct {
       else
         return typeid( void );
     }
-    function_pointer target() const noexcept {
+    [[nodiscard]] function_pointer target() const noexcept {
       if( func )
         return func->first;
       else

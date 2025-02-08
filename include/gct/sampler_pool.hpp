@@ -47,18 +47,18 @@ private:
   using request_range = index_range;
 public:
   sampler_pool( const sampler_pool_create_info & );
-  sampler_descriptor allocate( const sampler_create_info_t& );
-  const sampler_pool_create_info &get_props() const { return state->props; }
-  std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
+  [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
+  [[nodiscard]] const sampler_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
   void operator()();
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const sampler_pool_create_info & );
-    sampler_index_t allocate_index();
+    [[nodiscard]] sampler_index_t allocate_index();
     void release_index( sampler_index_t );
-    sampler_descriptor allocate( const sampler_create_info_t& );
-    std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
+    [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
+    [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
     void release( sampler_index_t );
     void flush();
     sampler_pool_create_info props;

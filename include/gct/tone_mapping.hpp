@@ -6,12 +6,14 @@
 #include <cstdint>
 #include <gct/hysteresis.hpp>
 #include <gct/tone_mapping_create_info.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
 
 class buffer_t;
 class compute;
-class tone_mapping {
+class tone_mapping :
+  public property< tone_mapping_create_info > {
   struct tone_state_t {
     std::uint32_t max;
     float scale;
@@ -28,14 +30,10 @@ public:
     command_buffer_recorder_t &rec,
     unsigned int image_index
   ) const;
-  const std::vector< std::shared_ptr< buffer_t > > &get_buffer() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< buffer_t > > &get_buffer() const {
     return tone;
   }
-  const tone_mapping_create_info &get_props() const {
-    return props;
-  };
 private:
-  tone_mapping_create_info props;
   std::vector< std::shared_ptr< buffer_t > > tone;
   std::vector< std::shared_ptr< buffer_t > > tone_staging;
   std::shared_ptr< compute > calc_tone;

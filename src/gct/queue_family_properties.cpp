@@ -62,7 +62,9 @@ namespace gct {
       ext.find( "VK_NV_device_diagnostic_checkpoints" ) != ext.end() &&
       ext.find( "VK_KHR_synchronization2" ) != ext.end()
     ) {
+// NOLINTBEGIN(modernize-make-unique)
       checkpoint2.reset( new checkpoint2_t() );
+// NOLINTEND(modernize-make-unique)
     }
 #endif
 #ifdef VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME

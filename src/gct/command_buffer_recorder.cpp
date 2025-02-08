@@ -11,8 +11,8 @@ namespace gct {
     const std::shared_ptr< bound_command_buffer_t > &cb,
     const command_buffer_begin_info_t &begin_info
   ) :
+    property_type( begin_info ),
     created_from< bound_command_buffer_t >( cb ),
-    props( begin_info ),
     local_size_is_available( false ) {
     std::fill( local_size.begin(), local_size.end(), 0 );
     props.rebuild_chain();

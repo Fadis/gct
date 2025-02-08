@@ -18,21 +18,21 @@ struct nohc_node_data {
   float poccl = 0.0f;
 };
 
-float nohc_next_cscr(
+[[nodiscard]] float nohc_next_cscr(
   float current_cscr,
   float current_c
 );
-float nohc_pcov(
+[[nodiscard]] float nohc_pcov(
   float cscr,
   float cbb
 );
-unsigned int get_vertex_count(
+[[nodiscard]] unsigned int get_vertex_count(
   const std::vector< resource_pair > &v,
   const instance_list &il
 );
 
 template< typename T >
-float nohc_cbb(
+[[nodiscard]] float nohc_cbb(
   const T &oi,
   const glm::vec3 &eye_pos,
   std::uint32_t width,
@@ -46,7 +46,7 @@ float nohc_cbb(
 }
 
 template< typename T >
-float nohc_rcov(
+[[nodiscard]] float nohc_rcov(
   const T &oi
 ) {
   const float r = get_inner_sphere_radius( oi.get_aabb() );
@@ -55,7 +55,7 @@ float nohc_rcov(
 }
 
 template< typename T >
-float nohc_c(
+[[nodiscard]] float nohc_c(
   const T &oi,
   float current_cbb
 ) {
@@ -63,7 +63,7 @@ float nohc_c(
 }
 
 template< typename T >
-unsigned int get_vertex_count(
+[[nodiscard]] unsigned int get_vertex_count(
   const T &v,
   const instance_list &il
 ) {
@@ -74,7 +74,7 @@ unsigned int get_vertex_count(
 
 
 template< typename T >
-float nohc_tr(
+[[nodiscard]] float nohc_tr(
   const T &oi,
   const instance_list &il,
   const nohc_parameter &p,
@@ -93,7 +93,7 @@ float nohc_tr(
 }
 
 template< typename T >
-float nohc_to(
+[[nodiscard]] float nohc_to(
   const T &oi,
   const instance_list &il,
   const nohc_parameter &p,
@@ -109,7 +109,7 @@ float nohc_to(
 }
 
 template< typename T >
-float nohc_b(
+[[nodiscard]] float nohc_b(
   const T &oi,
   const instance_list &il,
   const nohc_parameter &p,
@@ -127,7 +127,7 @@ float nohc_b(
 }
 
 template< typename T >
-bool nohc(
+[[nodiscard]] bool nohc(
   const T &oi,
   const instance_list &il,
   const nohc_parameter &p,
@@ -143,7 +143,7 @@ bool nohc(
 }
 
 template< typename T >
-float nohc_next_cscr(
+[[nodiscard]] float nohc_next_cscr(
   float current_cscr,
   const T &oi,
   const glm::vec3 &eye_pos,

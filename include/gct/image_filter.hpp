@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <gct/image_filter_create_info.hpp>
+#include <gct/property.hpp>
 
 namespace gct {
   class allocator_t;
@@ -15,7 +16,9 @@ namespace gct {
   class command_buffer_recorder_t;
   class named_resource;
   class image_filter {
-    class image_filter_impl : std::enable_shared_from_this< image_filter_impl > {
+    class image_filter_impl :
+      public property< image_filter_create_info >,
+      public std::enable_shared_from_this< image_filter_impl > {
     public:
       image_filter_impl(
         const image_filter_create_info &ci
@@ -24,22 +27,18 @@ namespace gct {
         command_buffer_recorder_t &rec,
         unsigned int image_index
       ) const;
-      const std::vector< std::shared_ptr< image_view_t > > &get_output() const;
+      [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_output() const;
       image_filter_impl(
         const std::shared_ptr< image_filter::image_filter_impl > &prev_,
         const image_filter_create_info &ci
       );
-      bool is_reused() const {
+      [[nodiscard]] bool is_reused() const {
         return reused;
       }
-      const image_filter_create_info &get_props() const {
-        return props;
-      }
-      const std::shared_ptr< compute_pipeline_t > &get_pipeline() const {
+      [[nodiscard]] const std::shared_ptr< compute_pipeline_t > &get_pipeline() const {
         return pipeline;
       }
     private:
-      image_filter_create_info props;
       std::shared_ptr< descriptor_set_layout_t > descriptor_set_layout;
       std::vector< std::shared_ptr< descriptor_set_t > > descriptor_set;
       std::shared_ptr< compute_pipeline_t > pipeline;
@@ -54,16 +53,16 @@ namespace gct {
       command_buffer_recorder_t &rec,
       unsigned int image_index = 0u
     ) const;
-    const std::vector< std::shared_ptr< image_view_t > > &get_output() const {
+    [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_output() const {
       return resources->get_output();
     }
-    image_filter operator()(
+    [[nodiscard]] image_filter operator()(
       const image_filter_create_info &ci
     ) const;
-    const image_filter_create_info &get_props() const {
+    [[nodiscard]] const image_filter_create_info &get_props() const {
       return resources->get_props();
     }
-    const std::shared_ptr< compute_pipeline_t > &get_pipeline() const {
+    [[nodiscard]] const std::shared_ptr< compute_pipeline_t > &get_pipeline() const {
       return resources->get_pipeline();
     }
   private:

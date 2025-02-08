@@ -22,7 +22,7 @@ namespace gct {
   compute::compute(
     const compute_create_info &ci
   ) :
-    props( ci ) {
+    property_type( ci ) {
     if( props.external_pipeline_layout ) {
       auto &device = get_device( *props.pipeline_cache );
       auto shader = device.get_shader_module( props.shader );

@@ -72,25 +72,25 @@ private:
   using request_range = index_range;
 public:
   aabb_pool( const aabb_pool_create_info & );
-  aabb_descriptor allocate( const aabb_type& );
-  aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
-  aabb_descriptor get_local( const aabb_descriptor& );
+  [[nodiscard]] aabb_descriptor allocate( const aabb_type& );
+  [[nodiscard]] aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
+  [[nodiscard]] aabb_descriptor get_local( const aabb_descriptor& );
   void touch( const aabb_descriptor& );
   void set( const aabb_descriptor&, const aabb_type& );
   void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb_type& ) >& );
-  const aabb_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] const aabb_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
-  std::shared_ptr< buffer_t > get_buffer() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_buffer() const {
     return state->aabb;
   }
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const aabb_pool_create_info & );
-    aabb_index_t allocate_index();
+    [[nodiscard]] aabb_index_t allocate_index();
     void release_index( aabb_index_t );
-    aabb_descriptor allocate( const aabb_type& ); // standalone aabb
-    aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
+    [[nodiscard]] aabb_descriptor allocate( const aabb_type& ); // standalone aabb
+    [[nodiscard]] aabb_descriptor allocate( const aabb_descriptor&, const matrix_pool::matrix_descriptor& );
     //////aabb_descriptor allocate( const aabb_descriptor&, const aabb4& ); // chained aabb
     void release( aabb_index_t );
     void touch( const aabb_descriptor& );
@@ -98,7 +98,7 @@ private:
     void set( const aabb_descriptor&, const aabb_type& );
     void get( const aabb_descriptor&, const std::function< void( vk::Result, const aabb_type& ) >& );
     void flush( command_buffer_recorder_t& );
-    aabb_descriptor get_local( const aabb_descriptor& );
+    [[nodiscard]] aabb_descriptor get_local( const aabb_descriptor& );
     aabb_pool_create_info props;
     std::vector< aabb_state_type > aabb_state;
     linear_allocator index_allocator;

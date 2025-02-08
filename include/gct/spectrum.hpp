@@ -6,8 +6,8 @@
 
 namespace gct {
 extern const std::map< unsigned int, glm::vec3 > spectrum;
-glm::vec3 wavelength_to_color( float );
-glm::vec3 level_to_color( double value, double min, double max );
+[[nodiscard]] glm::vec3 wavelength_to_color( float );
+[[nodiscard]] glm::vec3 level_to_color( double value, double min, double max );
 }
 
 #endif

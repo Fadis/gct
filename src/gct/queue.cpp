@@ -209,11 +209,9 @@ namespace gct {
     command_pool( p ),
     available_queue_family_index( available_queue_family_index_ ) {}
   std::shared_ptr< bound_command_pool_t > queue_t::get_command_pool() {
-    return std::shared_ptr< bound_command_pool_t >(
-      new bound_command_pool_t(
-        shared_from_this(),
-        command_pool
-      )
+    return std::make_shared< bound_command_pool_t >(
+      shared_from_this(),
+      command_pool
     );
   }
 #ifdef VK_KHR_SWAPCHAIN_EXTENSION_NAME

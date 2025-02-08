@@ -80,29 +80,29 @@ private:
   using request_range = index_range;
 public:
   matrix_pool( const matrix_pool_create_info & );
-  matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
-  matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
-  matrix_descriptor get_local( const matrix_descriptor& );
-  matrix_descriptor get_history( const matrix_descriptor& );
+  [[nodiscard]] matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
+  [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
+  [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );
+  [[nodiscard]] matrix_descriptor get_history( const matrix_descriptor& );
   void touch( const matrix_descriptor& );
   void set( const matrix_descriptor&, const glm::mat4& );
   void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
   void copy( const matrix_descriptor&, const matrix_descriptor& );
-  bool is_valid( const matrix_descriptor& ) const;
-  const matrix_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] bool is_valid( const matrix_descriptor& ) const;
+  [[nodiscard]] const matrix_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
-  std::shared_ptr< buffer_t > get_buffer() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_buffer() const {
     return state->matrix;
   }
-  bool copy_enabled() const;
+  [[nodiscard]] bool copy_enabled() const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const matrix_pool_create_info & );
-    matrix_index_t allocate_index();
+    [[nodiscard]] matrix_index_t allocate_index();
     void release_index( matrix_index_t );
-    matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
-    matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
+    [[nodiscard]] matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
+    [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
     void release( matrix_index_t );
     void touch( const matrix_descriptor& );
     void touch( matrix_index_t );
@@ -110,11 +110,11 @@ private:
     void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
     void copy( const matrix_descriptor&, const matrix_descriptor& );
     void copy_to_history( const matrix_descriptor& );
-    bool is_valid( const matrix_descriptor& ) const;
+    [[nodiscard]] bool is_valid( const matrix_descriptor& ) const;
     void flush( command_buffer_recorder_t& );
-    matrix_descriptor get_local( const matrix_descriptor& );
-    matrix_descriptor get_history( const matrix_descriptor& );
-    std::vector< request_range > build_update_request_range();
+    [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );
+    [[nodiscard]] matrix_descriptor get_history( const matrix_descriptor& );
+    [[nodiscard]] std::vector< request_range > build_update_request_range();
     matrix_pool_create_info props;
     std::vector< matrix_state_type > matrix_state;
     linear_allocator index_allocator;

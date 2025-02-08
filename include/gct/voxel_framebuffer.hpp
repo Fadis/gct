@@ -15,19 +15,19 @@ public:
     const std::shared_ptr< allocator_t > &allocator,
     unsigned int size
   );
-  const std::shared_ptr< gct::render_pass_t > &get_render_pass() const {
+  [[nodiscard]] const std::shared_ptr< gct::render_pass_t > &get_render_pass() const {
     return render_pass;
   }
-  const std::shared_ptr< gct::framebuffer_t > &get_framebuffer() const {
+  [[nodiscard]] const std::shared_ptr< gct::framebuffer_t > &get_framebuffer() const {
     return framebuffer;
   }
-  const gct::render_pass_begin_info_t &get_render_pass_begin_info() const {
+  [[nodiscard]] const gct::render_pass_begin_info_t &get_render_pass_begin_info() const {
     return rpbi;
   }
-  const vk::Viewport &get_viewport() const {
+  [[nodiscard]] const vk::Viewport &get_viewport() const {
     return viewport;
   }
-  const vk::Rect2D &get_scissor() const {
+  [[nodiscard]] const vk::Rect2D &get_scissor() const {
     return scissor;
   }
 private:

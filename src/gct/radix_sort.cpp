@@ -18,7 +18,7 @@ namespace gct {
 
 radix_sort::radix_sort(
   const radix_sort_create_info &ci
-) : props( ci ) {
+) : property_type( ci ) {
   max_size = std::min(
     props.input->get_props().get_basic().size / sizeof( key_value_t ), 
     props.output->get_props().get_basic().size / sizeof( key_value_t )

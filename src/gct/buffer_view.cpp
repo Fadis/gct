@@ -9,8 +9,8 @@ namespace gct {
     const std::shared_ptr< buffer_t > &buffer,
     const buffer_view_create_info_t &create_info
   ) :
-    created_from< buffer_t >( buffer ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< buffer_t >( buffer ) {
     auto basic = props.get_basic();
     basic
       .setBuffer( **buffer );

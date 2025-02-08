@@ -15,7 +15,7 @@ namespace gct {
   private:
     std::shared_ptr< buffer_t > buffer;
   public:
-    const std::shared_ptr< buffer_t > &get_buffer() const {
+    [[nodiscard]] const std::shared_ptr< buffer_t > &get_buffer() const {
       return buffer;
     }
     descriptor_buffer_info_t &set_buffer( const std::shared_ptr< buffer_t > & );

@@ -9,7 +9,8 @@ namespace gct {
 class buffer_t;
 class compute;
 class command_buffer_recorder_t;
-class radix_sort {
+class radix_sort :
+  public property< radix_sort_create_info > {
 public:
   radix_sort(
     const radix_sort_create_info&
@@ -18,11 +19,7 @@ public:
     command_buffer_recorder_t&,
     std::uint32_t
   ) const;
-  const radix_sort_create_info &get_props() const {
-    return props;
-  }
 private:
-  radix_sort_create_info props;
   std::uint32_t max_size = 0u;
   std::shared_ptr< buffer_t > local_offset;
   std::shared_ptr< buffer_t > workgroup_offset;

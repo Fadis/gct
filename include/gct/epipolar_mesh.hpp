@@ -39,13 +39,13 @@ public:
     unsigned int,
     const glm::vec2 &center
   ) const;
-  const std::shared_ptr< buffer_t > &get_index_buffer() const {
+  [[nodiscard]] const std::shared_ptr< buffer_t > &get_index_buffer() const {
     return index_buffer;
   }
-  const std::vector< std::shared_ptr< mappable_buffer_t > > &get_vertex_buffer() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< mappable_buffer_t > > &get_vertex_buffer() const {
     return vertex_buffer;
   }
-  std::uint32_t get_index_count() const {
+  [[nodiscard]] std::uint32_t get_index_count() const {
     return ( props.pole_count - 1u ) * ( props.vertex_count - 1u ) * 6u;
   }
 private:

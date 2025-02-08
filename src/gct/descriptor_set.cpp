@@ -12,8 +12,8 @@ namespace gct {
     const std::shared_ptr< descriptor_pool_t > &pool,
     const descriptor_set_allocate_info_t &create_info
   ) :
-    created_from< descriptor_pool_t >( pool ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< descriptor_pool_t >( pool ) {
     auto basic = props.get_basic();
     basic
       .setDescriptorPool( **pool )

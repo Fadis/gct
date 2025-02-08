@@ -25,12 +25,12 @@ namespace gct {
   public:
     framebuffer_create_info_t &add_attachment( const std::shared_ptr< image_view_t >& );
     framebuffer_create_info_t &clear_attachment();
-    const std::vector< std::shared_ptr< image_view_t > > &get_attachment() const {
+    [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_attachment() const {
       return attachment;
     }
-    std::uint32_t get_width() const;
-    std::uint32_t get_height() const;
-    std::uint32_t get_layer() const;
+    [[nodiscard]] std::uint32_t get_width() const;
+    [[nodiscard]] std::uint32_t get_height() const;
+    [[nodiscard]] std::uint32_t get_layer() const;
   };
   void to_json( nlohmann::json &root, const framebuffer_create_info_t &v );
   void from_json( const nlohmann::json &root, framebuffer_create_info_t &v );

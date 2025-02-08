@@ -39,7 +39,7 @@ namespace gct {
       float far,
       unsigned int buffer_index = 0u
     ) const;
-    const std::vector< std::shared_ptr< buffer_t > > &get_buffer() const {
+    [[nodiscard]] const std::vector< std::shared_ptr< buffer_t > > &get_buffer() const {
       return storage;
     }
   private:

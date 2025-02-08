@@ -10,7 +10,7 @@ namespace gct {
 hbao::hbao(
   const hbao_create_info &ci
 ) :
-  props( ci ),
+  property_type( ci ),
   width(
     ci.input[ 0 ]->get_factory()->get_props().get_basic().extent.width
   ),

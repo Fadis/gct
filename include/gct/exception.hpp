@@ -21,6 +21,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+// NOLINTBEGIN(bugprone-easily-swappable-parameters,bugprone-macro-parentheses)
+
 #include <stdexcept>
 #define LIBGCT_GENERATE_EXCEPTION( base ) \
   class base : public std:: base { \
@@ -29,8 +32,8 @@
     base ( const char *what ) : std:: base ( what ), where_( nullptr ), line_( 0 ) {} \
     base ( const char *what, const char *w, int l ) : std:: base ( what ), where_( w ), line_( l ) {} \
     base ( const std::string &what, const char *w, int l ) : std:: base ( what ), where_( w ), line_( l ) {} \
-    const char *where() const { return where_; } \
-    int line() const { return line_; } \
+    [[nodiscard]] const char *where() const { return where_; } \
+    [[nodiscard]] int line() const { return line_; } \
   private: \
     const char *where_; \
     int line_; \
@@ -55,5 +58,8 @@ namespace gct::exception {
     name ( const char *what, const char *w, int l ) : ::gct::exception:: base ( what, w, l ) {} \
     name ( const std::string &what, const char *w, int l ) : ::gct::exception:: base ( what, w, l ) {} \
   };
+
+// NOLINTEND(bugprone-easily-swappable-parameters,bugprone-macro-parentheses)
+
 #endif
 

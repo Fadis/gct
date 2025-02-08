@@ -52,8 +52,8 @@ namespace gct {
   public:
     instance_create_info_t &set_application_info( const vk::ApplicationInfo &v );
     instance_create_info_t &clear_pplication_info();
-    bool has_application_info() const { return application_info.get(); }
-    const vk::ApplicationInfo &get_application_info() const { return *application_info; }
+    [[nodiscard]] bool has_application_info() const { return application_info.get(); }
+    [[nodiscard]] const vk::ApplicationInfo &get_application_info() const { return *application_info; }
   };
   void to_json( nlohmann::json&, const instance_create_info_t& );
   void from_json( const nlohmann::json&, instance_create_info_t& );

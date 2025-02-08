@@ -21,8 +21,8 @@ namespace gct {
     descriptor_image_info_t &clear_image_view();
     descriptor_image_info_t &set_sampler( const std::shared_ptr< sampler_t > &v );
     descriptor_image_info_t &clear_sampler();
-    const std::shared_ptr< image_view_t > &get_image_view() const { return image_view;  }
-    const std::shared_ptr< sampler_t > &get_sampler() const { return sampler;  }
+    [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_view() const { return image_view;  }
+    [[nodiscard]] const std::shared_ptr< sampler_t > &get_sampler() const { return sampler;  }
   };
 
 void to_json( nlohmann::json&, const descriptor_image_info_t& );

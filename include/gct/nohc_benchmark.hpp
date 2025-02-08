@@ -36,7 +36,7 @@ public:
   void operator()(
     std::shared_ptr< bound_command_buffer_t > &command_buffer
   );
-  nohc_parameter get() const {
+  [[nodiscard]] nohc_parameter get() const {
     return nohc_parameter()
       .set_tos( tos )
       .set_top( top )
@@ -51,7 +51,7 @@ private:
     bool high,
     const std::shared_ptr< gct::scene_graph::instance_list >&
   );
-  std::shared_ptr< gct::scene_graph::instance_list > setup(
+  [[nodiscard]] std::shared_ptr< gct::scene_graph::instance_list > setup(
     command_buffer_recorder_t &rec,
     float scale,
     bool high

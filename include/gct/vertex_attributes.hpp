@@ -24,9 +24,9 @@ namespace gct {
     JOINT,
     WEIGHT
   };
-  std::string get_normalized_vertex_attribute_name( const std::string &name );
-  std::uint32_t get_normalized_vertex_attribute_local_index( const std::string &name );
-  std::optional< vertex_attribute_usage_t > vertex_attribute_name_to_usage( const std::string &name );
+  [[nodiscard]] std::string get_normalized_vertex_attribute_name( const std::string &name );
+  [[nodiscard]] std::uint32_t get_normalized_vertex_attribute_local_index( const std::string &name );
+  [[nodiscard]] std::optional< vertex_attribute_usage_t > vertex_attribute_name_to_usage( const std::string &name );
   struct vertex_input_detail_t {
     std::uint32_t location = 0u;
     std::uint32_t offset = 0u;
@@ -38,7 +38,7 @@ namespace gct {
   void from_json( const nlohmann::json&, vertex_attribute_usage_t& );
   void from_json( const nlohmann::json&, vertex_input_detail_t& );
   void from_json( const nlohmann::json&, std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t >& );
-  std::tuple<
+  [[nodiscard]] std::tuple<
     gct::pipeline_vertex_input_state_create_info_t,
     std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t >,
     std::uint32_t

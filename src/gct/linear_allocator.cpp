@@ -6,7 +6,7 @@ namespace gct {
 
 linear_allocator::linear_allocator(
   const linear_allocator_create_info &ci
-) : props( ci ) {}
+) : property_type( ci ) {}
 std::uint32_t linear_allocator::allocate() {
   if( deallocated.empty() ) {
     if( tail == props.max ) {
@@ -57,7 +57,7 @@ void to_json( nlohmann::json &dest, const linear_allocator &src ) {
 
 reduced_linear_allocator::reduced_linear_allocator(
   const linear_allocator_create_info &ci
-) : props( ci ) {}
+) : property_type( ci ) {}
 std::uint32_t reduced_linear_allocator::allocate() {
   if( tail == props.max ) {
     throw exception::out_of_range( "reduced_linear_allocator::allocate : no space left", __FILE__, __LINE__ );

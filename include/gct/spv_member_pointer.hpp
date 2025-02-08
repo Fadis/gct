@@ -40,28 +40,28 @@ public:
     const SpvReflectTypeDescription&,
     memory_layout layout
   );
-  std::size_t get_aligned_size() const {
+  [[nodiscard]] std::size_t get_aligned_size() const {
     return aligned_size;
   }
-  std::size_t get_offset() const {
+  [[nodiscard]] std::size_t get_offset() const {
     return begin_;
   }
-  std::size_t get_stride() const {
+  [[nodiscard]] std::size_t get_stride() const {
     return stride;
   }
-  const numeric_type_t &get_numeric() const;
-  std::optional< spv_member_pointer > get_maybe( const std::string &name ) const;
-  const spv_member_pointer &operator[]( const std::string &name ) const;
-  spv_member_pointer operator[]( int ) const;
-  spv_member_pointer begin() const;
-  spv_member_pointer end() const;
+  [[nodiscard]] const numeric_type_t &get_numeric() const;
+  [[nodiscard]] std::optional< spv_member_pointer > get_maybe( const std::string &name ) const;
+  [[nodiscard]] const spv_member_pointer &operator[]( const std::string &name ) const;
+  [[nodiscard]] spv_member_pointer operator[]( int ) const;
+  [[nodiscard]] spv_member_pointer begin() const;
+  [[nodiscard]] spv_member_pointer end() const;
   spv_member_pointer &operator++();
   spv_member_pointer operator++( int );
-  spv_member_pointer operator*() const;
-  bool operator==( const spv_member_pointer& ) const;
-  bool operator!=( const spv_member_pointer& ) const;
+  [[nodiscard]] spv_member_pointer operator*() const;
+  [[nodiscard]] bool operator==( const spv_member_pointer& ) const;
+  [[nodiscard]] bool operator!=( const spv_member_pointer& ) const;
   void to_json( nlohmann::json& ) const;
-  bool has( const std::string &name ) const;
+  [[nodiscard]] bool has( const std::string &name ) const;
 private:
   std::size_t begin_;
   const SpvReflectTypeDescription *type;
@@ -88,7 +88,7 @@ public:
   template< typename U >
   spv_reference &operator=( U &&v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeryc_type_match< U >()( mp.get_numeric() ) ) {
+    if( numeric_type_match< U >()( mp.get_numeric() ) ) {
       *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = std::move( v );
     }
     else {
@@ -99,7 +99,7 @@ public:
   template< typename U >
   spv_reference &operator=( const U &v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeryc_type_match< std::remove_cvref_t< U > >()( mp.get_numeric() ) ) {
+    if( numeric_type_match< std::remove_cvref_t< U > >()( mp.get_numeric() ) ) {
       *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = v;
     }
     else {
@@ -108,9 +108,9 @@ public:
     return *this;
   }
   template< typename U >
-  operator U& () const {
+  [[nodiscard]] operator U& () const {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeryc_type_match< U >()( mp.get_numeric() ) ) {
+    if( numeric_type_match< U >()( mp.get_numeric() ) ) {
       return *reinterpret_cast< std::remove_cvref_t< U >* >( cur );
     }
     else {
@@ -123,7 +123,7 @@ private:
 };
 
 template< typename T >
-spv_reference< T > operator->*( const T &head, const spv_member_pointer &mp ) {
+[[nodiscard]] spv_reference< T > operator->*( const T &head, const spv_member_pointer &mp ) {
   return spv_reference< T >( head, mp );
 }
 

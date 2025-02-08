@@ -25,25 +25,25 @@ public:
       vk::ImageUsageFlagBits::eTransferSrc|
       vk::ImageUsageFlagBits::eTransferDst
   );
-  const std::shared_ptr< gct::image_view_t > &get_image() const {
+  [[nodiscard]] const std::shared_ptr< gct::image_view_t > &get_image() const {
     return view;
   }
-  const std::vector< std::shared_ptr< gct::image_view_t > > &get_single_mip_view() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< gct::image_view_t > > &get_single_mip_view() const {
     return single_mip_view;
   }
-  const std::shared_ptr< gct::render_pass_t > &get_render_pass() const {
+  [[nodiscard]] const std::shared_ptr< gct::render_pass_t > &get_render_pass() const {
     return render_pass;
   }
-  const std::shared_ptr< gct::framebuffer_t > &get_framebuffer() const {
+  [[nodiscard]] const std::shared_ptr< gct::framebuffer_t > &get_framebuffer() const {
     return framebuffer;
   }
-  const gct::render_pass_begin_info_t &get_render_pass_begin_info() const {
+  [[nodiscard]] const gct::render_pass_begin_info_t &get_render_pass_begin_info() const {
     return rpbi;
   }
-  const vk::Viewport &get_viewport() const {
+  [[nodiscard]] const vk::Viewport &get_viewport() const {
     return viewport;
   }
-  const vk::Rect2D &get_scissor() const {
+  [[nodiscard]] const vk::Rect2D &get_scissor() const {
     return scissor;
   }
 private:
@@ -62,13 +62,13 @@ public:
     glm::vec3 min,
     glm::vec3 max
   );
-  const glm::mat4 &get_input_projection( unsigned int i ) const {
+  [[nodiscard]] const glm::mat4 &get_input_projection( unsigned int i ) const {
     return input_projection[ i % input_projection.size() ];
   }
-  const glm::mat4 &get_output_projection() const {
+  [[nodiscard]] const glm::mat4 &get_output_projection() const {
     return output_projection;
   }
-  const glm::mat4 &get_inversed_output_projection() const {
+  [[nodiscard]] const glm::mat4 &get_inversed_output_projection() const {
     return inversed_output_projection;
   }
 private:

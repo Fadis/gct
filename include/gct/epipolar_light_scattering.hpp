@@ -56,7 +56,7 @@ public:
     const epipolar_light_scattering_texcoord_parameters_t&,
     const glm::vec2 &light_pos_on_screen
   ) const;
-  const std::vector< std::shared_ptr< image_view_t > > &get_output() const;
+  [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_output() const;
 private:
   epipolar_light_scattering_create_info props;
   std::shared_ptr< gbuffer > output;

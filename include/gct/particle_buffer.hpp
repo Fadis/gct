@@ -14,13 +14,13 @@ public:
   particle_buffer(
     const particle_buffer_create_info &ci
   );
-  std::shared_ptr< buffer_t > get_buffer() const {
+  [[nodiscard]] std::shared_ptr< buffer_t > get_buffer() const {
     return vertex_buffer;
   }
-  std::uint32_t get_count() const {
+  [[nodiscard]] std::uint32_t get_count() const {
     return particle_count;
   }
-  const aabb &get_aabb() const {
+  [[nodiscard]] const aabb &get_aabb() const {
     return aabb_;
   }
   void init(

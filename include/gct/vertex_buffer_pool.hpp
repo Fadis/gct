@@ -47,23 +47,23 @@ private:
   using request_range = index_range;
 public:
   vertex_buffer_pool( const vertex_buffer_pool_create_info & );
-  vertex_buffer_descriptor allocate( const std::string &filename );
-  vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
-  vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
-  std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
-  std::vector< std::shared_ptr< buffer_t > > get();
-  const vertex_buffer_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] vertex_buffer_descriptor allocate( const std::string &filename );
+  [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
+  [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
+  [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
+  [[nodiscard]] std::vector< std::shared_ptr< buffer_t > > get();
+  [[nodiscard]] const vertex_buffer_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const vertex_buffer_pool_create_info & );
-    vertex_buffer_index_t allocate_index();
+    [[nodiscard]] vertex_buffer_index_t allocate_index();
     void release_index( vertex_buffer_index_t );
-    vertex_buffer_descriptor allocate( const std::string &filename );
-    vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
-    vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
-    std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
+    [[nodiscard]] vertex_buffer_descriptor allocate( const std::string &filename );
+    [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
+    [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
+    [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
     std::vector< std::shared_ptr< buffer_t > > get();
     void release( vertex_buffer_index_t );
     void flush( command_buffer_recorder_t& );

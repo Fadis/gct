@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 namespace gct {
-nlohmann::json remove_chain( const nlohmann::json &src );
+[[nodiscard]] nlohmann::json remove_chain( const nlohmann::json &src );
 }
 
 #endif

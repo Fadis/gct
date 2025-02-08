@@ -14,16 +14,16 @@ namespace gct {
     LIBGCT_BASIC_SETTER( vk::AccelerationStructureBuildSizesInfoKHR )
   public:
     void to_json( nlohmann::json &j ) const;
-    vk::AccelerationStructureBuildSizesInfoKHR &operator*() {
+    [[nodiscard]] vk::AccelerationStructureBuildSizesInfoKHR &operator*() {
       return basic;
     }
-    const vk::AccelerationStructureBuildSizesInfoKHR &operator*() const {
+    [[nodiscard]] const vk::AccelerationStructureBuildSizesInfoKHR &operator*() const {
       return basic;
     }
-    vk::AccelerationStructureBuildSizesInfoKHR *operator->() {
+    [[nodiscard]] vk::AccelerationStructureBuildSizesInfoKHR *operator->() {
       return &basic;
     }
-    const vk::AccelerationStructureBuildSizesInfoKHR *operator->() const {
+    [[nodiscard]] const vk::AccelerationStructureBuildSizesInfoKHR *operator->() const {
       return &basic;
     }
   };

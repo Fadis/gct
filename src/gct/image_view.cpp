@@ -10,8 +10,8 @@ namespace gct {
     const std::shared_ptr< image_t > &image,
     const image_view_create_info_t &create_info
   ) :
-    created_from< image_t >( image ),
-    props( create_info ) {
+    property_type( create_info ),
+    created_from< image_t >( image ) {
     auto basic = props.get_basic();
     basic.setImage( **image );
     if( basic.subresourceRange.levelCount == 0u ) {

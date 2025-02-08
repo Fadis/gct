@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace gct {
-  std::uint32_t round_up( std::uint32_t value, std::uint32_t alignment );
+  [[nodiscard]] std::uint32_t round_up( std::uint32_t value, std::uint32_t alignment );
 }
 
 #endif

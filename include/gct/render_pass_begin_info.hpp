@@ -42,10 +42,10 @@ namespace gct {
     render_pass_begin_info_t &clear_render_pass();
     render_pass_begin_info_t &set_framebuffer( const std::shared_ptr< framebuffer_t >& );
     render_pass_begin_info_t &clear_framebuffer();
-    const std::shared_ptr< render_pass_t > &get_render_pass() const {
+    [[nodiscard]] const std::shared_ptr< render_pass_t > &get_render_pass() const {
       return render_pass;
     }
-    const std::shared_ptr< framebuffer_t > &get_framebuffer() const {
+    [[nodiscard]] const std::shared_ptr< framebuffer_t > &get_framebuffer() const {
       return framebuffer;
     }
   };

@@ -12,48 +12,48 @@ float split_depth(
   std::uint32_t m
 );
 
-glm::mat4 split_projection_matrix(
+[[nodiscard]] glm::mat4 split_projection_matrix(
   const glm::mat4 &projection,
   std::uint32_t i,
   std::uint32_t m
 );
 
-aabb get_clipping_aabb(
+[[nodiscard]] aabb get_clipping_aabb(
   const glm::mat4 &matrix
 );
 
-std::vector< aabb > get_clipping_aabb(
+[[nodiscard]] std::vector< aabb > get_clipping_aabb(
   const glm::mat4 &projection_matrix,
   const glm::mat4 &camera_matrix,
   std::uint32_t m
 );
 
-std::vector< std::pair< glm::vec4, glm::vec4 > > get_clippling_area_edges(
+[[nodiscard]] std::vector< std::pair< glm::vec4, glm::vec4 > > get_clippling_area_edges(
   const glm::mat4 &projection_matrix,
   const glm::mat4 &camera_matrix
 );
 
-bool is_visible(
+[[nodiscard]] bool is_visible(
   const glm::mat4 &matrix,
   const aabb &box
 );
 
-bool is_visible(
+[[nodiscard]] bool is_visible(
   const glm::mat4 &matrix,
   const aabb4 &box
 );
 
-std::vector< glm::vec4 > get_far_plane(
+[[nodiscard]] std::vector< glm::vec4 > get_far_plane(
   const glm::mat4 &projection_matrix,
   const glm::mat4 &camera_matrix
 );
 
-std::vector< glm::vec4 > get_near_plane(
+[[nodiscard]] std::vector< glm::vec4 > get_near_plane(
   const glm::mat4 &projection_matrix,
   const glm::mat4 &camera_matrix
 );
 
-aabb get_minimum_projection_matrix(
+[[nodiscard]] aabb get_minimum_projection_matrix(
   const glm::mat4 &projection_matrix,
   const glm::mat4 &camera_matrix,
   const std::vector< glm::vec4 > &p,

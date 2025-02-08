@@ -15,7 +15,7 @@ public:
     unsigned int size,
     unsigned int data_size
   );
-  const std::shared_ptr< gct::buffer_t > &get_buffer() const {
+  [[nodiscard]] const std::shared_ptr< gct::buffer_t > &get_buffer() const {
     return buf;
   }
 private:

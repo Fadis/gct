@@ -18,27 +18,28 @@ namespace gct {
     vk::SurfaceKHR raw_handle
   ) :
     created_from< instance_t >( pdev.get_factory() ),
-    handle(
-      raw_handle,
-      **pdev.get_factory()
-    ),
     caps(
       pdev,
       raw_handle
-    )
-  {}
+    ) {
+    handle = vk::UniqueHandle< raw_handle_type, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE >(
+      raw_handle,
+      **pdev.get_factory()
+    );
+  }
 #if defined(VK_KHR_SURFACE_EXTENSION_NAME) && defined(VK_KHR_DISPLAY_EXTENSION_NAME)
   surface_t::surface_t(
     const physical_device_t &pdev,
     vk::UniqueHandle< vk::SurfaceKHR, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE > &&h
   ) :
     created_from< instance_t >( pdev.get_factory() ),
-    handle( std::move( h ) ),
     caps(
       pdev,
-      handle.get()
+      h.get()
     )
-  {}
+  {
+    handle = std::move( h );
+  }
 #endif
 #endif
 }

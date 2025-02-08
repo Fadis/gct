@@ -37,22 +37,22 @@ namespace gct {
 }
 namespace gct::gltf {
   LIBGCT_EXCEPTION( runtime_error, invalid_gltf, "invalid glTF" )
-  vk::Filter to_vulkan_mag_filter( fx::gltf::Sampler::MagFilter v );
-  vk::Filter to_vulkan_min_filter( fx::gltf::Sampler::MinFilter v );
-  vk::SamplerMipmapMode to_vulkan_mipmap_mode( fx::gltf::Sampler::MinFilter v );
-  vk::SamplerAddressMode to_vulkan_address_mode( fx::gltf::Sampler::WrappingMode v );
-  std::uint32_t to_size( fx::gltf::Accessor::ComponentType type );
-  std::uint32_t to_size( fx::gltf::Accessor::Type type );
-  std::uint32_t to_size(
+  [[nodiscard]] vk::Filter to_vulkan_mag_filter( fx::gltf::Sampler::MagFilter v );
+  [[nodiscard]] vk::Filter to_vulkan_min_filter( fx::gltf::Sampler::MinFilter v );
+  [[nodiscard]] vk::SamplerMipmapMode to_vulkan_mipmap_mode( fx::gltf::Sampler::MinFilter v );
+  [[nodiscard]] vk::SamplerAddressMode to_vulkan_address_mode( fx::gltf::Sampler::WrappingMode v );
+  [[nodiscard]] std::uint32_t to_size( fx::gltf::Accessor::ComponentType type );
+  [[nodiscard]] std::uint32_t to_size( fx::gltf::Accessor::Type type );
+  [[nodiscard]] std::uint32_t to_size(
     fx::gltf::Accessor::ComponentType componentType,
     fx::gltf::Accessor::Type type
   );
-  vk::Format to_vulkan_format(
+  [[nodiscard]] vk::Format to_vulkan_format(
     fx::gltf::Accessor::ComponentType componentType,
     fx::gltf::Accessor::Type type,
     bool normalize
   );
-  vk::IndexType to_vulkan_index_type( fx::gltf::Accessor::ComponentType v );
+  [[nodiscard]] vk::IndexType to_vulkan_index_type( fx::gltf::Accessor::ComponentType v );
   struct image_pair_t {
     LIBGCT_SETTER( unorm )
     LIBGCT_SETTER( srgb )
@@ -64,14 +64,14 @@ namespace gct::gltf {
     std::shared_ptr< image_view_t > srgb_view;
   };
   using images_t = std::vector< image_pair_t >;
-  images_t create_image(
+  [[nodiscard]] images_t create_image(
     const fx::gltf::Document &doc,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
     const std::filesystem::path cd
   );
   using buffers_t = std::vector< std::shared_ptr< buffer_t > >;
-  buffers_t create_buffer(
+  [[nodiscard]] buffers_t create_buffer(
     const fx::gltf::Document &doc,
     command_buffer_recorder_t &command_buffer,
     const std::shared_ptr< allocator_t > &allocator,
@@ -87,7 +87,7 @@ namespace gct::gltf {
     glm::mat4 projection_matrix;
   };
   using cameras_t = std::vector< camera_t >;
-  cameras_t create_camera(
+  [[nodiscard]] cameras_t create_camera(
     const fx::gltf::Document &doc,
     float
   );
@@ -100,23 +100,23 @@ namespace gct::gltf {
     float intensity;
   };
   using point_lights_t = std::vector< point_light_t >;
-  point_lights_t create_point_light(
+  [[nodiscard]] point_lights_t create_point_light(
     const fx::gltf::Document &doc
   );
-  std::shared_ptr< sampler_t > create_sampler(
+  [[nodiscard]] std::shared_ptr< sampler_t > create_sampler(
     const fx::gltf::Document &doc,
     int32_t index,
     const std::shared_ptr< device_t > &device
   );
   using samplers_t = std::vector< std::shared_ptr< sampler_t > >;
-  samplers_t create_sampler(
+  [[nodiscard]] samplers_t create_sampler(
     const fx::gltf::Document &doc,
     const std::shared_ptr< device_t > &device
   );
-  std::shared_ptr< sampler_t > create_default_sampler(
+  [[nodiscard]] std::shared_ptr< sampler_t > create_default_sampler(
     const std::shared_ptr< device_t > &device
   );
-  std::shared_ptr< sampler_t > create_nomip_sampler(
+  [[nodiscard]] std::shared_ptr< sampler_t > create_nomip_sampler(
     const std::shared_ptr< device_t > &device
   );
 
@@ -129,24 +129,24 @@ namespace gct::gltf {
   };
   //
   using textures_t = std::vector< texture_t >;
-  texture_t create_texture(
+  [[nodiscard]] texture_t create_texture(
     const fx::gltf::Document &doc,
     int32_t index,
     const images_t &images,
     const samplers_t &samplers,
     const std::shared_ptr< sampler_t > &default_samplers
   );
-  std::shared_ptr< texture_t > create_texture(
+  [[nodiscard]] std::shared_ptr< texture_t > create_texture(
     int32_t index,
     const image_t &image,
     const samplers_t &samplers,
     const std::shared_ptr< sampler_t > &default_samplers
   );
-  texture_t create_texture(
+  [[nodiscard]] texture_t create_texture(
     const std::shared_ptr< image_view_t > &image,
     const std::shared_ptr< sampler_t > &sampler
   );
-  textures_t create_texture(
+  [[nodiscard]] textures_t create_texture(
     const fx::gltf::Document &doc,
     const images_t &images,
     const samplers_t &samplers,
@@ -238,7 +238,7 @@ namespace gct::gltf {
     textures_t texture;
     node_t node;
   };
-  document_t load_gltf(
+  [[nodiscard]] document_t load_gltf(
     std::filesystem::path path,
     const std::shared_ptr< device_t > &device,
     command_buffer_recorder_t &command_buffer,
@@ -312,7 +312,7 @@ namespace gct::gltf {
     float ambient;
     std::array< float, 5u > light_z;
   };
-  std::tuple<
+  [[nodiscard]] std::tuple<
     std::shared_ptr< descriptor_set_layout_t >,
     std::shared_ptr< pipeline_layout_t >
   >
@@ -320,7 +320,7 @@ namespace gct::gltf {
     const std::shared_ptr< device_t > &device,
     const std::vector< shader_t > &
   );
-  std::shared_ptr< graphics_pipeline_t > create_pipeline(
+  [[nodiscard]] std::shared_ptr< graphics_pipeline_t > create_pipeline(
     const std::shared_ptr< pipeline_cache_t > &pipeline_cache,
     const std::shared_ptr< shader_module_t > &vs,
     const std::shared_ptr< shader_module_t > &gs,
@@ -335,7 +335,7 @@ namespace gct::gltf {
     bool back_side,
     bool dynamic_cull_mode
   );
-  primitive_t create_primitive(
+  [[nodiscard]] primitive_t create_primitive(
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive,
     const std::shared_ptr< device_t > &device,
@@ -354,7 +354,7 @@ namespace gct::gltf {
     int shader_mask,
     bool dynamic_cull_mode
   );
-  meshes_t create_mesh(
+  [[nodiscard]] meshes_t create_mesh(
     const fx::gltf::Document &doc,
     const std::shared_ptr< device_t > &device,
     command_buffer_recorder_t &command_buffer,
@@ -369,21 +369,21 @@ namespace gct::gltf {
     const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
     bool dynamic_cull_mode
   );
-  node_t create_node(
+  [[nodiscard]] node_t create_node(
     const fx::gltf::Document &doc,
     int32_t index,
     const glm::mat4 &upper,
     const meshes_t &meshes
   );
-  node_t create_node(
+  [[nodiscard]] node_t create_node(
     const fx::gltf::Document &doc,
     const meshes_t &mesh
   );
-  point_lights_t get_point_lights(
+  [[nodiscard]] point_lights_t get_point_lights(
     const node_t &node,
     const point_lights_t &lights
   );
-  cameras_t get_cameras(
+  [[nodiscard]] cameras_t get_cameras(
     const node_t &node,
     const cameras_t &cameras
   );

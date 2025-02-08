@@ -19,16 +19,16 @@ namespace gct {
     device_or_host_address_const_t &set_device_address( const device_address_t &v );
     device_or_host_address_const_t &clear_address();
     void to_json( nlohmann::json& ) const;
-    vk::DeviceOrHostAddressConstKHR &operator*() {
+    [[nodiscard]] vk::DeviceOrHostAddressConstKHR &operator*() {
       return value;
     }
-    const vk::DeviceOrHostAddressConstKHR &operator*() const {
+    [[nodiscard]] const vk::DeviceOrHostAddressConstKHR &operator*() const {
       return value;
     }
     void reset() {
       address = std::shared_ptr< void >();
     }
-    operator bool() const;
+    [[nodiscard]] operator bool() const;
   private:
     vk::DeviceOrHostAddressConstKHR value;
     std::variant<

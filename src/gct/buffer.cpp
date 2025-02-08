@@ -21,8 +21,8 @@ namespace gct {
     VmaMemoryUsage usage,
     VmaAllocationCreateFlags flags
   ) :
+    property( create_info ),
     created_from< allocator_t >( allocator ),
-    props( create_info ),
     allocation( new VmaAllocation() ) {
     props.rebuild_chain();
     VmaAllocationCreateInfo buffer_alloc_info = {};

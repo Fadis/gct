@@ -11,7 +11,7 @@ namespace gct {
 tone_mapping::tone_mapping(
   const tone_mapping_create_info &ci
 ) :
-  props( ci ),
+  property_type( ci ),
   tone_scale( 1.f, 10, 60 )
 {
   for( std::size_t i = 0u; i != props.input.size(); ++i ) {

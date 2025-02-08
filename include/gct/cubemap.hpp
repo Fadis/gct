@@ -12,7 +12,7 @@
 
 namespace gct {
 
-std::pair< glm::mat4, std::array< glm::mat4, 6u > >
+[[nodiscard]] std::pair< glm::mat4, std::array< glm::mat4, 6u > >
 get_cubemap_matrix(
   const glm::vec3 &light_pos,
   float near,
@@ -33,16 +33,16 @@ public:
     const std::shared_ptr< render_pass_t > &render_pass,
     const std::vector< vk::ClearValue > &clear_color
   );
-  const std::shared_ptr< image_t > &get_image( unsigned int i ) const {
+  [[nodiscard]] const std::shared_ptr< image_t > &get_image( unsigned int i ) const {
     return images[ i % images.size() ];
   }
-  const std::shared_ptr< image_view_t > &get_image_views( unsigned int i, unsigned int j ) const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_image_views( unsigned int i, unsigned int j ) const {
     return image_views[ i % image_views.size() ][ j % 6u ];
   }
-  const std::shared_ptr< image_view_t > &get_cube_image_views( unsigned int i ) const {
+  [[nodiscard]] const std::shared_ptr< image_view_t > &get_cube_image_views( unsigned int i ) const {
     return cube_image_views[ i % image_views.size() ];
   }
-  const render_pass_begin_info_t &get_render_pass_begin_info( unsigned int i ) const {
+  [[nodiscard]] const render_pass_begin_info_t &get_render_pass_begin_info( unsigned int i ) const {
     return render_pass_begin_info[ i % 6u ];
   }
 private:
@@ -59,8 +59,8 @@ public:
     float near_,
     float far_
   );
-  const glm::mat4 &get_projection_matrix() const { return proj; }
-  const glm::mat4 &get_view_matrix( unsigned int i ) const { return view[ i % view.size() ]; }
+  [[nodiscard]] const glm::mat4 &get_projection_matrix() const { return proj; }
+  [[nodiscard]] const glm::mat4 &get_view_matrix( unsigned int i ) const { return view[ i % view.size() ]; }
   void move_center( const glm::vec3& );
   void to_json( nlohmann::json &dest ) const;
 private:
@@ -86,7 +86,7 @@ public:
   cubemap_images2(
     const std::vector< std::shared_ptr< image_view_t > > &images
   );
-  const std::vector< std::shared_ptr< image_view_t > > &get_cube_image_views() const {
+  [[nodiscard]] const std::vector< std::shared_ptr< image_view_t > > &get_cube_image_views() const {
     return cube_image_views;
   }
 private:
