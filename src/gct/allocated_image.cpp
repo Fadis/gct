@@ -46,7 +46,8 @@ namespace gct {
     );
   }
   std::shared_ptr< image_view_t > allocated_image_t::get_view(
-    vk::ImageAspectFlags aspect
+    vk::ImageAspectFlags aspect,
+    bool force_array
   ) {
     return get_view(
       image_view_create_info_t()
@@ -60,17 +61,18 @@ namespace gct {
                 .setBaseArrayLayer( 0 )
                 .setLayerCount( get_props().get_basic().arrayLayers )
             )
-            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers ) )
+            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers, force_array ) )
         )
         .rebuild_chain()
     );
   }
-  std::shared_ptr< image_view_t > allocated_image_t::get_view() {
-    return get_view( format_to_aspect( get_props().get_basic().format ) );
+  std::shared_ptr< image_view_t > allocated_image_t::get_view( bool force_array ) {
+    return get_view( format_to_aspect( get_props().get_basic().format ), force_array );
   }
   std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
     vk::ImageAspectFlags aspect,
-    std::uint32_t layer
+    std::uint32_t layer,
+    bool force_array
   ) {
     std::vector< std::shared_ptr< image_view_t > > temp;
     for( unsigned int l = 0u; l != get_props().get_basic().arrayLayers / layer; ++l ) {
@@ -86,7 +88,7 @@ namespace gct {
                   .setBaseArrayLayer( l * layer )
                   .setLayerCount( layer )
               )
-              .setViewType( to_image_view_type( get_props().get_basic().imageType, layer ) )
+              .setViewType( to_image_view_type( get_props().get_basic().imageType, layer, force_array ) )
           )
           .rebuild_chain()
       ) );
@@ -94,9 +96,10 @@ namespace gct {
     return temp;
   }
   std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
-    std::uint32_t layer
+    std::uint32_t layer,
+    bool force_array
   ) {
-    return get_thin_views( format_to_aspect( get_props().get_basic().format ), layer );
+    return get_thin_views( format_to_aspect( get_props().get_basic().format ), layer, force_array );
   }
   std::shared_ptr< device_t > allocated_image_t::get_device() const {
     return get_factory()->get_factory();

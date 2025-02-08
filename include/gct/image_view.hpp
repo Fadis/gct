@@ -1,5 +1,6 @@
 #ifndef GCT_IMAGE_VIEW_HPP
 #define GCT_IMAGE_VIEW_HPP
+#include <cstdint>
 #include <memory>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
@@ -7,8 +8,26 @@
 #include <gct/image_view_create_info.hpp>
 #include <gct/vulkan_handle.hpp>
 #include <gct/property.hpp>
+#include <gct/setter.hpp>
 
 namespace gct {
+
+  [[nodiscard]] vk::ImageViewType add_array( vk::ImageViewType );
+  [[nodiscard]] vk::ImageViewType remove_array( vk::ImageViewType );
+
+  struct subview_range {
+    LIBGCT_SETTER( mip_offset )
+    LIBGCT_SETTER( mip_count )
+    LIBGCT_SETTER( layer_offset )
+    LIBGCT_SETTER( layer_count )
+    LIBGCT_SETTER( force_array )
+    std::uint32_t mip_offset = 0u;
+    std::uint32_t mip_count = 1u;
+    std::uint32_t layer_offset = 0u;
+    std::uint32_t layer_count = 1u;
+    bool force_array = false;
+  };
+
   struct allocator_t;
   class image_t;
   class image_view_t :
@@ -24,6 +43,9 @@ namespace gct {
     image_view_t( image_view_t&& ) = default;
     image_view_t &operator=( const image_view_t& ) = delete;
     image_view_t &operator=( image_view_t&& ) = default;
+    [[nodiscard]] std::shared_ptr< image_view_t > subview(
+      const subview_range&
+    ) const;
   };
   void to_json( nlohmann::json&, const image_view_t& );
 }

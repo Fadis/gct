@@ -36,15 +36,20 @@ namespace gct {
       const image_view_create_info_t&
     );
     [[nodiscard]] std::shared_ptr< image_view_t > get_view(
-      vk::ImageAspectFlags aspect
+      vk::ImageAspectFlags aspect,
+      bool force_array = false
     );
     [[nodiscard]] std::vector< std::shared_ptr< image_view_t > > get_thin_views(
       vk::ImageAspectFlags aspect,
-      std::uint32_t layer
+      std::uint32_t layer,
+      bool force_array = false
     );
-    [[nodiscard]] std::shared_ptr< image_view_t > get_view();
+    [[nodiscard]] std::shared_ptr< image_view_t > get_view(
+      bool force_array = false
+    );
     [[nodiscard]] std::vector< std::shared_ptr< image_view_t > > get_thin_views(
-      std::uint32_t layer
+      std::uint32_t layer,
+      bool force_array = false
     );
     [[nodiscard]] vk::Image &operator*() {
       return *handle;

@@ -50,7 +50,7 @@ voxel_image::voxel_image(
                 .setBaseArrayLayer( 0 )
                 .setLayerCount( 1 )
             )
-            .setViewType( to_image_view_type( image->get_props().get_basic().imageType, image->get_props().get_basic().arrayLayers ) )
+            .setViewType( to_image_view_type( image->get_props().get_basic().imageType, image->get_props().get_basic().arrayLayers, false ) )
         )
         .rebuild_chain()
     ) );

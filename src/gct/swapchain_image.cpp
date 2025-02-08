@@ -45,35 +45,38 @@ namespace gct {
     );
   }
   std::shared_ptr< image_view_t > swapchain_image_t::get_view(
-    vk::ImageAspectFlags aspect
+    vk::ImageAspectFlags aspect,
+    bool force_array
   ) {
     return get_view(
       image_view_create_info_t()
         .set_basic(
           vk::ImageViewCreateInfo()
             .setSubresourceRange( vk::ImageSubresourceRange( aspect, 0, 1, 0, 1 ) )
-            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers ) )
+            .setViewType( to_image_view_type( get_props().get_basic().imageType, get_props().get_basic().arrayLayers, force_array ) )
         )
         .rebuild_chain()
     );
   }
-  std::shared_ptr< image_view_t > swapchain_image_t::get_view() {
-    return get_view( format_to_aspect( get_props().get_basic().format ) );
+  std::shared_ptr< image_view_t > swapchain_image_t::get_view( bool force_array ) {
+    return get_view( format_to_aspect( get_props().get_basic().format ), force_array );
   }
   std::vector< std::shared_ptr< image_view_t > > swapchain_image_t::get_thin_views(
     vk::ImageAspectFlags aspect,
-    std::uint32_t layer
+    std::uint32_t layer,
+    bool force_array
   ) {
     return layer == 1u ?
       std::vector< std::shared_ptr< image_view_t > >{
-        get_view( aspect )
+        get_view( aspect, force_array )
       } :
       std::vector< std::shared_ptr< image_view_t > >{};
   }
   std::vector< std::shared_ptr< image_view_t > > swapchain_image_t::get_thin_views(
-    std::uint32_t layer
+    std::uint32_t layer,
+    bool force_array
   ) {
-    return get_thin_views( format_to_aspect( get_props().get_basic().format ), layer );
+    return get_thin_views( format_to_aspect( get_props().get_basic().format ), layer, force_array );
   }
   std::shared_ptr< device_t > swapchain_image_t::get_device() const {
     return get_factory()->get_factory();
