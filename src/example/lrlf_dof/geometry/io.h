@@ -8,8 +8,8 @@ layout (location = 4) in vec4 input_optflow;
 layout (location = 5) flat in vec4 input_id;
 layout (location = 6) in vec4 input_previous_position;
 
-layout (location = 0) out vec4 output_position;
 /*
+layout (location = 0) out vec4 output_position;
 layout (location = 1) out vec4 output_albedo; // [albedo.r] [albedo.g] [albedo.b] [albedo.a]
 layout (location = 2) out vec4 output_normal; // [normal.x] [normal.y] [tangent.x] [tangent.y]
 layout (location = 3) out vec4 output_emissive; // [emissive.r] [emissive.g] [emissive.b]

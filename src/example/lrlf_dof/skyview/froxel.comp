@@ -25,9 +25,9 @@ layout(binding = 4) uniform FroxelState {
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 4 ) in;
 
-#include "constants.h"
-#include "volumetric.h"
-#include "sky.h"
+#include <gct/constants.h>
+#include <gct/volumetric.h>
+#include <gct/sky.h>
 
 void main()  {
   const ivec3 screen_pos = ivec3( gl_GlobalInvocationID.xyz );

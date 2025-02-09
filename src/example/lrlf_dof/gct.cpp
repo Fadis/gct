@@ -168,7 +168,7 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t gbuf_count = 2u;
+  constexpr std::size_t gbuf_count = 0u;
   gct::gbuffer gbuffer(
     gct::gbuffer_create_info()
       .set_allocator( res.allocator )
@@ -411,6 +411,11 @@ int main( int argc, const char *argv[] ) {
     r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
+  
+  const auto nearest_position = res.allocator->create_image_view(
+    rgba32ici,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
 
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -422,6 +427,7 @@ int main( int argc, const char *argv[] ) {
       recorder.set_image_layout( dof_temporary, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( coc, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( coc_temporary, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( nearest_position, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -440,14 +446,25 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
   );
 
+  const auto generate_nearest_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/nearest_position/nearest_position.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
+      .add_resource( { "position", nearest_position, vk::ImageLayout::eGeneral } )
+  );
+
   gct::hbao hbao(
     gct::hbao_create_info()
       .set_allocator( res.allocator )
       .set_pipeline_cache( res.pipeline_cache )
       .set_descriptor_pool( res.descriptor_pool )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/ao/" )
-      .set_input_name( "gbuffer" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ extended_gbuffer } ) ////
+      .set_input_name( "position" )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ nearest_position } )
       .add_resource( { "global_uniforms", global_uniform } ) 
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
   );
@@ -973,7 +990,14 @@ int main( int argc, const char *argv[] ) {
             {},
             { diffuse->get_factory() }
           );
-      
+     
+          generate_nearest_position( rec, 0, res.width, res.height, 1u );
+
+          rec.compute_barrier(
+            {},
+            { nearest_position->get_factory() }
+          );
+
           hbao( rec, 0 );
         
           rec.compute_barrier(

@@ -63,13 +63,6 @@ void main()  {
   float shadow_level3 = 1.0;
 
   if( albedo.a <= 0.0 ) discard;
-  output_position = vec4( pos, gl_FragCoord.z );
-  /*output_albedo = albedo;
-  output_normal = vec4( normal.x, normal.y, normal.z, 1.0 );
-  output_emissive = vec4( emissive, occlusion );
-  output_material = vec4( metallic, roughness, 0.0, 0.0 );
-  output_optflow = vec4( optflow, 0.0 );
-  output_shadow = vec4( shadow_level0, shadow_level1, shadow_level2, shadow_level3 );*/
   const uint visibility_index = instance_resource_index[ push_constants.instance ].visibility;
   visibility_pool[ visibility_index ] = 1;
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );

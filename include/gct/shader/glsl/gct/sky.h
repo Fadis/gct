@@ -1,3 +1,6 @@
+#ifndef GCT_SKY
+#define GCT_SKY
+
 float atan2( float y, float x ) {
   bool s = abs( x ) > abs( y );
   return s ? atan( y, x ) : pi / 2.0 - atan( x, y );
@@ -131,4 +134,6 @@ float skyview_texcoord_to_latitude( float t ) {
   const float a = ( ( - t + 0.5 )/ 0.5 );
   return sign( a ) * a * a * ( pi / 2.0 );
 }
+
+#endif
 

@@ -60,116 +60,155 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const ivec2 image_size = imageSize( gbuffer ).xy;
   
-  uint near_layer = 5;
-  uint far_layer = 5;
-  float near_depth = af_state.depth;
-  float far_depth = af_state.depth;
-  const float far_threshold = af_state.depth - 0.1;
-  {
-    const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x != 0;
-    const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
-    const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) );
-    const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 2 ) ).xyz;
-    const bool has_surface = dot( normal, normal ) != 0.0;
-    const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
-    far_layer =
-      ( has_layer && has_surface && linear_depth >= far_threshold ) ?
-      layer :
-      far_layer;
-    far_depth =
-      ( has_layer && has_surface && linear_depth >= far_threshold ) ?
-      linear_depth :
-      far_depth;
-    near_layer =
-      ( has_layer && has_surface && linear_depth < af_state.depth ) ?
-      layer :
-      near_layer;
-    near_depth =
-      ( has_layer && has_surface && linear_depth < af_state.depth ) ?
-      linear_depth :
-      near_depth;
-  }
-  {
-    const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).y != 0;
-    const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).y ) - 1, 0 );
-    const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) );
-    const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 2 ) ).xyz;
-    const bool has_surface = dot( normal, normal ) != 0.0;
-    const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
-    far_depth =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      linear_depth :
-      far_depth;
-    far_layer =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      layer :
-      far_layer;
-  }
-  {
-    const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).z != 0;
-    const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).z ) - 1, 0 );
-    const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) );
-    const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 2 ) ).xyz;
-    const bool has_surface = dot( normal, normal ) != 0.0;
-    const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
-    far_depth =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      linear_depth :
-      far_depth;
-    far_layer =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      layer :
-      far_layer;
-  }
-  {
-    const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).w != 0;
-    const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).w ) - 1, 0 );
-    const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) );
-    const vec3 normal = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 2 ) ).xyz;
-    const bool has_surface = dot( normal, normal ) != 0.0;
-    const float linear_depth = decode_depth( pos_depth.w, af_state.znear, af_state.zfar );
-    far_depth =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      linear_depth :
-      far_depth;
-    far_layer =
-      ( has_layer && has_surface && linear_depth >= far_threshold && far_layer == 5 ) ?
-      layer :
-      far_layer;
-  }
-
-  const vec3 near_normal = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 2 ) ).xyz;
-  const vec3 near_optflow = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 5 ) ).xyz;
-  const vec4 near_albedo = imageLoad( gbuffer, ivec3( screen_pos, near_layer * 8 + 1 ) );
-  const vec3 near_ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * near_albedo.rgb;
+  const float far_threshold = af_state.depth;
   
-  const vec4 near_diffuse = imageLoad( diffuse_image, ivec3( screen_pos, near_layer ) );
-  const vec3 near_specular = imageLoad( specular_image, ivec3( screen_pos, near_layer ) ).rgb;
-
-  const vec3 far_normal = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 2 ) ).xyz;
-  const vec3 far_optflow = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 5 ) ).xyz;
-  const vec4 far_albedo = imageLoad( gbuffer, ivec3( screen_pos, far_layer * 8 + 1 ) );
-  const vec3 far_ambient = global_uniforms.ambient * light_pool[ global_uniforms.light ].energy.xyz * imageLoad( occlusion, screen_pos ).r * far_albedo.rgb;
+  vec4 layer_index = imageLoad( gbuffer, ivec3( screen_pos, 32 ) );
   
-  const vec4 far_diffuse = imageLoad( diffuse_image, ivec3( screen_pos, far_layer ) );
-  const vec3 far_specular = imageLoad( specular_image, ivec3( screen_pos, far_layer ) ).rgb;
-
   const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
+
+  const float l0_depth =
+    ( layer_index.x != 0 ) ?
+    decode_depth(
+      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.x ) - 1 ) * 8 + 0 ) ).w,
+      af_state.znear, af_state.zfar
+    ) :
+    af_state.zfar;
+  const float l1_depth =
+    ( layer_index.x != 0 ) ?
+    decode_depth(
+      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.y ) - 1 ) * 8 + 0 ) ).w,
+      af_state.znear, af_state.zfar
+    ) :
+    af_state.zfar;
+  const float l2_depth =
+    ( layer_index.x != 0 ) ?
+    decode_depth(
+      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.z ) - 1 ) * 8 + 0 ) ).w,
+      af_state.znear, af_state.zfar
+    ) :
+    af_state.zfar;
+  const float l3_depth =
+    ( layer_index.x != 0 ) ?
+    decode_depth(
+      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.w ) - 1 ) * 8 + 0 ) ).w,
+      af_state.znear, af_state.zfar
+    ) :
+    af_state.zfar;
+
+  const vec4 l0_albedo =
+    ( layer_index.x != 0 ) ?
+    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) * 8 + 1 ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l1_albedo =
+    ( layer_index.y != 0 ) ?
+    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) * 8 + 1 ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l2_albedo =
+    ( layer_index.z != 0 ) ?
+    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) * 8 + 1 ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l3_albedo =
+    ( layer_index.w != 0 ) ?
+    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) * 8 + 1 ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+
+  const vec3 l0_ambient =
+    global_uniforms.ambient *
+    light_pool[ global_uniforms.light ].energy.xyz *
+    imageLoad( occlusion, screen_pos ).r *
+    l0_albedo.xyz;
+  const vec3 l1_ambient =
+    global_uniforms.ambient *
+    light_pool[ global_uniforms.light ].energy.xyz *
+    l1_albedo.xyz;
+  const vec3 l2_ambient =
+    global_uniforms.ambient *
+    light_pool[ global_uniforms.light ].energy.xyz *
+    l2_albedo.xyz;
+  const vec3 l3_ambient =
+    global_uniforms.ambient *
+    light_pool[ global_uniforms.light ].energy.xyz *
+    l2_albedo.xyz;
+
+  const vec3 l0_diffuse =
+    ( layer_index.x != 0 ) ?
+    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l1_diffuse =
+    ( layer_index.y != 0 ) ?
+    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l2_diffuse =
+    ( layer_index.z != 0 ) ?
+    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l3_diffuse =
+    ( layer_index.w != 0 ) ?
+    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+
+  const vec3 l0_specular =
+    ( layer_index.x != 0 ) ?
+    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l1_specular =
+    ( layer_index.y != 0 ) ?
+    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l2_specular =
+    ( layer_index.z != 0 ) ?
+    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+  const vec3 l3_specular =
+    ( layer_index.w != 0 ) ?
+    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
+    vec3( 0.0, 0.0, 0.0 );
+
+  const vec4 l0_total = 
+    vec4( ( l0_ambient + ( l0_diffuse.rgb + l0_specular ) ) * scat.w + scat.rgb, l0_albedo.a );
+  const vec4 l1_total = 
+    vec4( ( l1_ambient + ( l1_diffuse.rgb + l1_specular ) ) * scat.w + scat.rgb, l1_albedo.a );
+  const vec4 l2_total = 
+    vec4( ( l2_ambient + ( l2_diffuse.rgb + l2_specular ) ) * scat.w + scat.rgb, l2_albedo.a );
+  const vec4 l3_total = 
+    vec4( ( l3_ambient + ( l3_diffuse.rgb + l3_specular ) ) * scat.w + scat.rgb, l3_albedo.a );
+
+  vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  near_total =
+    ( l3_depth < far_threshold ) ? //( far_layer > 1 ) ?
+    vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) ) :    near_total;
+  near_total =
+    ( l2_depth < far_threshold ) ? //( far_layer > 1 ) ?
+    vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) ) :    near_total;
+  near_total =
+    ( l1_depth < far_threshold ) ? //( far_layer > 1 ) ?
+    vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) ) :    near_total;
+  near_total =
+    ( l0_depth < far_threshold ) ? //( far_layer > 1 ) ?
+    vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) ) :
+    near_total;
+  float near_depth = af_state.depth;
+  near_depth = min( l3_depth, near_depth );
+  near_depth = min( l2_depth, near_depth );
+  near_depth = min( l1_depth, near_depth );
+  near_depth = min( l0_depth, near_depth );
+
+  vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  far_total = vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) );
+  far_total = vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) );
+  far_total = vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) );
+  far_total = vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) );
+  float far_depth = af_state.zfar;
+  far_depth = ( ( l3_depth ) >= far_threshold ) ? min( ( l3_depth ), far_depth ) : far_depth;
+  far_depth = ( ( l2_depth ) >= far_threshold ) ? min( ( l2_depth ), far_depth ) : far_depth;
+  far_depth = ( ( l1_depth ) >= far_threshold ) ? min( ( l1_depth ), far_depth ) : far_depth;
+  far_depth = ( ( l0_depth ) >= far_threshold ) ? min( ( l0_depth ), far_depth ) : far_depth;
+
+  near_total.rgb = ( near_total.a == 0.0 ) ? far_total.rgb : near_total.rgb;
   
-  const vec4 near_total = (
-    ( near_layer != 5 ) ?
-    vec4( ( near_ambient + ( near_diffuse.rgb + near_specular ) ) * scat.w + scat.rgb, near_albedo.a ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 )
-  );
-  
-  const vec4 far_total = (
-    ( far_layer != 5 ) ?
-    vec4( ( far_ambient + ( far_diffuse.rgb + far_specular ) ) * scat.w + scat.rgb, far_albedo.a ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 )
-  );
-  const float near_coc = min( max( af_state.lens_size * abs( near_depth - af_state.depth )/near_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 32.0 );
-  const float far_coc = min( max( af_state.lens_size * abs( far_depth - af_state.depth )/far_depth*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x, 0.0 ), 32.0 );
-  
+  const float near_coc = min( max( ( af_state.lens_size * abs( near_depth - af_state.depth )/( near_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
+  const float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
+ 
   imageStore( dest_image, ivec3( screen_pos, 0 ), near_total );
   imageStore( dest_image, ivec3( screen_pos, 1 ), far_total );
   imageStore( coc_image, ivec3( screen_pos, 0 ), vec4( near_coc, 0.0, 0.0, 0.0 ) );

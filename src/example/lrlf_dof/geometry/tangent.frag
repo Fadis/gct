@@ -77,7 +77,7 @@ void main() {
   float shadow_level3 = 1.0;
 
   if( albedo.a <= 0.0 ) discard;
-  output_position = vec4( pos, gl_FragCoord.z );
+  //output_position = vec4( pos, gl_FragCoord.z );
   /*output_albedo = albedo;
   output_normal = vec4( normal.x, normal.y, normal.z, 1.0 );
   output_emissive = vec4( emissive, occlusion );

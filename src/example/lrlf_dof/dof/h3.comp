@@ -3,6 +3,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
+#include <gct/filter_cache.h>
+
 layout (binding = 1, rgba32f) readonly uniform image2DArray src_image;
 layout (binding = 2, r32f) readonly uniform image2DArray coc;
 layout (binding = 3, rgba32f) writeonly uniform image2DArray dest_image;
@@ -27,17 +29,10 @@ void main() {
   const uint lcpos = gl_LocalInvocationID.x;
   const uint hcpos = lcpos + gl_WorkGroupSize.x;
   const ivec2 image_size = imageSize( src_image ).xy;
-  ivec2 lsample_pos = screen_pos;
-  lsample_pos.x = lsample_pos.x - kernel_size;
-  ivec2 hsample_pos = lsample_pos;
-  hsample_pos.x += int( gl_WorkGroupSize.x );
-  lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
-  lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
-  hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
-  hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
-  cache[ lcpos ] = imageLoad( src_image, ivec3( lsample_pos, layer ) );
+  const ivec4 sample_pos = horizontal_filter_cache_pos( screen_pos, image_size, gl_WorkGroupSize.x, kernel_size );
+  cache[ lcpos ] = imageLoad( src_image, ivec3( sample_pos.xy, layer ) );
   if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
-    cache[ hcpos ] = imageLoad( src_image, ivec3( hsample_pos, layer ) );
+    cache[ hcpos ] = imageLoad( src_image, ivec3( sample_pos.zw, layer ) );
   }
   barrier();
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );

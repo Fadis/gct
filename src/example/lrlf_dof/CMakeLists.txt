@@ -79,6 +79,8 @@ add_shader( lrlf_dof gauss/v12_32.comp )
 add_shader( lrlf_dof lighting/lighting.comp )
 add_shader( lrlf_dof gamma/gamma.comp )
 
+add_shader( lrlf_dof nearest_position/nearest_position.comp )
+
 add_shader( lrlf_dof ao/hbao_0.comp )
 add_shader( lrlf_dof ao/hbao_45.comp )
 add_shader( lrlf_dof ao/hbao_90.comp )

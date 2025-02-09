@@ -1,3 +1,7 @@
+#ifndef GCT_VOLUMETRIC
+#define GCT_VOLUMETRIC
+
+#include <gct/constants.h>
 
 float rayleigh(
   float theta
@@ -42,4 +46,6 @@ vec3 beer_lambert( vec3 sigma, float distance ) {
 vec3 beer_lambert( vec3 sigma, float density, float distance ) {
   return exp( -( sigma * density * distance ) );
 }
+
+#endif
 

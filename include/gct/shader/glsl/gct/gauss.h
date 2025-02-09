@@ -3,7 +3,7 @@
 
 int adaptive_gauss8_16_size = 33;
 float adaptive_gauss8_16[33*58] = float[](
-#include "gauss.inc"
+#include "adaptive_gauss8_16.inc"
 );
 
 #endif
