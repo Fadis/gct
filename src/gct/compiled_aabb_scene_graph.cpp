@@ -1,6 +1,5 @@
 #include <nlohmann/json.hpp>
 #include <glm/vec4.hpp>
-#include "gct/exception.hpp"
 #include <gct/format.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/get_shader.hpp>
@@ -170,7 +169,7 @@ void compiled_aabb_scene_graph::create_pipeline(
     );
   }
 #endif
-  pipeline = graph.get_props().pipeline_cache->get_pipeline( gpci );
+  pipeline = graph.get_props().allocator_set.pipeline_cache->get_pipeline( gpci );
 }
 void compiled_aabb_scene_graph::create_vertex_buffer() {
   vertex_buffer_desc = resource->vertex->allocate(
@@ -182,7 +181,7 @@ compiled_aabb_scene_graph::compiled_aabb_scene_graph(
   const compiled_aabb_scene_graph_create_info &ci,
   const scene_graph &graph
 ) : props( ci ), resource( graph.get_resource() ) {
-  const auto &device = get_device( *graph.get_props().allocator );
+  const auto &device = get_device( *graph.get_props().allocator_set.allocator );
 #ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
   enable_representive = device.get_activated_extensions().find( VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME ) != device.get_activated_extensions().end();
 #else
@@ -218,7 +217,7 @@ std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > > compiled
     if( flag ) {
       shader.emplace(
         *flag,
-        get_device( *graph.get_props().allocator ).get_shader_module(
+        get_device( *graph.get_props().allocator_set.allocator ).get_shader_module(
           path.path().string()
         )
       );

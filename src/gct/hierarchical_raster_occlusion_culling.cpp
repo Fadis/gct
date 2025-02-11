@@ -19,7 +19,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
 ) : props( ci ), resource( il.get_resource() ) {
   output = std::make_shared< gct::gbuffer >(
     gct::gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( props.width )
       .set_height( props.height )
       .set_layer( 1u )
@@ -30,12 +30,12 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
       .set_external_depth( props.external_depth )
   );
 
-  sort_input = props.allocator->create_mappable_buffer(
+  sort_input = props.allocator_set.allocator->create_mappable_buffer(
     il.get_draw_list().size() * sizeof( key_value_t ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
   
-  sort_output = props.allocator->create_mappable_buffer(
+  sort_output = props.allocator_set.allocator->create_mappable_buffer(
     il.get_draw_list().size() * sizeof( key_value_t ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
@@ -56,12 +56,12 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
     node_count += node_offset.back().count;
   }
 
-  bvh = props.allocator->create_mappable_buffer(
+  bvh = props.allocator_set.allocator->create_mappable_buffer(
     node_count * sizeof( node_type ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
 
-  visibility = props.allocator->create_mappable_buffer(
+  visibility = props.allocator_set.allocator->create_mappable_buffer(
     node_count * sizeof( std::uint32_t ),
     vk::BufferUsageFlagBits::eStorageBuffer|
     vk::BufferUsageFlagBits::eTransferDst
@@ -69,9 +69,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
 
   setup_sort = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.setup_sort_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -84,18 +82,14 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
 
   sort = std::make_shared< gct::onesweep >(
     gct::onesweep_create_info( props.sort )
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_input( sort_input->get_buffer() )
       .set_output( sort_output->get_buffer() )
   );
 
   setup_leaf = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.setup_leaf_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -109,9 +103,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
   
   setup_node = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.setup_node_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -120,9 +112,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
   
   mark_leaf = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.mark_leaf_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -137,9 +127,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
   
   mark_node = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.mark_node_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -147,12 +135,12 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
       .add_resource( { "visibility", visibility } )
   );
   
-  global_uniform = props.allocator->create_mappable_buffer(
+  global_uniform = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( global_uniform_type ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
   
-  vertex_buffer = props.allocator->create_mappable_buffer(
+  vertex_buffer = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( glm::vec4 ), vk::BufferUsageFlagBits::eVertexBuffer
   );
 
@@ -236,9 +224,7 @@ hierarchical_raster_occlusion_culling::hierarchical_raster_occlusion_culling(
 
   evaluate = std::make_shared< graphics >(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_vertex_input( vertex_input )

@@ -593,6 +593,56 @@ void to_json( nlohmann::json &to, const color_profile &from ) {
   to[ "gamma" ] = from.gamma;
   to[ "max_intensity" ] = from.max_intensity;
 }
+std::string to_string( color_space from ) {
+  if( from == color_space::cie_xyz ) {
+    return "cie_xyz";
+  }
+  else if( from == color_space::ntsc ) {
+    return "ntsc";
+  }
+  else if( from == color_space::bt709 ) {
+    return "bt709";
+  }
+  else if( from == color_space::apple_rgb ) {
+    return "apple_rgb";
+  }
+  else if( from == color_space::adobe_rgb ) {
+    return "adobe_rgb";
+  }
+  else if( from == color_space::display_p3 ) {
+    return "display_p3";
+  }
+  else if( from == color_space::bt2020 ) {
+    return "bt2020";
+  }
+  else if( from == color_space::aces_cg ) {
+    return "aces_cg";
+  }
+  else {
+    return "unknown";
+  }
+}
+void to_json( nlohmann::json &dest, const color_space_matrix &src ) {
+  dest = nlohmann::json::object();
+  dest[ "from" ] = nlohmann::json::object();
+  for( const auto &p: src.from ) {
+    if( p.second ) {
+      dest[ "from" ][ to_string( p.first ) ] = *p.second;
+    }
+    else {
+      dest[ "from" ][ to_string( p.first ) ] = nullptr;
+    }
+  }
+  dest[ "to" ] = nlohmann::json::object();
+  for( const auto &p: src.to ) {
+    if( p.second ) {
+      dest[ "to" ][ to_string( p.first ) ] = *p.second;
+    }
+    else {
+      dest[ "to" ][ to_string( p.first ) ] = nullptr;
+    }
+  }
+}
 
 }
 

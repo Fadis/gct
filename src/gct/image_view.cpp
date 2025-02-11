@@ -4,6 +4,7 @@
 #include <gct/image_view_create_info.hpp>
 #include <gct/image_view.hpp>
 #include <gct/image.hpp>
+#include <gct/subview_range.hpp>
 #include <gct/exception.hpp>
 
 namespace gct {

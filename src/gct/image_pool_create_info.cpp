@@ -1,6 +1,10 @@
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
+#include <gct/matrix_pool.hpp>
+#include <gct/buffer.hpp>
+#include <gct/color_space.hpp>
 #include <gct/descriptor_set.hpp>
+#include <gct/descriptor_set_layout.hpp>
 #include <gct/image_pool_create_info.hpp>
 
 namespace gct {
@@ -26,20 +30,41 @@ image_pool_create_info &image_pool_create_info::set_shader(
 
 void to_json( nlohmann::json &dest, const image_pool_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "max_image_count" ] = src.max_image_count;
+  dest[ "descriptor_set_layout" ] = nlohmann::json::array();
+  for( const auto &p: src.descriptor_set_layout ) {
+    if( p ) {
+      dest[ "descriptor_set_layout" ].push_back( *p );
+    }
+    else {
+      dest[ "descriptor_set_layout" ].push_back( nullptr );
+    }
+  }
   dest[ "descriptor_set" ] = nlohmann::json::object();
   for( const auto &v: src.external_descriptor_set ) {
-    dest[ "descriptor_set" ][ std::to_string( v.first ) ] = *v.second;
+    if( v.second ) {
+      dest[ "descriptor_set" ][ std::to_string( v.first ) ] = *v.second;
+    }
+    else {
+      dest[ "descriptor_set" ][ std::to_string( v.first ) ] = nullptr;
+    }
   }
+  dest[ "image_descriptor_set_id" ] = src.image_descriptor_set_id;
   dest[ "descriptor_name" ] = src.descriptor_name;
+  dest[ "layout" ] = src.layout;
+  if( src.matrix_pool ) {
+    dest[ "matrix_pool" ] = *src.matrix_pool;
+  }
+  dest[ "matrix_buffer_name" ] = src.matrix_buffer_name;
   dest[ "enable_linear" ] = src.enable_linear;
+  dest[ "csmat" ] = src.csmat;
   dest[ "rgba8_shader" ] = src.rgba8_shader;
   dest[ "rgba16_shader" ] = src.rgba16_shader;
   dest[ "rgba16f_shader" ] = src.rgba16f_shader;
   dest[ "rgba32f_shader" ] = src.rgba32f_shader;
+  dest[ "resources" ] = src.resources;
 }
+
 }
 

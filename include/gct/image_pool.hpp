@@ -2,13 +2,10 @@
 #define GCT_IMAGE_POOL_HPP
 #include <glm/mat4x4.hpp>
 #include <cstdint>
-#include <unordered_set>
-#include <unordered_map>
 #include <memory>
 #include <vector>
 #include <cstdint>
 #include <optional>
-#include <functional>
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
@@ -20,6 +17,8 @@
 #include <gct/named_resource.hpp>
 #include <gct/handler.hpp>
 #include <gct/color_space.hpp>
+#include <gct/image_create_info.hpp>
+#include <gct/subview_range.hpp>
 
 namespace gct {
 class image_t;
@@ -31,12 +30,23 @@ struct image_load_info {
   LIBGCT_SETTER( attr )
   LIBGCT_SETTER( max_channels_per_layer )
   LIBGCT_SETTER( enable_linear )
+  LIBGCT_SETTER( layout )
   std::string filename;
   vk::ImageUsageFlagBits usage;
   bool mipmap = true;
   integer_attribute_t attr = integer_attribute_t::normalized;
   unsigned int max_channels_per_layer = 4u;
   bool enable_linear = false;
+  std::optional< vk::ImageLayout > layout;
+};
+
+struct image_allocate_info {
+  LIBGCT_SETTER( create_info )
+  LIBGCT_SETTER( range )
+  LIBGCT_SETTER( layout )
+  image_create_info_t create_info;
+  subview_range range;
+  std::optional< vk::ImageLayout > layout;
 };
 
 struct image_dump_info {
@@ -78,26 +88,39 @@ private:
     LIBGCT_SETTER( mipmap )
     LIBGCT_SETTER( staging_buffer )
     LIBGCT_SETTER( final_image )
+    LIBGCT_SETTER( layout )
     image_index_t index;
     bool mipmap = true;
     std::shared_ptr< buffer_t > staging_buffer;
     std::shared_ptr< image_view_t > final_image;
+    vk::ImageLayout layout;
+  };
+  struct convert_request {
+    LIBGCT_SETTER( index )
+    LIBGCT_SETTER( image )
+    LIBGCT_SETTER( layout )
+    image_index_t index;
+    std::shared_ptr< image_view_t > image;
+    vk::ImageLayout layout;
   };
   struct rgb_to_xyz_request {
     LIBGCT_SETTER( rgb )
     LIBGCT_SETTER( xyz )
     LIBGCT_SETTER( rgb_image )
     LIBGCT_SETTER( xyz_image )
+    LIBGCT_SETTER( layout )
     image_index_t rgb;
     image_index_t xyz;
     std::shared_ptr< image_view_t > rgb_image;
     std::shared_ptr< image_view_t > xyz_image;
+    vk::ImageLayout layout;
   };
   using request_range = index_range;
 public:
   image_pool( const image_pool_create_info & );
-  views allocate( const image_load_info& );
-  views allocate();
+  [[nodiscard]] views allocate( const image_load_info& );
+  [[nodiscard]] views allocate();
+  [[nodiscard]] views allocate( const image_allocate_info& );
   [[nodiscard]] const image_pool_create_info &get_props() const { return state->props; }
   [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
   void dump( const image_descriptor&, const image_dump_info& );
@@ -110,6 +133,7 @@ private:
     void release_index( image_index_t );
     [[nodiscard]] views allocate( const image_load_info& );
     [[nodiscard]] views allocate();
+    [[nodiscard]] views allocate( const image_allocate_info& );
     [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
     void dump( const image_descriptor&, const image_dump_info& );
     void release( image_index_t );
@@ -120,6 +144,7 @@ private:
     std::vector< write_request > write_request_list;
     std::vector< std::pair< std::shared_ptr< image_t >, image_dump_info > > dump_request_list;
     std::vector< rgb_to_xyz_request > rgb_to_xyz_request_list;
+    std::vector< convert_request > convert_request_list;
     std::vector< image_descriptor > used_on_gpu;
     bool execution_pending = false;
     std::mutex guard;

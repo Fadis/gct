@@ -12,7 +12,6 @@ namespace gct {
 class allocator_t;
 class image_view_t;
 struct gbuffer_create_info {
-  gbuffer_create_info() {}
   LIBGCT_SETTER( allocator )
   LIBGCT_SETTER( width )
   LIBGCT_SETTER( height )

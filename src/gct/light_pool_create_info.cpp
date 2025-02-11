@@ -29,15 +29,7 @@ light_pool_create_info &light_pool_create_info::set_shader(
 
 void to_json( nlohmann::json &dest, const light_pool_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
-  if( src.descriptor_pool ) {
-    dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  }
-  if( src.pipeline_cache ) {
-    dest[ "pipeline_cache" ] = *src.pipeline_cache;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   if( src.matrix_pool ) {
     dest[ "matrix_pool" ] = *src.matrix_pool;
   }

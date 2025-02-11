@@ -63,7 +63,7 @@ epipolar_mesh::epipolar_mesh(
 
   for( std::size_t i = 0u; i != props.swapchain_image_count; ++i ) {
     vertex_buffer.push_back(
-      props.allocator->create_mappable_buffer(
+      props.allocator_set.allocator->create_mappable_buffer(
         sizeof( float ) * pc.stride * props.vertex_count * props.pole_count,
         vk::BufferUsageFlagBits::eStorageBuffer|
         vk::BufferUsageFlagBits::eVertexBuffer
@@ -71,7 +71,7 @@ epipolar_mesh::epipolar_mesh(
     );
   }
   index_buffer_staging =
-    props.allocator->create_mappable_buffer(
+    props.allocator_set.allocator->create_mappable_buffer(
       sizeof( std::uint16_t ) * 6u * ( props.pole_count - 1u ) * ( props.vertex_count - 1u ),
       vk::BufferUsageFlagBits::eStorageBuffer|
       vk::BufferUsageFlagBits::eIndexBuffer
@@ -106,9 +106,7 @@ epipolar_mesh::epipolar_mesh(
   generate.push_back(
     compute(
       compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_swapchain_image_count( props.swapchain_image_count )
         .set_shader( props.generate2_shader )
         .set_resources( props.resources )
@@ -118,9 +116,7 @@ epipolar_mesh::epipolar_mesh(
   generate.push_back(
     compute(
       compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_swapchain_image_count( props.swapchain_image_count )
         .set_shader( props.generate3_shader )
         .set_resources( props.resources )
@@ -130,9 +126,7 @@ epipolar_mesh::epipolar_mesh(
   generate.push_back(
     compute(
       compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_swapchain_image_count( props.swapchain_image_count )
         .set_shader( props.generate4_shader )
         .set_resources( props.resources )

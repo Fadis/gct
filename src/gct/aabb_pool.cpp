@@ -238,24 +238,22 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
   read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_aabb_count ) ),
   update_request_index_allocator( linear_allocator_create_info().set_max( ci.max_aabb_count ) )
 {
-  aabb = props.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
-  staging_aabb = props.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  aabb = props.allocator_set.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
+  staging_aabb = props.allocator_set.allocator->create_buffer( sizeof( aabb_type ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   {
     auto mapped = staging_aabb->map< float >();
     std::fill( mapped.begin(), mapped.end(), 1.8f );
   }
-  write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  update_request_buffer = props.allocator->create_buffer( sizeof( update_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  write_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( write_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  read_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( read_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  update_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( update_request ) * props.max_aabb_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   {
     auto mapped = update_request_buffer->map< std::uint32_t >();
     std::fill( mapped.begin(), mapped.end(), 2u );
   }
   write.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -265,9 +263,7 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
   ) );
   read.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -277,9 +273,7 @@ aabb_pool::state_type::state_type( const aabb_pool_create_info &ci ) :
   ) );
   update.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.update_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )

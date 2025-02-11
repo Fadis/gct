@@ -19,7 +19,7 @@ rtao::rtao(
     ci.output->get_factory()->get_props().get_basic().extent.height
   )
 {
-  previous_ao = props.allocator->create_image_view(
+  previous_ao = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( width, height )
@@ -32,7 +32,7 @@ rtao::rtao(
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   
-  previous_history = props.allocator->create_image_view(
+  previous_history = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( width, height )
@@ -45,7 +45,7 @@ rtao::rtao(
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   
-  history = props.allocator->create_image_view(
+  history = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( width, height )
@@ -61,9 +61,7 @@ rtao::rtao(
 
   generate_ao.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.rtao_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -76,9 +74,7 @@ rtao::rtao(
   
   hgauss.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.hgauss_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -90,9 +86,7 @@ rtao::rtao(
   
   vgauss.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.vgauss_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )

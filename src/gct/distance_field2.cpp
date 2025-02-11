@@ -16,7 +16,7 @@ distance_field2::distance_field2(
 ) :
   property_type( ci ),
   working_image(
-    ci.allocator,
+    ci.allocator_set.allocator,
     ci.size_factor,
     vk::Format::eR32Uint,
     1u,
@@ -24,15 +24,13 @@ distance_field2::distance_field2(
     vk::ImageUsageFlagBits::eTransferDst
   ),
   distance_field_image(
-    ci.allocator,
+    ci.allocator_set.allocator,
     ci.size_factor,
     vk::Format::eR16Sfloat
   ) {
   voronoi.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.voronoi_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -41,9 +39,7 @@ distance_field2::distance_field2(
 
   distance_field_.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.distance_field_shader )
       .set_swapchain_image_count( 1u )
       .add_resource( { props.working_image_name, working_image.get_image(), vk::ImageLayout::eGeneral } )

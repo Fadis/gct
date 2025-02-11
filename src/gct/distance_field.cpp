@@ -17,21 +17,19 @@ distance_field::distance_field(
 ) :
   property_type( ci ),
   working_image(
-    ci.allocator,
+    ci.allocator_set.allocator,
     ci.size_factor,
     vk::Format::eR32Uint
   ),
   distance_field_image(
-    ci.allocator,
+    ci.allocator_set.allocator,
     ci.size_factor,
     vk::Format::eR32Sfloat
   ) {
 
   clear_.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.clear_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "dest_image", working_image.get_image(), vk::ImageLayout::eGeneral } )
@@ -39,9 +37,7 @@ distance_field::distance_field(
 
   voronoi.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.voronoi_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "dest_image", working_image.get_image(), vk::ImageLayout::eGeneral } )
@@ -49,9 +45,7 @@ distance_field::distance_field(
 
   distance_field_.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.distance_field_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "src_image", working_image.get_image(), vk::ImageLayout::eGeneral } )

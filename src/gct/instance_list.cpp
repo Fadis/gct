@@ -37,7 +37,7 @@ instance_list::instance_list(
   if( !resource->push_constant_mp ) {
     throw -1;
   }
-  const auto &device = get_device( *graph.get_props().allocator );
+  const auto &device = get_device( *graph.get_props().allocator_set.allocator );
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
   enable_conditional = device.get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_activated_extensions().end();
 #else

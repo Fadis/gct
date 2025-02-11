@@ -44,7 +44,7 @@ image_pool::views image_pool::state_type::allocate() {
   const image_index_t normalized_index = allocate_index();
   const image_index_t srgb_index = allocate_index();
 
-  auto b = props.allocator->create_buffer(
+  auto b = props.allocator_set.allocator->create_buffer(
     16 * 16 * 4,
     vk::BufferUsageFlagBits::eTransferSrc,
     VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -81,7 +81,7 @@ image_pool::views image_pool::state_type::allocate() {
     }
   }
 
-  std::shared_ptr< image_t > i = props.allocator->create_image(
+  std::shared_ptr< image_t > i = props.allocator_set.allocator->create_image(
     image_create_info_t()
       .set_basic(
         vk::ImageCreateInfo()
@@ -137,6 +137,7 @@ image_pool::views image_pool::state_type::allocate() {
       .set_mipmap( false )
       .set_staging_buffer( b )
       .set_final_image( normalized )
+      .set_layout( props.layout )
   );
   image_state[ normalized_index ] =
     image_state_type()
@@ -189,10 +190,10 @@ image_pool::views image_pool::state_type::allocate(
   image_index_t srgb_index = 0u;
   image_index_t linear_index = 0u;
 
-  auto &device = get_device( *props.allocator );
+  auto &device = get_device( *props.allocator_set.allocator );
 
   const auto [b,i,l] = create_image_from_file(
-    props.allocator,
+    props.allocator_set.allocator,
     ci.filename,
     ci.usage,
     ci.mipmap,
@@ -271,6 +272,7 @@ image_pool::views image_pool::state_type::allocate(
       .set_mipmap( ci.mipmap )
       .set_staging_buffer( b )
       .set_final_image( normalized )
+      .set_layout( ci.layout ? *ci.layout : props.layout )
   );
   image_state[ normalized_index ] =
     image_state_type()
@@ -317,6 +319,7 @@ image_pool::views image_pool::state_type::allocate(
         .set_xyz( linear_index )
         .set_rgb_image( normalized )
         .set_xyz_image( linear )
+        .set_layout( ci.layout ? *ci.layout : props.layout )
     );
     image_state[ linear_index ] =
       image_state_type()
@@ -341,6 +344,50 @@ image_pool::views image_pool::state_type::allocate(
     .set_srgb( srgb_desc )
     .set_linear( linear_desc );
 }
+
+image_pool::views image_pool::state_type::allocate(
+  const image_allocate_info &alloc
+) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "image_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  image_index_t linear_index = allocate_index();
+
+  auto &device = get_device( *props.allocator_set.allocator );
+
+  std::shared_ptr< image_t > i = props.allocator_set.allocator->create_image(
+    alloc.create_info,
+    VMA_MEMORY_USAGE_GPU_ONLY
+  );
+
+  const std::shared_ptr< image_view_t > linear = i->get_view( alloc.range );
+
+  image_state[ linear_index ] =
+    image_state_type()
+      .set_valid( true )
+      .set_image( linear );
+  convert_request_list.push_back(
+    convert_request()
+      .set_index( linear_index )
+      .set_image( linear )
+      .set_layout( alloc.layout ? *alloc.layout : props.layout )
+  );
+
+  const image_descriptor linear_desc = image_descriptor(
+      new image_index_t( linear_index ),
+      [self=shared_from_this()]( const image_index_t *p ) {
+        if( p ) {
+          self->release( *p );
+          delete p;
+        }
+      }
+    );
+  used_on_gpu.push_back( linear_desc );
+
+  return views()
+    .set_linear( linear_desc );
+}
+
 
 void image_pool::state_type::release( image_index_t index ) {
   image_state_type removed;
@@ -405,6 +452,18 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
           )
           .add_image( req.xyz_image, vk::ImageLayout::eGeneral )
           .set_index( req.xyz )
+      );
+    }
+    for( const auto &req: convert_request_list ) {
+      updates.push_back(
+        write_descriptor_set_t()
+          .set_basic(
+            vk::WriteDescriptorSet( target )
+              .setDstArrayElement( req.index )
+              .setDescriptorCount( 1u )
+          )
+          .add_image( req.image, vk::ImageLayout::eGeneral )
+          .set_index( req.index )
       );
     }
     props.external_descriptor_set[ props.image_descriptor_set_id ]->update(
@@ -495,14 +554,17 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   }
   for( const auto &req: rgb_to_xyz_request_list ) {
     rec.barrier( {}, { req.xyz_image->get_factory() } );
-    rec.convert_image( req.xyz_image->get_factory(), props.layout );
+    rec.convert_image( req.xyz_image->get_factory(), req.layout );
   }
   for( const auto &req: write_request_list ) {
-    rec.convert_image( req.final_image->get_factory(), props.layout );
+    rec.convert_image( req.final_image->get_factory(), req.layout );
+  }
+  for( const auto &req: convert_request_list ) {
+    rec.convert_image( req.image->get_factory(), req.layout );
   }
   for( const auto &req: dump_request_list ) {
     rec.dump_image(
-      props.allocator,
+      props.allocator_set.allocator,
       req.first,
       req.second.filename,
       req.second.mipmap,
@@ -523,6 +585,7 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         }
         self->write_request_list.clear();
         self->rgb_to_xyz_request_list.clear();
+        self->convert_request_list.clear();
         used_on_gpu = std::move( self->used_on_gpu );
         self->used_on_gpu.clear();
         self->execution_pending = false;
@@ -554,9 +617,7 @@ image_pool::state_type::state_type( const image_pool_create_info &ci ) :
   if( props.enable_linear ) {
     rgba8.reset( new gct::compute(
       gct::compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.rgba8_shader )
         .set_swapchain_image_count( 1u )
         .set_descriptor_set_layout( props.descriptor_set_layout )
@@ -567,9 +628,7 @@ image_pool::state_type::state_type( const image_pool_create_info &ci ) :
     ) );
     rgba16.reset( new gct::compute(
       gct::compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.rgba16_shader )
         .set_swapchain_image_count( 1u )
         .set_descriptor_set_layout( props.descriptor_set_layout )
@@ -580,9 +639,7 @@ image_pool::state_type::state_type( const image_pool_create_info &ci ) :
     ) );
     rgba16f.reset( new gct::compute(
       gct::compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.rgba16f_shader )
         .set_swapchain_image_count( 1u )
         .set_descriptor_set_layout( props.descriptor_set_layout )
@@ -593,9 +650,7 @@ image_pool::state_type::state_type( const image_pool_create_info &ci ) :
     ) );
     rgba32f.reset( new gct::compute(
       gct::compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.rgba32f_shader )
         .set_swapchain_image_count( 1u )
         .set_descriptor_set_layout( props.descriptor_set_layout )

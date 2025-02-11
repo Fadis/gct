@@ -1,4 +1,3 @@
-#include <iostream>
 #include <chrono>
 #include <gct/gbuffer.hpp>
 #include <gct/allocator.hpp>
@@ -29,7 +28,7 @@ nohc_benchmark::nohc_benchmark(
 ) : props( ci ) {
   gbuf = std::make_shared< gct::gbuffer >(
     gct::gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( props.width )
       .set_height( props.height )
       .set_layer( 1u )
@@ -40,9 +39,7 @@ nohc_benchmark::nohc_benchmark(
   );
   sg = std::make_shared< gct::scene_graph::scene_graph >(
     gct::scene_graph::scene_graph_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .add_master_shader( props.shader / "geometry" )
       .set_shader( props.shader )
   );
@@ -59,7 +56,7 @@ nohc_benchmark::nohc_benchmark(
   }
 
   const auto [vistat,vamap,stride] = get_vertex_attributes(
-    get_device( *props.allocator ),
+    get_device( *props.allocator_set.allocator ),
     *vs_reflection
   );
   const auto [high_piasci,high_vertices,high_vertex_count] = primitive::create_sphere( vamap, stride, 120, 60 );
@@ -217,25 +214,25 @@ nohc_benchmark::nohc_benchmark(
     gct::scene_graph::instance_list_create_info(),
     *sg
   );
-  const auto global_descriptor_set_layout = get_device( *props.allocator ).get_descriptor_set_layout(
+  const auto global_descriptor_set_layout = get_device( *props.allocator_set.allocator ).get_descriptor_set_layout(
     std::vector< std::filesystem::path >{
       props.shader / "geometry"
     },
     1u
   );
   global_uniform =
-    props.allocator->create_mappable_buffer(
+    props.allocator_set.allocator->create_mappable_buffer(
       sizeof( gct::gltf::dynamic_uniforms_t ),
       vk::BufferUsageFlagBits::eUniformBuffer
     );
   global_descriptor_set =
-    props.descriptor_pool->allocate(
+    props.allocator_set.descriptor_pool->allocate(
       global_descriptor_set_layout
     );
   const unsigned int shadow_map_size = 1024u;
   shadow = std::make_shared< gbuffer >(
     gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( shadow_map_size )
       .set_height( shadow_map_size )
       .set_layer( 6 )
@@ -247,7 +244,7 @@ nohc_benchmark::nohc_benchmark(
       .set_clear_color( gct::color::web::white )
   );
   gct::cubemap_images2 cubemap_images( shadow->get_image_views() );
-  cubemap_sampler = get_device( *props.allocator ).get_sampler(
+  cubemap_sampler = get_device( *props.allocator_set.allocator ).get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
   global_descriptor_set->update({
@@ -257,9 +254,7 @@ nohc_benchmark::nohc_benchmark(
   
   oq = std::make_shared< gct::occlusion_query< unsigned int > >(
     gct::occlusion_query_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_color_attachment_count( 0u )
       .set_depth_image( gbuf->get_depth_views()[ 0 ] )
       .set_shader( props.shader / "aabb" )

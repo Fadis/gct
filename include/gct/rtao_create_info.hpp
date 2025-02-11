@@ -7,17 +7,14 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 class image_view_t;
 struct rtao_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( hgauss_shader )
   LIBGCT_SETTER( vgauss_shader )
   LIBGCT_SETTER( rtao_shader )
@@ -37,9 +34,7 @@ struct rtao_create_info {
   rtao_create_info &set_shader(
     const std::filesystem::path &
   );
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::filesystem::path hgauss_shader;
   std::filesystem::path vgauss_shader;
   std::filesystem::path rtao_shader;
@@ -51,6 +46,8 @@ struct rtao_create_info {
   std::shared_ptr< image_view_t > output;
   std::vector< named_resource > resources;
 };
+
+void to_json( nlohmann::json &dest, const rtao_create_info &src );
 
 }
 

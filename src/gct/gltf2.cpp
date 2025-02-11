@@ -42,7 +42,7 @@ gltf2::gltf2(
 void gltf2::load_buffer(
   const fx::gltf::Document &doc
 ) {
-  const auto allocator = props.graph->get_props().allocator;
+  const auto allocator = props.graph->get_props().allocator_set.allocator;
   for( const auto &b: doc.buffers ) {
     auto buffer_path = std::filesystem::path( b.uri );
     if( buffer_path.is_relative() ) buffer_path = cd / buffer_path;

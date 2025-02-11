@@ -1,4 +1,3 @@
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
@@ -21,7 +20,7 @@ namespace gct {
     const graphics_create_info &ci
   ) :
     property_type( ci ) {
-    auto &device = get_device( *props.pipeline_cache );
+    auto &device = get_device( *props.allocator_set.pipeline_cache );
     for( const auto &s: props.shaders ) {
       props.pipeline_create_info.add_stage( device.get_shader_module( s ) );
     }
@@ -106,7 +105,7 @@ namespace gct {
       }
       else {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          descriptor_set[ i ][ d.first ] = props.descriptor_pool->allocate(
+          descriptor_set[ i ][ d.first ] = props.allocator_set.descriptor_pool->allocate(
             d.second
           );
         }
@@ -144,7 +143,7 @@ namespace gct {
             .add_attachment()
         );
     }
-    pipeline = props.pipeline_cache->get_pipeline(
+    pipeline = props.allocator_set.pipeline_cache->get_pipeline(
       props.pipeline_create_info
         .set_vertex_input( vistat )
         .set_layout( pipeline_layout )

@@ -3,29 +3,25 @@
 
 #include <filesystem>
 #include <gct/setter.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
-class image_view_t;
 struct distance_field_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( clear_shader )
   LIBGCT_SETTER( voronoi_shader )
   LIBGCT_SETTER( distance_field_shader )
   LIBGCT_SETTER( size_factor )
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::filesystem::path clear_shader;
   std::filesystem::path voronoi_shader;
   std::filesystem::path distance_field_shader;
   unsigned int size_factor = 9u;
 };
+
+void to_json( nlohmann::json &dest, const distance_field_create_info &src );
 
 }
 

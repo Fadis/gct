@@ -1,7 +1,4 @@
 #include <nlohmann/json.hpp>
-#include <gct/allocator.hpp>
-#include <gct/descriptor_pool.hpp>
-#include <gct/pipeline_cache.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/compute_create_info.hpp>
 
@@ -21,9 +18,7 @@ compute_create_info &compute_create_info::clear_resource(
 }
 void to_json( nlohmann::json &dest, const compute_create_info &src ) {
   dest = nlohmann::json::object();
-  dest[ "allocator" ] = *src.allocator;
-  dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  dest[ "pipeline_cache" ] = *src.pipeline_cache;
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "shader" ] = src.shader.string();
   dest[ "resources" ] = src.resources;
 }

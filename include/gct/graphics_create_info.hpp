@@ -9,20 +9,17 @@
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 class render_pass_t;
 class shader_module_t;
 class descriptor_set_t;
 class pipeline_layout_t;
 struct graphics_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( shaders )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( shader_module )
@@ -61,9 +58,7 @@ struct graphics_create_info {
     return *this;
   }
   graphics_create_info &clear_shader();
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::vector< std::shared_ptr< shader_module_t > > shader_module;
@@ -74,6 +69,8 @@ struct graphics_create_info {
   unsigned int swapchain_image_count = 1u;
   bool ignore_unused_descriptor = false;
 };
+
+void to_json( nlohmann::json&, const graphics_create_info& );
 
 }
 

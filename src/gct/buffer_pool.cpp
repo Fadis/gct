@@ -269,21 +269,19 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
 {
   const auto reflection = shader_module_reflection_t( std::filesystem::path( props.write_shader ) );
   aligned_size = reflection.get_member_pointer( props.buffer_name, props.layout ).get_stride();
-  buffer = props.allocator->create_buffer(
+  buffer = props.allocator_set.allocator->create_buffer(
     aligned_size * props.max_buffer_count,
     vk::BufferUsageFlagBits::eStorageBuffer|
     vk::BufferUsageFlagBits::eTransferSrc|
     vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  staging_buffer = props.allocator->create_buffer( aligned_size * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  staging_buffer = props.allocator_set.allocator->create_buffer( aligned_size * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  write_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( write_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  read_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( read_request ) * props.max_buffer_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   write.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -293,9 +291,7 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
   ) );
   read.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )

@@ -16,10 +16,10 @@ namespace gct {
 skyview::skyview(
   const skyview_create_info &ci
 ) : props( ci ) {
-  auto linear_sampler = get_device( *props.allocator ).get_sampler(
+  auto linear_sampler = get_device( *props.allocator_set.allocator ).get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
-  transmittance = props.allocator->create_image_view(
+  transmittance = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( props.transmittance_width, props.transmittance_height )
@@ -32,7 +32,7 @@ skyview::skyview(
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  multiscat = props.allocator->create_image_view(
+  multiscat = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( props.multiscat_size, props.multiscat_size )
@@ -45,7 +45,7 @@ skyview::skyview(
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  output = props.allocator->create_image_view(
+  output = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( props.skyview_width, props.skyview_height )
@@ -61,18 +61,14 @@ skyview::skyview(
   
   generate_transmittance = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.transmittance_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "dest_image", transmittance, vk::ImageLayout::eGeneral } )
   );
   generate_multiscat = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.multiscat_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "transmittance", linear_sampler, transmittance, vk::ImageLayout::eShaderReadOnlyOptimal } )
@@ -80,9 +76,7 @@ skyview::skyview(
   );
   generate_skyview = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.skyview_shader )
       .set_swapchain_image_count( 1 )
       .add_resource( { "transmittance", linear_sampler, transmittance, vk::ImageLayout::eShaderReadOnlyOptimal } )

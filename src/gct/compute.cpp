@@ -24,14 +24,14 @@ namespace gct {
   ) :
     property_type( ci ) {
     if( props.external_pipeline_layout ) {
-      auto &device = get_device( *props.pipeline_cache );
+      auto &device = get_device( *props.allocator_set.pipeline_cache );
       auto shader = device.get_shader_module( props.shader );
       std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
       const auto &dsl = props.external_pipeline_layout->get_props().get_descriptor_set_layout();
       for( unsigned int i = 0u; i != dsl.size(); ++i ) {
         set_layouts.insert( std::make_pair( i, dsl[ i ] ) );
       }
-      pipeline = props.pipeline_cache->get_pipeline(
+      pipeline = props.allocator_set.pipeline_cache->get_pipeline(
         compute_pipeline_create_info_t()
           .set_dim( props.dim )
           .set_stage( shader, props.specs )
@@ -40,7 +40,7 @@ namespace gct {
       descriptor_set_layout = set_layouts;
     }
     else {
-      std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout, props.specs, props.dim );
+      std::tie(descriptor_set_layout,pipeline) = props.allocator_set.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout, props.specs, props.dim );
     }
     descriptor_set.resize( props.swapchain_image_count );
     for( auto &d: descriptor_set_layout ) {
@@ -58,7 +58,7 @@ namespace gct {
       }
       else {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          descriptor_set[ i ][ d.first ] = props.descriptor_pool->allocate(
+          descriptor_set[ i ][ d.first ] = props.allocator_set.descriptor_pool->allocate(
             d.second
           );
         }

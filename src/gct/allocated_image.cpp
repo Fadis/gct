@@ -2,6 +2,7 @@
 #include <gct/image_create_info.hpp>
 #include <gct/image_view_create_info.hpp>
 #include <gct/format.hpp>
+#include <gct/subview_range.hpp>
 #include <gct/allocated_image.hpp>
 
 namespace gct {
@@ -94,6 +95,32 @@ namespace gct {
       ) );
     }
     return temp;
+  }
+  std::shared_ptr< image_view_t > allocated_image_t::get_view(
+    const subview_range &r
+  ) {
+    if( get_props().get_basic().mipLevels < r.mip_offset + r.mip_count ) {
+      throw gct::exception::out_of_range( "allocated_image_t::get_view : Specified mipmap range is outside of available mipmap levels." );
+    }
+    if( get_props().get_basic().arrayLayers < r.layer_offset + r.layer_count ) {
+      throw gct::exception::out_of_range( "allocated_image_t::get_view : Specified layer range is outside of available layers." );
+    }
+    return get_view(
+      image_view_create_info_t()
+        .set_basic(
+          vk::ImageViewCreateInfo()
+            .setSubresourceRange(
+              vk::ImageSubresourceRange()
+                .setAspectMask( format_to_aspect( get_props().get_basic().format ) )
+                .setBaseMipLevel( r.mip_offset )
+                .setLevelCount( r.mip_count )
+                .setBaseArrayLayer( r.layer_offset )
+                .setLayerCount( r.layer_count )
+            )
+            .setViewType( to_image_view_type( get_props().get_basic().imageType, r.layer_count, r.force_array ) )
+        )
+        .rebuild_chain()
+    );
   }
   std::vector< std::shared_ptr< image_view_t > > allocated_image_t::get_thin_views(
     std::uint32_t layer,

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
@@ -26,21 +25,21 @@ onesweep::onesweep(
     props.output->get_props().get_basic().size / sizeof( key_value_t )
   );
   histgram_buffer =
-    props.allocator->create_buffer(
+    props.allocator_set.allocator->create_buffer(
       sizeof( std::uint32_t ) * 256u * 4u,
       vk::BufferUsageFlagBits::eStorageBuffer|
       vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_ONLY
     );
   local_offset =
-    props.allocator->create_buffer(
+    props.allocator_set.allocator->create_buffer(
       sizeof( std::uint32_t ) * max_size,
       vk::BufferUsageFlagBits::eStorageBuffer|
       vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_ONLY
     );
   workgroup_offset =
-    props.allocator->create_buffer(
+    props.allocator_set.allocator->create_buffer(
       sizeof( std::uint32_t ) * 256u * 1024u,
       vk::BufferUsageFlagBits::eStorageBuffer|
       vk::BufferUsageFlagBits::eTransferDst,
@@ -48,9 +47,7 @@ onesweep::onesweep(
     );
   histgram.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.histgram_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -59,9 +56,7 @@ onesweep::onesweep(
   ) );
   histgram_sum.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.histgram_sum_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -69,9 +64,7 @@ onesweep::onesweep(
   ) );
   local_sum.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.local_sum_shader )
       .set_swapchain_image_count( 2u )
       .set_resources( props.resources )
@@ -82,9 +75,7 @@ onesweep::onesweep(
 
   global_sum.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.global_sum_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -93,9 +84,7 @@ onesweep::onesweep(
 
   sort.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.sort_shader )
       .set_swapchain_image_count( 2u )
       .set_resources( props.resources )
@@ -108,9 +97,7 @@ onesweep::onesweep(
 
   small_sort.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.small_sort_shader )
       .set_swapchain_image_count( 1u )
       .add_resource( { props.input_name, props.input } )

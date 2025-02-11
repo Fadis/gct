@@ -17,7 +17,7 @@ namespace gct {
 skyview_froxel::skyview_froxel(
   const skyview_froxel_create_info &ci
 ) : props( ci ) {
-  froxel = props.allocator->create_image_view(
+  froxel = props.allocator_set.allocator->create_image_view(
     gct::image_create_info_t()
       .set_basic(
         gct::basic_3d_image(
@@ -43,25 +43,23 @@ skyview_froxel::skyview_froxel(
          )
       );
 
-  rendered = props.allocator->create_image_view(
+  rendered = props.allocator_set.allocator->create_image_view(
     rgba32ici,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
-  auto linear_sampler = get_device( *props.allocator ).get_sampler(
+  auto linear_sampler = get_device( *props.allocator_set.allocator ).get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );
 
-  state = props.allocator->create_mappable_buffer(
+  state = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( skyview_froxel_param ),
     vk::BufferUsageFlagBits::eUniformBuffer
   );
 
   generate = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.generate_shader )
       .set_swapchain_image_count( 1u )
       .add_resource( { props.froxel_state_name, state } )
@@ -72,9 +70,7 @@ skyview_froxel::skyview_froxel(
 
   render = std::make_shared< gct::compute >(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.render_shader )
       .set_swapchain_image_count( 1u )
       .add_resource( { props.froxel_state_name, state } )

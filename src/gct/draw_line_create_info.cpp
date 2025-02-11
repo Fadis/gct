@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -43,6 +44,22 @@ draw_line_create_info &draw_line_create_info::add_shader(
 draw_line_create_info &draw_line_create_info::clear_shader() {
   shaders.clear();
   return *this;
+}
+
+void to_json( nlohmann::json &dest, const draw_line_create_info &src ) {
+  dest = nlohmann::json::object();
+  dest[ "allocator_set" ] = src.allocator_set;
+  dest[ "color_attachment_count" ] = src.color_attachment_count;
+  dest[ "shaders" ] = nlohmann::json::array();
+  for( const auto &p: src.shaders ) {
+    dest[ "shaders" ].push_back( p.string() );
+  }
+  dest[ "dynamic_cull_mode" ] = src.dynamic_cull_mode;
+  dest[ "max_line_count" ] = src.max_line_count;
+  dest[ "line_width" ] = src.line_width;
+  dest[ "width" ] = src.width;
+  dest[ "height" ] = src.height;
+  dest[ "resources" ] = src.resources;
 }
 
 }

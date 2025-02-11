@@ -9,18 +9,15 @@
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/texture_pool.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 class shader_module_t;
 class descriptor_set_t;
 struct lens_flare_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( width )
   LIBGCT_SETTER( height )
@@ -58,9 +55,7 @@ struct lens_flare_create_info {
     return *this;
   }
   lens_flare_create_info &clear_shader();
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
   std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::uint32_t width = 1920u;
@@ -72,6 +67,7 @@ struct lens_flare_create_info {
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
   std::vector< named_resource > resources;
 };
+void to_json( nlohmann::json &dest, const lens_flare_create_info &src );
 
 }
 

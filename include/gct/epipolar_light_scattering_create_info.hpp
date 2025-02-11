@@ -8,16 +8,13 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 struct epipolar_light_scattering_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( pole_count )
   LIBGCT_SETTER( vertex_count )
   LIBGCT_SETTER( input )
@@ -42,9 +39,7 @@ struct epipolar_light_scattering_create_info {
     const std::filesystem::path&
   );
   epipolar_light_scattering_create_info &clear_draw_mesh_shader();
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::uint32_t pole_count = 256u;
   std::uint32_t vertex_count = 16u;
   std::vector< std::shared_ptr< image_view_t > > input;
@@ -62,6 +57,8 @@ struct epipolar_light_scattering_create_info {
   std::filesystem::path vgauss_shader;
   std::vector< named_resource > resources;
 };
+
+void to_json( nlohmann::json &dest, const epipolar_light_scattering_create_info &src );
 
 }
 

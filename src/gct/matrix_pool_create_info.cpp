@@ -29,15 +29,7 @@ matrix_pool_create_info &matrix_pool_create_info::set_shader(
 
 void to_json( nlohmann::json &dest, const matrix_pool_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
-  if( src.descriptor_pool ) {
-    dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  }
-  if( src.pipeline_cache ) {
-    dest[ "pipeline_cache" ] = *src.pipeline_cache;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "update_shader" ] = src.update_shader.string();

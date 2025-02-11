@@ -16,7 +16,7 @@ tone_mapping::tone_mapping(
 {
   for( std::size_t i = 0u; i != props.input.size(); ++i ) {
     tone.push_back(
-      props.allocator->create_buffer(
+      props.allocator_set.allocator->create_buffer(
         sizeof( tone_state_t ),
         vk::BufferUsageFlagBits::eStorageBuffer|
         vk::BufferUsageFlagBits::eTransferDst|
@@ -25,7 +25,7 @@ tone_mapping::tone_mapping(
       )
     );
     tone_staging.push_back(
-      props.allocator->create_buffer(
+      props.allocator_set.allocator->create_buffer(
         sizeof( tone_state_t ),
         vk::BufferUsageFlagBits::eTransferDst|
         vk::BufferUsageFlagBits::eTransferSrc,
@@ -35,9 +35,7 @@ tone_mapping::tone_mapping(
   }
   calc_tone.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )

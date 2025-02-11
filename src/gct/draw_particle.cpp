@@ -48,9 +48,7 @@ draw_particle::draw_particle(
   }
   draw.reset( new graphics(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_input_assembly(

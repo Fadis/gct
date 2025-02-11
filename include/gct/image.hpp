@@ -13,6 +13,7 @@ namespace gct {
   vk::ImageViewType to_image_view_type( vk::ImageType v, std::uint32_t, bool = false );
   class image_view_create_info_t;
   class device_t;
+  class subview_range;
   class image_t :
     public property< image_create_info_t > {
   public:
@@ -38,6 +39,9 @@ namespace gct {
     [[nodiscard]] virtual std::vector< std::shared_ptr< image_view_t > > get_thin_views(
       std::uint32_t layer,
       bool force_array = false
+    ) = 0;
+    [[nodiscard]] virtual std::shared_ptr< image_view_t > get_view(
+      const subview_range &
     ) = 0;
     [[nodiscard]] virtual vk::Image &operator*() = 0;
     [[nodiscard]] virtual const vk::Image &operator*() const = 0;

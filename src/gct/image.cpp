@@ -1,6 +1,7 @@
 #include <nlohmann/json.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/image_view_create_info.hpp>
+#include <gct/subview_range.hpp>
 #include <gct/image.hpp>
 
 namespace gct {

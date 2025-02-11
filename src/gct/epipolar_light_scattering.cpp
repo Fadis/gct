@@ -23,7 +23,7 @@ epipolar_light_scattering::epipolar_light_scattering(
 ) : props( ci ) {
   output.reset( new gbuffer(
     gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width(
         props.input[ 0 ]->get_factory()->get_props().get_basic().extent.width
       )
@@ -37,7 +37,7 @@ epipolar_light_scattering::epipolar_light_scattering(
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_clear_color( color::special::transparent )
   ) );
-  volumetric_light = props.allocator->create_image_views(
+  volumetric_light = props.allocator_set.allocator->create_image_views(
     image_create_info_t()
       .set_basic(
         basic_2d_image( props.pole_count, props.vertex_count )
@@ -50,7 +50,7 @@ epipolar_light_scattering::epipolar_light_scattering(
     VMA_MEMORY_USAGE_GPU_ONLY,
     props.input.size()
   );
-  volumetric_light_texcoord = props.allocator->create_image_views(
+  volumetric_light_texcoord = props.allocator_set.allocator->create_image_views(
     image_create_info_t()
       .set_basic(
         basic_2d_image( props.pole_count, props.vertex_count * props.texel_per_sample )
@@ -63,7 +63,7 @@ epipolar_light_scattering::epipolar_light_scattering(
     VMA_MEMORY_USAGE_GPU_ONLY,
     props.input.size()
   );
-  gauss_temp = props.allocator->create_image_views(
+  gauss_temp = props.allocator_set.allocator->create_image_views(
     image_create_info_t()
       .set_basic(
         basic_2d_image(
@@ -78,15 +78,13 @@ epipolar_light_scattering::epipolar_light_scattering(
     VMA_MEMORY_USAGE_GPU_ONLY,
     props.input.size()
   );
-  auto linear_sampler = get_device( *props.pipeline_cache ).get_sampler(
+  auto linear_sampler = get_device( *props.allocator_set.pipeline_cache ).get_sampler(
     get_basic_linear_sampler_create_info()
   );
 
   draw_mesh.reset( new graphics(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_input_assembly(
@@ -118,9 +116,7 @@ epipolar_light_scattering::epipolar_light_scattering(
 
   mesh.reset( new epipolar_mesh(
     epipolar_mesh_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_generate2_shader( props.generate_mesh2_shader )
       .set_generate3_shader( props.generate_mesh3_shader )
       .set_generate4_shader( props.generate_mesh4_shader )
@@ -133,9 +129,7 @@ epipolar_light_scattering::epipolar_light_scattering(
 
   calc_volumetric_light.reset( new compute(
     compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.volumetric_light_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -155,9 +149,7 @@ epipolar_light_scattering::epipolar_light_scattering(
 
   clear_volumetric_light_texcoord.reset( new compute(
     compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.clear_texcoord_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -166,9 +158,7 @@ epipolar_light_scattering::epipolar_light_scattering(
   
   calc_volumetric_light_texcoord.reset( new compute(
     compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.generate_texcoord_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -179,9 +169,7 @@ epipolar_light_scattering::epipolar_light_scattering(
   
   fill_volumetric_light_texcoord.reset( new compute(
     compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.fill_texcoord_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -191,9 +179,7 @@ epipolar_light_scattering::epipolar_light_scattering(
   if( !props.hgauss_shader.empty() && !props.vgauss_shader.empty() ) {
     hgauss.reset( new compute(
       compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.hgauss_shader )
         .set_swapchain_image_count( props.input.size() )
         .set_resources( props.resources )
@@ -204,9 +190,7 @@ epipolar_light_scattering::epipolar_light_scattering(
     
     vgauss.reset( new compute(
       compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.vgauss_shader )
         .set_swapchain_image_count( props.input.size() )
         .set_resources( props.resources )

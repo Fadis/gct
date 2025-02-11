@@ -32,15 +32,7 @@ radix_sort_create_info &radix_sort_create_info::set_shader(
 
 void to_json( nlohmann::json &dest, const radix_sort_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
-  if( src.descriptor_pool ) {
-    dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  }
-  if( src.pipeline_cache ) {
-    dest[ "pipeline_cache" ] = *src.pipeline_cache;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "local_sum_shader" ] = src.local_sum_shader;
   dest[ "global_sum_shader" ] = src.global_sum_shader;
   dest[ "sort_shader" ] = src.sort_shader;

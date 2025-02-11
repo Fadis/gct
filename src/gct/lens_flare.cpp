@@ -29,7 +29,7 @@ lens_flare::lens_flare(
 ) : props( ci ) {
   output = std::make_shared< gct::gbuffer >(
     gct::gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( props.width )
       .set_height( props.height )
       .set_layer( 1u )
@@ -93,9 +93,7 @@ lens_flare::lens_flare(
     );
   pipeline = std::make_shared< graphics >(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_descriptor_set_layout( props.descriptor_set_layout )
       .set_external_descriptor_set( props.external_descriptor_set )
       .set_ignore_unused_descriptor( true )
@@ -143,7 +141,7 @@ lens_flare::lens_flare(
       .add_shader( props.shaders )
       .set_resources( props.resources )
   );
-  point_mesh = props.allocator->create_mappable_buffer(
+  point_mesh = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( glm::vec4 ) * props.matrix_count, vk::BufferUsageFlagBits::eVertexBuffer
   );
 }

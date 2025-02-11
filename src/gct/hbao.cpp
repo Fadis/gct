@@ -19,7 +19,7 @@ hbao::hbao(
   )
 {
   if( props.temp.empty() ) {
-    props.temp = props.allocator->create_image_views(
+    props.temp = props.allocator_set.allocator->create_image_views(
       gct::image_create_info_t()
         .set_basic(
           gct::basic_2d_image( width, height )
@@ -32,7 +32,7 @@ hbao::hbao(
     );
   }
   if( props.output.empty() ) {
-    props.output = props.allocator->create_image_views(
+    props.output = props.allocator_set.allocator->create_image_views(
       gct::image_create_info_t()
         .set_basic(
           gct::basic_2d_image( width, height )
@@ -47,9 +47,7 @@ hbao::hbao(
 
   comp.push_back( gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.ao0_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -58,9 +56,7 @@ hbao::hbao(
   ) );
   comp.push_back( gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.ao45_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -69,9 +65,7 @@ hbao::hbao(
   ) );
   comp.push_back( gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.ao90_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -80,9 +74,7 @@ hbao::hbao(
   ) );
   comp.push_back( gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.ao135_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )
@@ -91,9 +83,7 @@ hbao::hbao(
   ) );
   comp.push_back( gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.sum_shader )
       .set_swapchain_image_count( props.input.size() )
       .set_resources( props.resources )

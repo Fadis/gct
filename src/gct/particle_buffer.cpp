@@ -32,7 +32,7 @@ void particle_buffer::init(
   command_buffer_recorder_t &rec
 ) {
   vertex_buffer = rec.load_buffer(
-    props.allocator,
+    props.allocator_set.allocator,
     host_vertex_buffer.data(),
     host_vertex_buffer.size(),
     vk::BufferUsageFlagBits::eVertexBuffer

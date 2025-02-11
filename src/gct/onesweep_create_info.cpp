@@ -34,15 +34,7 @@ onesweep_create_info &onesweep_create_info::set_shader(
 
 void to_json( nlohmann::json &dest, const onesweep_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
-  if( src.descriptor_pool ) {
-    dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  }
-  if( src.pipeline_cache ) {
-    dest[ "pipeline_cache" ] = *src.pipeline_cache;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "histgram_shader" ] = src.histgram_shader;
   dest[ "histgram_sum_shader" ] = src.histgram_sum_shader;
   dest[ "local_sum_shader" ] = src.local_sum_shader;

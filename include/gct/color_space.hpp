@@ -75,9 +75,11 @@ struct color_space_matrix {
 [[nodiscard]] color_profile parse_color_space( const std::string_view &name );
 [[nodiscard]] color_space_matrix allocate_color_space_matrix( matrix_pool &pool );
 [[nodiscard]] float get_gamma_value( color_gamma );
+[[nodiscard]] std::string to_string( color_space );
 void to_json( nlohmann::json &to, color_space from );
 void to_json( nlohmann::json &to, color_gamma from );
 void to_json( nlohmann::json &to, const color_profile &from );
+void to_json( nlohmann::json &to, const color_space_matrix &from );
 };
 
 #endif

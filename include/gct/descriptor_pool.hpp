@@ -13,6 +13,7 @@
 namespace gct {
   class descriptor_set_allocate_info_t;
   class descriptor_set_layout_t;
+  class device_t;
   class descriptor_pool_t :
     public vulkan_handle< vk::DescriptorPool >,
     public property< descriptor_pool_create_info_t >,

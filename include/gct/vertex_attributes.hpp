@@ -3,10 +3,8 @@
 
 #include <cstdint>
 #include <type_traits>
-#include <vector>
 #include <string>
 #include <optional>
-#include <utility>
 #include <tuple>
 #include <limits>
 #include <unordered_map>
@@ -32,6 +30,7 @@ namespace gct {
     std::uint32_t offset = 0u;
     numeric_type_t format;
   };
+  std::string to_string( const vertex_attribute_usage_t &src );
   void to_json( nlohmann::json&, const vertex_attribute_usage_t& );
   void to_json( nlohmann::json&, const vertex_input_detail_t& );
   void to_json( nlohmann::json&, const std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t >& );

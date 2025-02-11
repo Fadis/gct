@@ -60,7 +60,7 @@ std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > > compiled
     if( flag ) {
       shader.emplace(
         *flag,
-        get_device( *graph.get_props().allocator ).get_shader_module(
+        get_device( *graph.get_props().allocator_set.allocator ).get_shader_module(
           path.path().string()
         )
       );
@@ -155,7 +155,7 @@ compiled_primitive compiled_scene_graph::load_primitive(
       )
       .set_prim( p )
       .set_pipeline(
-        graph.get_props().pipeline_cache->get_pipeline( ci )
+        graph.get_props().allocator_set.pipeline_cache->get_pipeline( ci )
       );
 }
 

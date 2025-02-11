@@ -1,3 +1,5 @@
+#include <nlohmann/json.hpp>
+#include <gct/gbuffer.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -33,6 +35,19 @@ draw_particle_create_info &draw_particle_create_info::add_shader(
 draw_particle_create_info &draw_particle_create_info::clear_shader() {
   shaders.clear();
   return *this;
+}
+
+void to_json( nlohmann::json &dest, const draw_particle_create_info &src ) {
+  dest = nlohmann::json::object();
+  dest[ "allocator_set" ] = src.allocator_set;
+  if( src.output ) {
+    dest[ "output" ] = *src.output;
+  }
+  dest[ "shaders" ] = nlohmann::json::array();
+  for( const auto &p: src.shaders ) {
+    dest[ "shaders" ].push_back( p.string() );
+  }
+  dest[ "resources" ] = src.resources;
 }
 
 }

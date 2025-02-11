@@ -8,16 +8,13 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 struct skyview_froxel_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( froxel_xy_resolution )
   LIBGCT_SETTER( froxel_z_resolution )
   LIBGCT_SETTER( width )
@@ -41,9 +38,7 @@ struct skyview_froxel_create_info {
   skyview_froxel_create_info &set_shader(
     const std::filesystem::path &
   );
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::uint32_t froxel_xy_resolution = 32u;
   std::uint32_t froxel_z_resolution = 32u;
   std::uint32_t width = 1920u;
@@ -61,6 +56,8 @@ struct skyview_froxel_create_info {
   std::string output_name = "dest_image";
   std::vector< named_resource > resources;
 };
+
+void to_json( nlohmann::json&, const skyview_froxel_create_info& );
 
 }
 

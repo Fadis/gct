@@ -37,6 +37,7 @@ add_library( gct SHARED
   gct/device.cpp
   gct/command_pool.cpp
   gct/allocator.cpp
+  gct/allocator_set.cpp
   gct/image_create_info.cpp
   gct/image.cpp
   gct/astc.cpp
@@ -219,6 +220,7 @@ add_library( gct SHARED
   gct/voxel_buffer.cpp
   gct/voxel_framebuffer.cpp
   gct/distance_field.cpp
+  gct/distance_field_create_info.cpp
   gct/distance_field2.cpp
   gct/distance_field2_create_info.cpp
   gct/spectrum.cpp
@@ -304,6 +306,8 @@ add_library( gct SHARED
   gct/onesweep.cpp
   gct/create_image_from_file.cpp
   gct/scene_graph.cpp
+  gct/scene_graph_create_info.cpp
+  gct/scene_graph_resource.cpp
   gct/get_shader.cpp
   gct/compiled_scene_graph.cpp
   gct/compiled_aabb_scene_graph.cpp

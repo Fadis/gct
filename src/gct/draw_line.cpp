@@ -28,7 +28,7 @@ draw_line::draw_line(
 ) : props( ci ) {
   output = std::make_shared< gct::gbuffer >(
     gct::gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( props.width )
       .set_height( props.height )
       .set_layer( 1u )
@@ -105,9 +105,7 @@ draw_line::draw_line(
   }
   pipeline = std::make_shared< graphics >(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_vertex_input( vertex_input )
@@ -154,7 +152,7 @@ draw_line::draw_line(
       .add_shader( props.shaders )
       .set_resources( props.resources )
   );
-  vertex_buffer = props.allocator->create_mappable_buffer(
+  vertex_buffer = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( glm::vec4 ) * props.max_line_count * 2u, vk::BufferUsageFlagBits::eVertexBuffer
   );
 }

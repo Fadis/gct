@@ -51,6 +51,9 @@ namespace gct {
       std::uint32_t layer,
       bool force_array = false
     );
+    [[nodiscard]] virtual std::shared_ptr< image_view_t > get_view(
+      const subview_range &
+    );
     [[nodiscard]] vk::Image &operator*() {
       return *handle;
     }

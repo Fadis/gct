@@ -50,15 +50,7 @@ hierarchical_raster_occlusion_culling_create_info &hierarchical_raster_occlusion
 
 void to_json( nlohmann::json &dest, const hierarchical_raster_occlusion_culling_create_info &src ) {
   dest = nlohmann::json::object();
-  if( src.allocator ) {
-    dest[ "allocator" ] = *src.allocator;
-  }
-  if( src.descriptor_pool ) {
-    dest[ "descriptor_pool" ] = *src.descriptor_pool;
-  }
-  if( src.pipeline_cache ) {
-    dest[ "pipeline_cache" ] = *src.pipeline_cache;
-  }
+  dest[ "allocator_set" ] = src.allocator_set;
   dest[ "setup_sort_shader" ] = src.setup_sort_shader;
   dest[ "sort" ] = src.sort;
   dest[ "setup_leaf_shader" ] = src.setup_leaf_shader;

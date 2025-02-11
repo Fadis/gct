@@ -28,7 +28,7 @@ basic_occlusion_query::basic_occlusion_query(
 ) : props( ci ) {
   output = std::make_shared< gct::gbuffer >(
     gct::gbuffer_create_info()
-      .set_allocator( props.allocator )
+      .set_allocator( props.allocator_set.allocator )
       .set_width( props.depth_image->get_factory()->get_props().get_basic().extent.width )
       .set_height( props.depth_image->get_factory()->get_props().get_basic().extent.height )
       .set_layer( 1u )
@@ -116,15 +116,13 @@ basic_occlusion_query::basic_occlusion_query(
       .add_dynamic_state( vk::DynamicState::eDepthCompareOpExt );
 #endif
   }
-  aabb_buf = props.allocator->create_mappable_buffer(
+  aabb_buf = props.allocator_set.allocator->create_mappable_buffer(
     props.max_query_count * sizeof( aabb4 ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
   pipeline = std::make_shared< graphics >(
     graphics_create_info()
-      .set_allocator( props.allocator )
-      .set_pipeline_cache( props.pipeline_cache )
-      .set_descriptor_pool( props.descriptor_pool )
+      .set_allocator_set( props.allocator_set )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_vertex_input( vertex_input )
@@ -171,7 +169,7 @@ basic_occlusion_query::basic_occlusion_query(
       .add_resource( { "aabb", aabb_buf } )
   );
   if( props.query ) {
-    query_pool = get_device( *props.allocator ).get_query_pool(
+    query_pool = get_device( *props.allocator_set.allocator ).get_query_pool(
       gct::query_pool_create_info_t()
         .set_basic(
           vk::QueryPoolCreateInfo()
@@ -180,7 +178,7 @@ basic_occlusion_query::basic_occlusion_query(
         )
     );
   }
-  point_mesh = props.allocator->create_mappable_buffer(
+  point_mesh = props.allocator_set.allocator->create_mappable_buffer(
     sizeof( glm::vec4 ), vk::BufferUsageFlagBits::eVertexBuffer
   );
   if( props.query ) {

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -18,14 +17,14 @@ namespace gct {
     const image_filter_create_info &ci
   ) :
     property_type( ci ) {
-    std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline( ci.shader );
+    std::tie(descriptor_set_layout,pipeline) = props.allocator_set.pipeline_cache->get_pipeline( ci.shader );
 
     props.reusable = true;
     if( props.output.size() != props.input.size() ) {
       props.output.resize( props.input.size() );
       for( unsigned int i = 0u; i != props.input.size(); ++i ) {
         if( !props.output[ i ] ) {
-          props.output[ i ] = props.allocator->create_image(
+          props.output[ i ] = props.allocator_set.allocator->create_image(
             props.output_create_info ?
             *props.output_create_info :
             props.input[ i ]->get_factory()->get_props(),
@@ -41,7 +40,7 @@ namespace gct {
       props.reusable = false;
     }
     for( unsigned int i = 0u; i != props.input.size(); ++i ) {
-      descriptor_set.push_back( props.descriptor_pool->allocate(
+      descriptor_set.push_back( props.allocator_set.descriptor_pool->allocate(
         descriptor_set_layout
       ) );
       if( props.resources.empty() ) {
@@ -67,12 +66,10 @@ namespace gct {
   ) :
     property_type( ci ),
     prev( prev_ ) {
-    props.allocator = prev_->props.allocator;
-    props.descriptor_pool = prev_->props.descriptor_pool;
-    props.pipeline_cache = prev_->props.pipeline_cache;
+    props.allocator_set = prev_->props.allocator_set;
     props.input = prev->props.output;
 
-    std::tie(descriptor_set_layout,pipeline) = props.pipeline_cache->get_pipeline( props.shader );
+    std::tie(descriptor_set_layout,pipeline) = props.allocator_set.pipeline_cache->get_pipeline( props.shader );
   
     props.reusable = true;
     const bool reusable = prev->prev && prev->prev->props.reusable && prev->props.reusable;
@@ -85,7 +82,7 @@ namespace gct {
             prev->prev->reused = true;
           }
           else {
-            props.output[ i ] = props.allocator->create_image(
+            props.output[ i ] = props.allocator_set.allocator->create_image(
               props.input[ i ]->get_factory()->get_props(),
               VMA_MEMORY_USAGE_GPU_ONLY
             )->get_view();
@@ -101,7 +98,7 @@ namespace gct {
     }
     {
       for( unsigned int i = 0u; i != props.input.size(); ++i ) {
-        descriptor_set.push_back( props.descriptor_pool->allocate(
+        descriptor_set.push_back( props.allocator_set.descriptor_pool->allocate(
           descriptor_set_layout
         ) );
         if( props.resources.empty() ) {
@@ -174,4 +171,5 @@ namespace gct {
       ci
     );
   }
+
 }

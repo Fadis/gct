@@ -7,17 +7,14 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 class shader_module_t;
 struct occlusion_query_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( color_attachment_count )
   LIBGCT_SETTER( depth_image )
   LIBGCT_SETTER( shaders )
@@ -39,9 +36,7 @@ struct occlusion_query_create_info {
     const std::vector< std::filesystem::path >&
   );
   occlusion_query_create_info &clear_shader();
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::uint32_t color_attachment_count = 0u;
   std::shared_ptr< image_view_t > depth_image;
   std::vector< std::filesystem::path > shaders;
@@ -50,6 +45,8 @@ struct occlusion_query_create_info {
   bool query = true;
   std::vector< named_resource > resources;
 };
+
+void to_json( nlohmann::json&, const occlusion_query_create_info& );
 
 }
 

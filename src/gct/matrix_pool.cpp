@@ -472,34 +472,32 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
   copy_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) )
 {
-  matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
-  staging_matrix = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  matrix = props.allocator_set.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
+  staging_matrix = props.allocator_set.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   {
     auto mapped = staging_matrix->map< float >();
     std::fill( mapped.begin(), mapped.end(), 1.8f );
   }
-  receive_matrix = props.allocator->create_mappable_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer );
+  receive_matrix = props.allocator_set.allocator->create_mappable_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer );
   {
     auto mapped = receive_matrix->map< float >();
     std::fill( mapped.begin(), mapped.end(), 1.5f );
   }
-  write_request_buffer = props.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  write_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   {
     auto mapped = write_request_buffer->map< std::uint8_t >();
     std::fill( mapped.begin(), mapped.end(), 0u );
   }
-  //write_request_buffer = props.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  read_request_buffer = props.allocator->create_buffer( sizeof( read_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  update_request_buffer = props.allocator->create_buffer( sizeof( update_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  //write_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( write_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  read_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( read_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  update_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( update_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   enable_copy = std::filesystem::exists( props.copy_shader );
   if( enable_copy ) {
-    copy_request_buffer = props.allocator->create_buffer( sizeof( copy_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+    copy_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( copy_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   }
   write.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.write_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -509,9 +507,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   ) );
   read.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.read_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )
@@ -522,9 +518,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   if( enable_copy ) {
     copy_.reset( new gct::compute(
       gct::compute_create_info()
-        .set_allocator( props.allocator )
-        .set_descriptor_pool( props.descriptor_pool )
-        .set_pipeline_cache( props.pipeline_cache )
+        .set_allocator_set( props.allocator_set )
         .set_shader( props.copy_shader )
         .set_swapchain_image_count( 1u )
         .set_resources( props.resources )
@@ -534,9 +528,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   }
   update.reset( new gct::compute(
     gct::compute_create_info()
-      .set_allocator( props.allocator )
-      .set_descriptor_pool( props.descriptor_pool )
-      .set_pipeline_cache( props.pipeline_cache )
+      .set_allocator_set( props.allocator_set )
       .set_shader( props.update_shader )
       .set_swapchain_image_count( 1u )
       .set_resources( props.resources )

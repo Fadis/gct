@@ -2,23 +2,19 @@
 #define GCT_EPIPOLAR_MESH_CREATE_INFO_HPP
 
 #include <cstdint>
-#include <memory>
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
 #include <gct/setter.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/vertex_attributes.hpp>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
-class allocator_t;
-class descriptor_pool_t;
-class pipeline_cache_t;
 struct epipolar_mesh_create_info {
-  LIBGCT_SETTER( allocator )
-  LIBGCT_SETTER( descriptor_pool )
-  LIBGCT_SETTER( pipeline_cache )
+  LIBGCT_SETTER( allocator_set )
+  LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( generate2_shader )
   LIBGCT_SETTER( generate3_shader )
   LIBGCT_SETTER( generate4_shader )
@@ -34,9 +30,7 @@ struct epipolar_mesh_create_info {
   epipolar_mesh_create_info &clear_resource(
     const named_resource &n
   );
-  std::shared_ptr< allocator_t > allocator;
-  std::shared_ptr< descriptor_pool_t > descriptor_pool;
-  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  allocator_set_t allocator_set;
   std::filesystem::path generate2_shader;
   std::filesystem::path generate3_shader;
   std::filesystem::path generate4_shader;
@@ -47,6 +41,8 @@ struct epipolar_mesh_create_info {
   std::vector< named_resource > resources;
   unsigned int swapchain_image_count = 1u;
 };
+
+void to_json( nlohmann::json &dest, const epipolar_mesh_create_info &src );
 
 }
 
