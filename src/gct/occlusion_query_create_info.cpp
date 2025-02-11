@@ -8,16 +8,6 @@
 
 namespace gct {
 
-occlusion_query_create_info &occlusion_query_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-occlusion_query_create_info &occlusion_query_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 occlusion_query_create_info &occlusion_query_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

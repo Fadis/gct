@@ -8,18 +8,6 @@
 
 namespace gct {
 
-radix_sort_create_info &radix_sort_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-radix_sort_create_info &radix_sort_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
 radix_sort_create_info &radix_sort_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

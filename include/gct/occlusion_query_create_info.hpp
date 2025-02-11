@@ -22,10 +22,7 @@ struct occlusion_query_create_info {
   LIBGCT_SETTER( max_query_count )
   LIBGCT_SETTER( query )
   LIBGCT_SETTER( resources )
-  occlusion_query_create_info &add_resource(
-    const named_resource &n
-  );
-  occlusion_query_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   occlusion_query_create_info &set_shader(
     const std::filesystem::path &
   );

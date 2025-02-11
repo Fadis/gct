@@ -17,10 +17,7 @@ struct draw_particle_create_info {
   LIBGCT_SETTER( output )
   LIBGCT_SETTER( shaders )
   LIBGCT_SETTER( resources )
-  draw_particle_create_info &add_resource(
-    const named_resource &n
-  );
-  draw_particle_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   draw_particle_create_info &add_draw_mesh_shader(
     const std::filesystem::path&
   );

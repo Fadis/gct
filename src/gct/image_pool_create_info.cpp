@@ -8,16 +8,6 @@
 #include <gct/image_pool_create_info.hpp>
 
 namespace gct {
-image_pool_create_info &image_pool_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-image_pool_create_info &image_pool_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 image_pool_create_info &image_pool_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

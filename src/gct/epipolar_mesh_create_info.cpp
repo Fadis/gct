@@ -7,19 +7,6 @@
 
 namespace gct {
 
-epipolar_mesh_create_info &epipolar_mesh_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-epipolar_mesh_create_info &epipolar_mesh_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
-
 void to_json( nlohmann::json &dest, const epipolar_mesh_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

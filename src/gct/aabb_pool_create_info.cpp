@@ -8,16 +8,6 @@
 
 namespace gct {
 
-aabb_pool_create_info &aabb_pool_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-aabb_pool_create_info &aabb_pool_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 aabb_pool_create_info &aabb_pool_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

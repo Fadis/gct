@@ -25,12 +25,7 @@ struct rtao_create_info {
   LIBGCT_SETTER( temporary_name )
   LIBGCT_SETTER( ao_name )
   LIBGCT_SETTER( resources )
-  rtao_create_info &add_resource(
-    const named_resource &n
-  );
-  rtao_create_info &clear_resource(
-    const named_resource &n
-  );
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   rtao_create_info &set_shader(
     const std::filesystem::path &
   );

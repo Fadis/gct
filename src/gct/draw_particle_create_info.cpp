@@ -8,16 +8,6 @@
 
 namespace gct {
 
-draw_particle_create_info &draw_particle_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-draw_particle_create_info &draw_particle_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 draw_particle_create_info &draw_particle_create_info::add_shader(
   const std::filesystem::path &p
 ) {

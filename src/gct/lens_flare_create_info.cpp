@@ -8,16 +8,6 @@
 
 namespace gct {
 
-lens_flare_create_info &lens_flare_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-lens_flare_create_info &lens_flare_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 lens_flare_create_info &lens_flare_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

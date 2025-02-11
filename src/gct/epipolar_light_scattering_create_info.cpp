@@ -8,16 +8,6 @@
 
 namespace gct {
 
-epipolar_light_scattering_create_info &epipolar_light_scattering_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-epipolar_light_scattering_create_info &epipolar_light_scattering_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 epipolar_light_scattering_create_info &epipolar_light_scattering_create_info::add_draw_mesh_shader(
   const std::filesystem::path &p
 ) {

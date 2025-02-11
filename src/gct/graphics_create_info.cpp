@@ -9,18 +9,6 @@
 
 namespace gct {
 
-graphics_create_info &graphics_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-graphics_create_info &graphics_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
 graphics_create_info &graphics_create_info::add_shader(
   const std::filesystem::path &p
 ) {

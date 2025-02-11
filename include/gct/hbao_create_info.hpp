@@ -27,12 +27,7 @@ struct hbao_create_info {
   LIBGCT_SETTER( temp )
   LIBGCT_SETTER( temp_name )
   LIBGCT_SETTER( resources )
-  hbao_create_info &add_resource(
-    const named_resource &n
-  );
-  hbao_create_info &clear_resource(
-    const named_resource &n
-  );
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   hbao_create_info &set_shader(
     const std::filesystem::path &
   );

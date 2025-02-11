@@ -4,18 +4,6 @@
 
 namespace gct {
 
-distance_field2_create_info &distance_field2_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-distance_field2_create_info &distance_field2_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
 distance_field2_create_info &distance_field2_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

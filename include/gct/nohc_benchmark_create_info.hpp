@@ -18,10 +18,7 @@ struct nohc_benchmark_create_info {
   LIBGCT_SETTER( height )
   LIBGCT_SETTER( color_buffer_count )
   LIBGCT_SETTER( resources )
-  nohc_benchmark_create_info &add_resource(
-    const named_resource &n
-  );
-  nohc_benchmark_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   allocator_set_t allocator_set;
   std::filesystem::path shader;
   unsigned int width = 1920u;

@@ -8,18 +8,6 @@
 
 namespace gct {
 
-hbao_create_info &hbao_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-hbao_create_info &hbao_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
 hbao_create_info &hbao_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

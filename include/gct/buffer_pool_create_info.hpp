@@ -27,10 +27,7 @@ struct buffer_pool_create_info {
   LIBGCT_SETTER( write_request_buffer_name )
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( resources )
-  buffer_pool_create_info &add_resource(
-    const named_resource &n
-  );
-  buffer_pool_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   buffer_pool_create_info &set_shader(
     const std::filesystem::path &
   );

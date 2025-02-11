@@ -31,10 +31,7 @@ struct skyview_froxel_create_info {
   LIBGCT_SETTER( froxel_state_name )
   LIBGCT_SETTER( output_name )
   LIBGCT_SETTER( resources )
-  skyview_froxel_create_info &add_resource(
-    const named_resource &n
-  );
-  skyview_froxel_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   skyview_froxel_create_info &set_shader(
     const std::filesystem::path &
   );

@@ -22,10 +22,7 @@ struct draw_line_create_info {
   LIBGCT_SETTER( width )
   LIBGCT_SETTER( height )
   LIBGCT_SETTER( resources )
-  draw_line_create_info &add_resource(
-    const named_resource &n
-  );
-  draw_line_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   draw_line_create_info &set_shader(
     const std::filesystem::path &
   );

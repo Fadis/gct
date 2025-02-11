@@ -7,16 +7,6 @@
 
 namespace gct {
 
-skyview_create_info &skyview_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-skyview_create_info &skyview_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 skyview_create_info &skyview_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

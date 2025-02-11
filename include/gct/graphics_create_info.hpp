@@ -27,14 +27,9 @@ struct graphics_create_info {
   LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( external_pipeline_layout )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   LIBGCT_SETTER( ignore_unused_descriptor )
-  graphics_create_info &add_resource(
-    const named_resource &n
-  );
-  graphics_create_info &clear_resource(
-    const named_resource &n
-  );
   graphics_create_info &add_shader(
     const std::filesystem::path&
   );

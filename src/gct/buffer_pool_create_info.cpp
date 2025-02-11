@@ -4,16 +4,6 @@
 
 namespace gct {
 
-buffer_pool_create_info &buffer_pool_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-buffer_pool_create_info &buffer_pool_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 buffer_pool_create_info &buffer_pool_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

@@ -8,19 +8,6 @@
 
 namespace gct {
 
-tone_mapping_create_info &tone_mapping_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-tone_mapping_create_info &tone_mapping_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
-
 void to_json( nlohmann::json &dest, const tone_mapping_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

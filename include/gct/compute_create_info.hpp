@@ -25,16 +25,11 @@ struct compute_create_info {
   LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( external_pipeline_layout )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
   LIBGCT_SETTER( ignore_unused_descriptor )
   LIBGCT_SETTER( specs )
   LIBGCT_SETTER( dim )
-  compute_create_info &add_resource(
-    const named_resource &n
-  );
-  compute_create_info &clear_resource(
-    const named_resource &n
-  );
   compute_create_info &set_external_descriptor_set(
     const std::shared_ptr< descriptor_set_t > &v
   ) {

@@ -17,12 +17,7 @@ struct tone_mapping_create_info {
   LIBGCT_SETTER( input )
   LIBGCT_SETTER( input_name )
   LIBGCT_SETTER( resources )
-  tone_mapping_create_info &add_resource(
-    const named_resource &n
-  );
-  tone_mapping_create_info &clear_resource(
-    const named_resource &n
-  );
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   allocator_set_t allocator_set;
   std::filesystem::path shader;
   std::vector< std::shared_ptr< image_view_t > > input;

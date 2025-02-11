@@ -24,13 +24,8 @@ struct image_filter_create_info {
   LIBGCT_SETTER( output )
   LIBGCT_SETTER( output_name )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( reusable )
-  image_filter_create_info &add_resource(
-    const named_resource &n
-  );
-  image_filter_create_info &clear_resource(
-    const named_resource &n
-  );
   allocator_set_t allocator_set;
   std::filesystem::path shader;
   std::vector< std::shared_ptr< image_view_t > > input;

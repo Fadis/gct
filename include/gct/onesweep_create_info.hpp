@@ -28,12 +28,7 @@ struct onesweep_create_info {
   LIBGCT_SETTER( local_offset_name )
   LIBGCT_SETTER( workgroup_offset_name )
   LIBGCT_SETTER( resources )
-  onesweep_create_info &add_resource(
-    const named_resource &n
-  );
-  onesweep_create_info &clear_resource(
-    const named_resource &n
-  );
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   onesweep_create_info &set_shader(
     const std::filesystem::path &
   );

@@ -23,13 +23,8 @@ struct epipolar_mesh_create_info {
   LIBGCT_SETTER( attrs )
   LIBGCT_SETTER( stride )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( swapchain_image_count )
-  epipolar_mesh_create_info &add_resource(
-    const named_resource &n
-  );
-  epipolar_mesh_create_info &clear_resource(
-    const named_resource &n
-  );
   allocator_set_t allocator_set;
   std::filesystem::path generate2_shader;
   std::filesystem::path generate3_shader;

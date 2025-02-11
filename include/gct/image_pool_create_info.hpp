@@ -32,11 +32,8 @@ struct image_pool_create_info {
   LIBGCT_SETTER( rgba16f_shader )
   LIBGCT_SETTER( rgba32f_shader )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( image_descriptor_set_id )
-  image_pool_create_info &add_resource(
-    const named_resource &n
-  );
-  image_pool_create_info &clear_resource();
   image_pool_create_info &set_shader(
     const std::filesystem::path &
   );

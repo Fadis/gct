@@ -31,10 +31,7 @@ struct epipolar_light_scattering_create_info {
   LIBGCT_SETTER( hgauss_shader )
   LIBGCT_SETTER( vgauss_shader )
   LIBGCT_SETTER( resources )
-  epipolar_light_scattering_create_info &add_resource(
-    const named_resource &n
-  );
-  epipolar_light_scattering_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   epipolar_light_scattering_create_info &add_draw_mesh_shader(
     const std::filesystem::path&
   );

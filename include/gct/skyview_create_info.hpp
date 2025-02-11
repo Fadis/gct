@@ -22,10 +22,7 @@ struct skyview_create_info {
   LIBGCT_SETTER( multiscat_shader )
   LIBGCT_SETTER( skyview_shader )
   LIBGCT_SETTER( resources )
-  skyview_create_info &add_resource(
-    const named_resource &n
-  );
-  skyview_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   skyview_create_info &set_shader(
     const std::filesystem::path &
   );

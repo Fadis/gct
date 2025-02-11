@@ -28,10 +28,7 @@ struct lens_flare_create_info {
   LIBGCT_SETTER( matrix_count )
   LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( resources )
-  lens_flare_create_info &add_resource(
-    const named_resource &n
-  );
-  lens_flare_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   lens_flare_create_info &set_shader(
     const std::filesystem::path &
   );

@@ -423,6 +423,19 @@ namespace gct {
     > resource;
   };
   void to_json( nlohmann::json&, const named_resource& );
+
+#define LIBGCT_NAMED_RESOURCE_SETTER( name ) \
+  decltype(auto) add_resource( \
+    const named_resource &n \
+  ) { \
+    ( name ) .push_back( n ); \
+    return *this; \
+  } \
+  decltype(auto) clear_resource() { \
+    ( name ) .clear(); \
+    return *this; \
+  }
+
 }
 
 #endif

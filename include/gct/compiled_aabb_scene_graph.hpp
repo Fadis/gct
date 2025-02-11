@@ -24,6 +24,7 @@ struct compiled_aabb_scene_graph_create_info {
   LIBGCT_SETTER( stencil_op )
   LIBGCT_SETTER( dynamic_cull_mode )
   LIBGCT_SETTER( resources )
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   shader_flag_t shader_mask = shader_flag_t( 0 );
   std::filesystem::path shader;
   std::shared_ptr< render_pass_t > render_pass;

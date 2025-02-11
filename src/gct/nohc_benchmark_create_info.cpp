@@ -7,17 +7,6 @@
 
 namespace gct {
 
-nohc_benchmark_create_info &nohc_benchmark_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-nohc_benchmark_create_info &nohc_benchmark_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
-
 void to_json( nlohmann::json &dest, const nohc_benchmark_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

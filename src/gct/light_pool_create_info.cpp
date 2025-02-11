@@ -8,16 +8,6 @@
 
 namespace gct {
 
-light_pool_create_info &light_pool_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-light_pool_create_info &light_pool_create_info::clear_resource() {
-  resources.clear();
-  return *this;
-}
 light_pool_create_info &light_pool_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

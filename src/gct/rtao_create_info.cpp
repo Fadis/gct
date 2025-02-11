@@ -5,18 +5,6 @@
 
 namespace gct {
 
-rtao_create_info &rtao_create_info::add_resource(
-  const named_resource &n
-) {
-  resources.push_back( n );
-  return *this;
-}
-rtao_create_info &rtao_create_info::clear_resource(
-  const named_resource &n
-) {
-  resources.clear();
-  return *this;
-}
 rtao_create_info &rtao_create_info::set_shader(
   const std::filesystem::path &dir
 ) {

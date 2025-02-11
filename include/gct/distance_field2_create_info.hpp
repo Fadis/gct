@@ -20,12 +20,7 @@ struct distance_field2_create_info {
   LIBGCT_SETTER( working_image_name )
   LIBGCT_SETTER( distance_field_name )
   LIBGCT_SETTER( resources )
-  distance_field2_create_info &add_resource(
-    const named_resource &n
-  );
-  distance_field2_create_info &clear_resource(
-    const named_resource &n
-  );
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   distance_field2_create_info &set_shader(
     const std::filesystem::path &
   );

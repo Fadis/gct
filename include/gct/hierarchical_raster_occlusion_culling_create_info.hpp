@@ -29,10 +29,7 @@ struct hierarchical_raster_occlusion_culling_create_info {
   LIBGCT_SETTER( dynamic_cull_mode )
   LIBGCT_SETTER( external_depth )
   LIBGCT_SETTER( resources )
-  hierarchical_raster_occlusion_culling_create_info &add_resource(
-    const named_resource &n
-  );
-  hierarchical_raster_occlusion_culling_create_info &clear_resource();
+  LIBGCT_NAMED_RESOURCE_SETTER( resources )
   hierarchical_raster_occlusion_culling_create_info &set_shader(
     const std::filesystem::path &
   );
