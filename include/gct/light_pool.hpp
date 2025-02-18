@@ -34,6 +34,7 @@ struct punctual_light_parameter {
   LIBGCT_SETTER( phi )
   LIBGCT_SETTER( falloff )
   LIBGCT_SETTER( matrix )
+  LIBGCT_SETTER( shadow_map )
   glm::vec4 local_position = glm::vec4( 0.f, 0.f, 0.f, 1.f );
   glm::vec4 world_position = glm::vec4( 0.f, 0.f, 0.f, 1.f );
   glm::vec4 local_direction = glm::vec4( 0.f, 1.f, 0.f, 1.f );
@@ -45,7 +46,8 @@ struct punctual_light_parameter {
   float phi = 0.f;
   float falloff = 0.f;
   std::uint32_t matrix = 0u;
-  std::uint32_t reserved[ 2 ];
+  std::int32_t shadow_map = 0u;
+  std::uint32_t reserved;
 };
 
 void to_json( nlohmann::json &dest, const punctual_light_parameter &src );

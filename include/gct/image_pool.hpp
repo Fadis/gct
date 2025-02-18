@@ -19,6 +19,7 @@
 #include <gct/color_space.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/subview_range.hpp>
+#include <gct/image_allocate_info.hpp>
 
 namespace gct {
 class image_t;
@@ -37,15 +38,6 @@ struct image_load_info {
   integer_attribute_t attr = integer_attribute_t::normalized;
   unsigned int max_channels_per_layer = 4u;
   bool enable_linear = false;
-  std::optional< vk::ImageLayout > layout;
-};
-
-struct image_allocate_info {
-  LIBGCT_SETTER( create_info )
-  LIBGCT_SETTER( range )
-  LIBGCT_SETTER( layout )
-  image_create_info_t create_info;
-  subview_range range;
   std::optional< vk::ImageLayout > layout;
 };
 

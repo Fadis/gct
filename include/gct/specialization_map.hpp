@@ -5,6 +5,7 @@
 #include <utility>
 #include <unordered_map>
 #include <variant>
+#include <nlohmann/json_fwd.hpp>
 #include <gct/specialization_info.hpp>
 
 namespace gct {
@@ -29,6 +30,7 @@ namespace gct {
   using specialization_map_item = std::pair< std::uint32_t, specialization_value_type >;
   using specialization_map = std::unordered_map< std::uint32_t, specialization_value_type >;
   encoded_specialization_info_t encode( const specialization_map & );
+  void to_json( nlohmann::json &dest, const specialization_value_type& );
 }
 
 #endif

@@ -360,7 +360,14 @@ image_pool::views image_pool::state_type::allocate(
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
-  const std::shared_ptr< image_view_t > linear = i->get_view( alloc.range );
+  const std::shared_ptr< image_view_t > linear = i->get_view(
+    alloc.range ? *alloc.range :
+    subview_range()
+      .set_mip_offset( 0u )
+      .set_mip_count( alloc.create_info.get_basic().mipLevels )
+      .set_layer_offset( 0u )
+      .set_layer_count( alloc.create_info.get_basic().arrayLayers )
+  );
 
   image_state[ linear_index ] =
     image_state_type()
@@ -476,6 +483,7 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   }
   for( const auto &req: rgb_to_xyz_request_list ) {
     //rec.blit( req.rgb_image->get_factory(), req.xyz_image->get_factory() );
+    rec.convert_image( req.xyz_image->get_factory(), vk::ImageLayout::eTransferDstOptimal );
     rec.fill( req.xyz_image->get_factory(), std::array< float, 4u >{ 1.0, 0.0, 0.0, 1.0 } );
     rec.barrier( {}, { req.xyz_image->get_factory() } );
   }
@@ -677,6 +685,14 @@ image_pool::views image_pool::allocate() {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate();
 }
+
+image_pool::views image_pool::allocate(
+  const image_allocate_info &ci
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( ci );
+}
+
 
 std::shared_ptr< image_view_t > image_pool::get(
   const image_descriptor &desc

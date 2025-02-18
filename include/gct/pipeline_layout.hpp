@@ -1,6 +1,7 @@
 #ifndef GCT_PIPELINE_LAYOUT_HPP
 #define GCT_PIPELINE_LAYOUT_HPP
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/created_from.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
@@ -24,6 +25,8 @@ namespace gct {
     pipeline_layout_t &operator=( const pipeline_layout_t& ) = delete;
     pipeline_layout_t &operator=( pipeline_layout_t&& ) = default;
   };
+
+  void to_json( nlohmann::json&, const pipeline_layout_t& );
 }
 
 #endif

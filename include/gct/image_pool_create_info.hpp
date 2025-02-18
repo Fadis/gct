@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <filesystem>
+#include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/descriptor_set.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -52,7 +53,7 @@ struct image_pool_create_info {
   }
   allocator_set_t allocator_set;
   std::uint32_t max_image_count = 1024u;
-  std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+  std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
   std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
   std::uint32_t image_descriptor_set_id = 3u;

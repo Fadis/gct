@@ -1,8 +1,5 @@
 #ifndef GCT_ATTACHMENT_DESCRIPTION2_HPP
 #define GCT_ATTACHMENT_DESCRIPTION2_HPP
-#include <memory>
-#include <vector>
-#include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>

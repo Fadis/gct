@@ -21,7 +21,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#include <utility>
 #include <typeinfo>
+#include <type_traits>
 #define LIBGCT_SETTER( name ) \
   template< typename ArgType > \
   decltype(auto) set_ ## name ( ArgType v, std::enable_if_t< ( sizeof( std::remove_reference_t< ArgType > ) <= sizeof( void* ) ) >* = nullptr ) { \

@@ -16,6 +16,7 @@ layout (std430, binding = 1) buffer Output {
   float lens_size;
   float sensor_size;
   float apeture_rotation;
+  float visible_range;
 } af_state;
 
 layout(push_constant) uniform PushConstants {
@@ -42,7 +43,7 @@ void main()  {
   const uint nearest_layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
   uint first_far_layer = nearest_layer;
   const float encoded_depth = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 0 ) ).w;
-  const float linear_depth = decode_depth( encoded_depth, af_state.znear, af_state.zfar );
+  const float linear_depth = ( encoded_depth == 0.0 ) ? ( ( af_state.znear + af_state.zfar ) / 2.0 ) : decode_depth( encoded_depth, af_state.znear, af_state.zfar );
   const float subgroup_sum = subgroupAdd( linear_depth );
   temp[ gl_SubgroupID ] = subgroup_sum;
   barrier();

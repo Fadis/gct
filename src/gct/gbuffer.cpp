@@ -11,6 +11,7 @@
 #include <gct/image.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/gbuffer.hpp>
+#include <gct/subview_range.hpp>
 
 namespace gct {
 
@@ -71,58 +72,75 @@ gbuffer::gbuffer(
     render_pass = ci.allocator->get_factory()->get_render_pass( rpci );
   }
   for( std::size_t i = 0u; i != ci.swapchain_image_count; ++i ) {
-    auto gbuf = ci.allocator->create_image(
-      image_create_info_t()
-        .set_basic(
-          vk::ImageCreateInfo()
-            .setImageType( vk::ImageType::e2D )
-            .setFlags( ci.flags )
-            .setFormat( ci.format )
-            .setExtent( { ci.width, ci.height, 1 } )
-            .setArrayLayers( ci.color_buffer_count * ci.layer )
-            .setUsage(
-              vk::ImageUsageFlagBits::eColorAttachment|
-              vk::ImageUsageFlagBits::eSampled|
-              vk::ImageUsageFlagBits::eStorage|
-              vk::ImageUsageFlagBits::eTransferSrc|
-              vk::ImageUsageFlagBits::eTransferDst
-            )
-        )
-        .rebuild_chain(),
-      VMA_MEMORY_USAGE_GPU_ONLY
-    );
-    image_views.push_back(
-      gbuf->get_view( vk::ImageAspectFlagBits::eColor )
-    );
+    auto rpbi = render_pass_begin_info_t();
     auto framebuffer_create_info =
       framebuffer_create_info_t()
         .set_basic(
           vk::FramebufferCreateInfo()
             .setLayers( ci.layer )
         );
-    auto rpbi = render_pass_begin_info_t();
-    for( unsigned int i = 0u; i != ci.color_buffer_count; ++i ) {
-      framebuffer_create_info.add_attachment(
-        gbuf->get_view(
-          image_view_create_info_t()
-            .set_basic(
-              vk::ImageViewCreateInfo()
-                .setViewType( ci.layer > 1u ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D )
-                .setSubresourceRange(
-                  vk::ImageSubresourceRange()
-                    .setAspectMask( vk::ImageAspectFlagBits::eColor )
-                    .setBaseMipLevel( 0 )
-                    .setLevelCount( 1 )
-                    .setBaseArrayLayer( i * ci.layer )
-                    .setLayerCount( ci.layer )
-                )
-            )
-        )
+    if( ci.external_color.size() > i ) {
+      image_views.push_back( ci.external_color[ i ] );
+      for( unsigned int i = 0u; i != ci.color_buffer_count; ++i ) {
+        framebuffer_create_info.add_attachment(
+          image_views.back()->subview(
+            subview_range()
+              .set_mip_offset( 0 )
+              .set_mip_count( 1u )
+              .set_layer_offset( i * ci.layer )
+              .set_layer_count( ci.layer )
+          )
+        );
+        rpbi.add_clear_value( vk::ClearColorValue( ci.clear_color ) );
+      }
+    }
+    else {
+      auto gbuf = ci.allocator->create_image(
+        image_create_info_t()
+          .set_basic(
+            vk::ImageCreateInfo()
+              .setImageType( vk::ImageType::e2D )
+              .setFlags( ci.flags )
+              .setFormat( ci.format )
+              .setExtent( { ci.width, ci.height, 1 } )
+              .setArrayLayers( ci.color_buffer_count * ci.layer )
+              .setUsage(
+                vk::ImageUsageFlagBits::eColorAttachment|
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+          .rebuild_chain(),
+        VMA_MEMORY_USAGE_GPU_ONLY
       );
-      rpbi.add_clear_value( vk::ClearColorValue( ci.clear_color ) );
+      image_views.push_back(
+        gbuf->get_view( vk::ImageAspectFlagBits::eColor )
+      );
+      for( unsigned int i = 0u; i != ci.color_buffer_count; ++i ) {
+        framebuffer_create_info.add_attachment(
+          gbuf->get_view(
+            image_view_create_info_t()
+              .set_basic(
+                vk::ImageViewCreateInfo()
+                  .setViewType( ci.layer > 1u ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D )
+                  .setSubresourceRange(
+                    vk::ImageSubresourceRange()
+                      .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                      .setBaseMipLevel( 0 )
+                      .setLevelCount( 1 )
+                      .setBaseArrayLayer( i * ci.layer )
+                      .setLayerCount( ci.layer )
+                  )
+              )
+          )
+        );
+        rpbi.add_clear_value( vk::ClearColorValue( ci.clear_color ) );
+      }
     }
     if( ci.has_depth ) {
-      if( !ci.external_depth.empty() ) {
+      if( ci.external_depth.size() > i ) {
         framebuffer_create_info.add_attachment(
           ci.external_depth[ i ]
         );

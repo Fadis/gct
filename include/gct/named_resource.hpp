@@ -431,6 +431,12 @@ namespace gct {
     ( name ) .push_back( n ); \
     return *this; \
   } \
+  decltype(auto) add_resource( \
+    const std::vector< named_resource > &n \
+  ) { \
+    ( name ) .insert( ( name ).end(),  n.begin(), n.end() ); \
+    return *this; \
+  } \
   decltype(auto) clear_resource() { \
     ( name ) .clear(); \
     return *this; \

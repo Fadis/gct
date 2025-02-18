@@ -3,7 +3,6 @@
 
 #include <vulkan/vulkan.hpp>
 #ifdef VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 #include <gct/device_or_host_address_const.hpp>

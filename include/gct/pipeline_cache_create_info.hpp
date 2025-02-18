@@ -1,7 +1,6 @@
 #ifndef GCT_PIPELINE_CACHE_CREATE_INFO_HPP
 #define GCT_PIPELINE_CACHE_CREATE_INFO_HPP
 #include <string>
-#include <memory>
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

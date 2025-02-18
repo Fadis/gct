@@ -14,6 +14,9 @@
 namespace gct {
 
 class image_view_t;
+class descriptor_set_layout_t;
+class descriptor_set_t;
+class pipeline_layout_t;
 struct image_filter_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )

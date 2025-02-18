@@ -1,7 +1,5 @@
 #ifndef GCT_RENDER_PASS_CREATE_INFO2_HPP
 #define GCT_RENDER_PASS_CREATE_INFO2_HPP
-#include <memory>
-#include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

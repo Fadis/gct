@@ -1,7 +1,5 @@
 #ifndef GCT_IMAGE_CREATE_INFO_HPP
 #define GCT_IMAGE_CREATE_INFO_HPP
-#include <memory>
-#include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
@@ -10,6 +8,7 @@
 #include <gct/color_space.hpp>
 
 namespace gct {
+  class image_shrink_info;
   class image_create_info_t : public chained_t {
   public:
     using self_type = image_create_info_t;
@@ -28,6 +27,9 @@ namespace gct {
 #ifdef VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ExternalFormatANDROID , external_format )
 #endif
+#ifdef VK_QNX_EXTERNAL_MEMORY_SCREEN_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk:::ExternalFormatQNX, external_format_qnx )
+#endif
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_SETTER( vk::ExternalMemoryImageCreateInfo , external_memory_image )
 #elif defined(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)
@@ -35,6 +37,9 @@ namespace gct {
 #endif
 #ifdef VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ExternalMemoryImageCreateInfoNV , external_memory_image_nv )
+#endif
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::ImageAlignmentControlCreateInfoMESA, alignment_control )
 #endif
 #ifdef VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::ImageCompressionControlEXT , image_compression_control )
@@ -92,6 +97,9 @@ namespace gct {
     [[nodiscard]] const color_profile &get_profile() const {
       return profile;
     }
+    image_create_info_t &shrink(
+      const image_shrink_info&
+    );
   private:
     color_profile profile;
   };
@@ -99,6 +107,8 @@ namespace gct {
   [[nodiscard]] vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );
   void to_json( nlohmann::json &root, const image_create_info_t &v );
   void from_json( const nlohmann::json &root, image_create_info_t &v );
+  bool operator==( const image_create_info_t&, const image_create_info_t& );
+  bool operator!=( const image_create_info_t&, const image_create_info_t& );
 }
 
 #endif

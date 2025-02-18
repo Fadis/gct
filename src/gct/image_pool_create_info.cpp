@@ -22,13 +22,13 @@ void to_json( nlohmann::json &dest, const image_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;
   dest[ "max_image_count" ] = src.max_image_count;
-  dest[ "descriptor_set_layout" ] = nlohmann::json::array();
-  for( const auto &p: src.descriptor_set_layout ) {
-    if( p ) {
-      dest[ "descriptor_set_layout" ].push_back( *p );
+  dest[ "descriptor_set_layout" ] = nlohmann::json::object();
+  for( const auto &v: src.descriptor_set_layout ) {
+    if( v.second ) {
+      dest[ "descriptor_set_layout" ][ std::to_string( v.first ) ] = *v.second;
     }
     else {
-      dest[ "descriptor_set_layout" ].push_back( nullptr );
+      dest[ "descriptor_set_layout" ][ std::to_string( v.first ) ] = nullptr;
     }
   }
   dest[ "descriptor_set" ] = nlohmann::json::object();

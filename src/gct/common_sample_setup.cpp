@@ -173,6 +173,10 @@ common_sample_setup::common_sample_setup(
   allocator = device->get_allocator(
     allocator_create_info
   );
+  allocator_set
+    .set_allocator( allocator )
+    .set_pipeline_cache( pipeline_cache )
+    .set_descriptor_pool( descriptor_pool );
 }
 
 }

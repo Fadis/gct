@@ -9,8 +9,8 @@ layout (binding = 3, rgba32f) writeonly uniform image2D bloom_image;
 layout (binding = 9) uniform sampler2D skyview;
 
 #include "push_constants.h"
-#include "constants.h"
-#include "sky.h"
+#include <gct/constants.h>
+#include <gct/sky.h>
 
 layout (std430, binding = 6) buffer Output {
   uint value;
@@ -24,11 +24,6 @@ layout(binding = 11,std430) buffer MatrixPool {
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
 void main()  {
-  const mat3 bt709_to_xyz = mat3(
-    0.4124079, 0.2126478, 0.0193316,
-    0.3575896, 0.7151791, 0.1191965,
-    0.1804326, 0.0721730, 0.9502783
-  );
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   vec4 pos = matrix_pool[ global_uniforms.screen_to_world_matrix ] * vec4( vec2( screen_pos )/vec2( gl_NumWorkGroups * gl_WorkGroupSize ) * 2.0 - 1.0, 0.0, 1.0 );
   pos /= pos.w;
@@ -53,7 +48,8 @@ void main()  {
     imageLoad( src_image, ivec3( screen_pos, 9 ) ),
     vec4( 0.0, 0.0, 0.0, 0.0 )
   );
-  total = mix( total, far.rgb, min( far.a * 1.2, 1.0 ) );
+  total = mix( total, far.rgb, min( far.a * 3.0, 1.0 ) );
+  //total = mix( total, vec3( 1.0 - min( far.a * 1.5, 1.0 ), far.a <= 0.1 ? 1.0 : 0.0, 0.0 ), min( far.a * 1.5, 1.0 ) );
   vec4 near = max(
     imageLoad( src_image, ivec3( screen_pos, 0 ) ) +
     imageLoad( src_image, ivec3( screen_pos, 2 ) ) +
@@ -62,7 +58,7 @@ void main()  {
     imageLoad( src_image, ivec3( screen_pos, 8 ) ),
     vec4( 0.0, 0.0, 0.0, 0.0 )
   );
-  total = mix( total, near.rgb, min( near.a * 1.2, 1.0 ) );
+  total = mix( total, near.rgb, min( near.a * 1.0, 1.0 ) );
   
   total /= tone.scale;
   const vec3 bloom = max( total - vec3( 1.0, 1.0, 1.0 ), vec3( 0.0, 0.0, 0.0 ) );

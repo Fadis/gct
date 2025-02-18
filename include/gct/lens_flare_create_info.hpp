@@ -54,7 +54,7 @@ struct lens_flare_create_info {
   lens_flare_create_info &clear_shader();
   allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
-  std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+  std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::uint32_t width = 1920u;
   std::uint32_t height = 1080u;
   texture_pool::texture_descriptor texture;

@@ -73,6 +73,24 @@ namespace gct {
       const specialization_map &specs,
       const glm::ivec3 &dim
     );
+    [[nodiscard]] std::pair<
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
+      std::shared_ptr< compute_pipeline_t >
+    >
+    get_pipeline2(
+      const std::string &path,
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout
+    );
+    [[nodiscard]] std::pair<
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > >,
+      std::shared_ptr< compute_pipeline_t >
+    >
+    get_pipeline2(
+      const std::string &path,
+      std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > &external_descriptor_set_layout,
+      const specialization_map &specs,
+      const glm::ivec3 &dim
+    );
     void dump( const std::filesystem::path &filename ) const;
   };
   void to_json( nlohmann::json &dest, const pipeline_cache_t &src );

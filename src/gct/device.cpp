@@ -267,6 +267,17 @@ namespace gct {
     ci.rebuild_chain();
     return get_descriptor_set_layout( ci );
   }
+  std::shared_ptr< descriptor_set_layout_t > device_t::get_descriptor_set_layout() {
+    return std::shared_ptr< descriptor_set_layout_t >(
+      new descriptor_set_layout_t(
+        shared_from_this(),
+        descriptor_set_layout_create_info_t()
+          .set_basic(
+            vk::DescriptorSetLayoutCreateInfo()
+          )
+      )
+    );
+  }
   std::shared_ptr< pipeline_cache_t > device_t::get_pipeline_cache( const pipeline_cache_create_info_t &create_info ) {
     return std::shared_ptr< pipeline_cache_t >(
       new pipeline_cache_t(

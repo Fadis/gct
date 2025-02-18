@@ -4,16 +4,55 @@
 #include <vulkan2json/VertexInputAttributeDescription.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/scene_graph_resource.hpp>
-#include <gct/primitive.hpp>
+#include <gct/scene_graph_primitive.hpp>
+#include <gct/scene_graph_instance.hpp>
+#include <gct/scene_graph_create_info.hpp>
+#include <gct/matrix_pool.hpp>
+#include <gct/aabb_pool.hpp>
+#include <gct/image_pool.hpp>
+#include <gct/texture_pool.hpp>
+#include <gct/sampler_pool.hpp>
+#include <gct/buffer_pool.hpp>
+#include <gct/light_pool.hpp>
+#include <gct/vertex_buffer_pool.hpp>
+#include <gct/pool.hpp>
+#include <gct/scene_graph_resource.hpp>
 
 namespace gct::scene_graph {
-void to_json( nlohmann::json &dest, const buffer_offset &src ) {
-  dest = nlohmann::json::object();
-  if( src.buffer ) {
-    dest[ "buffer" ] = *src.buffer;
+  
+scene_graph_resource::scene_graph_resource(
+  const scene_graph_create_info &ci
+) : prim( ci.prim_pool_size ), inst( ci.inst_pool_size ) {}
+
+scene_graph_resource::operator std::vector< named_resource > () {
+  std::vector< named_resource > n;
+  if( primitive_resource_index ) {
+    n.emplace_back( "primitive_resource_index", primitive_resource_index->get_buffer() );
   }
-  dest[ "offset" ] = src.offset;
+  if( instance_resource_index ) {
+    n.emplace_back( "instance_resource_index", instance_resource_index->get_buffer() );
+  }
+  if( visibility ) {
+    n.emplace_back( "visibility_pool", visibility->get_buffer() );
+  }
+  if( matrix ) {
+    n.emplace_back( "matrix_pool", matrix->get_buffer() );
+  }
+  if( aabb ) {
+    n.emplace_back( "aabb_pool", aabb->get_buffer() );
+  }
+  /*if( texture ) {
+    n.emplace_back( "texture_pool", sampler-> );
+  }
+  if( image ) {
+    n.emplace_back( "image_pool8", visibility->get_buffer() );
+  }*/
+  if( light ) {
+    n.emplace_back( "light_pool", light->get_buffer() );
+  }
+  return n;
 }
+
 
 void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   dest = nlohmann::json::object();
@@ -44,13 +83,13 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.light ) {
     dest[ "light" ] = *src.light;
   }
-  dest[ "descriptor_set_layout" ] = nlohmann::json::array();
+  dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
-    if( v ) {
-      dest[ "descriptor_set_layout" ].push_back( *v );
+    if( v.second ) {
+      dest[ "descriptor_set_layout" ][ std::to_string( v.first ) ] = *v.second;
     }
     else {
-      dest[ "descriptor_set_layout" ].push_back( nullptr );
+      dest[ "descriptor_set_layout" ][ std::to_string( v.first ) ] = nullptr;
     }
   }
   if( src.descriptor_set ) {
@@ -67,106 +106,6 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   for( const auto &v: src.inst.get_value() ) {
     dest[ "instance" ].push_back( *v );
   }
-}
-
-void to_json( nlohmann::json &dest, const primitive_descriptor &src ) {
-  dest = nlohmann::json::object();
-  /*dest[ "vertex_buffer" ] = nlohmann::json::array();
-  for( const auto &v: src.vertex_buffer ) {
-    dest[ "vertex_buffer" ].push_back( *v );
-  }
-  dest[ "vertex_buffer_offset" ] = nlohmann::json::array();
-  for( const auto &v: src.vertex_buffer_offset ) {
-    dest[ "vertex_buffer_offset" ].push_back( v );
-  }
-  if( src.index_buffer ) {
-    dest[ "index_buffer" ] = *src.index_buffer;
-  }
-  dest[ "index_buffer_offset" ] = src.index_buffer_offset;*/
-  if( src.base_color_texture ) {
-    dest[ "base_color_texture" ] = *src.base_color_texture;
-  }
-  if( src.metallic_roughness_texture ) {
-    dest[ "metallic_roughness_texture" ] = *src.metallic_roughness_texture;
-  }
-  if( src.normal_texture ) {
-    dest[ "normal_texture" ] = *src.normal_texture;
-  }
-  if( src.occlusion_texture ) {
-    dest[ "occlusion_texture" ] = *src.occlusion_texture;
-  }
-  if( src.emissive_texture ) {
-    dest[ "emissive_texture" ] = *src.emissive_texture;
-  }
-  if( src.resource_index ) {
-    dest[ "resource_index" ] = *src.resource_index;
-  }
-  if( src.aabb ) {
-    dest[ "aabb" ] = *src.aabb;
-  }
-}
-
-void to_json( nlohmann::json &dest, const primitive &src ) {
-  dest = nlohmann::json::object();
-  dest[ "vertex_buffer" ] = nlohmann::json::object();
-  for( const auto &v: src.vertex_buffer ) {
-    dest[ "vertex_buffer" ][ std::to_string( v.first ) ] = v.second;
-  }
-  dest[ "indexed" ] = src.indexed;
-  dest[ "index_buffer" ] = src.index_buffer;
-  dest[ "count" ] = src.count;
-  dest[ "index_buffer_type" ] = src.index_buffer_type;
-  dest[ "aabb" ] = src.aabb;
-  dest[ "vertex_input_binding" ] = nlohmann::json::array();
-  for( const auto &v: src.vertex_input_binding ) {
-    dest[ "vertex_input_binding" ].push_back( v );
-  }
-  dest[ "vertex_input_attribute" ] = nlohmann::json::array();
-  for( const auto &v: src.vertex_input_attribute ) {
-    dest[ "vertex_input_attribute" ].push_back( v );
-  }
-  dest[ "vs_flag" ] = int( src.vs_flag );
-  dest[ "gs_flag" ] = int( src.gs_flag );
-  dest[ "fs_flag" ] = int( src.fs_flag );
-  dest[ "cull" ] = src.cull;
-  dest[ "blend" ] = src.blend;
-  dest[ "roughness" ] = src.roughness;
-  dest[ "emissive" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != 4u; ++i ) {
-    dest[ "emissive" ].push_back( src.emissive[ i ] );
-  }
-  dest[ "base_color" ] = nlohmann::json::array();
-  for( unsigned int i = 0u; i != 4u; ++i ) {
-    dest[ "base_color" ].push_back( src.emissive[ i ] );
-  }
-  dest[ "normal_scale" ] = src.normal_scale;
-  dest[ "occlusion_strength" ] = src.occlusion_strength;
-  dest[ "pipeline_create_info" ] = src.pipeline_create_info;
-  dest[ "descriptor" ] = src.descriptor;
-}
-
-void to_json( nlohmann::json &dest, const instance_descriptor &src ) {
-  dest = nlohmann::json::object();
-  if( src.matrix ) {
-    dest[ "matrix" ] = *src.matrix;
-  }
-  if( src.aabb ) {
-    dest[ "aabb" ] = *src.aabb;
-  }
-  if( src.resource_index ) {
-    dest[ "resource_index" ] = *src.resource_index;
-  }
-  if( src.prim ) {
-    dest[ "primitive" ] = *src.prim;
-  }
-  if( src.visibility ) {
-    dest[ "visibility" ] = *src.visibility;
-  }
-};
-
-void to_json( nlohmann::json &dest, const instance &src ) {
-  dest = nlohmann::json::object();
-  dest[ "descriptor" ] = src.descriptor;
 }
 
 }

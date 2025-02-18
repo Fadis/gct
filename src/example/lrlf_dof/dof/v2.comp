@@ -37,7 +37,7 @@ void main() {
   barrier();
   float scale = 0.0;
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
-  const uint coc_ = min( uint( imageLoad( coc, ivec3( screen_pos, layer ) ).r ), 32u ) * lrlfilter_size;
+  const uint coc_ = min( uint( max( imageLoad( coc, ivec3( screen_pos, layer ) ).r, 0.0 ) ), 32u ) * lrlfilter_size;
   for( uint i = 0; i != lrlfilter_size; i++ ) {
     sum += cache[ lcpos + i ] * lrlfilter[ i + coc_ ];
   }

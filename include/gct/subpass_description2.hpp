@@ -1,7 +1,5 @@
 #ifndef GCT_SUBPASS_DESCRIPTION2_HPP
 #define GCT_SUBPASS_DESCRIPTION2_HPP
-#include <memory>
-#include <vector>
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>

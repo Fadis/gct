@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <gct/allocator_set.hpp>
 
 namespace gct {
 
@@ -44,6 +45,7 @@ struct common_sample_setup {
   std::shared_ptr< descriptor_pool_t > descriptor_pool;
   std::shared_ptr< pipeline_cache_t > pipeline_cache;
   std::shared_ptr< allocator_t > allocator;
+  allocator_set_t allocator_set;
 };
 
 }

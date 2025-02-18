@@ -1,6 +1,5 @@
 #ifndef GCT_DESCRIPTOR_POOL_CREATE_INFO_HPP
 #define GCT_DESCRIPTOR_POOL_CREATE_INFO_HPP
-#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan.hpp>

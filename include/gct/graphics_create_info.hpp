@@ -17,6 +17,11 @@ class render_pass_t;
 class shader_module_t;
 class descriptor_set_t;
 class pipeline_layout_t;
+
+namespace scene_graph {
+  class scene_graph_resource;
+}
+
 struct graphics_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
@@ -52,10 +57,13 @@ struct graphics_create_info {
     external_descriptor_set.insert( std::make_pair( id, v ) );
     return *this;
   }
+  graphics_create_info &set_scene_graph(
+     const scene_graph::scene_graph_resource &r
+  );
   graphics_create_info &clear_shader();
   allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
-  std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+  std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::vector< std::shared_ptr< shader_module_t > > shader_module;
   graphics_pipeline_create_info_t pipeline_create_info;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;

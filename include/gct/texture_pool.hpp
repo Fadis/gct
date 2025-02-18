@@ -78,6 +78,10 @@ public:
     const sampler_pool::sampler_descriptor &s,
     const image_pool::views &i
   );
+  [[nodiscard]] texture_descriptor allocate(
+    const std::shared_ptr< sampler_t > &s,
+    const std::shared_ptr< image_view_t > &i
+  );
   [[nodiscard]] std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
     const texture_descriptor&
   ) const;
@@ -92,6 +96,10 @@ private:
     [[nodiscard]] views allocate(
       const sampler_pool::sampler_descriptor &s,
       const image_pool::views &i
+    );
+    [[nodiscard]] texture_descriptor allocate(
+      const std::shared_ptr< sampler_t > &s,
+      const std::shared_ptr< image_view_t > &i
     );
     [[nodiscard]] std::pair< std::shared_ptr< image_view_t >, std::shared_ptr< sampler_t > > get(
       const texture_descriptor&

@@ -63,6 +63,12 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->texture_descriptor_set
   );
+  rec.bind_descriptor_set(
+    vk::PipelineBindPoint::eGraphics,
+    resource->image_descriptor_set_id,
+    resource->pipeline_layout,
+    resource->image_descriptor_set
+  );
   for( const auto &v: draw_list ) {
     auto p = prim.find( v.prim );
     auto i = resource->inst.get( v.inst );
@@ -138,6 +144,12 @@ void instance_list::operator()(
     resource->texture_descriptor_set_id,
     resource->pipeline_layout,
     resource->texture_descriptor_set
+  );
+  rec.bind_descriptor_set(
+    vk::PipelineBindPoint::eGraphics,
+    resource->image_descriptor_set_id,
+    resource->pipeline_layout,
+    resource->image_descriptor_set
   );
   compiled( rec, draw_list.size() );
   /*for( const auto &i: draw_list ) {

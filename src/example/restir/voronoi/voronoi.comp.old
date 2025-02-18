@@ -1,0 +1,112 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (binding = 2, std430) buffer Voxel {
+  uint voxel[];
+};
+
+
+layout(push_constant) uniform PushConstants {
+  uint distance;
+} push_constants;
+
+layout(local_size_x = 8, local_size_y = 4, local_size_z = 4 ) in;
+
+const ivec3 directions[26] = ivec3[](
+  ivec3(   0,   0, + 1 ),
+  ivec3(   0,   0, - 1 ),
+  ivec3(   0, + 1,   0 ),
+  ivec3(   0, + 1, + 1 ),
+  ivec3(   0, + 1, - 1 ),
+  ivec3(   0, - 1,   0 ),
+  ivec3(   0, - 1, + 1 ),
+  ivec3(   0, - 1, - 1 ),
+  ivec3( + 1,   0,   0 ),
+  ivec3( + 1,   0, + 1 ),
+  ivec3( + 1,   0, - 1 ),
+  ivec3( + 1, + 1,   0 ),
+  ivec3( + 1, + 1, + 1 ),
+  ivec3( + 1, + 1, - 1 ),
+  ivec3( + 1, - 1,   0 ),
+  ivec3( + 1, - 1, + 1 ),
+  ivec3( + 1, - 1, - 1 ),
+  ivec3( - 1,   0,   0 ),
+  ivec3( - 1,   0, + 1 ),
+  ivec3( - 1,   0, - 1 ),
+  ivec3( - 1, + 1,   0 ),
+  ivec3( - 1, + 1, + 1 ),
+  ivec3( - 1, + 1, - 1 ),
+  ivec3( - 1, - 1,   0 ),
+  ivec3( - 1, - 1, + 1 ),
+  ivec3( - 1, - 1, - 1 )
+);
+
+ivec3 get_target( ivec3 pos, uint d, uint index ) {
+  return pos + directions[ index ] * int( d );
+}
+
+ivec3 decode_pos( uint v ) {
+  return ivec3(
+    ( v >> 20 ) & 0x3FF,
+    ( v >> 10 ) & 0x3FF,
+    ( v ) & 0x3FF
+  );
+}
+
+uint encode_pos( ivec3 v ) {
+  return
+    ( v.x << 20 ) |
+    ( v.y << 10 ) |
+    v.z;
+}
+
+bool empty( uint v ) {
+  return ( v >> 30 ) != 0;
+}
+
+uint pos_to_index( ivec3 pos, ivec3 image_size ) {
+  return pos.x + pos.y * image_size.x + pos.z * image_size.x * image_size.y;
+}
+
+ivec3 index_to_pos( uint index, ivec3 image_size ) {
+  return ivec3(
+    index % image_size.x,
+    ( index / image_size.x ) % image_size.y,
+    ( index / image_size.x / image_size.y )
+  );
+}
+
+void main()  {
+  const ivec3 image_size = ivec3( 512, 512, 512 );
+  ivec3 pos = ivec3( gl_GlobalInvocationID.xyz );
+
+  const uint center_index = pos_to_index( pos, image_size );
+  const uint center_encoded = voxel[ center_index ];
+  if( empty( center_encoded ) ) return;
+  ivec3 center = decode_pos( center_encoded );
+
+  for( uint index = 0; index != 26; index++ ) {
+    const ivec3 target = get_target( pos, push_constants.distance, index );
+    if(
+      target.x < image_size.x &&
+      target.y < image_size.y &&
+      target.z < image_size.z
+    ) {
+      const uint target_index = pos_to_index( target, image_size );
+      uint existing_encoded = voxel[ target_index ];
+      ivec3 existing = decode_pos( existing_encoded );
+      vec3 d_old_v = vec3( target ) - vec3( existing );
+      d_old_v *= d_old_v;
+      float d_old = d_old_v.x + d_old_v.y + d_old_v.z;
+      vec3 d_new_v = vec3( target ) - vec3( center );
+      d_new_v *= d_new_v;
+      float d_new = d_new_v.x + d_new_v.y + d_new_v.z;
+      if( empty( existing_encoded ) || d_old > d_new ) {
+        //voxel[ target_index ] = center_encoded;
+      }
+    }
+  }
+}
+

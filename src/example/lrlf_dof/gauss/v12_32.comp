@@ -8,7 +8,7 @@ layout (binding = 1, rgba32f) writeonly uniform image2D dest_image;
 
 layout(local_size_x = 1, local_size_y = 256 ) in;
 
-#include "gauss.h"
+#include <gct/gauss.h>
 
 const int kernel_size = 32;
 shared vec3[gl_WorkGroupSize.y+kernel_size*2+1] cache;

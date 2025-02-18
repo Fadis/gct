@@ -1,6 +1,5 @@
 #ifndef GCT_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO_HPP
 #define GCT_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO_HPP
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

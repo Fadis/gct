@@ -15,6 +15,7 @@ layout(binding=8) uniform GlobalUniforms {
   int light_count;
   float ambient;
   int light;
+  int gbuffer;
 } global_uniforms;
 
 

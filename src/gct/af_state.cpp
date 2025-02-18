@@ -13,6 +13,7 @@ void to_json( nlohmann::json &dest, const af_state &src ) {
   dest[ "focal_distance" ] = src.focal_distance;
   dest[ "lens_size" ] = src.lens_size;
   dest[ "sensor_size" ] = src.sensor_size;
+  dest[ "visible_range" ] = src.visible_range;
 }
 
 void from_json( const nlohmann::json &src, af_state &dest ) {
@@ -40,6 +41,9 @@ void from_json( const nlohmann::json &src, af_state &dest ) {
   }
   if( src.find( "sensor_size" ) != src.end() ) {
     dest.set_sensor_size( float( src[ "sensor_size" ] ) );
+  }
+  if( src.find( "visible_range" ) != src.end() ) {
+    dest.set_sensor_size( float( src[ "visible_range" ] ) );
   }
 }
 

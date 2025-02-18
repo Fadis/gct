@@ -1,6 +1,7 @@
 #ifndef GCT_COMPUTE_CREATE_INFO_HPP
 #define GCT_COMPUTE_CREATE_INFO_HPP
 
+#include "gct/scene_graph_resource.hpp"
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -17,6 +18,11 @@ namespace gct {
 class descriptor_set_layout_t;
 class descriptor_set_t;
 class pipeline_layout_t;
+
+namespace scene_graph {
+  class scene_graph_resource;
+}
+
 struct compute_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
@@ -58,9 +64,12 @@ struct compute_create_info {
     dim = glm::ivec3( x, y, z );
     return *this;
   }
+  compute_create_info &set_scene_graph(
+     const std::shared_ptr< scene_graph::scene_graph_resource >&
+  );
   allocator_set_t allocator_set;
   std::filesystem::path shader;
-  std::vector< std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
+  std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
   std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
   std::vector< named_resource > resources;

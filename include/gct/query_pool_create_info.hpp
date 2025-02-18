@@ -1,6 +1,5 @@
 #ifndef GCT_QUERY_POOL_CREATE_INFO_HPP
 #define GCT_QUERY_POOL_CREATE_INFO_HPP
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>

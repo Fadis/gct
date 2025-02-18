@@ -12,26 +12,13 @@ layout (binding = 5, r32f) writeonly uniform image2DArray coc_image;
 layout (binding = 10, rgba32f) readonly uniform image2D scattering;
 
 #include "push_constants.h"
-#include "constants.h"
 
 layout(binding = 11,std430) buffer MatrixPool {
   mat4 matrix_pool[];
 };
 
-struct punctual_light_parameter {
-  vec4 local_position;
-  vec4 world_position;
-  vec4 local_direction;
-  vec4 world_direction;
-  vec4 energy;
-  uint type;
-  float light_size;
-  float theta;
-  float phi;
-  float falloff;
-  uint matrix;
-  uint reserved[ 2 ];
-};
+#include <gct/depth.h>
+#include <gct/punctual_light_parameter.h>
 
 layout(binding = 12,std430) buffer LightPool {
   punctual_light_parameter light_pool[];
@@ -47,14 +34,10 @@ layout (std430, binding = 13) buffer Output {
   float lens_size;
   float sensor_size;
   float apeture_rotation;
+  float visible_range;
 } af_state;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
-
-float decode_depth(float d,float zNear,float zFar)
-{
-  return zNear * zFar / (zFar + d * (zNear - zFar));
-}
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
@@ -74,21 +57,21 @@ void main()  {
     ) :
     af_state.zfar;
   const float l1_depth =
-    ( layer_index.x != 0 ) ?
+    ( layer_index.y != 0 ) ?
     decode_depth(
       imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.y ) - 1 ) * 8 + 0 ) ).w,
       af_state.znear, af_state.zfar
     ) :
     af_state.zfar;
   const float l2_depth =
-    ( layer_index.x != 0 ) ?
+    ( layer_index.z != 0 ) ?
     decode_depth(
       imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.z ) - 1 ) * 8 + 0 ) ).w,
       af_state.znear, af_state.zfar
     ) :
     af_state.zfar;
   const float l3_depth =
-    ( layer_index.x != 0 ) ?
+    ( layer_index.w != 0 ) ?
     decode_depth(
       imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.w ) - 1 ) * 8 + 0 ) ).w,
       af_state.znear, af_state.zfar
@@ -175,23 +158,20 @@ void main()  {
 
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   near_total =
-    ( l3_depth < far_threshold ) ? //( far_layer > 1 ) ?
-    vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) ) :    near_total;
+    vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) : near_total.a );
   near_total =
-    ( l2_depth < far_threshold ) ? //( far_layer > 1 ) ?
-    vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) ) :    near_total;
+    vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), ( l2_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) : near_total.a );
   near_total =
-    ( l1_depth < far_threshold ) ? //( far_layer > 1 ) ?
-    vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) ) :    near_total;
+    vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), ( l1_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) : near_total.a );
   near_total =
-    ( l0_depth < far_threshold ) ? //( far_layer > 1 ) ?
-    vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) ) :
-    near_total;
+    vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), ( l0_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) : near_total.a );
+
   float near_depth = af_state.depth;
   near_depth = min( l3_depth, near_depth );
   near_depth = min( l2_depth, near_depth );
   near_depth = min( l1_depth, near_depth );
   near_depth = min( l0_depth, near_depth );
+  near_depth = min( af_state.depth, near_depth + af_state.visible_range );
 
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   far_total = vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) );
@@ -199,10 +179,11 @@ void main()  {
   far_total = vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) );
   far_total = vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) );
   float far_depth = af_state.zfar;
-  far_depth = ( ( l3_depth ) >= far_threshold ) ? min( ( l3_depth ), far_depth ) : far_depth;
-  far_depth = ( ( l2_depth ) >= far_threshold ) ? min( ( l2_depth ), far_depth ) : far_depth;
-  far_depth = ( ( l1_depth ) >= far_threshold ) ? min( ( l1_depth ), far_depth ) : far_depth;
-  far_depth = ( ( l0_depth ) >= far_threshold ) ? min( ( l0_depth ), far_depth ) : far_depth;
+  far_depth = min( ( l3_depth ), far_depth );
+  far_depth = min( ( l2_depth ), far_depth );
+  far_depth = min( ( l1_depth ), far_depth );
+  far_depth = min( ( l0_depth ), far_depth );
+  far_depth = max( af_state.depth, far_depth - af_state.visible_range );
 
   near_total.rgb = ( near_total.a == 0.0 ) ? far_total.rgb : near_total.rgb;
   

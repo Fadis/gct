@@ -1,3 +1,4 @@
+#include <nlohmann/json.hpp>
 #include <gct/specialization_map.hpp>
 
 namespace gct {
@@ -34,6 +35,17 @@ encoded_specialization_info_t encode( const specialization_map &map ) {
   }
   encoded.set_data( std::move( temp ) );
   return encoded;
+}
+void to_json( nlohmann::json &dest, const specialization_value_type &src ) {
+  if( src.value.index() == 0 ) {
+    dest = std::get< 0 >( src.value );
+  }
+  if( src.value.index() == 1 ) {
+    dest = std::get< 1 >( src.value );
+  }
+  if( src.value.index() == 2 ) {
+    dest = std::get< 2 >( src.value );
+  }
 }
 
 }

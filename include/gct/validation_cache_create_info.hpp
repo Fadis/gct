@@ -2,7 +2,6 @@
 #define GCT_VALIDATION_CACHE_CREATE_INFO_HPP
 #include <cstdint>
 #include <string>
-#include <memory>
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>

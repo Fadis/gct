@@ -2,7 +2,6 @@
 #define GCT_RAY_TRACING_PIPELINE_INTERFACE_CREATE_INFO_HPP
 #include <vulkan/vulkan.hpp>
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 

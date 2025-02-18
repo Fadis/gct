@@ -32,6 +32,8 @@ struct gbuffer_create_info {
     has_depth = false;
     return *this;
   }
+  gbuffer_create_info &set_external_color( const std::vector< std::shared_ptr< image_view_t > > &v );
+  gbuffer_create_info &set_external_color( std::vector< std::shared_ptr< image_view_t > > &&v );
   std::shared_ptr< allocator_t > allocator;
   unsigned int width = 64u;
   unsigned int height = 64u;
@@ -44,6 +46,7 @@ struct gbuffer_create_info {
   vk::ImageLayout final_layout = vk::ImageLayout::eGeneral;
   std::array< float, 4u > clear_color = gct::color::web::black;
   vk::ClearDepthStencilValue initial_depth = vk::ClearDepthStencilValue( 1.f, 0 );
+  std::vector< std::shared_ptr< image_view_t > > external_color;
   std::vector< std::shared_ptr< image_view_t > > external_depth;
 };
 

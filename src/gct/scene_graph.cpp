@@ -108,7 +108,7 @@ scene_graph::scene_graph(
   use_conditional = false;
 #endif
 
-  std::vector< descriptor_set_layout_create_info_t > descriptor_set_layout_create_info;
+  std::unordered_map< unsigned int, descriptor_set_layout_create_info_t > descriptor_set_layout_create_info;
   bool indexing = false;
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
   if( props->allocator_set.descriptor_pool->get_props().get_basic().flags & vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind ) {
@@ -122,9 +122,6 @@ scene_graph::scene_graph(
       if( f.path().extension() == ".spv" ) {
         shader_module_reflection_t reflection( f.path() );
         for( auto dsid: reflection.get_descriptor_set_id() ) {
-          if( descriptor_set_layout_create_info.size() <= dsid ) {
-            descriptor_set_layout_create_info.resize( dsid + 1u );
-          }
           descriptor_set_layout_create_info[ dsid ].add_binding( reflection, dsid );
           if( indexing ) {
             descriptor_set_layout_create_info[ dsid ].set_indexing( true );
@@ -148,8 +145,8 @@ scene_graph::scene_graph(
     }
   }
   for( const auto &v: descriptor_set_layout_create_info ) {
-    resource->descriptor_set_layout.push_back( device.get_descriptor_set_layout( v ) );
-    pipeline_layout_create_info.add_descriptor_set_layout( resource->descriptor_set_layout.back() );
+    resource->descriptor_set_layout[ v.first ] =  device.get_descriptor_set_layout( v.second );
+    pipeline_layout_create_info.add_descriptor_set_layout( v.first, resource->descriptor_set_layout[ v.first ] );
   }
   resource->descriptor_set = props->allocator_set.descriptor_pool->allocate( resource->descriptor_set_layout[ props->descriptor_set_id ] );
   resource->descriptor_set_id = props->descriptor_set_id;

@@ -17,6 +17,7 @@ struct af_state {
   LIBGCT_SETTER( lens_size )
   LIBGCT_SETTER( sensor_size )
   LIBGCT_SETTER( apeture_rotation )
+  LIBGCT_SETTER( visible_range )
   std::uint32_t history = 0u;
   std::uint32_t max_history = 60u;
   float depth = 0.0f;
@@ -26,6 +27,7 @@ struct af_state {
   float lens_size = 0.050f / 2.8f; // 50mm lens with F2.8
   float sensor_size = 0.036f;
   float apeture_rotation = M_PI*13.f/180.f;
+  float visible_range = 2.0f; // 2m
 };
 
 void to_json( nlohmann::json &dest, const af_state &src );

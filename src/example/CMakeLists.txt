@@ -78,6 +78,7 @@ subdirs(
   star_burst
   sslf
   prtlf
+  image_io
 )
 if( DXC_FOUND )
 subdirs(

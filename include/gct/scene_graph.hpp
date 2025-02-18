@@ -7,6 +7,11 @@
 #include <gct/raw_resource_pair_type.hpp>
 #include <gct/scene_graph_create_info.hpp>
 #include <gct/scene_graph_resource.hpp>
+#include <gct/matrix_pool.hpp>
+#include <gct/light_pool.hpp>
+#include <gct/aabb_pool.hpp>
+#include <gct/scene_graph_primitive.hpp>
+#include <gct/scene_graph_instance.hpp>
 
 namespace gct::scene_graph {
 

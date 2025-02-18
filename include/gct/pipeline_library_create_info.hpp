@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.hpp>
 #ifdef VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME
 #include <memory>
-#include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/extension.hpp>
 #include <gct/array_of.hpp>

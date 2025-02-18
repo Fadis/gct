@@ -38,6 +38,7 @@ add_library( gct SHARED
   gct/command_pool.cpp
   gct/allocator.cpp
   gct/allocator_set.cpp
+  gct/image_shrink_info.cpp
   gct/image_create_info.cpp
   gct/image.cpp
   gct/astc.cpp
@@ -239,8 +240,12 @@ add_library( gct SHARED
   gct/nnef_data.cpp
   gct/numeric_type_to_oiio_type.cpp
   gct/cubemap_matrix_generator.cpp
+  gct/image_io_create_info.cpp
+  gct/image_io.cpp
+  gct/shader_graph_vertex.cpp
   gct/image_filter.cpp
   gct/image_filter_create_info.cpp
+  gct/image_filter2_create_info.cpp
   gct/named_resource.cpp
   gct/compute.cpp
   gct/compute_create_info.cpp
@@ -292,6 +297,8 @@ add_library( gct SHARED
   gct/buffer_pool.cpp
   gct/sampler_pool_create_info.cpp
   gct/sampler_pool.cpp
+  gct/image_allocate_info.cpp
+  gct/subview_range.cpp
   gct/image_pool_create_info.cpp
   gct/image_pool.cpp
   gct/vertex_buffer_pool_create_info.cpp
@@ -308,6 +315,8 @@ add_library( gct SHARED
   gct/scene_graph.cpp
   gct/scene_graph_create_info.cpp
   gct/scene_graph_resource.cpp
+  gct/scene_graph_primitive.cpp
+  gct/scene_graph_instance.cpp
   gct/get_shader.cpp
   gct/compiled_scene_graph.cpp
   gct/compiled_aabb_scene_graph.cpp

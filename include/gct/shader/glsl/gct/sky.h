@@ -57,13 +57,21 @@ vec2 lat_to_world( float latitude ) {
   );
 }
 
-vec2 world_to_llar( vec3 n ) {
-  return vec2(
-    atan2( n.y, sqrt( n.x*n.x+n.z*n.z ) ),
-    atan2( n.z, n.x )
-  );
-}
 
+vec2 world_to_llar( vec3 n ) {
+  if( n.z > 0.0 ) {
+    return vec2(
+      atan2( n.y, sqrt( n.x*n.x+n.z*n.z ) ),
+      atan2( n.z, n.x )
+    );
+  }
+  else {
+    return vec2(
+      atan2( n.y, sqrt( n.x*n.x+n.z*n.z ) ),
+      -atan2( -n.z, n.x )
+    );
+  }
+}
 
 float get_atmosphere_distance_pos( float altitude, vec3 direction, float radius ) {
   const float ad2 = 2.0*altitude*direction.y;

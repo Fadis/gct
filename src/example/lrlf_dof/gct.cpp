@@ -82,6 +82,7 @@ struct global_uniforms_t {
   LIBGCT_SETTER( light_count )
   LIBGCT_SETTER( ambient )
   LIBGCT_SETTER( light )
+  LIBGCT_SETTER( gbuffer )
   glm::vec4 eye_pos;
   glm::ivec4 voxel_proj;
   std::int32_t projection_matrix;
@@ -95,6 +96,7 @@ struct global_uniforms_t {
   std::int32_t light_count;
   float ambient;
   std::int32_t light;
+  std::int32_t gbuffer;
 };
 
 int main( int argc, const char *argv[] ) {
@@ -134,28 +136,69 @@ int main( int argc, const char *argv[] ) {
     CMAKE_CURRENT_BINARY_DIR "/shadow_mat/shadow_mat.comp.spv",
     1u
   );
+  
+  const auto sg = std::make_shared< gct::scene_graph::scene_graph >(
+    gct::scene_graph::scene_graph_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
+      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
+      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
+      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR )
+      .set_enable_linear( true )
+  );
 
   const unsigned int shadow_map_size = 1024u;
+  const auto shadow_map_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( shadow_map_size, shadow_map_size )
+              .setFlags( vk::ImageCreateFlagBits::eCubeCompatible )
+              .setUsage(
+                vk::ImageUsageFlagBits::eColorAttachment|
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+              .setArrayLayers( 6u )
+          )
+      )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 6u )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  const auto linear_sampler_desc = sg->get_resource()->sampler->allocate(
+    gct::get_basic_linear_sampler_create_info()
+  );
+  
+  auto linear_sampler = sg->get_resource()->sampler->get( linear_sampler_desc );
+
   gct::gbuffer shadow_gbuffer(
     gct::gbuffer_create_info()
       .set_allocator( res.allocator )
-      .set_width( shadow_map_size )
-      .set_height( shadow_map_size )
-      .set_layer( 6 )
+      .set_external_color( { sg->get_resource()->image->get( shadow_map_desc.linear ) } )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( 1 )
-      .set_flags( vk::ImageCreateFlagBits::eCubeCompatible )
-      .set_format( vk::Format::eR32G32Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_clear_color( gct::color::web::white )
   );
 
   gct::cubemap_images2 cubemap_images( shadow_gbuffer.get_image_views() );
-
-  auto cubemap_sampler = res.device->get_sampler(
-    gct::get_basic_linear_sampler_create_info()
-  );
   
+  const auto shadow_map_texture_desc = sg->get_resource()->texture->allocate(
+     linear_sampler,
+     cubemap_images.get_cube_image_views()[ 0 ]
+  );
+
   gct::gbuffer depth_gbuffer(
     gct::gbuffer_create_info()
       .set_allocator( res.allocator )
@@ -182,19 +225,30 @@ int main( int argc, const char *argv[] ) {
   );
 
   constexpr std::size_t egbuf_count = 8u * 4u + 1u;
-  const auto extended_gbuffer = res.allocator->create_image_view(
-    gct::image_create_info_t()
-      .set_basic(
-        gct::basic_2d_image( res.width, res.height )
-          .setUsage(
-            vk::ImageUsageFlagBits::eStorage |
-            vk::ImageUsageFlagBits::eTransferDst |
-            vk::ImageUsageFlagBits::eTransferSrc
+  const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( res.width, res.height )
+              .setUsage(
+                vk::ImageUsageFlagBits::eStorage |
+                vk::ImageUsageFlagBits::eTransferDst |
+                vk::ImageUsageFlagBits::eTransferSrc
+              )
+              .setArrayLayers( egbuf_count )
           )
-          .setArrayLayers( egbuf_count )
-      ),
-    VMA_MEMORY_USAGE_GPU_ONLY
+      )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( egbuf_count )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
   );
+
+  const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
   
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -217,19 +271,6 @@ int main( int argc, const char *argv[] ) {
       .set_format( vk::Format::eR32G32B32A32Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_external_depth( depth_gbuffer.get_depth_views() )
-  );
-
-  const auto sg = std::make_shared< gct::scene_graph::scene_graph >(
-    gct::scene_graph::scene_graph_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR )
-      .set_enable_linear( true )
   );
 
   gct::gltf::gltf2 doc(
@@ -314,9 +355,7 @@ int main( int argc, const char *argv[] ) {
     );
   global_descriptor_set->update({
     { "global_uniforms", global_uniform },
-    { "shadow", cubemap_sampler, cubemap_images.get_cube_image_views()[ 0 ], vk::ImageLayout::eShaderReadOnlyOptimal },
-    { "condition", sg->get_resource()->last_visibility->get_buffer() },
-    { "extended_gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral }
+    { "condition", sg->get_resource()->last_visibility->get_buffer() }
   });
 
   const auto rgba32ici =
@@ -378,15 +417,28 @@ int main( int argc, const char *argv[] ) {
       }
     );
   }
-  
-  const auto diffuse = res.allocator->create_image_view(
-    rgba32ici4,
-    VMA_MEMORY_USAGE_GPU_ONLY
+ 
+  const auto diffuse_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info( rgba32ici4 )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 4u )
+      )
+      .set_layout( vk::ImageLayout::eGeneral )
   );
-  const auto specular = res.allocator->create_image_view(
-    rgba32ici4,
-    VMA_MEMORY_USAGE_GPU_ONLY
+  const auto diffuse = sg->get_resource()->image->get( diffuse_desc.linear );
+
+  const auto specular_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info( rgba32ici4 )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 4u )
+      )
+      .set_layout( vk::ImageLayout::eGeneral )
   );
+  const auto specular = sg->get_resource()->image->get( specular_desc.linear );
 
   const auto dof = res.allocator->create_image_view(
     rgba32ici10,
@@ -439,9 +491,7 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
-      .add_resource( { "diffuse_image", diffuse } )
-      .add_resource( { "specular_image", specular } )
+      .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
   );
@@ -523,10 +573,6 @@ int main( int argc, const char *argv[] ) {
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out } )
   );
   
-  auto linear_sampler = res.device->get_sampler(
-    gct::get_basic_linear_sampler_create_info()
-  );
-
   std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
     res.allocator->create_mappable_buffer(
       sizeof( gct::af_state ),
@@ -757,7 +803,8 @@ int main( int argc, const char *argv[] ) {
       gct::af_state state = gct::af_state()
         .set_znear( std::min(0.1f*scale,0.5f) )
         .set_zfar( scale )
-        .set_lens_size( 0.05f/2.8f );
+        .set_lens_size( 0.05f/2.8f )
+        .set_visible_range( 0.01 );
       recorder.copy( state, af_state_buffer );
     }
     command_buffer->execute_and_wait();
@@ -789,6 +836,7 @@ int main( int argc, const char *argv[] ) {
       .set_light_size( light_size )
       .set_local_position( glm::vec4( walk.get_light_pos(), 1.0 ) * glm::vec4( 1.0, -1.0, 1.0, 1.0 ) )
       .set_energy( glm::vec4( walk.get_light_energy(),walk.get_light_energy(),walk.get_light_energy(), 1.0 ) )
+      .set_shadow_map( *shadow_map_texture_desc )
   );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
@@ -806,6 +854,10 @@ int main( int argc, const char *argv[] ) {
     { "global_uniforms", shadow_uniform },
     { "matrices", shadow_mat.get_buffer()[ 0 ] }
   });
+
+  const auto lighting_pcmp = lighting.get_push_constant_member_pointer();
+  const auto diffuse_pcmp = (*lighting_pcmp)[ "diffuse" ];
+  const auto specular_pcmp = (*lighting_pcmp)[ "specular" ];
 
   std::uint32_t current_frame = 0u;
   std::uint32_t frame_counter = 0u;
@@ -825,7 +877,8 @@ int main( int argc, const char *argv[] ) {
       .set_light_count( res.light_count )
       .set_ambient( res.ambient_level )
       .set_frame_counter( frame_counter )
-      .set_light( *light_desc );
+      .set_light( *light_desc )
+      .set_gbuffer( *extended_gbuffer_desc.linear );
     {
       sg->get_resource()->matrix->set( proj_desc, projection );
       sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
@@ -837,6 +890,7 @@ int main( int argc, const char *argv[] ) {
           .set_light_size( light_size )
           .set_local_position( glm::vec4( walk.get_light_pos(), 1.0 ) * glm::vec4( 1.0, -1.0, 1.0, 1.0 ) )
           .set_energy( glm::vec4( walk.get_light_energy(),walk.get_light_energy(),walk.get_light_energy(), 1.0 ) )
+          .set_shadow_map( *shadow_map_texture_desc )
       );
       {
         auto rec = command_buffer->begin();
@@ -984,6 +1038,11 @@ int main( int argc, const char *argv[] ) {
           );
         }
         if( walk.light_moved() || walk.camera_moved() || frame_counter <= 2u ) {
+          {
+            auto &pc = lighting.get_push_constant();
+            pc.data()->*diffuse_pcmp = *diffuse_desc.linear;
+            pc.data()->*specular_pcmp = *specular_desc.linear;
+          }
           lighting( rec, 0, res.width, res.height, 4u );
       
           rec.compute_barrier(
