@@ -163,5 +163,16 @@ namespace gct {
     );
   }
 #endif
+  format_properties physical_device_t::get_format_properties( vk::Format f ) const {
+    return format_properties(
+      *get_factory(),
+      handle,
+      props,
+      f
+    );
+  }
+  format_properties device_group_t::get_format_properties( vk::Format f ) const {
+    return devices[ 0 ]->get_format_properties( f );
+  }
 }
 

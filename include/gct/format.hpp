@@ -4,6 +4,7 @@
 #include <OpenImageIO/imageio.h>
 #include <gct/numeric_types.hpp>
 #include <gct/get_extensions.hpp>
+#include <vulkan/vulkan_enums.hpp>
 namespace gct {
   [[nodiscard]] vk::Flags<vk::ImageAspectFlagBits> format_to_aspect( vk::Format format );
   [[nodiscard]] unsigned int format_to_channels( vk::Format format );
@@ -25,6 +26,7 @@ namespace gct {
   [[nodiscard]] bool is_srgb( vk::Format format );
   [[nodiscard]] unsigned int format_to_component_size( vk::Format format );
   [[nodiscard]] numeric_component_type_t format_to_component_type( vk::Format format );
+  [[nodiscard]] bool is_available_for( vk::ImageUsageFlags, vk::FormatFeatureFlags );
 }
 
 #endif

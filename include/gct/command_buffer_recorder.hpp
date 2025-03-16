@@ -23,6 +23,7 @@
 #include <gct/type_traits/is_lifted.hpp>
 #include <gct/type_traits/nth_type.hpp>
 #include <gct/property.hpp>
+#include <gct/syncable.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -377,45 +378,83 @@ namespace gct {
       const std::vector< std::shared_ptr< buffer_t > >&,
       const std::vector< std::shared_ptr< image_t > >&
     );
+    void barrier(
+      vk::AccessFlags src_access_mask,
+      vk::AccessFlags dest_access_mask,
+      vk::PipelineStageFlagBits src_stage,
+      vk::PipelineStageFlagBits dest_stage,
+      vk::DependencyFlagBits dependency,
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
+    );
+    void barrier(
+      const syncable&
     );
     std::vector< vk::ImageMemoryBarrier > compute_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
+    void compute_barrier(
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > compute_write_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
+    );
+    void compute_write_barrier(
+      const syncable&
     );
     std::vector< vk::ImageMemoryBarrier > transfer_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
+    void transfer_barrier(
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > transfer_to_compute_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
+    );
+    void transfer_to_compute_barrier(
+      const syncable&
     );
     std::vector< vk::ImageMemoryBarrier > compute_to_transfer_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
+    void compute_to_transfer_barrier(
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > transfer_to_graphics_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
+    );
+    void transfer_to_graphics_barrier(
+      const syncable&
     );
     std::vector< vk::ImageMemoryBarrier > graphics_to_transfer_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
+    void graphics_to_transfer_barrier(
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > compute_to_graphics_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
     );
+    void compute_to_graphics_barrier(
+      const syncable&
+    );
     std::vector< vk::ImageMemoryBarrier > graphics_to_compute_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
       const std::vector< std::shared_ptr< image_t > > &image
+    );
+    void graphics_to_compute_barrier(
+      const syncable&
     );
     /*
     void convert_image(

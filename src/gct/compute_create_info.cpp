@@ -16,6 +16,7 @@ compute_create_info &compute_create_info::set_scene_graph(
    const std::shared_ptr< scene_graph::scene_graph_resource > &r
 ) {
   if( r ) {
+    external_pipeline_layout = r->pipeline_layout;
     {
       const auto iter = r->descriptor_set_layout.find( r->image_descriptor_set_id );
       if( iter != r->descriptor_set_layout.end() && r->image_descriptor_set ) {

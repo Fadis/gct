@@ -896,7 +896,7 @@ int main( int argc, const char *argv[] ) {
         auto rec = command_buffer->begin();
         (*sg)( rec );
         rec.copy( global_data, global_uniform );
-        rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
+        rec.transfer_to_graphics_barrier( global_uniform );
       }
       command_buffer->execute_and_wait();
     }
@@ -930,7 +930,7 @@ int main( int argc, const char *argv[] ) {
         {
           auto rec = command_buffer->begin();
           rec.copy( global_data, global_uniform );
-          rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
+          rec.transfer_to_graphics_barrier( global_uniform );
           il->setup_resource_pair_buffer( rec );
           {
             auto render_pass_token = rec.begin_render_pass(
@@ -972,7 +972,7 @@ int main( int argc, const char *argv[] ) {
             .set_frame_counter( frame_counter );
           shadow_mat( rec, walk.get_light_pos(), std::min( 0.1f*scale, 0.5f ), 2.f*scale, 0 );
           rec.copy( shadow_data, shadow_uniform );
-          rec.transfer_to_graphics_barrier( { shadow_uniform->get_buffer() }, {} );
+          rec.transfer_to_graphics_barrier( shadow_uniform );
           {
             auto render_pass_token = rec.begin_render_pass(
               shadow_gbuffer.get_render_pass_begin_info( 0 ),
@@ -1008,10 +1008,10 @@ int main( int argc, const char *argv[] ) {
         }
         if( walk.light_moved() || walk.camera_moved() ) {
           rec.copy( global_data, global_uniform );
-          rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
+          rec.transfer_to_graphics_barrier( global_uniform );
           {
             rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
-            rec.barrier( {}, { extended_gbuffer->get_factory() } );
+            rec.barrier( extended_gbuffer );
             auto render_pass_token = rec.begin_render_pass(
               gbuffer.get_render_pass_begin_info( 0 ),
               vk::SubpassContents::eInline
@@ -1031,7 +1031,7 @@ int main( int argc, const char *argv[] ) {
           if( walk.get_current_camera() == 0 ) {
             sg->rotate_visibility( rec );
           }
-          rec.barrier( {}, { extended_gbuffer->get_factory() } );
+          rec.barrier( extended_gbuffer );
           rec.convert_image(
             gbuffer.get_image( 0 ),
             vk::ImageLayout::eGeneral
@@ -1045,27 +1045,19 @@ int main( int argc, const char *argv[] ) {
           }
           lighting( rec, 0, res.width, res.height, 4u );
       
-          rec.compute_barrier(
-            {},
-            { diffuse->get_factory() }
-          );
+          rec.compute_barrier( diffuse );
      
           generate_nearest_position( rec, 0, res.width, res.height, 1u );
 
-          rec.compute_barrier(
-            {},
-            { nearest_position->get_factory() }
-          );
+          rec.compute_barrier( nearest_position );
 
           hbao( rec, 0 );
         
           rec.compute_barrier(
-            {},
-            {
-              hbao.get_output()[ 0 ]->get_factory(),
-              diffuse->get_factory(),
-              specular->get_factory()
-            }
+            gct::syncable()
+              .add( hbao.get_output()[ 0 ] )
+              .add( diffuse )
+              .add( specular )
           );
 
           const glm::mat4 world_to_screen = projection * walk.get_lookat();
@@ -1087,12 +1079,7 @@ int main( int argc, const char *argv[] ) {
               .set_altitude( skyview_param.ground_radius + skyview_param.altitude )
               .set_light_energy( walk.get_light_energy() )
           );
-          rec.compute_barrier(
-            {},
-            {
-              skyview_froxel.get_output()->get_factory()
-            }
-          );
+          rec.compute_barrier( skyview_froxel.get_output() );
         }
 
         glm::ivec2 focus( res.width/2, res.height/2 );
@@ -1104,27 +1091,31 @@ int main( int argc, const char *argv[] ) {
           &focus
         );
         update_af( rec, 0, 16, 16, 1u );
-        rec.compute_barrier( { af_state_buffer->get_buffer() }, {} );
+        rec.compute_barrier( af_state_buffer );
         mix_ao( rec, 0, res.width, res.height, 1u );
-        rec.compute_barrier( {}, { coc->get_factory() } );
+        rec.compute_barrier( coc );
         coc_hgauss( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier( {}, { coc_temporary->get_factory() } );
+        rec.compute_barrier( coc_temporary );
         coc_vgauss( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier( {}, { coc->get_factory(), dof->get_factory() } );
+        rec.compute_barrier(
+          gct::syncable()
+            .add( coc )
+            .add( dof )
+        );
         dof_h0( rec, 0, res.width, res.height, 2u );
         dof_h1( rec, 0, res.width, res.height, 2u );
         dof_h2( rec, 0, res.width, res.height, 2u );
         dof_h3( rec, 0, res.width, res.height, 2u );
         dof_h4( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier( {}, { dof_temporary->get_factory() } );
+        rec.compute_barrier( dof_temporary );
         dof_v0( rec, 0, res.width, res.height, 2u );
         dof_v1( rec, 0, res.width, res.height, 2u );
         dof_v2( rec, 0, res.width, res.height, 2u );
         dof_v3( rec, 0, res.width, res.height, 2u );
         dof_v4( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier( {}, { dof->get_factory() } );
+        rec.compute_barrier( dof );
         bloom_gauss( rec, 0 );
-        rec.compute_barrier( {}, { mixed_out->get_factory() } );
+        rec.compute_barrier( mixed_out );
         tone.get( rec, 0 );
       }
       command_buffer->execute_and_wait();

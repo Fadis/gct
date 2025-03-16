@@ -46,8 +46,8 @@ namespace gct {
     const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
 #endif
     for( auto &v: image ) {
-      // This causes validation layer fails to track image layout randomly.
-      /*if( synchronization2_is_activated ) {
+      // This causes old (older than 1.3.296?) validation layer fails to track image layout randomly.
+      if( synchronization2_is_activated ) {
         raw_image.push_back(
           vk::ImageMemoryBarrier()
             .setSrcAccessMask( src_access_mask )
@@ -67,7 +67,7 @@ namespace gct {
             )
         );
       }
-      else {*/
+      else {
         for( auto &f: v->get_layout().get_layout() ) {
           raw_image.push_back(
             vk::ImageMemoryBarrier( f )
@@ -82,7 +82,7 @@ namespace gct {
               )
           );
         }
-      /*}*/
+      }
     }
     (*get_factory())->pipelineBarrier(
       src_stage,
@@ -96,6 +96,129 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( image );
     return raw_image;
   }
+  void command_buffer_recorder_t::barrier(
+    vk::AccessFlags src_access_mask,
+    vk::AccessFlags dest_access_mask,
+    vk::PipelineStageFlagBits src_stage,
+    vk::PipelineStageFlagBits dest_stage,
+    vk::DependencyFlagBits dependency,
+    const syncable &s
+  ) {
+    const auto available_queue_family_index = get_factory()->get_factory()->get_factory()->get_available_queue_family_index();
+    std::vector< vk::BufferMemoryBarrier > raw_buffer;
+    std::transform(
+      s.buffer.begin(),
+      s.buffer.end(),
+      std::back_inserter( raw_buffer ),
+      [&]( const auto &v ) {
+        return vk::BufferMemoryBarrier()
+          .setSrcAccessMask( src_access_mask )
+          .setDstAccessMask( dest_access_mask )
+          .setSrcQueueFamilyIndex( available_queue_family_index )
+          .setDstQueueFamilyIndex( available_queue_family_index )
+          .setBuffer( **v )
+          .setOffset( 0 )
+          .setSize( v->get_props().get_basic().size );
+      }
+    );
+    std::vector< vk::ImageMemoryBarrier > raw_image;
+    const auto api_version = get_device( *this ).get_api_version();
+    const auto &exts = get_device( *this ).get_activated_extensions();
+#ifdef VK_API_VERSION_1_3
+    const bool synchronization2_is_activated = api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end();
+#else
+    const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
+#endif
+    for( auto &v: s.image ) {
+      // This causes old (older than 1.3.296?) validation layer fails to track image layout randomly.
+      if( synchronization2_is_activated ) {
+        raw_image.push_back(
+          vk::ImageMemoryBarrier()
+            .setSrcAccessMask( src_access_mask )
+            .setDstAccessMask( dest_access_mask )
+            .setOldLayout( vk::ImageLayout::eUndefined )
+            .setNewLayout( vk::ImageLayout::eUndefined )
+            .setSrcQueueFamilyIndex( available_queue_family_index )
+            .setDstQueueFamilyIndex( available_queue_family_index )
+            .setImage( **v )
+            .setSubresourceRange(
+              vk::ImageSubresourceRange()
+                .setAspectMask( format_to_aspect( v->get_props().get_basic().format ) )
+                .setBaseMipLevel( 0 )
+                .setLevelCount( v->get_props().get_basic().mipLevels )
+                .setBaseArrayLayer( 0 )
+                .setLayerCount( v->get_props().get_basic().arrayLayers )
+            )
+        );
+      }
+      else {
+        for( auto &f: v->get_layout().get_layout() ) {
+          raw_image.push_back(
+            vk::ImageMemoryBarrier( f )
+              .setSrcAccessMask( src_access_mask )
+              .setDstAccessMask( dest_access_mask )
+              .setSrcQueueFamilyIndex( available_queue_family_index )
+              .setDstQueueFamilyIndex( available_queue_family_index )
+              .setImage( **v )
+              .setSubresourceRange(
+                vk::ImageSubresourceRange( f.subresourceRange )
+                  .setAspectMask( format_to_aspect( v->get_props().get_basic().format ) )
+              )
+          );
+        }
+      }
+    }
+    for( auto &v: s.image_view ) {
+      // This causes old (older than 1.3.296?) validation layer fails to track image layout randomly.
+      if( synchronization2_is_activated ) {
+        raw_image.push_back(
+          vk::ImageMemoryBarrier()
+            .setSrcAccessMask( src_access_mask )
+            .setDstAccessMask( dest_access_mask )
+            .setOldLayout( vk::ImageLayout::eUndefined )
+            .setNewLayout( vk::ImageLayout::eUndefined )
+            .setSrcQueueFamilyIndex( available_queue_family_index )
+            .setDstQueueFamilyIndex( available_queue_family_index )
+            .setImage( **v->get_factory() )
+            .setSubresourceRange(
+              vk::ImageSubresourceRange()
+                .setAspectMask( format_to_aspect( v->get_factory()->get_props().get_basic().format ) )
+                .setBaseMipLevel( v->get_props().get_basic().subresourceRange.baseMipLevel )
+                .setLevelCount( v->get_props().get_basic().subresourceRange.levelCount )
+                .setBaseArrayLayer( v->get_props().get_basic().subresourceRange.baseArrayLayer )
+                .setLayerCount( v->get_props().get_basic().subresourceRange.layerCount )
+            )
+        );
+      }
+      else {
+        for( auto &f: v->get_factory()->get_layout().get_layout() ) {
+          raw_image.push_back(
+            vk::ImageMemoryBarrier( f )
+              .setSrcAccessMask( src_access_mask )
+              .setDstAccessMask( dest_access_mask )
+              .setSrcQueueFamilyIndex( available_queue_family_index )
+              .setDstQueueFamilyIndex( available_queue_family_index )
+              .setImage( **v->get_factory() )
+              .setSubresourceRange(
+                vk::ImageSubresourceRange( f.subresourceRange )
+                  .setAspectMask( format_to_aspect( v->get_props().get_basic().format ) )
+              )
+          );
+        }
+      }
+    }
+    (*get_factory())->pipelineBarrier(
+      src_stage,
+      dest_stage,
+      dependency,
+      std::vector< vk::MemoryBarrier >{},
+      raw_buffer,
+      raw_image
+    );
+    get_factory()->unbound()->keep.push_back( s.buffer );
+    get_factory()->unbound()->keep.push_back( s.image );
+    get_factory()->unbound()->keep.push_back( s.image_view );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -108,6 +231,18 @@ namespace gct {
       vk::DependencyFlagBits( 0 ),
       buffer,
       image
+    );
+  }
+  void command_buffer_recorder_t::barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
+      vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::PipelineStageFlagBits::eAllCommands,
+      vk::DependencyFlagBits( 0 ),
+      s
     );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_barrier(
@@ -124,6 +259,18 @@ namespace gct {
       image
     );
   }
+  void command_buffer_recorder_t::compute_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_write_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -136,6 +283,18 @@ namespace gct {
       vk::DependencyFlagBits( 0 ),
       buffer,
       image
+    );
+  }
+  void command_buffer_recorder_t::compute_write_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderRead,
+      vk::AccessFlagBits::eShaderWrite,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      s
     );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_barrier(
@@ -152,6 +311,18 @@ namespace gct {
       image
     );
   }
+  void command_buffer_recorder_t::transfer_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_to_transfer_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -164,6 +335,18 @@ namespace gct {
       vk::DependencyFlagBits( 0 ),
       buffer,
       image
+    );
+  }
+  void command_buffer_recorder_t::compute_to_transfer_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::DependencyFlagBits( 0 ),
+      s
     );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_to_compute_barrier(
@@ -180,6 +363,18 @@ namespace gct {
       image
     );
   }
+  void command_buffer_recorder_t::transfer_to_compute_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::transfer_to_graphics_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -192,6 +387,18 @@ namespace gct {
       vk::DependencyFlagBits( 0 ),
       buffer,
       image
+    );
+  }
+  void command_buffer_recorder_t::transfer_to_graphics_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eTransferWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::PipelineStageFlagBits::eVertexShader,
+      vk::DependencyFlagBits( 0 ),
+      s
     );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::graphics_to_transfer_barrier(
@@ -208,6 +415,18 @@ namespace gct {
       image
     );
   }
+  void command_buffer_recorder_t::graphics_to_transfer_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::AccessFlagBits::eTransferRead,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eTransfer,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::compute_to_graphics_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -222,6 +441,18 @@ namespace gct {
       image
     );
   }
+  void command_buffer_recorder_t::compute_to_graphics_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eVertexShader,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::graphics_to_compute_barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -234,6 +465,18 @@ namespace gct {
       vk::DependencyFlagBits( 0 ),
       buffer,
       image
+    );
+  }
+  void command_buffer_recorder_t::graphics_to_compute_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eColorAttachmentWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      s
     );
   }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::convert_image(

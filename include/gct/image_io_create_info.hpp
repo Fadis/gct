@@ -1,15 +1,18 @@
 #ifndef GCT_IMAGE_IO_CREATE_INFO_HPP
 #define GCT_IMAGE_IO_CREATE_INFO_HPP
 
+#include "gct/exception.hpp"
 #include <memory>
 #include <optional>
 #include <unordered_set>
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
 #include <glm/mat4x4.hpp>
+#include <gct/exception.hpp>
 #include <gct/setter.hpp>
 #include <gct/image_pool.hpp>
 #include <gct/image_allocate_info.hpp>
+#include <gct/spv_member_pointer.hpp>
 
 namespace gct {
 
@@ -49,8 +52,37 @@ struct image_io_plan {
     const std::string &name,
     const image_allocate_info &desc
   ) {
-    output.insert( std::make_pair( name, desc ) );
+    auto basic = desc.create_info.get_basic();
+    basic.setUsage(
+      basic.usage |
+      vk::ImageUsageFlagBits::eTransferSrc |
+      vk::ImageUsageFlagBits::eTransferDst |
+      vk::ImageUsageFlagBits::eStorage
+    );
+    auto desc_ = desc;
+    desc_.create_info.set_basic( basic );
+    desc_.set_layout( vk::ImageLayout::eGeneral );
+    output.insert( std::make_pair( name, desc_ ) );
     return *this;
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    unsigned int width,
+    unsigned int height
+  ) {
+    return add_output(
+      name,
+      gct::image_allocate_info()
+        .set_create_info(
+          gct::image_create_info_t()
+            .set_basic(
+              gct::basic_2d_image(
+                width,
+                height
+              )
+            )
+        )
+    );
   }
   image_io_plan &add_output(
     const std::string &name,
@@ -65,6 +97,56 @@ struct image_io_plan {
     inout.insert( name );
     return *this;
   }
+  image_io_plan &set_dim(
+    const std::string &name
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+    );
+  }
+  image_io_plan &set_dim(
+    const char *name
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+    );
+  }
+  image_io_plan &set_dim(
+    const std::string &name,
+    float scale
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+        .set_size_transform(
+          glm::mat4(
+            scale, 0.0f, 0.0f, 0.0f,
+            0.0f, scale, 0.0f, 0.0f,
+            0.0f, 0.0f,  1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+    );
+  }
+  image_io_plan &set_dim(
+    const char *name,
+    float scale
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+        .set_size_transform(
+          glm::mat4(
+            scale, 0.0f, 0.0f, 0.0f,
+            0.0f, scale, 0.0f, 0.0f,
+            0.0f, 0.0f,  1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+    );
+  }
   std::unordered_set< std::string > input;
   std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info > > output;
   std::unordered_set< std::string > inout;
@@ -76,7 +158,7 @@ void to_json( nlohmann::json&, const image_io_plan& );
 struct image_io_create_info {
   image_io_create_info(
     const std::shared_ptr< compute >&,
-    const std::shared_ptr< scene_graph::scene_graph_resource >&,
+    const std::shared_ptr< scene_graph::scene_graph_resource > &r,
     const image_io_plan&
   );
   image_io_create_info &add_input(
@@ -109,9 +191,35 @@ struct image_io_create_info {
   [[nodiscard]] const glm::ivec3 &get_dim() const {
     return dim;
   }
+  bool independent() const;
   bool filled() const;
   [[nodiscard]] const std::vector< std::uint8_t > &get_push_constant() const {
     return push_constant;
+  }
+  [[nodiscard]] const std::optional< spv_member_pointer > &get_push_constant_member_pointer() const;
+  template< typename T >
+  image_io_create_info &set_push_constant(
+    const std::string &name,
+    const T &value
+  ) {
+    auto pcmp = get_push_constant_member_pointer();
+    if( !pcmp ) {
+      throw exception::runtime_error( "image_io_create_info::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
+    }
+    if( !pcmp->has( name ) ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
+    }
+    if( plan.input.find( name ) != plan.input.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for input image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.output.find( name ) != plan.output.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for output image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.inout.find( name ) != plan.inout.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for inout image ID" , __FILE__, __LINE__ );
+    }
+    push_constant.data()->*((*pcmp)[ name ]) = value;
+    return *this;
   }
 private:
   void update_size(

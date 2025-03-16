@@ -131,6 +131,9 @@ namespace gct {
       const validation_cache_create_info_t &ci
     );
 #endif
+    [[nodiscard]] format_properties get_format_properties( vk::Format f ) const {
+      return group.get_format_properties( f );
+    }
   private:
     void create_command_pools( std::uint32_t activated_queue_family_index );
     device_group_t group;

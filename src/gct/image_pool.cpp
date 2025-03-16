@@ -20,6 +20,8 @@
 #include <gct/create_image_from_file.hpp>
 #include <gct/image_pool_create_info.hpp>
 #include <gct/image_pool.hpp>
+#include <gct/image.hpp>
+#include <gct/image_create_info.hpp>
 
 namespace gct {
 
@@ -207,34 +209,47 @@ image_pool::views image_pool::state_type::allocate(
   std::shared_ptr< image_view_t > srgb;
 
   for( auto f: i->get_props().get_format() ) {
-    auto view = i->get_view(
-      image_view_create_info_t()
-        .set_basic(
-          vk::ImageViewCreateInfo()
-            .setSubresourceRange(
-              vk::ImageSubresourceRange()
-                .setAspectMask( vk::ImageAspectFlagBits::eColor )
-                .setBaseMipLevel( 0 )
-                .setLevelCount( i->get_props().get_basic().mipLevels )
-                .setBaseArrayLayer( 0 )
-                .setLayerCount( i->get_props().get_basic().arrayLayers )
-            )
-            .setViewType( to_image_view_type( i->get_props().get_basic().imageType, i->get_props().get_basic().arrayLayers, false ) )
-            .setFormat( f )
-        )
-        .rebuild_chain()
+    const auto fp = device.get_format_properties( f );
+    const bool compatible = is_available_for(
+      i->get_props().get_basic().usage,
+      i->get_props().get_basic().tiling == vk::ImageTiling::eOptimal ?
+      fp.get_basic().optimalTilingFeatures :
+      fp.get_basic().linearTilingFeatures
     );
-    if( i->get_props().get_profile().gamma == color_gamma::srgb ) {
-      if( is_normalized( f ) ) {
+    if( compatible ) {
+      auto view = i->get_view(
+        image_view_create_info_t()
+          .set_basic(
+            vk::ImageViewCreateInfo()
+              .setSubresourceRange(
+                vk::ImageSubresourceRange()
+                  .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                  .setBaseMipLevel( 0 )
+                  .setLevelCount( i->get_props().get_basic().mipLevels )
+                  .setBaseArrayLayer( 0 )
+                  .setLayerCount( i->get_props().get_basic().arrayLayers )
+              )
+              .setViewType( to_image_view_type( i->get_props().get_basic().imageType, i->get_props().get_basic().arrayLayers, false ) )
+              .setFormat( f )
+          )
+          .rebuild_chain()
+      );
+      if( i->get_props().get_profile().gamma == color_gamma::srgb ) {
+        if( is_normalized( f ) ) {
+          normalized = view;
+        }
+        else if( is_srgb( f ) ) {
+          srgb = view;
+        }
+      }
+      else {
         normalized = view;
       }
-      else if( is_srgb( f ) ) {
-        srgb = view;
-      }
     }
-    else {
-      normalized = view;
-    }
+  }
+
+  if( !normalized ) {
+    throw exception::runtime_error( "image_pool::state_type::allocate : Specified usage is not compatible to the format", __FILE__, __LINE__ );
   }
 
   const unsigned int channels = format_to_channels( i->get_props().get_basic().format );

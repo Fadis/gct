@@ -11,6 +11,7 @@
 #include <gct/physical_device_features.hpp>
 #include <gct/queue_requirement.hpp>
 #include <gct/created_from.hpp>
+#include <gct/format_properties.hpp>
 
 namespace gct {
   class instance_t;
@@ -49,9 +50,10 @@ namespace gct {
       const display_surface_create_info_t &
     );
 #endif
+    [[nodiscard]] format_properties get_format_properties( vk::Format ) const;
   private:
     void detect_vertex_buffer_formats();
-    vk::PhysicalDevice handle;
+    mutable vk::PhysicalDevice handle;
     physical_device_properties_t props;
     physical_device_features_t features;
     std::unordered_set< vk::Format > vertex_buffer_formats;
@@ -73,6 +75,7 @@ namespace gct {
       const std::vector< queue_requirement_t > &queue_requirements,
       const device_create_info_t &create_info
     );
+    [[nodiscard]] format_properties get_format_properties( vk::Format ) const;
     physical_devices_t devices;
     bool subset_allocation = false;
   };

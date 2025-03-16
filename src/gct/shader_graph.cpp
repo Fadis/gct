@@ -9,7 +9,7 @@
 #include <gct/image_io_create_info.hpp>
 #include <gct/image_io.hpp>
 #include <gct/command_buffer_recorder.hpp>
-#include <gct/shader_graph_vertex.hpp>
+#include <gct/shader_graph.hpp>
 
 namespace gct {
 
@@ -113,12 +113,12 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       create_info
     );
   }
-  std::vector< std::pair< shader_graph_optimizer::graph_type::vertex_descriptor, std::string > >
-  shader_graph_optimizer::get_consumer_of(
+  std::vector< std::pair< shader_graph_builder::graph_type::vertex_descriptor, std::string > >
+  shader_graph_builder::get_consumer_of(
     const graph_type::vertex_descriptor &generator,
     const std::string &name
   ) const {
-    std::vector< std::pair< shader_graph_optimizer::graph_type::vertex_descriptor, std::string > > temp;
+    std::vector< std::pair< shader_graph_builder::graph_type::vertex_descriptor, std::string > > temp;
     const auto [out_begin,out_end] = out_edges( generator, *graph );
     for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
       for( const auto &sub: (*graph)[ edge ] ) {
@@ -129,7 +129,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     }
     return temp;
   }
-  bool shader_graph_optimizer::shareable(
+  bool shader_graph_builder::shareable(
     const graph_type::vertex_descriptor &first_generator,
     const std::string &first_subedge,
     const graph_type::vertex_descriptor &second_generator
@@ -148,7 +148,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     std::cout << "  ok" << std::endl;
     return true;
   }
-  bool shader_graph_optimizer::shareable(
+  bool shader_graph_builder::shareable(
     const std::vector< std::pair< graph_type::vertex_descriptor, std::string > > &first_generator,
     const graph_type::vertex_descriptor &second_generator
   ) const {
@@ -159,7 +159,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     }
     return true;
   }
-  void shader_graph_optimizer::reuse(
+  void shader_graph_builder::reuse(
     std::vector< image_binding >::iterator iter,
     const graph_type::vertex_descriptor &v,
     const std::string &name
@@ -177,7 +177,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       }
     }
   }
-  void shader_graph_optimizer::bind(
+  void shader_graph_builder::bind(
     const graph_type::vertex_descriptor &v,
     const std::string &name,
     const image_pool::image_descriptor &view,
@@ -201,7 +201,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       }
     }
   }
-  void shader_graph_optimizer::assign_image() {
+  void shader_graph_builder::assign_image() {
     const auto [v_begin,v_end] = vertices( *graph );
     std::queue< graph_type::vertex_descriptor > v_cur;
     std::unordered_set< graph_type::vertex_descriptor > visited;
@@ -258,7 +258,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       v_cur.pop();
     }
   }
-  std::pair< bool, unsigned int > shader_graph_optimizer::is_ready_to_execulte(
+  std::pair< bool, unsigned int > shader_graph_builder::is_ready_to_execulte(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
     const graph_type::vertex_descriptor &v
   ) {
@@ -311,7 +311,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     }
     return std::make_pair( true, score );
   }
-  shader_graph_command_list shader_graph_optimizer::run(
+  shader_graph_command_list shader_graph_builder::run(
     std::unordered_map< image_pool::image_descriptor, image_state > &state,
     const graph_type::vertex_descriptor &v
   ) {
@@ -358,7 +358,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     );
     return list;
   }
-  shader_graph_command_list shader_graph_optimizer::build_command_list() {
+  shader_graph_command_list shader_graph_builder::build_command_list() {
     if( binding.empty() ) {
       assign_image();
     }

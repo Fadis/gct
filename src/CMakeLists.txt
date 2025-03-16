@@ -27,6 +27,7 @@ add_library( gct SHARED
   gct/physical_device_properties.cpp
   gct/physical_device_memory_properties.cpp
   gct/physical_device_features.cpp
+  gct/format_properties.cpp
   gct/physical_device.cpp
   gct/instance_create_info.cpp
   gct/instance.cpp
@@ -38,6 +39,7 @@ add_library( gct SHARED
   gct/command_pool.cpp
   gct/allocator.cpp
   gct/allocator_set.cpp
+  gct/syncable.cpp
   gct/image_shrink_info.cpp
   gct/image_create_info.cpp
   gct/image.cpp
@@ -149,6 +151,7 @@ add_library( gct SHARED
   gct/format_to_size.cpp
   gct/format_to_type.cpp
   gct/format_to_channels.cpp
+  gct/is_available_for.cpp
   gct/get_all_formats.cpp
   gct/pixel_per_element_x.cpp
   gct/pixel_per_element_y.cpp
@@ -242,7 +245,7 @@ add_library( gct SHARED
   gct/cubemap_matrix_generator.cpp
   gct/image_io_create_info.cpp
   gct/image_io.cpp
-  gct/shader_graph_vertex.cpp
+  gct/shader_graph.cpp
   gct/image_filter.cpp
   gct/image_filter_create_info.cpp
   gct/image_filter2_create_info.cpp

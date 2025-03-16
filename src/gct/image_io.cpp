@@ -1,3 +1,5 @@
+#include <iostream>
+#include <nlohmann/json.hpp>
 #include <gct/image_io.hpp>
 #include <gct/compute.hpp>
 #include <gct/compute_pipeline.hpp>
@@ -24,6 +26,11 @@ void image_io::operator()(
   );
   const auto dim = get_props().get_dim();
   (*get_props().get_executable())( rec, 0u, dim.x, dim.y, dim.z );
+}
+
+void to_json( nlohmann::json &dest, const image_io &src ) {
+  dest = nlohmann::json::object();
+  dest[ "props" ] = src.get_props();
 }
 
 }

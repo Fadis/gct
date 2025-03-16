@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/compute.hpp>
@@ -6,6 +7,7 @@
 #include <gct/scene_graph_resource.hpp>
 #include <gct/image_view.hpp>
 #include <gct/image.hpp>
+#include <gct/compute.hpp>
 
 namespace gct {
 
@@ -99,6 +101,7 @@ image_io_create_info::image_io_create_info(
     }
   }
   push_constant.resize( pcmp->get_aligned_size() );
+  bool size_specified = false;
   if( plan.dim.relative_to ) {
     bool found = false;
     if( plan.input.find( *plan.dim.relative_to ) != plan.input.end() ) found = true;
@@ -107,10 +110,40 @@ image_io_create_info::image_io_create_info(
     if( !found ) {
       throw exception::invalid_argument( "image_io_create_info::image_io_create_info : Compute dimension is relative to size of unknown image " + *plan.dim.relative_to, __FILE__, __LINE__ );
     }
+    const auto e = plan.output.find( *plan.dim.relative_to );
+    if( e != plan.output.end() ) {
+      if( e->second.index() == 0 ) {
+        update_pc( e->first, std::get< image_pool::image_descriptor >( e->second ) );
+        update_size( e->first, std::get< image_pool::image_descriptor >( e->second ) );
+        size_specified = true;
+      }
+      else if( e->second.index() == 1 ) {
+        const auto &basic = std::get< image_allocate_info >( e->second ).create_info.get_basic();
+        const auto image_size = basic.extent;
+        const auto &range = std::get< image_allocate_info >( e->second ).range;
+        if( range && range->layer_offset + range->layer_count > basic.arrayLayers ) {
+          throw exception::invalid_argument( "image_io_create_info::image_io_create_info : Broken image allocate info", __FILE__, __LINE__ );
+        }
+        const auto layer_count = range ? range->layer_count : basic.arrayLayers;
+        auto size =
+          ( basic.imageType == vk::ImageType::e3D ) ?
+          plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f ) :
+          (
+            ( basic.imageType == vk::ImageType::e2D ) ?
+            plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, layer_count, 1.0f ) :
+            plan.dim.size_transform * glm::vec4( image_size.width, layer_count, 1.0f, 1.0f )
+          );
+        size /= size.w;
+        dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
+        size_specified = true;
+      }
+    }
   }
-  auto size = plan.dim.size_transform * glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
-  size /= size.w;
-  dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
+  if( !size_specified ) {
+    auto size = plan.dim.size_transform * glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+    size /= size.w;
+    dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
+  }
 }
 
 void image_io_create_info::update_size(
@@ -122,8 +155,18 @@ void image_io_create_info::update_size(
       throw exception::invalid_argument( "image_io_create_info::add_input : Broken scene graph resource", __FILE__, __LINE__ );
     }
     const auto view = resource->image->get( desc );
-    const auto image_size = view->get_factory()->get_props().get_basic().extent;
-    auto size = plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f );
+    const auto &basic = view->get_factory()->get_props().get_basic();
+    const auto image_size = basic.extent;
+    const auto &range = view->get_props().get_basic().subresourceRange;
+    const auto layer_count = range.layerCount;
+    auto size =
+      ( basic.imageType == vk::ImageType::e3D ) ?
+      plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f ) :
+      (
+        ( basic.imageType == vk::ImageType::e2D ) ?
+        plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, layer_count, 1.0f ) :
+        plan.dim.size_transform * glm::vec4( image_size.width, layer_count, 1.0f, 1.0f )
+      );
     size /= size.w;
     dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
   }
@@ -193,15 +236,22 @@ image_io_create_info &image_io_create_info::add_inout(
   return *this;
 }
 
-bool image_io_create_info::filled() const {
+bool image_io_create_info::independent() const {
   if( input.size() != plan.input.size() ) return false;
-  for( const auto &v: plan.output ) {
-    if( v.second.index() != 0u ) return false;
-  }
   if( inout.size() != plan.inout.size() ) return false;
   return true;
 }
 
+bool image_io_create_info::filled() const {
+  if( !independent() ) return false;
+  for( const auto &v: plan.output ) {
+    if( v.second.index() != 0u ) return false;
+  }
+  return true;
+}
+const std::optional< spv_member_pointer > &image_io_create_info::get_push_constant_member_pointer() const {
+  return executable->get_push_constant_member_pointer();
+}
 void to_json( nlohmann::json &dest, const image_io_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "executable" ] = *src.get_executable();
@@ -214,6 +264,14 @@ void to_json( nlohmann::json &dest, const image_io_create_info &src ) {
     dest[ "inout" ][ v.first ] = *v.second;
   }
   dest[ "plan" ] = src.get_plan();
+  dest[ "dim" ] = nlohmann::json::array();
+  dest[ "dim" ].push_back( src.get_dim()[ 0 ] );
+  dest[ "dim" ].push_back( src.get_dim()[ 1 ] );
+  dest[ "dim" ].push_back( src.get_dim()[ 2 ] );
+  dest[ "push_constant" ] = nlohmann::json::array();
+  for( const auto &b : src.get_push_constant() ) {
+    dest[ "push_constant" ].push_back( int( b ) );
+  }
 }
 
 }

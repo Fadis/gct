@@ -62,6 +62,7 @@
 #include <gct/skyview_froxel.hpp>
 #include <gct/af_state.hpp>
 #include <gct/image_io.hpp>
+#include <gct/shader_graph.hpp>
 #include <vulkan/vulkan_enums.hpp>
 
 struct fb_resources_t {
@@ -157,6 +158,7 @@ int main( int argc, const char *argv[] ) {
   );
  
   const auto src = sg->get_resource()->image->get( src_desc.normalized );
+  const auto src_extent = src->get_factory()->get_props().get_basic().extent;
 
   const auto dest_alloc_info =
     gct::image_allocate_info()
@@ -179,6 +181,28 @@ int main( int argc, const char *argv[] ) {
       );
 
   const auto dest_desc = sg->get_resource()->image->allocate( dest_alloc_info );
+
+  const auto dest2_alloc_info =
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image(
+              src_extent.width / 2,
+              src_extent.height / 2
+            )
+              .setUsage(
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      );
+
+  const auto dest2_desc = sg->get_resource()->image->allocate( dest2_alloc_info );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
@@ -229,5 +253,87 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
+
+  gct::shader_graph_builder opt( sg->get_resource() );
+  auto s0 = opt.get_image_io(
+    opt.get_image_io_create_info(
+      shrink,
+      gct::image_io_plan()
+        .add_input( "input_image" )
+        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
+        .set_dim( "output_image" )
+    )
+    .add_input( "input_image", src_desc.normalized )
+  );
+  auto s1 = opt.get_image_io(
+    opt.get_image_io_create_info(
+      shrink,
+      gct::image_io_plan()
+        .add_input( "input_image" )
+        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
+        .set_dim( "output_image", 0.5f )
+    )
+    .set_push_constant( "x_offset", src_extent.width / 4 )
+    .set_push_constant( "y_offset", src_extent.height / 4 )
+  );
+  auto s2 = opt.get_image_io(
+    opt.get_image_io_create_info(
+      shrink,
+      gct::image_io_plan()
+        .add_input( "input_image" )
+        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
+        .set_dim( "output_image", 0.5f )
+    )
+    .set_push_constant( "x_offset", src_extent.width / 4 )
+    .set_push_constant( "y_offset", src_extent.height / 4 )
+  );
+  auto s3 = opt.get_image_io(
+    opt.get_image_io_create_info(
+      shrink,
+      gct::image_io_plan()
+        .add_input( "input_image" )
+        .add_output( "output_image", dest2_desc.linear )
+        .set_dim( "output_image", 0.5f )
+    )
+    .set_push_constant( "x_offset", src_extent.width / 4 )
+    .set_push_constant( "y_offset", src_extent.height / 4 )
+  );
+  auto s0r = s0( {} );
+  auto s1r = s1( { { "input_image", s0r[ "output_image" ] } } );
+  auto s2r = s2( { { "input_image", s1r[ "output_image" ] } } );
+  auto s3r = s3( { { "input_image", s2r[ "output_image" ] } } );
+  auto compiled = opt();
+  std::cout << nlohmann::json( compiled ).dump( 2 ) << std::endl;
+  
+  {
+    {
+      auto recorder = command_buffer->begin();
+      (*sg)( recorder );
+    }
+    command_buffer->execute_and_wait();
+  }
+  
+  {
+    {
+      auto recorder = command_buffer->begin();
+      compiled( recorder );
+    }
+    command_buffer->execute_and_wait();
+  }
+  
+  sg->get_resource()->image->dump(
+    dest2_desc.linear,
+    gct::image_dump_info()
+      .set_filename( "output2.png" )
+  );
+  
+  {
+    {
+      auto recorder = command_buffer->begin();
+      (*sg)( recorder );
+    }
+    command_buffer->execute_and_wait();
+  }
+  std::cout << nlohmann::json( compiled ).dump( 2 ) << std::endl;
 }
 

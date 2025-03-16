@@ -31,7 +31,7 @@ namespace gct {
     allocated_image_t( allocated_image_t&& ) = default;
     allocated_image_t &operator=( const allocated_image_t& ) = delete;
     allocated_image_t &operator=( allocated_image_t&& ) = default;
-    [[nodiscard]] const image_create_info_t &get_props() const { return props; }
+//    [[nodiscard]] const image_create_info_t &get_props() const { return props; }
     [[nodiscard]] std::shared_ptr< image_view_t > get_view(
       const image_view_create_info_t&
     );

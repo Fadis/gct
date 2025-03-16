@@ -23,8 +23,8 @@ namespace gct {
     const compute_create_info &ci
   ) :
     property_type( ci ) {
+    auto &device = get_device( *props.allocator_set.pipeline_cache );
     if( props.external_pipeline_layout ) {
-      auto &device = get_device( *props.allocator_set.pipeline_cache );
       auto shader = device.get_shader_module( props.shader );
       std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > set_layouts;
       const auto &dsl = props.external_pipeline_layout->get_props().get_descriptor_set_layout();
@@ -43,23 +43,24 @@ namespace gct {
       std::tie(descriptor_set_layout,pipeline) = props.allocator_set.pipeline_cache->get_pipeline2( props.shader, props.descriptor_set_layout, props.specs, props.dim );
     }
     descriptor_set.resize( props.swapchain_image_count );
-    for( auto &d: descriptor_set_layout ) {
-      for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-        if( descriptor_set[ i ].size() <= d.first ) {
-          descriptor_set[ i ].resize( d.first + 1u );
-        }
-      }
-      const auto ext = props.external_descriptor_set.find( d.first );
+    std::shared_ptr< descriptor_set_layout_t > null_descriptor_set_layout;
+    const auto &descriptor_set_layout_list = pipeline->get_props().get_layout()->get_props().get_descriptor_set_layout();
+    for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
+      descriptor_set[ i ].resize( descriptor_set_layout_list.size() );
+    }
+    for( std::size_t descriptor_set_layout_index = 0u; descriptor_set_layout_index != descriptor_set_layout_list.size(); ++descriptor_set_layout_index ) {
+      auto &d = descriptor_set_layout_list[ descriptor_set_layout_index ];
+      const auto ext = props.external_descriptor_set.find( descriptor_set_layout_index );
       if( ext != props.external_descriptor_set.end() ) {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          descriptor_set[ i ][ d.first ] = ext->second;
-          descriptor_set_layout[ d.first ] = ext->second->get_props().get_layout()[ 0 ];
+          descriptor_set[ i ][ descriptor_set_layout_index ] = ext->second;
+          descriptor_set_layout[ descriptor_set_layout_index ] = ext->second->get_props().get_layout()[ 0 ];
         }
       }
       else {
         for( unsigned int i = 0u; i != props.swapchain_image_count; ++i ) {
-          descriptor_set[ i ][ d.first ] = props.allocator_set.descriptor_pool->allocate(
-            d.second
+          descriptor_set[ i ][ descriptor_set_layout_index ] = props.allocator_set.descriptor_pool->allocate(
+            d
           );
         }
       }
