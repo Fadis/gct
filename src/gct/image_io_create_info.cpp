@@ -236,6 +236,65 @@ image_io_create_info &image_io_create_info::add_inout(
   return *this;
 }
 
+image_io_create_info &image_io_create_info::add(
+  const std::string &name,
+  const image_pool::image_descriptor &desc
+) {
+  if( plan.input.find( name ) != plan.input.end() ) {
+    return add_input( name, desc );
+  }
+  else if( plan.inout.find( name ) != plan.inout.end() ) {
+    return add_inout( name, desc );
+  }
+  else if( plan.output.find( name ) != plan.output.end() ) {
+    return add_output( name, desc );
+  }
+  else {
+    throw exception::invalid_argument( "image_io_create_info::add : Image name " + name + " is not expected", __FILE__, __LINE__ );
+  }
+}
+bool image_io_create_info::is_ready(
+  const std::string &name
+) const {
+  if( plan.input.find( name ) != plan.input.end() ) {
+    return input.find( name ) != input.end();
+  }
+  else if( plan.inout.find( name ) != plan.inout.end() ) {
+    return inout.find( name ) != inout.end();
+  }
+  else if( plan.output.find( name ) != plan.output.end() ) {
+    const auto match = plan.output.find( name );
+    return match->second.index() == 0u;
+  }
+  else {
+    throw exception::invalid_argument( "image_io_create_info::is_ready : Image name " + name + " is not expected", __FILE__, __LINE__ );
+  }
+}
+image_pool::image_descriptor image_io_create_info::get(
+  const std::string &name
+) const {
+  if( plan.input.find( name ) != plan.input.end() ) {
+    const auto match = input.find( name );
+    if( match == input.end() ) return image_pool::image_descriptor();
+    else return match->second;
+  }
+  else if( plan.inout.find( name ) != plan.inout.end() ) {
+    const auto match = inout.find( name );
+    if( match == inout.end() ) return image_pool::image_descriptor();
+    else return match->second;
+  }
+  else if( plan.output.find( name ) != plan.output.end() ) {
+    const auto match = plan.output.find( name );
+    if( match == plan.output.end() ) return image_pool::image_descriptor();
+    if( match->second.index() != 0u ) return image_pool::image_descriptor();
+    const auto &desc = std::get< image_pool::image_descriptor >( match->second );
+    return desc;
+  }
+  else {
+    throw exception::invalid_argument( "image_io_create_info::get : Image name " + name + " is not expected", __FILE__, __LINE__ );
+  }
+}
+
 bool image_io_create_info::independent() const {
   if( input.size() != plan.input.size() ) return false;
   if( inout.size() != plan.inout.size() ) return false;

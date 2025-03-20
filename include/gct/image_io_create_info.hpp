@@ -173,6 +173,16 @@ struct image_io_create_info {
     const std::string &name,
     const image_pool::image_descriptor &desc
   );
+  [[nodiscard]] bool is_ready(
+    const std::string &name
+  ) const;
+  image_io_create_info &add(
+    const std::string &name,
+    const image_pool::image_descriptor &desc
+  );
+  [[nodiscard]] image_pool::image_descriptor get(
+    const std::string &name
+  ) const;
   [[nodiscard]] const std::shared_ptr< compute > &get_executable() const {
     return executable;
   }

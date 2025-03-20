@@ -140,6 +140,7 @@ add_library( gct SHARED
   gct/fill.cpp
   gct/blit.cpp
   gct/barrier.cpp
+  gct/barrier_config.cpp
   gct/build_acceleration_structure.cpp
   gct/present_info.cpp
   gct/wait_for_sync.cpp

@@ -24,6 +24,7 @@
 #include <gct/type_traits/nth_type.hpp>
 #include <gct/property.hpp>
 #include <gct/syncable.hpp>
+#include <gct/barrier_config.hpp>
 
 namespace gct {
   struct command_pool_t;
@@ -372,19 +373,22 @@ namespace gct {
     std::vector< vk::ImageMemoryBarrier > barrier(
       vk::AccessFlags,
       vk::AccessFlags,
-      vk::PipelineStageFlagBits,
-      vk::PipelineStageFlagBits,
-      vk::DependencyFlagBits,
+      vk::PipelineStageFlags,
+      vk::PipelineStageFlags,
+      vk::DependencyFlags,
       const std::vector< std::shared_ptr< buffer_t > >&,
       const std::vector< std::shared_ptr< image_t > >&
     );
     void barrier(
       vk::AccessFlags src_access_mask,
       vk::AccessFlags dest_access_mask,
-      vk::PipelineStageFlagBits src_stage,
-      vk::PipelineStageFlagBits dest_stage,
-      vk::DependencyFlagBits dependency,
+      vk::PipelineStageFlags src_stage,
+      vk::PipelineStageFlags dest_stage,
+      vk::DependencyFlags dependency,
       const syncable&
+    );
+    void barrier(
+      const barrier_state&
     );
     std::vector< vk::ImageMemoryBarrier > barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,
@@ -406,6 +410,9 @@ namespace gct {
     );
     void compute_write_barrier(
       const syncable&
+    );
+    void compute_bidirectional_barrier(
+      const syncable &s
     );
     std::vector< vk::ImageMemoryBarrier > transfer_barrier(
       const std::vector< std::shared_ptr< buffer_t > > &buffer,

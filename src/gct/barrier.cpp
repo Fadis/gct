@@ -14,9 +14,9 @@ namespace gct {
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::barrier(
     vk::AccessFlags src_access_mask,
     vk::AccessFlags dest_access_mask,
-    vk::PipelineStageFlagBits src_stage,
-    vk::PipelineStageFlagBits dest_stage,
-    vk::DependencyFlagBits dependency,
+    vk::PipelineStageFlags src_stage,
+    vk::PipelineStageFlags dest_stage,
+    vk::DependencyFlags dependency,
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
   ) {
@@ -99,9 +99,9 @@ namespace gct {
   void command_buffer_recorder_t::barrier(
     vk::AccessFlags src_access_mask,
     vk::AccessFlags dest_access_mask,
-    vk::PipelineStageFlagBits src_stage,
-    vk::PipelineStageFlagBits dest_stage,
-    vk::DependencyFlagBits dependency,
+    vk::PipelineStageFlags src_stage,
+    vk::PipelineStageFlags dest_stage,
+    vk::DependencyFlags dependency,
     const syncable &s
   ) {
     const auto available_queue_family_index = get_factory()->get_factory()->get_factory()->get_available_queue_family_index();
@@ -219,6 +219,18 @@ namespace gct {
     get_factory()->unbound()->keep.push_back( s.image );
     get_factory()->unbound()->keep.push_back( s.image_view );
   }
+  void command_buffer_recorder_t::barrier(
+    const barrier_state &c
+  ) {
+    barrier(
+      c.config.src_access_mask,
+      c.config.dest_access_mask,
+      c.config.src_stage,
+      c.config.dest_stage,
+      c.config.dependency,
+      c.data
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::barrier(
     const std::vector< std::shared_ptr< buffer_t > > &buffer,
     const std::vector< std::shared_ptr< image_t > > &image
@@ -291,6 +303,18 @@ namespace gct {
     barrier(
       vk::AccessFlagBits::eShaderRead,
       vk::AccessFlagBits::eShaderWrite,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
+  void command_buffer_recorder_t::compute_bidirectional_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite,
       vk::PipelineStageFlagBits::eComputeShader,
       vk::PipelineStageFlagBits::eComputeShader,
       vk::DependencyFlagBits( 0 ),
