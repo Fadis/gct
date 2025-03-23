@@ -265,12 +265,17 @@ int main( int argc, const char *argv[] ) {
     )
     .add_input( "input_image", src_desc.normalized )
   );
+  auto f0 = opt.get_image_fill(
+    gct::image_fill_create_info()
+      .set_output( src_extent.width / 2, src_extent.height / 2 )
+  );
   auto s1 = opt.get_image_io(
     opt.get_image_io_create_info(
       shrink,
       gct::image_io_plan()
         .add_input( "input_image" )
-        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
+        .add_inout( "output_image" )
+        //.add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
         .set_dim( "output_image", 0.5f )
     )
     .set_push_constant( "x_offset", src_extent.width / 4 )
@@ -299,12 +304,12 @@ int main( int argc, const char *argv[] ) {
     .set_push_constant( "y_offset", src_extent.height / 4 )
   );
   auto s0r = s0( {} );
-  auto s1r = s1( { { "input_image", s0r[ "output_image" ] } } );
+  auto f0r = f0( {} );
+  auto s1r = s1( { { "input_image", s0r[ "output_image" ] }, { "output_image", f0r[ "default" ] } } );
   auto s2r = s2( { { "input_image", s1r[ "output_image" ] } } );
   auto s3r = s3( { { "input_image", s2r[ "output_image" ] } } );
   auto compiled = opt();
-  std::cout << nlohmann::json( compiled ).dump( 2 ) << std::endl;
-  
+  std::cout << to_string( compiled ) << std::endl;
   {
     {
       auto recorder = command_buffer->begin();

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/compute.hpp>

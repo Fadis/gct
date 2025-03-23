@@ -137,6 +137,16 @@ void command_buffer_recorder_t::fill(
     range
   );
 }
+void command_buffer_recorder_t::fill(
+  const std::shared_ptr< image_view_t > &dest,
+  const std::array< float, 4u > &color
+) {
+  fill(
+    dest->get_factory(),
+    color,
+    dest->get_props().get_basic().subresourceRange
+  );
+}
 
 }
 

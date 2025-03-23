@@ -370,6 +370,10 @@ namespace gct {
       const vk::ClearColorValue &color,
       const vk::ImageSubresourceRange &range
     );
+    void fill(
+      const std::shared_ptr< image_view_t > &dest,
+      const std::array< float, 4u > &color
+    );
     std::vector< vk::ImageMemoryBarrier > barrier(
       vk::AccessFlags,
       vk::AccessFlags,

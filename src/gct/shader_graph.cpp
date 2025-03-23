@@ -1,4 +1,5 @@
 #include <queue>
+#include <string>
 #include <utility>
 #include <nlohmann/json.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -42,6 +43,19 @@ void to_json( nlohmann::json &dest, const shader_graph_barrier &src ) {
   }
 }
 
+void to_json( nlohmann::json &dest, const image_fill_create_info &src ) {
+  dest = nlohmann::json::object();
+  dest[ "name" ] = src.name;
+  if( src.output.index() == 0 ) {
+    dest[ "output" ] = *std::get< image_pool::image_descriptor >( src.output );
+  }
+  else if( src.output.index() == 1 ) {
+    dest[ "output" ] = std::get< image_allocate_info >( src.output );
+  }
+  dest[ "color" ] = src.color;
+  dest[ "independent" ] = src.independent;
+}
+
 void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
   dest = nlohmann::json::object();
   if( src.index() == 0 ) {
@@ -51,6 +65,10 @@ void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
   else if( src.index() == 1 ) {
     dest[ "type" ] = "barrier";
     dest[ "value" ] = std::get< shader_graph_barrier >( src );
+  }
+  else if( src.index() == 2 ) {
+    dest[ "type" ] = "fill";
+    dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
   }
 }
 
@@ -64,6 +82,77 @@ void to_json( nlohmann::json &dest, const shader_graph_command_list &src ) {
 void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
   dest = src.get_list();
 }
+
+std::string to_string( const shader_graph_command &src ) {
+  std::string dest;
+  if( src.index() == 0 ) {
+    const auto &io = *std::get< std::shared_ptr< image_io > >( src );
+    dest += "image_io( ";
+    bool initial = true;
+    for( const auto &i: io.get_props().get_input() ) {
+      if( initial ) initial = false;
+      else dest += ", ";
+      dest += "in " + i.first + ":" + std::to_string( *i.second );
+    }
+    for( const auto &i: io.get_props().get_inout() ) {
+      if( initial ) initial = false;
+      else dest += ", ";
+      dest += "inout " + i.first + ":" + std::to_string( *i.second );
+    }
+    dest += " ) -> ( ";
+    initial = true;
+    for( const auto &i: io.get_props().get_plan().output ) {
+      if( initial ) initial = false;
+      else dest += ", ";
+      dest += "out " + i.first + ":" + std::to_string( *std::get< image_pool::image_descriptor >( i.second ) );
+    }
+    for( const auto &i: io.get_props().get_inout() ) {
+      if( initial ) initial = false;
+      else dest += ", ";
+      dest += "inout " + i.first + ":" + std::to_string( *i.second );
+    }
+    dest += " );\n";
+  }
+  else if( src.index() == 1 ) {
+    const auto &b = std::get< shader_graph_barrier >( src );
+    dest += "barrier< " + nlohmann::json( b.state.config ).dump() + " >( ";
+    bool initial = true;
+    for( const auto &v: b.view ) {
+      if( initial ) initial = false;
+      else dest += ", ";
+      dest += std::to_string( *v );
+    }
+    dest += " );\n";
+  }
+  else if( src.index() == 2 ) {
+    const auto &fill = *std::get< std::shared_ptr< image_fill_create_info > >( src );
+    dest += "fill( color:( ";
+    dest += std::to_string( fill.color[ 0 ] ) + ", ";
+    dest += std::to_string( fill.color[ 1 ] ) + ", ";
+    dest += std::to_string( fill.color[ 2 ] ) +  ", ";
+    dest += std::to_string( fill.color[ 3 ] ) + " ),";
+    dest += " independent:";
+    dest += ( fill.independent ? "true" :"false" ) + std::string( " ) -> ( " );
+    dest += fill.name + ":";
+    dest += std::to_string( *std::get< image_pool::image_descriptor >( fill.output ) );
+    dest += " );\n";
+  }
+  return dest;
+}
+
+std::string to_string( const shader_graph_command_list &src ) {
+  std::string dest;
+  for( const auto &v: src ) {
+    dest += to_string( v );
+  }
+  return dest;
+}
+
+std::string to_string( const compiled_shader_graph &src ) {
+  return to_string( src.get_list() );
+}
+
+
 
   shader_graph_vertex::subresult_type shader_graph_vertex::result_type::operator[]( const std::string name ) const {
     if( create_info ) {
@@ -127,7 +216,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
           throw exception::runtime_error( "shader_graph_vertex::result_type::operator() : Edge insertion from " + i.second.name + " to " + i.first + " failed.", __FILE__, __LINE__ );
         }
         for( const auto &f : incoming_fill ) {
-          auto [desc,inserted] = add_edge( i.second.vertex_id, vertex_id, *graph );
+          auto [desc,inserted] = add_edge( i.second.vertex_id, f, *graph );
           (*graph)[ f ].fill_create_info->independent = false;
         }
         unique_edge.insert( std::make_pair( i.second.vertex_id, desc ) );
@@ -162,7 +251,8 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
   std::vector< std::pair< shader_graph_builder::graph_type::vertex_descriptor, std::string > >
   shader_graph_builder::get_consumer_of(
     const graph_type::vertex_descriptor &generator,
-    const std::string &name
+    const std::string &name,
+    bool include_middle
   ) const {
     std::vector< std::pair< shader_graph_builder::graph_type::vertex_descriptor, std::string > > temp;
     std::unordered_set< std::pair< graph_type::vertex_descriptor, std::string >, subresult_hash > next_depth{ std::make_pair( generator, name ) };
@@ -185,24 +275,24 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
             const auto dest = target( edge, *graph );
             if( (*graph)[ dest ].create_info ) {
               const auto inout = std::find_if(
-                (*graph)[ dest ].create_info->get_inout().begin(),
-                (*graph)[ dest ].create_info->get_inout().end(),
+                (*graph)[ dest ].create_info->get_plan().inout.begin(),
+                (*graph)[ dest ].create_info->get_plan().inout.end(),
                 [&]( const auto &i ) {
-                  return i.first == connected->to;
+                  return i == connected->to;
                 }
               );
-              if( inout != (*graph)[ dest ].create_info->get_inout().end() ) {
+              if( inout != (*graph)[ dest ].create_info->get_plan().inout.end() ) {
                 next_depth.insert( std::make_pair( dest, connected->to ) );
               }
               else {
                 const auto in = std::find_if(
-                  (*graph)[ dest ].create_info->get_input().begin(),
-                  (*graph)[ dest ].create_info->get_input().end(),
+                  (*graph)[ dest ].create_info->get_plan().input.begin(),
+                  (*graph)[ dest ].create_info->get_plan().input.end(),
                   [&]( const auto &i ) {
-                    return i.first == connected->to;
+                    return i == connected->to;
                   }
                 );
-                if( in != (*graph)[ dest ].create_info->get_input().end() ) {
+                if( in != (*graph)[ dest ].create_info->get_plan().input.end() ) {
                   consumer.insert( std::make_pair( dest, connected->to ) );
                   consumed.insert( sub );
                 }
@@ -211,11 +301,17 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
           }
         }
       }
+      if( include_middle ) {
+        consumer.insert( current_depth.begin(), current_depth.end() );
+      }
       for( const auto &sub: consumed ) {
         current_depth.erase( sub );
       }
     } while( !next_depth.empty() );
-    consumer.insert( current_depth.begin(), current_depth.end() );
+    if( include_middle ) {
+      consumer.insert( current_depth.begin(), current_depth.end() );
+    }
+    consumer.erase( std::make_pair( generator, name ) );
     return std::vector< std::pair< shader_graph_builder::graph_type::vertex_descriptor, std::string > >(
       consumer.begin(),
       consumer.end()
@@ -227,11 +323,13 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     const graph_type::vertex_descriptor &second_generator
   ) const {
     const auto &vertex = (*graph)[ first_generator ];
+    unsigned int id = 0u;
     if( vertex.create_info ) {
       const auto &out = vertex.create_info->get_plan().output.find( first_subedge );
       if( out != vertex.create_info->get_plan().output.end() ) {
         if( out->second.index() == 0 ) {
           const auto view = std::get< image_pool::image_descriptor >( out->second );
+          id = *view;
           const auto b = std::find_if( 
             binding.begin(),
             binding.end(),
@@ -261,6 +359,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       if( vertex.fill_create_info->name == first_subedge ) {
         if( out.index() == 0 ) {
           const auto view = std::get< image_pool::image_descriptor >( out );
+          id = *view;
           const auto b = std::find_if( 
             binding.begin(),
             binding.end(),
@@ -288,14 +387,18 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     else {
       throw -1;
     }
-    for( const auto &v: get_consumer_of( first_generator, first_subedge ) ) {
-      std::cout << first_generator << ":" << first_subedge << " " << v.first << ":" << v.second << " " << second_generator << std::endl;
+    bool has_consumer = false;
+    for( const auto &v: get_consumer_of( first_generator, first_subedge, false ) ) {
+      has_consumer = true;
       if( v.first == second_generator ) {
         return false;
       }
       if( !boost::is_reachable( v.first, second_generator, *graph, boost::get( &shader_graph_vertex_type::color, *graph ) ) ) {
         return false;
       }
+    }
+    if( !has_consumer ) {
+      return false;
     }
     return true;
   }
@@ -317,15 +420,8 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
   ) {
     iter->add_used_by( v, name );
     (*graph)[ v ].create_info->add( name, iter->view );
-    const auto [e_begin,e_end] = out_edges( v, *graph );
-    for( const auto &edge: boost::make_iterator_range( e_begin, e_end ) ) {
-      for( const auto &sub: (*graph)[ edge ] ) {
-        if( sub.from == name ) {
-          const auto consumer = target( edge, *graph );
-          (*graph)[ consumer ].create_info->add( sub.to, iter->view );
-          break;
-        }
-      }
+    for( const auto &c: get_consumer_of( v, name, true ) ) {
+      (*graph)[ c.first ].create_info->add( c.second, iter->view );
     }
   }
   void shader_graph_builder::bind(
@@ -342,27 +438,39 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
         .add_used_by( v, name )
         .set_shareable( shareable )
     );
-    if( !(*graph)[ v ].create_info->is_ready( name ) ) {
-      (*graph)[ v ].create_info->add( name, view );
-    }
-    else {
-      const auto existing = (*graph)[ v ].create_info->get( name );
-      if( !existing ) {
-        throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
+    if( (*graph)[ v ].create_info ) {
+      if( !(*graph)[ v ].create_info->is_ready( name ) ) {
+        (*graph)[ v ].create_info->add( name, view );
       }
-      if( existing != view ) {
-        throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
-      }
-    }
-    const auto [e_begin,e_end] = out_edges( v, *graph );
-    for( const auto &edge: boost::make_iterator_range( e_begin, e_end ) ) {
-      for( const auto &sub: (*graph)[ edge ] ) {
-        if( sub.from == name ) {
-          const auto consumer = target( edge, *graph );
-          (*graph)[ consumer ].create_info->add( sub.to, view );
-          break;
+      else {
+        const auto existing = (*graph)[ v ].create_info->get( name );
+        if( !existing ) {
+          throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
+        }
+        if( existing != view ) {
+          throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
         }
       }
+    }
+    else if( (*graph)[ v ].fill_create_info ) {
+      if( (*graph)[ v ].fill_create_info->name != name ) {
+        throw exception::runtime_error( "shader_graph_builder::bind : unknown resource name " + name, __FILE__, __LINE__ );
+      }
+      if( (*graph)[ v ].fill_create_info->output.index() == 1 ) {
+        (*graph)[ v ].fill_create_info->output = view;
+      }
+      else if( (*graph)[ v ].fill_create_info->output.index() == 0 ) {
+        const auto existing = std::get< image_pool::image_descriptor >( (*graph)[ v ].fill_create_info->output );
+        if( !existing ) {
+          throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
+        }
+        if( existing != view ) {
+          throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
+        }
+      }
+    }
+    for( const auto &c: get_consumer_of( v, name, true ) ) {
+      (*graph)[ c.first ].create_info->add( c.second, view );
     }
   }
   void shader_graph_builder::assign_image() {
@@ -370,10 +478,22 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     std::queue< graph_type::vertex_descriptor > v_cur;
     std::unordered_set< graph_type::vertex_descriptor > visited;
     for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
-      if( (*graph)[ v ].create_info->independent() ) {
-        v_cur.push( v );
-        independent_vertex.push_back( v );
-        visited.insert( v );
+      if( (*graph)[ v ].create_info ) {
+        if( (*graph)[ v ].create_info->independent() ) {
+          v_cur.push( v );
+          independent_vertex.push_back( v );
+          visited.insert( v );
+        }
+      }
+      else if( (*graph)[ v ].fill_create_info ) {
+        if( (*graph)[ v ].fill_create_info->independent ) {
+          v_cur.push( v );
+          independent_vertex.push_back( v );
+          visited.insert( v );
+        }
+      }
+      else {
+        throw -1;
       }
     }
     if( v_cur.empty() ) {
@@ -381,27 +501,76 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     }
     while( !v_cur.empty() ) {
       const auto &v = v_cur.front();
-      for( const auto &inout: (*graph)[ v ].create_info->get_inout() ) {
-        const std::string &name = inout.first;
-        const auto &desc = inout.second;
-        const auto view = resource->image->get( desc );
-        bind( v, name, desc,
-          image_allocate_info()
-            .set_create_info( view->get_factory()->get_props() )
-            .set_range(
-              subview_range()
-                .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
-                .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
-                .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
-                .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
-            ),
-          false
-        );
+      if( (*graph)[ v ].create_info ) {
+        for( const auto &inout: (*graph)[ v ].create_info->get_inout() ) {
+          const std::string &name = inout.first;
+          const auto &desc = inout.second;
+          const auto view = resource->image->get( desc );
+          bind( v, name, desc,
+            image_allocate_info()
+              .set_create_info( view->get_factory()->get_props() )
+              .set_range(
+                subview_range()
+                  .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                  .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                  .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                  .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+              ),
+            false
+          );
+        }
+        for( const auto &out: (*graph)[ v ].create_info->get_plan().output ) {
+          const std::string &name = out.first;
+          if( out.second.index() == 1u ) {
+            const auto &ai = std::get< image_allocate_info >( out.second );
+            bool solved = false;
+            for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+              cur = std::find_if(
+                cur,
+                binding.end(),
+                [&]( const auto &b ) -> bool {
+                  return *b.allocate_info == ai;
+                }
+              );
+              if( cur == binding.end() ) {
+                break;
+              }
+              else {
+                if( shareable( *cur->used_by, v ) ) {
+                  reuse( cur, v, name );
+                  solved = true;
+                  break;
+                }
+              }
+            }
+            if( !solved ) {
+              const auto view = resource->image->allocate( ai ).linear;
+              bind( v, name, view, ai, true );
+            }
+          }
+          else if( out.second.index() == 0u ) {
+            const auto &desc = std::get< image_pool::image_descriptor >( out.second );
+            const auto view = resource->image->get( desc );
+            bind( v, name, desc,
+              image_allocate_info()
+                .set_create_info( view->get_factory()->get_props() )
+                .set_range(
+                  subview_range()
+                    .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                    .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                    .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                    .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+                ),
+              false
+            );
+          }
+        }
       }
-      for( const auto &out: (*graph)[ v ].create_info->get_plan().output ) {
-        const std::string &name = out.first;
-        if( out.second.index() == 1u ) {
-          const auto &ai = std::get< image_allocate_info >( out.second );
+      else if( (*graph)[ v ].fill_create_info ) {
+        const std::string &name = (*graph)[ v ].fill_create_info->name;
+        auto &out = (*graph)[ v ].fill_create_info->output;
+        if( out.index() == 1u ) {
+          const auto &ai = std::get< image_allocate_info >( out );
           bool solved = false;
           for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
             cur = std::find_if(
@@ -427,8 +596,8 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
             bind( v, name, view, ai, true );
           }
         }
-        else if( out.second.index() == 0u ) {
-          const auto &desc = std::get< image_pool::image_descriptor >( out.second );
+        else if( out.index() == 0u ) {
+          const auto &desc = std::get< image_pool::image_descriptor >( out );
           const auto view = resource->image->get( desc );
           bind( v, name, desc,
             image_allocate_info()
@@ -882,9 +1051,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
         }
       }
       list.push_back(
-        std::make_shared< image_io >( /////
-          *(*graph)[ v ].create_info
-        )
+        (*graph)[ v ].fill_create_info
       );
     }
     return list;
@@ -896,6 +1063,7 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     shader_graph_command_list cl;
     const auto [v_begin,v_end] = vertices( *graph );
     std::multimap< unsigned int, graph_type::vertex_descriptor > v_cur;
+    std::unordered_set< graph_type::vertex_descriptor > v_next;
     std::unordered_set< graph_type::vertex_descriptor > visited;
     std::unordered_map< image_pool::image_descriptor, image_state > is;
     for( const auto &b: binding ) {
@@ -914,22 +1082,28 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
     }
     shader_graph_command_list list;
     while( !v_cur.empty() ) {
-      const auto cur = v_cur.begin();
-      const auto &[priority,v] = *cur;
-      auto partial_list = run( is, v );
-      list.insert( list.end(), partial_list.begin(), partial_list.end() );
-      const auto [out_begin,out_end] = out_edges( v, *graph );
-      for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
-        const auto next = target( edge, *graph );
-        if( visited.find( next ) == visited.end() ) {
-          const auto [ready,priority] = is_ready_to_execulte( is, next );
-          if( ready ) {
-            v_cur.insert( std::make_pair( priority, next ) );
-            visited.insert( next );
+      v_next.clear();
+      while( !v_cur.empty() ) {
+        const auto cur = v_cur.begin();
+        const auto [priority,v] = *cur;
+        v_cur.erase( cur );
+        auto partial_list = run( is, v );
+        list.insert( list.end(), partial_list.begin(), partial_list.end() );
+        const auto [out_begin,out_end] = out_edges( v, *graph );
+        for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
+          const auto next = target( edge, *graph );
+          if( visited.find( next ) == visited.end() ) {
+            v_next.insert( next );
           }
         }
       }
-      v_cur.erase( cur );
+      for( const auto &next: v_next ) {
+        const auto [ready,priority] = is_ready_to_execulte( is, next );
+        if( ready ) {
+          v_cur.insert( std::make_pair( priority, next ) );
+          visited.insert( next );
+        }
+      }
     }
     return list;
   }
@@ -942,6 +1116,10 @@ void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
       }
       else if( c.index() == 1 ) {
         rec.barrier( std::get< shader_graph_barrier >( c ).state );
+      }
+      else if( c.index() == 2 ) {
+        const auto fill = std::get< std::shared_ptr< image_fill_create_info > >( c );
+        rec.fill( resource->image->get( std::get< image_pool::image_descriptor >( fill->output ) ), fill->color );
       }
     }
   }

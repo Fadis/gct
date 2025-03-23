@@ -1,6 +1,7 @@
 #ifndef GCT_SHADER_GRAPH_HPP
 #define GCT_SHADER_GRAPH_HPP
 
+#include "gct/color.hpp"
 #include <iostream>
 #include <vector>
 #include <boost/graph/adjacency_list.hpp>
@@ -10,6 +11,7 @@
 #include <gct/setter.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/barrier_config.hpp>
+#include <gct/color.hpp>
 
 namespace gct {
 
@@ -33,7 +35,6 @@ using shader_graph_subedge_list = std::vector< shader_graph_subedge >;
 
 struct image_fill_create_info {
   LIBGCT_SETTER( name )
-  LIBGCT_SETTER( output )
   LIBGCT_SETTER( color )
   image_fill_create_info &set_output(
     const std::string &n,
@@ -111,11 +112,13 @@ struct image_fill_create_info {
     output = desc;
     return *this;
   }
-  std::string name;
+  std::string name = "default";
   std::variant< image_pool::image_descriptor, image_allocate_info > output;
-  std::array< float, 4u > color;
+  std::array< float, 4u > color = color::web::pink;
   bool independent = true;
 };
+
+void to_json( nlohmann::json&, const image_fill_create_info& );
 
 struct shader_graph_vertex_type {
   LIBGCT_SETTER( create_info )
@@ -149,16 +152,19 @@ void to_json( nlohmann::json &dest, const shader_graph_barrier& );
 
 using shader_graph_command = std::variant<
   std::shared_ptr< image_io >,
-  shader_graph_barrier
+  shader_graph_barrier,
+  std::shared_ptr< image_fill_create_info >
 >;
 
 void to_json( nlohmann::json &dest, const shader_graph_command& );
+std::string to_string( const shader_graph_command& );
 
 using shader_graph_command_list = std::vector<
   shader_graph_command
 >;
 
-void to_json( nlohmann::json &dest, const shader_graph_command& );
+void to_json( nlohmann::json &dest, const shader_graph_command_list& );
+std::string to_string( const shader_graph_command_list& );
 
 class shader_graph_vertex {
 public:
@@ -256,6 +262,7 @@ enum class image_generator_type {
 };
 
 void to_json( nlohmann::json &dest, const compiled_shader_graph& );
+std::string to_string( const compiled_shader_graph& );
 
 class shader_graph_builder {
 public:
@@ -332,7 +339,7 @@ public:
   }
 private:
   std::vector< std::pair< graph_type::vertex_descriptor, std::string > > get_consumer_of(
-    const graph_type::vertex_descriptor &, const std::string&
+    const graph_type::vertex_descriptor &, const std::string&, bool include_middle
   ) const;
   bool shareable(
     const graph_type::vertex_descriptor &,
