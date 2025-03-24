@@ -56,7 +56,7 @@ class image_pool {
 public:
   using image_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using image_descriptor = handler< image_index_t >;
+  using image_descriptor = handler< image_index_t, image_pool >;
   using weak_image_descriptor = image_descriptor::weak_type;
   struct views {
     LIBGCT_SETTER( normalized )

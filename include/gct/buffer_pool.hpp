@@ -26,7 +26,7 @@ public:
   using buffer_level_t = std::uint32_t;
   using buffer_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using buffer_descriptor = handler< buffer_index_t >;
+  using buffer_descriptor = handler< buffer_index_t, buffer_pool >;
   using weak_buffer_descriptor = buffer_descriptor::weak_type;
 private:
   struct buffer_state_type {

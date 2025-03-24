@@ -58,7 +58,7 @@ public:
   using light_level_t = std::uint32_t;
   using light_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using light_descriptor = handler< light_index_t >;
+  using light_descriptor = handler< light_index_t, light_pool >;
   using weak_aabb_descriptor = light_descriptor::weak_type;
 private:
   struct light_state_type {

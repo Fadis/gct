@@ -543,7 +543,7 @@ void test_aabb_pool(
     l0mdesc.push_back( matrix.allocate( m ) );
   }
   std::vector< aabb4 > l0a;
-  std::vector< matrix_pool::matrix_descriptor > l0adesc;
+  std::vector< aabb_pool::aabb_descriptor > l0adesc;
   for( unsigned int i = 0u; i != 5u; ++i ) {
     const auto a = generate_random_aabb( dist, engine );
     l0a.push_back( a );
@@ -563,7 +563,7 @@ void test_aabb_pool(
     );
   }
   std::vector< aabb4 > l1a;
-  std::vector< matrix_pool::matrix_descriptor > l1adesc;
+  std::vector< aabb_pool::aabb_descriptor > l1adesc;
   for( unsigned int i = 0u; i != 5u; ++i ) {
     l1adesc.push_back( aabb.allocate( l0adesc[ i ], l0mdesc[ 2 ] ) );
     aabb.get(

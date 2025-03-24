@@ -26,7 +26,7 @@ public:
   using aabb_level_t = std::uint32_t;
   using aabb_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using aabb_descriptor = handler< aabb_index_t >;
+  using aabb_descriptor = handler< aabb_index_t, aabb_pool >;
   using weak_aabb_descriptor = aabb_descriptor::weak_type;
 private:
   struct aabb_state_type {

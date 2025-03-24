@@ -2,12 +2,9 @@
 #define GCT_TEXTURE_POOL_HPP
 #include <glm/mat4x4.hpp>
 #include <cstdint>
-#include <unordered_set>
-#include <unordered_map>
 #include <memory>
 #include <vector>
 #include <optional>
-#include <functional>
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
@@ -42,7 +39,7 @@ class texture_pool {
 public:
   using texture_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using texture_descriptor = handler< texture_index_t >;
+  using texture_descriptor = handler< texture_index_t, texture_pool >;
   using weak_texture_descriptor = texture_descriptor::weak_type;
   struct views {
     LIBGCT_SETTER( normalized )
@@ -79,6 +76,10 @@ public:
     const image_pool::views &i
   );
   [[nodiscard]] texture_descriptor allocate(
+    const sampler_pool::sampler_descriptor &s,
+    const image_pool::image_descriptor &i
+  );
+  [[nodiscard]] texture_descriptor allocate(
     const std::shared_ptr< sampler_t > &s,
     const std::shared_ptr< image_view_t > &i
   );
@@ -96,6 +97,10 @@ private:
     [[nodiscard]] views allocate(
       const sampler_pool::sampler_descriptor &s,
       const image_pool::views &i
+    );
+    [[nodiscard]] texture_descriptor allocate(
+      const sampler_pool::sampler_descriptor &s,
+      const image_pool::image_descriptor &i
     );
     [[nodiscard]] texture_descriptor allocate(
       const std::shared_ptr< sampler_t > &s,

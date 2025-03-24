@@ -25,7 +25,7 @@ public:
   using matrix_level_t = std::uint32_t;
   using matrix_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using matrix_descriptor = handler< matrix_index_t >;
+  using matrix_descriptor = handler< matrix_index_t, matrix_pool >;
   using weak_matrix_descriptor = matrix_descriptor::weak_type;
 private:
   struct matrix_state_type {

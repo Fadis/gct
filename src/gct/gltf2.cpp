@@ -449,7 +449,7 @@ scene_graph::primitive gltf2::create_primitive(
   const auto emt = material.emissiveTexture.index;
   if( emt >= 0 ) {
     if( texture.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
-    auto view = props.graph->get_resource()->image->get( texture[ emt ].normalized );
+    auto view = props.graph->get_resource()->texture->get( texture[ emt ].normalized ).first;
     const auto &profile = view->get_factory()->get_props().get_profile();
     if( profile.gamma == color_gamma::srgb && texture[ emt ].srgb ) {
       p.descriptor.set_emissive_texture( texture[ emt ].srgb );

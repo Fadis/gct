@@ -139,6 +139,46 @@ texture_pool::views texture_pool::state_type::allocate(
 }
 
 texture_pool::texture_descriptor texture_pool::state_type::allocate(
+  const sampler_pool::sampler_descriptor &sid,
+  const image_pool::image_descriptor &iid
+) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "texture_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+
+  const texture_index_t index = allocate_index();
+    
+  const auto s = props.sampler->get( sid );
+  const auto linear = props.image->get( iid );
+
+  write_request_list.push_back(
+    write_request()
+      .set_index( index )
+      .set_sampler( s )
+      .set_view( linear )
+  );
+  texture_state[ index ] =
+    texture_state_type()
+      .set_valid( true )
+      .set_write_request_index( write_request_list.size() - 1u )
+      .set_sampler( s )
+      .set_view( linear );
+ 
+  auto desc = texture_descriptor(
+    new texture_index_t( index ),
+    [self=shared_from_this()]( const texture_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  used_on_gpu.push_back( desc );
+
+  return desc;
+}
+
+texture_pool::texture_descriptor texture_pool::state_type::allocate(
   const std::shared_ptr< sampler_t > &s,
   const std::shared_ptr< image_view_t > &linear
 ) {
@@ -273,6 +313,15 @@ texture_pool::views texture_pool::allocate(
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( sid, iid );
 }
+
+texture_pool::texture_descriptor texture_pool::allocate(
+  const sampler_pool::sampler_descriptor &sid,
+  const image_pool::image_descriptor &iid
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( sid, iid );
+}
+
 
 texture_pool::texture_descriptor texture_pool::allocate(
   const std::shared_ptr< sampler_t > &s,

@@ -11,6 +11,8 @@
 #include <gct/exception.hpp>
 #include <gct/setter.hpp>
 #include <gct/image_pool.hpp>
+#include <gct/sampler_pool.hpp>
+#include <gct/texture_pool.hpp>
 #include <gct/image_allocate_info.hpp>
 #include <gct/spv_member_pointer.hpp>
 
@@ -36,6 +38,7 @@ struct image_io_dimension {
 };
 
 void to_json( nlohmann::json&, const image_io_dimension& );
+
 
 struct image_io_plan {
   LIBGCT_SETTER( input )
@@ -97,6 +100,13 @@ struct image_io_plan {
     inout.insert( name );
     return *this;
   }
+  image_io_plan &add_sampled(
+    const std::string &name,
+    const sampler_pool::sampler_descriptor &s
+  ) {
+    sampled.insert( std::make_pair( name, s ) );
+    return *this;
+  }
   image_io_plan &set_dim(
     const std::string &name
   ) {
@@ -150,6 +160,7 @@ struct image_io_plan {
   std::unordered_set< std::string > input;
   std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info > > output;
   std::unordered_set< std::string > inout;
+  std::unordered_map< std::string, sampler_pool::sampler_descriptor > sampled;
   image_io_dimension dim;
 };
 
@@ -173,12 +184,20 @@ struct image_io_create_info {
     const std::string &name,
     const image_pool::image_descriptor &desc
   );
+  image_io_create_info &add_sampled(
+    const std::string &name,
+    const texture_pool::texture_descriptor &desc
+  );
   [[nodiscard]] bool is_ready(
     const std::string &name
   ) const;
   image_io_create_info &add(
     const std::string &name,
     const image_pool::image_descriptor &desc
+  );
+  image_io_create_info &add(
+    const std::string &name,
+    const texture_pool::texture_descriptor &desc
   );
   [[nodiscard]] image_pool::image_descriptor get(
     const std::string &name
@@ -197,6 +216,9 @@ struct image_io_create_info {
   }*/
   [[nodiscard]] const std::unordered_map< std::string, image_pool::image_descriptor > get_inout() const {
     return inout;
+  }
+  [[nodiscard]] const std::unordered_map< std::string, texture_pool::texture_descriptor > get_sampled() const {
+    return sampled;
   }
   [[nodiscard]] const glm::ivec3 &get_dim() const {
     return dim;
@@ -236,15 +258,24 @@ private:
     const std::string &name,
     const image_pool::image_descriptor &desc
   );
+  void update_size(
+    const std::string &name,
+    const texture_pool::texture_descriptor &desc
+  );
   void update_pc(
     const std::string &name,
     const image_pool::image_descriptor &desc
+  );
+  void update_pc(
+    const std::string &name,
+    const texture_pool::texture_descriptor &desc
   );
   std::shared_ptr< compute > executable;
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
   image_io_plan plan;
   std::unordered_map< std::string, image_pool::image_descriptor > input;
   std::unordered_map< std::string, image_pool::image_descriptor > inout;
+  std::unordered_map< std::string, texture_pool::texture_descriptor > sampled;
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
   std::vector< std::uint8_t > push_constant;
 };

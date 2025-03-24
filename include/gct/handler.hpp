@@ -4,7 +4,7 @@
 #include <memory>
 
 namespace gct {
-template< typename T >
+template< typename T, typename Tag = void >
 class handler {
 public:
   using weak_type = std::weak_ptr< T >;
@@ -37,9 +37,9 @@ private:
 
 namespace std {
 
-template< typename T >
-struct hash< gct::handler< T > > {
-  auto operator()( const gct::handler< T > &v ) const -> std::size_t {
+template< typename T, typename Tag >
+struct hash< gct::handler< T, Tag > > {
+  auto operator()( const gct::handler< T, Tag > &v ) const -> std::size_t {
     return std::hash< T >{}( T( *v ) );
   }
 };

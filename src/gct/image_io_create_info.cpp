@@ -171,9 +171,43 @@ void image_io_create_info::update_size(
   }
 }
 
+void image_io_create_info::update_size(
+  const std::string &name,
+  const texture_pool::texture_descriptor &desc
+) {
+  if( plan.dim.relative_to && name == *plan.dim.relative_to ) {
+    if( !resource->image ) {
+      throw exception::invalid_argument( "image_io_create_info::add_input : Broken scene graph resource", __FILE__, __LINE__ );
+    }
+    const auto t = resource->texture->get( desc );
+    const auto &basic = t.first->get_factory()->get_props().get_basic();
+    const auto image_size = basic.extent;
+    const auto &range = t.first->get_props().get_basic().subresourceRange;
+    const auto layer_count = range.layerCount;
+    auto size =
+      ( basic.imageType == vk::ImageType::e3D ) ?
+      plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f ) :
+      (
+        ( basic.imageType == vk::ImageType::e2D ) ?
+        plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, layer_count, 1.0f ) :
+        plan.dim.size_transform * glm::vec4( image_size.width, layer_count, 1.0f, 1.0f )
+      );
+    size /= size.w;
+    dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
+  }
+}
+
 void image_io_create_info::update_pc(
   const std::string &name,
   const image_pool::image_descriptor &desc
+) {
+  const auto pcmp = executable->get_push_constant_member_pointer();
+  push_constant.data()->*(*pcmp)[ name ] = *desc;
+}
+
+void image_io_create_info::update_pc(
+  const std::string &name,
+  const texture_pool::texture_descriptor &desc
 ) {
   const auto pcmp = executable->get_push_constant_member_pointer();
   push_constant.data()->*(*pcmp)[ name ] = *desc;
@@ -234,6 +268,21 @@ image_io_create_info &image_io_create_info::add_inout(
   update_size( name, desc );
   return *this;
 }
+image_io_create_info &image_io_create_info::add_sampled(
+  const std::string &name,
+  const texture_pool::texture_descriptor &desc
+) {
+  if( plan.sampled.find( name ) == plan.sampled.end() ) {
+    throw exception::invalid_argument( "image_io_create_info::add_sampled : Sampled texture is attached to unknown texture " + name, __FILE__, __LINE__ );
+  }
+  if( !desc ) {
+    throw exception::invalid_argument( "image_io_create_info::add_sampled : Null texture descriptor", __FILE__, __LINE__ );
+  }
+  sampled[ name ] = desc;
+  update_pc( name, desc );
+  update_size( name, desc );
+  return *this;
+}
 
 image_io_create_info &image_io_create_info::add(
   const std::string &name,
@@ -252,6 +301,19 @@ image_io_create_info &image_io_create_info::add(
     throw exception::invalid_argument( "image_io_create_info::add : Image name " + name + " is not expected", __FILE__, __LINE__ );
   }
 }
+
+image_io_create_info &image_io_create_info::add(
+  const std::string &name,
+  const texture_pool::texture_descriptor &desc
+) {
+  if( plan.sampled.find( name ) != plan.sampled.end() ) {
+    return add_sampled( name, desc );
+  }
+  else {
+    throw exception::invalid_argument( "image_io_create_info::add : Texture name " + name + " is not expected", __FILE__, __LINE__ );
+  }
+}
+
 bool image_io_create_info::is_ready(
   const std::string &name
 ) const {

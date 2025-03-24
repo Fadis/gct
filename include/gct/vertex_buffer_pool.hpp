@@ -3,12 +3,9 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec4.hpp>
 #include <cstdint>
-#include <unordered_set>
-#include <unordered_map>
 #include <memory>
 #include <vector>
 #include <optional>
-#include <functional>
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
@@ -27,7 +24,7 @@ class vertex_buffer_pool {
 public:
   using vertex_buffer_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using vertex_buffer_descriptor = handler< vertex_buffer_index_t >;
+  using vertex_buffer_descriptor = handler< vertex_buffer_index_t, vertex_buffer_pool >;
   using weak_vertex_buffer_descriptor = vertex_buffer_descriptor::weak_type;
 private:
   struct vertex_buffer_state_type {

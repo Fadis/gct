@@ -27,7 +27,7 @@ class sampler_pool {
 public:
   using sampler_index_t = std::uint32_t;
   using request_index_t = std::uint32_t;
-  using sampler_descriptor = handler< sampler_index_t >;
+  using sampler_descriptor = handler< sampler_index_t, sampler_pool >;
   using weak_sampler_descriptor = sampler_descriptor::weak_type;
 private:
   struct sampler_state_type {
