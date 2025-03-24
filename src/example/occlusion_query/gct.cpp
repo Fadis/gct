@@ -420,7 +420,7 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out, mixed_out } )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >( res.swapchain_images.size(), mixed_out ) )
       .set_output( res.swapchain_image_views )
       .add_resource( { "bloom_image", bloom_gauss.get_output(), vk::ImageLayout::eGeneral } )
   );
