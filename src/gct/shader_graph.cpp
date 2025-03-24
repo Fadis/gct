@@ -771,7 +771,7 @@ std::string to_string( const compiled_shader_graph &src ) {
   std::pair< bool, unsigned int > shader_graph_builder::is_ready_to_execulte(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
     const graph_type::vertex_descriptor &v,
-    image_to_texture_map &texture
+    const image_to_texture_map &texture
   ) {
     unsigned int score = 0;
     if( (*graph)[ v ].create_info ) {
@@ -905,12 +905,94 @@ std::string to_string( const compiled_shader_graph &src ) {
   }
   shader_graph_command_list shader_graph_builder::run(
     std::unordered_map< image_pool::image_descriptor, image_state > &state,
-    const graph_type::vertex_descriptor &v
+    const graph_type::vertex_descriptor &v,
+    const image_to_texture_map &texture
   ) {
     shader_graph_command_list list;
     if( (*graph)[ v ].create_info ) {
       for( const auto &i: (*graph)[ v ].create_info->get_input() ) {
         const auto &is = state.find( i.second );
+        if( is != state.end() ) {
+          if( is->second.mode != image_mode::readable_without_sync_writable_after_sync ) {
+            if( is->second.last_generator_type == image_generator_type::transfer ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask( vk::AccessFlagBits::eTransferWrite )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            else if( is->second.last_generator_type == image_generator_type::output ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask( vk::AccessFlagBits::eShaderWrite )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            else if( is->second.last_generator_type == image_generator_type::inout ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eShaderWrite
+                          )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            is->second.mode = image_mode::readable_without_sync_writable_after_sync;
+          }
+          const auto consumed = std::find(
+            is->second.expected_consumer.begin(),
+            is->second.expected_consumer.end(),
+            v
+          );
+          if( consumed != is->second.expected_consumer.end() ) {
+            is->second.expected_consumer.erase( consumed );
+          }
+        }
+      }
+      for( const auto &i: (*graph)[ v ].create_info->get_sampled() ) {
+        const auto i2t = std::find_if(
+          texture.begin(),
+          texture.end(),
+          [&]( const auto &t ) { return t.second == i.second; }
+        );
+        const auto &is = state.find( i2t->first.first );
         if( is != state.end() ) {
           if( is->second.mode != image_mode::readable_without_sync_writable_after_sync ) {
             if( is->second.last_generator_type == image_generator_type::transfer ) {
@@ -1265,7 +1347,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         const auto cur = v_cur.begin();
         const auto [priority,v] = *cur;
         v_cur.erase( cur );
-        auto partial_list = run( is, v );
+        auto partial_list = run( is, v, texture );
         list.insert( list.end(), partial_list.begin(), partial_list.end() );
         const auto [out_begin,out_end] = out_edges( v, *graph );
         for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {

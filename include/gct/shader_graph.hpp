@@ -382,11 +382,12 @@ private:
   std::pair< bool, unsigned int > is_ready_to_execulte(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
     const graph_type::vertex_descriptor &v,
-    image_to_texture_map &texture
+    const image_to_texture_map &texture
   );
   shader_graph_command_list run(
     std::unordered_map< image_pool::image_descriptor, image_state > &state,
-    const graph_type::vertex_descriptor &v
+    const graph_type::vertex_descriptor &v,
+    const image_to_texture_map &texture
   );
   void reset() {
     independent_vertex.clear();
