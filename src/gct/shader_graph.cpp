@@ -187,6 +187,76 @@ std::string to_string( const compiled_shader_graph &src ) {
       throw exception::runtime_error( "shader_graph_vertex::result_type::operator[] : Broken result_type", __FILE__, __LINE__ );
     }
   }
+  shader_graph_vertex::result_type:: operator subresult_type() const {
+    if( create_info ) {
+      if( create_info->get_plan().output.size() == 1u && create_info->get_plan().inout.size() == 0u ) {
+        return shader_graph_vertex::subresult_type(
+          vertex_id,
+          create_info,
+          create_info->get_plan().output.begin()->first
+        );
+      }
+      else if( create_info->get_plan().inout.size() == 1u && create_info->get_plan().output.size() == 0u ) {
+        return shader_graph_vertex::subresult_type(
+          vertex_id,
+          create_info,
+          *create_info->get_plan().inout.begin()
+        );
+      }
+      else {
+        throw exception::invalid_argument( "shader_graph_vertex::result_type::operator subresult_type : result_type has multiple output images", __FILE__, __LINE__ );
+      }
+    }
+    else if( fill_create_info ) {
+      return shader_graph_vertex::subresult_type(
+        vertex_id,
+        fill_create_info,
+        fill_create_info->name
+      );
+    }
+    else {
+      throw exception::invalid_argument( "shader_graph_vertex::result_type::operator subresult_type : broken result_type", __FILE__, __LINE__ );
+    }
+  }
+
+  shader_graph_vertex::result_type shader_graph_vertex::operator()(
+    const subresult_type &input
+  ) {
+    std::string name;
+    if( create_info ) {
+      if(
+        create_info->get_plan().input.size() == 1u &&
+        create_info->get_plan().sampled.size() == 0u &&
+        create_info->get_plan().inout.size() == 0u ) {
+        name = *create_info->get_plan().input.begin();
+      }
+      else if(
+        create_info->get_plan().input.size() == 0u &&
+        create_info->get_plan().sampled.size() == 1u &&
+        create_info->get_plan().inout.size() == 0u ) {
+        name = create_info->get_plan().sampled.begin()->first;
+      }
+      else if(
+        create_info->get_plan().input.size() == 0u &&
+        create_info->get_plan().sampled.size() == 0u &&
+        create_info->get_plan().inout.size() == 1u ) {
+        name = *create_info->get_plan().inout.begin();
+      }
+      else {
+        throw exception::invalid_argument( "shader_graph_vertex::operator() : vertex has multiple input images", __FILE__, __LINE__ );
+      }
+    }
+    else if( fill_create_info ) {
+      name = fill_create_info->name;
+    }
+    else {
+      throw exception::invalid_argument( "shader_graph_vertex::operator() : broken vertex", __FILE__, __LINE__ );
+    }
+    return (*this)( { { name, input } } );
+  }
+  shader_graph_vertex::result_type shader_graph_vertex::operator()() {
+    return (*this)( {} );
+  }
   shader_graph_vertex::result_type shader_graph_vertex::operator()(
     const std::unordered_map< std::string, subresult_type > &input
   ) {

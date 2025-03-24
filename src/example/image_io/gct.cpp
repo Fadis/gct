@@ -325,12 +325,12 @@ int main( int argc, const char *argv[] ) {
         .set_dim( "output_image" )
     )
   );
-  auto s0r = s0( {} );
-  auto f0r = f0( {} );
-  auto s1r = s1( { { "input_image", s0r[ "output_image" ] }, { "output_image", f0r[ "default" ] } } );
-  auto s2r = s2( { { "input_image", s1r[ "output_image" ] } } );
-  auto s3r = s3( { { "input_image", s2r[ "output_image" ] } } );
-  auto s4r = s4( { { "input_image", s3r[ "output_image" ] } } );
+  auto s0r = s0();
+  auto f0r = f0();
+  auto s1r = s1( { { "input_image", s0r }, { "output_image", f0r } } );
+  auto s2r = s2( s1r );
+  auto s3r = s3( s2r );
+  auto s4r = s4( s3r );
   auto compiled = opt();
   std::cout << to_string( compiled ) << std::endl;
   {

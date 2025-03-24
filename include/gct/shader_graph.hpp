@@ -204,6 +204,7 @@ public:
       const std::shared_ptr< image_fill_create_info > &ci
     ) : graph( g ), vertex_id( id ), fill_create_info( ci ) {}
     subresult_type operator[]( const std::string name ) const;
+    operator subresult_type() const;
   private:
     std::shared_ptr< graph_type > graph;
     graph_type::vertex_descriptor vertex_id;
@@ -223,6 +224,10 @@ public:
   result_type operator()(
     const std::unordered_map< std::string, subresult_type > &input
   );
+  result_type operator()(
+    const subresult_type &input
+  );
+  result_type operator()();
 private:
   std::shared_ptr< graph_type > graph;
   graph_type::vertex_descriptor vertex_id;
