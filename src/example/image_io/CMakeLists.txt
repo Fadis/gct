@@ -47,4 +47,5 @@ add_shader( image_io light_pool/update.comp )
 add_shader( image_io dummy/dummy.comp )
 
 add_shader( image_io shrink/shrink.comp )
+add_shader( image_io rotate/rotate.comp )
 

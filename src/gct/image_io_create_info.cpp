@@ -53,6 +53,15 @@ void to_json( nlohmann::json &dest, const image_io_plan &src ) {
   for( const auto &v: src.inout ) {
     dest[ "inout" ].push_back( v );
   }
+  dest[ "sampled" ] = nlohmann::json::object();
+  for( const auto &v: src.sampled ) {
+    if( v.second ) {
+      dest[ "sampled" ][ v.first ] = *v.second;
+    }
+    else {
+      dest[ "sampled" ][ v.first ] = nullptr;
+    }
+  }
   dest[ "dim" ] = src.dim;
 }
 
@@ -331,7 +340,7 @@ bool image_io_create_info::is_ready(
     throw exception::invalid_argument( "image_io_create_info::is_ready : Image name " + name + " is not expected", __FILE__, __LINE__ );
   }
 }
-image_pool::image_descriptor image_io_create_info::get(
+std::variant< image_pool::image_descriptor, texture_pool::texture_descriptor > image_io_create_info::get(
   const std::string &name
 ) const {
   if( plan.input.find( name ) != plan.input.end() ) {
@@ -351,6 +360,11 @@ image_pool::image_descriptor image_io_create_info::get(
     const auto &desc = std::get< image_pool::image_descriptor >( match->second );
     return desc;
   }
+  else if( plan.sampled.find( name ) != plan.sampled.end() ) {
+    const auto match = sampled.find( name );
+    if( match == sampled.end() ) return image_pool::image_descriptor();
+    else return match->second;
+  }
   else {
     throw exception::invalid_argument( "image_io_create_info::get : Image name " + name + " is not expected", __FILE__, __LINE__ );
   }
@@ -359,6 +373,7 @@ image_pool::image_descriptor image_io_create_info::get(
 bool image_io_create_info::independent() const {
   if( input.size() != plan.input.size() ) return false;
   if( inout.size() != plan.inout.size() ) return false;
+  if( sampled.size() != plan.sampled.size() ) return false;
   return true;
 }
 
@@ -377,11 +392,30 @@ void to_json( nlohmann::json &dest, const image_io_create_info &src ) {
   dest[ "executable" ] = *src.get_executable();
   dest[ "input" ] = nlohmann::json::object();
   for( const auto &v: src.get_input() ) {
-    dest[ "input" ][ v.first ] = *v.second;
+    if( v.second ) {
+      dest[ "input" ][ v.first ] = *v.second;
+    }
+    else {
+      dest[ "input" ][ v.first ] = nullptr;
+    }
   }
   dest[ "inout" ] = nlohmann::json::object();
   for( const auto &v: src.get_inout() ) {
-    dest[ "inout" ][ v.first ] = *v.second;
+    if( v.second ) {
+      dest[ "inout" ][ v.first ] = *v.second;
+    }
+    else {
+      dest[ "inout" ][ v.first ] = nullptr;
+    }
+  }
+  dest[ "sampled" ] = nlohmann::json::object();
+  for( const auto &v: src.get_sampled() ) {
+    if( v.second ) {
+      dest[ "sampled" ][ v.first ] = *v.second;
+    }
+    else {
+      dest[ "sampled" ][ v.first ] = nullptr;
+    }
   }
   dest[ "plan" ] = src.get_plan();
   dest[ "dim" ] = nlohmann::json::array();

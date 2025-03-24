@@ -147,6 +147,13 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/shrink/shrink.comp.spv" )
       .set_scene_graph( sg->get_resource() )
   );
+  
+  const auto rotate = std::make_shared< gct::compute >(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/rotate/rotate.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+  );
 
   const auto src_desc = sg->get_resource()->image->allocate(
     gct::image_load_info()
@@ -193,6 +200,7 @@ int main( int argc, const char *argv[] ) {
             )
               .setUsage(
                 vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eSampled|
                 vk::ImageUsageFlagBits::eTransferSrc|
                 vk::ImageUsageFlagBits::eTransferDst
               )
@@ -203,6 +211,11 @@ int main( int argc, const char *argv[] ) {
       );
 
   const auto dest2_desc = sg->get_resource()->image->allocate( dest2_alloc_info );
+  const auto dest3_desc = sg->get_resource()->image->allocate( dest2_alloc_info );
+
+  const auto linear_sampler_desc = sg->get_resource()->sampler->allocate(
+    gct::get_basic_linear_sampler_create_info()
+  );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
@@ -303,11 +316,21 @@ int main( int argc, const char *argv[] ) {
     .set_push_constant( "x_offset", src_extent.width / 4 )
     .set_push_constant( "y_offset", src_extent.height / 4 )
   );
+  auto s4 = opt.get_image_io(
+    opt.get_image_io_create_info(
+      rotate,
+      gct::image_io_plan()
+        .add_sampled( "input_image", linear_sampler_desc )
+        .add_output( "output_image", dest3_desc.linear )
+        .set_dim( "output_image" )
+    )
+  );
   auto s0r = s0( {} );
   auto f0r = f0( {} );
   auto s1r = s1( { { "input_image", s0r[ "output_image" ] }, { "output_image", f0r[ "default" ] } } );
   auto s2r = s2( { { "input_image", s1r[ "output_image" ] } } );
   auto s3r = s3( { { "input_image", s2r[ "output_image" ] } } );
+  auto s4r = s4( { { "input_image", s3r[ "output_image" ] } } );
   auto compiled = opt();
   std::cout << to_string( compiled ) << std::endl;
   {
@@ -330,6 +353,12 @@ int main( int argc, const char *argv[] ) {
     dest2_desc.linear,
     gct::image_dump_info()
       .set_filename( "output2.png" )
+  );
+  
+  sg->get_resource()->image->dump(
+    dest3_desc.linear,
+    gct::image_dump_info()
+      .set_filename( "output3.png" )
   );
   
   {

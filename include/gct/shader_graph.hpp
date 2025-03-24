@@ -45,7 +45,8 @@ struct image_fill_create_info {
       basic.usage |
       vk::ImageUsageFlagBits::eTransferSrc |
       vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage
+      vk::ImageUsageFlagBits::eStorage |
+      vk::ImageUsageFlagBits::eSampled
     );
     auto desc_ = desc;
     desc_.create_info.set_basic( basic );
@@ -81,7 +82,8 @@ struct image_fill_create_info {
       basic.usage |
       vk::ImageUsageFlagBits::eTransferSrc |
       vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage
+      vk::ImageUsageFlagBits::eStorage |
+      vk::ImageUsageFlagBits::eSampled
     );
     auto desc_ = desc;
     desc_.create_info.set_basic( basic );
@@ -310,6 +312,10 @@ private:
   struct subresult_hash {
     [[nodiscard]] std::size_t operator()( const std::pair< graph_type::vertex_descriptor, std::string > & ) const;
   };
+  struct texture_hash {
+    [[nodiscard]] std::size_t operator()( const std::pair< image_pool::image_descriptor, sampler_pool::sampler_descriptor > & ) const;
+  };
+  using image_to_texture_map = std::unordered_map< std::pair< image_pool::image_descriptor, sampler_pool::sampler_descriptor >, texture_pool::texture_descriptor, texture_hash >;
 public:
   shader_graph_builder(
     const std::shared_ptr< scene_graph::scene_graph_resource > &r
@@ -350,23 +356,28 @@ private:
     const std::vector< std::pair< graph_type::vertex_descriptor, std::string > > &first_generator,
     const graph_type::vertex_descriptor &second_generator
   ) const;
-  void assign_image();
+  void assign_image(
+    image_to_texture_map &texture
+  );
   shader_graph_command_list build_command_list();
   void bind(
     const graph_type::vertex_descriptor &v,
     const std::string &name,
     const image_pool::image_descriptor &view,
     const image_allocate_info &ai,
-    bool shareable
+    bool shareable,
+    image_to_texture_map &texture
   );
   void reuse(
     std::vector< image_binding >::iterator iter,
     const graph_type::vertex_descriptor &v,
-    const std::string &name
+    const std::string &name,
+    image_to_texture_map &texture
   );
   std::pair< bool, unsigned int > is_ready_to_execulte(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
-    const graph_type::vertex_descriptor &v
+    const graph_type::vertex_descriptor &v,
+    image_to_texture_map &texture
   );
   shader_graph_command_list run(
     std::unordered_map< image_pool::image_descriptor, image_state > &state,

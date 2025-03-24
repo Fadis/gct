@@ -199,7 +199,7 @@ struct image_io_create_info {
     const std::string &name,
     const texture_pool::texture_descriptor &desc
   );
-  [[nodiscard]] image_pool::image_descriptor get(
+  [[nodiscard]] std::variant< image_pool::image_descriptor, texture_pool::texture_descriptor > get(
     const std::string &name
   ) const;
   [[nodiscard]] const std::shared_ptr< compute > &get_executable() const {
