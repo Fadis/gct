@@ -1,8 +1,6 @@
 #ifndef GCT_SHADER_GRAPH_HPP
 #define GCT_SHADER_GRAPH_HPP
 
-#include "gct/color.hpp"
-#include <iostream>
 #include <vector>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/directed_graph.hpp>
@@ -11,6 +9,8 @@
 #include <gct/setter.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/barrier_config.hpp>
+#include <gct/image_fill_create_info.hpp>
+#include <gct/image_blit_create_info.hpp>
 #include <gct/color.hpp>
 
 namespace gct {
@@ -33,101 +33,18 @@ struct shader_graph_subedge {
 
 using shader_graph_subedge_list = std::vector< shader_graph_subedge >;
 
-struct image_fill_create_info {
-  LIBGCT_SETTER( name )
-  LIBGCT_SETTER( color )
-  image_fill_create_info &set_output(
-    const std::string &n,
-    const image_allocate_info &desc
-  ) {
-    auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage |
-      vk::ImageUsageFlagBits::eSampled
-    );
-    auto desc_ = desc;
-    desc_.create_info.set_basic( basic );
-    desc_.set_layout( vk::ImageLayout::eGeneral );
-    output = desc_;
-    name = n;
-    return *this;
-  }
-  image_fill_create_info &set_output(
-    const std::string &name,
-    unsigned int width,
-    unsigned int height
-  ) {
-    return set_output(
-      name,
-      gct::image_allocate_info()
-        .set_create_info(
-          gct::image_create_info_t()
-            .set_basic(
-              gct::basic_2d_image(
-                width,
-                height
-              )
-            )
-        )
-    );
-  }
-  image_fill_create_info &set_output(
-    const image_allocate_info &desc
-  ) {
-    auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage |
-      vk::ImageUsageFlagBits::eSampled
-    );
-    auto desc_ = desc;
-    desc_.create_info.set_basic( basic );
-    desc_.set_layout( vk::ImageLayout::eGeneral );
-    output = desc_;
-    return *this;
-  }
-  image_fill_create_info &set_output(
-    unsigned int width,
-    unsigned int height
-  ) {
-    return set_output(
-      gct::image_allocate_info()
-        .set_create_info(
-          gct::image_create_info_t()
-            .set_basic(
-              gct::basic_2d_image(
-                width,
-                height
-              )
-            )
-        )
-    );
-  }
-  image_fill_create_info &set_output(
-    const image_pool::image_descriptor &desc
-  ) {
-    output = desc;
-    return *this;
-  }
-  std::string name = "default";
-  std::variant< image_pool::image_descriptor, image_allocate_info > output;
-  std::array< float, 4u > color = color::web::pink;
-  bool independent = true;
-};
+using shader_graph_vertex_command = std::variant<
+  std::shared_ptr< image_io_create_info >,
+  std::shared_ptr< image_fill_create_info >,
+  std::shared_ptr< image_blit_create_info >
+>;
 
-void to_json( nlohmann::json&, const image_fill_create_info& );
+void to_json( nlohmann::json &dest, const shader_graph_vertex_command &src );
 
 struct shader_graph_vertex_type {
-  LIBGCT_SETTER( create_info )
-  LIBGCT_SETTER( fill_create_info )
+  LIBGCT_SETTER( command )
   LIBGCT_SETTER( color )
-  std::shared_ptr< image_io_create_info > create_info;
-  std::shared_ptr< image_fill_create_info > fill_create_info;
+  shader_graph_vertex_command command;
   boost::default_color_type color = boost::white_color; 
 };
 
@@ -155,7 +72,8 @@ void to_json( nlohmann::json &dest, const shader_graph_barrier& );
 using shader_graph_command = std::variant<
   std::shared_ptr< image_io >,
   shader_graph_barrier,
-  std::shared_ptr< image_fill_create_info >
+  std::shared_ptr< image_fill_create_info >,
+  std::shared_ptr< image_blit_create_info >
 >;
 
 void to_json( nlohmann::json &dest, const shader_graph_command& );
@@ -173,22 +91,15 @@ public:
   using graph_type = shader_graph_graph_type;
   struct subresult_type {
     LIBGCT_SETTER( vertex_id )
-    LIBGCT_SETTER( create_info )
-    LIBGCT_SETTER( fill_create_info )
+    LIBGCT_SETTER( command )
     LIBGCT_SETTER( name )
     subresult_type(
       const graph_type::vertex_descriptor &v,
-      const std::shared_ptr< image_io_create_info > &ci,
+      const shader_graph_vertex_command &ci,
       const std::string &n
-    ) : vertex_id( v ), create_info( ci ), name( n ) {}
-    subresult_type(
-      const graph_type::vertex_descriptor &v,
-      const std::shared_ptr< image_fill_create_info > &ci,
-      const std::string &n
-    ) : vertex_id( v ), fill_create_info( ci ), name( n ) {}
+    ) : vertex_id( v ), command( ci ), name( n ) {}
     graph_type::vertex_descriptor vertex_id;
-    std::shared_ptr< image_io_create_info > create_info;
-    std::shared_ptr< image_fill_create_info > fill_create_info;
+    shader_graph_vertex_command command;
     std::string name;
   };
   class result_type {
@@ -196,31 +107,20 @@ public:
     result_type(
       const std::shared_ptr< graph_type > &g,
       graph_type::vertex_descriptor id,
-      const std::shared_ptr< image_io_create_info > &ci
-    ) : graph( g ), vertex_id( id ), create_info( ci ) {}
-    result_type(
-      const std::shared_ptr< graph_type > &g,
-      graph_type::vertex_descriptor id,
-      const std::shared_ptr< image_fill_create_info > &ci
-    ) : graph( g ), vertex_id( id ), fill_create_info( ci ) {}
+      const shader_graph_vertex_command &ci
+    ) : graph( g ), vertex_id( id ), command( ci ) {}
     subresult_type operator[]( const std::string name ) const;
     operator subresult_type() const;
   private:
     std::shared_ptr< graph_type > graph;
     graph_type::vertex_descriptor vertex_id;
-    std::shared_ptr< image_io_create_info > create_info;
-    std::shared_ptr< image_fill_create_info > fill_create_info;
+    shader_graph_vertex_command command;
   };
   shader_graph_vertex(
     const std::shared_ptr< graph_type > &g,
     graph_type::vertex_descriptor id,
-    const std::shared_ptr< image_io_create_info > &ci
-  ) : graph( g ), vertex_id( id ), create_info( ci ) {}
-  shader_graph_vertex(
-    const std::shared_ptr< graph_type > &g,
-    graph_type::vertex_descriptor id,
-    const std::shared_ptr< image_fill_create_info > &ci
-  ) : graph( g ), vertex_id( id ), fill_create_info( ci ) {}
+    const shader_graph_vertex_command &ci
+  ) : graph( g ), vertex_id( id ), command( ci ) {}
   result_type operator()(
     const std::unordered_map< std::string, subresult_type > &input
   );
@@ -231,8 +131,7 @@ public:
 private:
   std::shared_ptr< graph_type > graph;
   graph_type::vertex_descriptor vertex_id;
-  std::shared_ptr< image_io_create_info > create_info;
-  std::shared_ptr< image_fill_create_info > fill_create_info;
+  shader_graph_vertex_command command;
   bool called = false;
 };
 
@@ -334,13 +233,19 @@ public:
   auto get_image_fill( const image_fill_create_info &v ) {
     auto desc = add_vertex( *graph );
     auto shared_v = std::make_shared< image_fill_create_info >( v );
-    (*graph)[ desc ].set_fill_create_info( shared_v );
+    (*graph)[ desc ].set_command( shared_v );
+    return shader_graph_vertex( graph, desc, shared_v );
+  }
+  auto get_image_blit( const image_blit_create_info &v ) {
+    auto desc = add_vertex( *graph );
+    auto shared_v = std::make_shared< image_blit_create_info >( v );
+    (*graph)[ desc ].set_command( shared_v );
     return shader_graph_vertex( graph, desc, shared_v );
   }
   auto get_image_io( const image_io_create_info &v ) {
     auto desc = add_vertex( *graph );
     auto shared_v = std::make_shared< image_io_create_info >( v );
-    (*graph)[ desc ].set_create_info( shared_v );
+    (*graph)[ desc ].set_command( shared_v );
     return shader_graph_vertex( graph, desc, shared_v );
   }
   compiled_shader_graph operator()() {
@@ -365,6 +270,12 @@ private:
     image_to_texture_map &texture
   );
   shader_graph_command_list build_command_list();
+  void set_image_on_consumer(
+    const graph_type::vertex_descriptor &v,
+    const std::string &name,
+    const image_pool::image_descriptor &view,
+    image_to_texture_map &texture
+  );
   void bind(
     const graph_type::vertex_descriptor &v,
     const std::string &name,

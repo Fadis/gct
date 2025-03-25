@@ -246,6 +246,8 @@ add_library( gct SHARED
   gct/cubemap_matrix_generator.cpp
   gct/image_io_create_info.cpp
   gct/image_io.cpp
+  gct/image_fill_create_info.cpp
+  gct/image_blit_create_info.cpp
   gct/shader_graph.cpp
   gct/image_filter.cpp
   gct/image_filter_create_info.cpp

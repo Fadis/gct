@@ -344,6 +344,12 @@ namespace gct {
       const std::shared_ptr< image_t > &src,
       const std::shared_ptr< image_t > &dest
     );
+    void blit(
+      const std::shared_ptr< image_view_t > &src,
+      const std::shared_ptr< image_view_t > &dest,
+      const std::vector< vk::ImageBlit > &range,
+      vk::Filter filter
+    );
     void fill(
       const std::shared_ptr< buffer_t > &,
       std::uint32_t

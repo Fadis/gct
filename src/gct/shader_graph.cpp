@@ -44,17 +44,36 @@ void to_json( nlohmann::json &dest, const shader_graph_barrier &src ) {
   }
 }
 
-void to_json( nlohmann::json &dest, const image_fill_create_info &src ) {
+void to_json( nlohmann::json &dest, const shader_graph_vertex_command &src ) {
   dest = nlohmann::json::object();
-  dest[ "name" ] = src.name;
-  if( src.output.index() == 0 ) {
-    dest[ "output" ] = *std::get< image_pool::image_descriptor >( src.output );
+  if( src.index() == 0 ) {
+    dest[ "type" ] = "image_io";
+    if( std::get< std::shared_ptr< image_io_create_info > >( src ) ) {
+      dest[ "value" ] = *std::get< std::shared_ptr< image_io_create_info > >( src );
+    }
+    else {
+      dest[ "value" ] = nullptr;
+    }
   }
-  else if( src.output.index() == 1 ) {
-    dest[ "output" ] = std::get< image_allocate_info >( src.output );
+  else if( src.index() == 1 ) {
+    dest[ "type" ] = "fill";
+    if( std::get< std::shared_ptr< image_fill_create_info > >( src ) ) {
+      dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
+    }
+    else {
+      dest[ "value" ] = nullptr;
+    }
   }
-  dest[ "color" ] = src.color;
-  dest[ "independent" ] = src.independent;
+  else if( src.index() == 2 ) {
+    dest[ "type" ] = "blit";
+    if( std::get< std::shared_ptr< image_blit_create_info > >( src ) ) {
+      dest[ "value" ] = *std::get< std::shared_ptr< image_blit_create_info > >( src );
+    }
+    else {
+      dest[ "value" ] = nullptr;
+    }
+  }
+
 }
 
 void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
@@ -70,6 +89,10 @@ void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
   else if( src.index() == 2 ) {
     dest[ "type" ] = "fill";
     dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
+  }
+  else if( src.index() == 3 ) {
+    dest[ "type" ] = "blit";
+    dest[ "value" ] = *std::get< std::shared_ptr< image_blit_create_info > >( src );
   }
 }
 
@@ -143,6 +166,17 @@ std::string to_string( const shader_graph_command &src ) {
     dest += std::to_string( *std::get< image_pool::image_descriptor >( fill.output ) );
     dest += " );\n";
   }
+  else if( src.index() == 3 ) {
+    const auto &blit = *std::get< std::shared_ptr< image_blit_create_info > >( src );
+    dest += "blit( ";
+    dest += blit.input_name + ":";
+    dest += std::to_string( *std::get< image_pool::image_descriptor >( blit.input ) );
+    dest += ", independent:";
+    dest += ( blit.independent ? "true" :"false" ) + std::string( " ) -> ( " );
+    dest += blit.output_name + ":";
+    dest += std::to_string( *std::get< image_pool::image_descriptor >( blit.output ) );
+    dest += " );\n";
+  }
   return dest;
 }
 
@@ -161,7 +195,8 @@ std::string to_string( const compiled_shader_graph &src ) {
 
 
   shader_graph_vertex::subresult_type shader_graph_vertex::result_type::operator[]( const std::string name ) const {
-    if( create_info ) {
+    if( command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if( create_info->get_plan().output.find( name ) == create_info->get_plan().output.end() ) {
         if( create_info->get_plan().inout.find( name ) == create_info->get_plan().inout.end() ) {
           throw exception::invalid_argument( "shader_graph_vertex::result_type::operator[] : Output image " + name + "does not exist", __FILE__, __LINE__ );
@@ -169,17 +204,29 @@ std::string to_string( const compiled_shader_graph &src ) {
       }
       return shader_graph_vertex::subresult_type(
         vertex_id,
-        create_info,
+        command,
         name
       );
     }
-    else if( fill_create_info ) {
+    else if( command.index() == 1 ) {
+      const auto &fill_create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       if( name != fill_create_info->name ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator[] : Output image " + name + "does not exist", __FILE__, __LINE__ );
       }
       return shader_graph_vertex::subresult_type(
         vertex_id,
-        fill_create_info,
+        command,
+        name
+      );
+    }
+    else if( command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+      if( name != create_info->output_name ) {
+        throw exception::invalid_argument( "shader_graph_vertex::result_type::operator[] : Output image " + name + "does not exist", __FILE__, __LINE__ );
+      }
+      return shader_graph_vertex::subresult_type(
+        vertex_id,
+        command,
         name
       );
     }
@@ -188,18 +235,19 @@ std::string to_string( const compiled_shader_graph &src ) {
     }
   }
   shader_graph_vertex::result_type:: operator subresult_type() const {
-    if( create_info ) {
+    if( command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if( create_info->get_plan().output.size() == 1u && create_info->get_plan().inout.size() == 0u ) {
         return shader_graph_vertex::subresult_type(
           vertex_id,
-          create_info,
+          command,
           create_info->get_plan().output.begin()->first
         );
       }
       else if( create_info->get_plan().inout.size() == 1u && create_info->get_plan().output.size() == 0u ) {
         return shader_graph_vertex::subresult_type(
           vertex_id,
-          create_info,
+          command,
           *create_info->get_plan().inout.begin()
         );
       }
@@ -207,11 +255,20 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator subresult_type : result_type has multiple output images", __FILE__, __LINE__ );
       }
     }
-    else if( fill_create_info ) {
+    else if( command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       return shader_graph_vertex::subresult_type(
         vertex_id,
-        fill_create_info,
-        fill_create_info->name
+        command,
+        create_info->name
+      );
+    }
+    else if( command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+      return shader_graph_vertex::subresult_type(
+        vertex_id,
+        command,
+        create_info->output_name
       );
     }
     else {
@@ -223,7 +280,8 @@ std::string to_string( const compiled_shader_graph &src ) {
     const subresult_type &input
   ) {
     std::string name;
-    if( create_info ) {
+    if( command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if(
         create_info->get_plan().input.size() == 1u &&
         create_info->get_plan().sampled.size() == 0u &&
@@ -246,8 +304,12 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_vertex::operator() : vertex has multiple input images", __FILE__, __LINE__ );
       }
     }
-    else if( fill_create_info ) {
-      name = fill_create_info->name;
+    else if( command.index() == 1 ) {
+      throw exception::invalid_argument( "shader_graph_vertex::operator() : vertex has no input images", __FILE__, __LINE__ );
+    }
+    else if( command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+      name = create_info->input_name;
     }
     else {
       throw exception::invalid_argument( "shader_graph_vertex::operator() : broken vertex", __FILE__, __LINE__ );
@@ -264,7 +326,8 @@ std::string to_string( const compiled_shader_graph &src ) {
       throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Vertex must not be called multiple times", __FILE__, __LINE__ );
     }
     std::unordered_set< graph_type::vertex_descriptor > incoming_fill;
-    if( create_info ) {
+    if( command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       for( const auto &i: input ) {
         if( create_info->get_plan().input.find( i.first ) == create_info->get_plan().input.end() ) {
           if( create_info->get_plan().inout.find( i.first ) == create_info->get_plan().inout.end() ) {
@@ -273,14 +336,24 @@ std::string to_string( const compiled_shader_graph &src ) {
             }
           }
         }
-        if( !i.second.create_info && i.second.fill_create_info ) {
+        if( i.second.command.index() == 1 ) {
           incoming_fill.insert( i.second.vertex_id );
         }
       }
     }
-    else if( fill_create_info ) {
+    else if( command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       if( !input.empty() ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Fill does not take any inputs", __FILE__, __LINE__ );
+      }
+    }
+    else if( command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+      if( input.size() != 1 ) {
+        throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Blit take only one input", __FILE__, __LINE__ );
+      }
+      if( create_info->input_name != input.begin()->first ) {
+        throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Input image " + input.begin()->first + "does not exist", __FILE__, __LINE__ );
       }
     }
     else {
@@ -295,7 +368,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
         for( const auto &f : incoming_fill ) {
           auto [desc,inserted] = add_edge( i.second.vertex_id, f, *graph );
-          (*graph)[ f ].fill_create_info->independent = false;
+          std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ f ].command )->independent = false;
         }
         unique_edge.insert( std::make_pair( i.second.vertex_id, desc ) );
       }
@@ -308,20 +381,11 @@ std::string to_string( const compiled_shader_graph &src ) {
       );
     }
     called = true;
-    if( create_info ) {
-      return result_type(
-        graph,
-        vertex_id,
-        create_info
-      );
-    }
-    else {
-      return result_type(
-        graph,
-        vertex_id,
-        fill_create_info
-      );
-    }
+    return result_type(
+      graph,
+      vertex_id,
+      command
+    );
   }
   std::size_t shader_graph_builder::subresult_hash::operator()( const std::pair< graph_type::vertex_descriptor, std::string > &v ) const {
     return std::hash< void* >()( v.first ) ^ std::hash< std::string >()( v.second );
@@ -356,43 +420,55 @@ std::string to_string( const compiled_shader_graph &src ) {
           );
           if( connected != (*graph)[ edge ].end() ) {
             const auto dest = target( edge, *graph );
-            if( (*graph)[ dest ].create_info ) {
+            if( (*graph)[ dest ].command.index() == 0 ) {
+              const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ dest ].command );
               const auto inout = std::find_if(
-                (*graph)[ dest ].create_info->get_plan().inout.begin(),
-                (*graph)[ dest ].create_info->get_plan().inout.end(),
+                create_info->get_plan().inout.begin(),
+                create_info->get_plan().inout.end(),
                 [&]( const auto &i ) {
                   return i == connected->to;
                 }
               );
-              if( inout != (*graph)[ dest ].create_info->get_plan().inout.end() ) {
+              if( inout != create_info->get_plan().inout.end() ) {
                 next_depth.insert( std::make_pair( dest, connected->to ) );
               }
               else {
                 const auto in = std::find_if(
-                  (*graph)[ dest ].create_info->get_plan().input.begin(),
-                  (*graph)[ dest ].create_info->get_plan().input.end(),
+                  create_info->get_plan().input.begin(),
+                  create_info->get_plan().input.end(),
                   [&]( const auto &i ) {
                     return i == connected->to;
                   }
                 );
-                if( in != (*graph)[ dest ].create_info->get_plan().input.end() ) {
+                if( in != create_info->get_plan().input.end() ) {
                   consumer.insert( std::make_pair( dest, connected->to ) );
                   consumed.insert( sub );
                 }
                 else {
                   const auto sampled = std::find_if(
-                    (*graph)[ dest ].create_info->get_plan().sampled.begin(),
-                    (*graph)[ dest ].create_info->get_plan().sampled.end(),
+                    create_info->get_plan().sampled.begin(),
+                    create_info->get_plan().sampled.end(),
                     [&]( const auto &i ) {
                       return i.first == connected->to;
                     }
                   );
-                  if( sampled != (*graph)[ dest ].create_info->get_plan().sampled.end() ) {
+                  if( sampled != create_info->get_plan().sampled.end() ) {
                     consumer.insert( std::make_pair( dest, connected->to ) );
                     consumed.insert( sub );
                   }
                 }
               }
+            }
+            else if( (*graph)[ dest ].command.index() == 1 ) {
+            }
+            else if( (*graph)[ dest ].command.index() == 2 ) {
+              const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ dest ].command );
+              if( create_info->input_name == connected->to ) {
+                next_depth.insert( std::make_pair( dest, connected->to ) );
+              }
+            }
+            else {
+              throw -1;
             }
           }
         }
@@ -420,9 +496,10 @@ std::string to_string( const compiled_shader_graph &src ) {
   ) const {
     const auto &vertex = (*graph)[ first_generator ];
     unsigned int id = 0u;
-    if( vertex.create_info ) {
-      const auto &out = vertex.create_info->get_plan().output.find( first_subedge );
-      if( out != vertex.create_info->get_plan().output.end() ) {
+    if( vertex.command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( vertex.command );
+      const auto &out = create_info->get_plan().output.find( first_subedge );
+      if( out != create_info->get_plan().output.end() ) {
         if( out->second.index() == 0 ) {
           const auto view = std::get< image_pool::image_descriptor >( out->second );
           id = *view;
@@ -439,20 +516,21 @@ std::string to_string( const compiled_shader_graph &src ) {
             }
           }
           else {
-            throw -1;
+            throw exception::runtime_error( "shader_graph_builder::shareable : Corrpted binding : An image generated by generator is not recorded on binding", __FILE__, __LINE__ );
           }
         }
         else {
-          throw -1;
+          throw exception::invalid_argument( "shader_graph_builder::shareable : Output image of source generator must be bound prior", __FILE__, __LINE__ );
         }
       }
       else {
-        throw -1;
+        throw exception::invalid_argument( "shader_graph_builder::shareable : Source generator does not have an output image named " + first_subedge, __FILE__, __LINE__ );
       }
     }
-    else if( vertex.fill_create_info ) {
-      const auto &out = vertex.fill_create_info->output;
-      if( vertex.fill_create_info->name == first_subedge ) {
+    else if( vertex.command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( vertex.command );
+      const auto &out = create_info->output;
+      if( create_info->name == first_subedge ) {
         if( out.index() == 0 ) {
           const auto view = std::get< image_pool::image_descriptor >( out );
           id = *view;
@@ -469,19 +547,50 @@ std::string to_string( const compiled_shader_graph &src ) {
             }
           }
           else {
-            throw -1;
+            throw exception::runtime_error( "shader_graph_builder::shareable : Corrpted binding : An image generated by generator is not recorded on binding", __FILE__, __LINE__ );
           }
         }
         else {
-          throw -1;
+          throw exception::invalid_argument( "shader_graph_builder::shareable : Output image of source generator must be bound prior", __FILE__, __LINE__ );
         }
       }
       else {
-        throw -1;
+        throw exception::invalid_argument( "shader_graph_builder::shareable : Source generator does not have an output image named " + first_subedge, __FILE__, __LINE__ );
+      }
+    }
+    else if( vertex.command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( vertex.command );
+      const auto &out = create_info->output;
+      if( create_info->output_name == first_subedge ) {
+        if( out.index() == 0 ) {
+          const auto view = std::get< image_pool::image_descriptor >( out );
+          id = *view;
+          const auto b = std::find_if( 
+            binding.begin(),
+            binding.end(),
+            [&]( const auto &b ) -> bool {
+              return b.view == view;
+            }
+          );
+          if( b != binding.end() ) {
+            if( !b->shareable ) {
+              return false;
+            }
+          }
+          else {
+            throw exception::runtime_error( "shader_graph_builder::shareable : Corrpted binding : An image generated by generator is not recorded on binding", __FILE__, __LINE__ );
+          }
+        }
+        else {
+          throw exception::invalid_argument( "shader_graph_builder::shareable : Output image of source generator must be bound prior", __FILE__, __LINE__ );
+        }
+      }
+      else {
+        throw exception::invalid_argument( "shader_graph_builder::shareable : Source generator does not have an output image named " + first_subedge, __FILE__, __LINE__ );
       }
     }
     else {
-      throw -1;
+      throw exception::invalid_argument( "shader_graph_builder::shareable : Corrupted vertex", __FILE__, __LINE__ );
     }
     bool has_consumer = false;
     for( const auto &v: get_consumer_of( first_generator, first_subedge, false ) ) {
@@ -516,26 +625,67 @@ std::string to_string( const compiled_shader_graph &src ) {
     image_to_texture_map &texture
   ) {
     iter->add_used_by( v, name );
-    (*graph)[ v ].create_info->add( name, iter->view );
+    if( (*graph)[ v ].command.index() == 0 ) {
+      std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command )->add( name, iter->view );
+    }
+    else if( (*graph)[ v ].command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+      if( create_info->name == name ) {
+        create_info->output = iter->view;
+      }
+    }
+    else if( (*graph)[ v ].command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+      if( create_info->input_name == name ) {
+        create_info->input = iter->view;
+        create_info->independent = false;
+      }
+      else if( create_info->output_name == name ) {
+        create_info->output = iter->view;
+      }
+    }
+    set_image_on_consumer( v, name, iter->view, texture );
+  }
+  void shader_graph_builder::set_image_on_consumer(
+    const graph_type::vertex_descriptor &v,
+    const std::string &name,
+    const image_pool::image_descriptor &view,
+    image_to_texture_map &texture
+  ) {
     for( const auto &c: get_consumer_of( v, name, true ) ) {
-      const auto tex_config = (*graph)[ c.first ].create_info->get_plan().sampled.find( c.second );
-        (*graph)[ c.first ].create_info->get_plan().sampled.end();
-      if( tex_config != (*graph)[ c.first ].create_info->get_plan().sampled.end() ) {
-        const auto existing = texture.find( std::make_pair( iter->view, tex_config->second ) );
-        if( existing != texture.end() ) {
-          (*graph)[ c.first ].create_info->add( c.second, existing->second );
+      if( (*graph)[ c.first ].command.index() == 0 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ c.first ].command );
+        const auto tex_config = create_info->get_plan().sampled.find( c.second );
+          create_info->get_plan().sampled.end();
+        if( tex_config != create_info->get_plan().sampled.end() ) {
+          const auto existing = texture.find( std::make_pair( view, tex_config->second ) );
+          if( existing != texture.end() ) {
+            create_info->add( c.second, existing->second );
+          }
+          else {
+            const auto tex = resource->texture->allocate(
+              tex_config->second,
+              view
+            );
+            texture.insert( std::make_pair( std::make_pair( view, tex_config->second ), tex ) );
+            create_info->add( c.second, tex );
+          }
         }
         else {
-          const auto tex = resource->texture->allocate(
-            tex_config->second,
-            iter->view
-          );
-          texture.insert( std::make_pair( std::make_pair( iter->view, tex_config->second ), tex ) );
-          (*graph)[ c.first ].create_info->add( c.second, tex );
+          create_info->add( c.second, view );
+        }
+      }
+      else if( (*graph)[ c.first ].command.index() == 1 ) {
+      }
+      else if( (*graph)[ c.first ].command.index() == 2 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ c.first ].command );
+        if( c.second == create_info->input_name ) {
+          create_info->input = view;
+          create_info->independent = false;
         }
       }
       else {
-        (*graph)[ c.first ].create_info->add( c.second, iter->view );
+        throw exception::invalid_argument( "shader_graph_builder::set_image_on_consumer : Corrupted vertex", __FILE__, __LINE__ );
       }
     }
   }
@@ -554,12 +704,13 @@ std::string to_string( const compiled_shader_graph &src ) {
         .add_used_by( v, name )
         .set_shareable( shareable )
     );
-    if( (*graph)[ v ].create_info ) {
-      if( !(*graph)[ v ].create_info->is_ready( name ) ) {
-        (*graph)[ v ].create_info->add( name, view ); /////
+    if( (*graph)[ v ].command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+      if( !create_info->is_ready( name ) ) {
+        create_info->add( name, view );
       }
       else {
-        const auto existing = (*graph)[ v ].create_info->get( name );
+        const auto existing = create_info->get( name );
         if( existing.index() == 0 ) {
           if( !std::get< image_pool::image_descriptor >( existing ) ) {
             throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
@@ -573,15 +724,16 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].fill_create_info ) {
-      if( (*graph)[ v ].fill_create_info->name != name ) {
+    else if( (*graph)[ v ].command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+      if( create_info->name != name ) {
         throw exception::runtime_error( "shader_graph_builder::bind : unknown resource name " + name, __FILE__, __LINE__ );
       }
-      if( (*graph)[ v ].fill_create_info->output.index() == 1 ) {
-        (*graph)[ v ].fill_create_info->output = view;
+      if( create_info->output.index() == 1 ) {
+        create_info->output = view;
       }
-      else if( (*graph)[ v ].fill_create_info->output.index() == 0 ) {
-        const auto existing = std::get< image_pool::image_descriptor >( (*graph)[ v ].fill_create_info->output );
+      else if( create_info->output.index() == 0 ) {
+        const auto existing = std::get< image_pool::image_descriptor >( create_info->output );
         if( !existing ) {
           throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
         }
@@ -590,27 +742,42 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    for( const auto &c: get_consumer_of( v, name, true ) ) {
-      const auto tex_config = (*graph)[ c.first ].create_info->get_plan().sampled.find( c.second );
-        (*graph)[ c.first ].create_info->get_plan().sampled.end();
-      if( tex_config != (*graph)[ c.first ].create_info->get_plan().sampled.end() ) {
-        const auto existing = texture.find( std::make_pair( view, tex_config->second ) );
-        if( existing != texture.end() ) {
-          (*graph)[ c.first ].create_info->add( c.second, existing->second );
+    else if( (*graph)[ v ].command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+      if( create_info->input_name != name || create_info->output_name != name ) {
+        throw exception::runtime_error( "shader_graph_builder::bind : unknown resource name " + name, __FILE__, __LINE__ );
+      }
+      if( create_info->output_name == name ) {
+        if( create_info->output.index() == 1 ) {
+          create_info->output = view;
         }
-        else {
-          const auto tex = resource->texture->allocate(
-            tex_config->second,
-            view
-          );
-          texture.insert( std::make_pair( std::make_pair( view, tex_config->second ), tex ) );
-          (*graph)[ c.first ].create_info->add( c.second, tex );
+        else if( create_info->output.index() == 0 ) {
+          const auto existing = std::get< image_pool::image_descriptor >( create_info->output );
+          if( !existing ) {
+            throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
+          }
+          if( existing != view ) {
+            throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
+          }
         }
       }
-      else {
-        (*graph)[ c.first ].create_info->add( c.second, view );
+      else if( create_info->input_name == name ) {
+        if( create_info->input.index() == 1 ) {
+          create_info->input = view;
+          create_info->independent = false;
+        }
+        else if( create_info->input.index() == 0 ) {
+          const auto existing = std::get< image_pool::image_descriptor >( create_info->output );
+          if( !existing ) {
+            throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
+          }
+          if( existing != view ) {
+            throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
+          }
+        }
       }
     }
+    set_image_on_consumer( v, name, view, texture );
   }
   void shader_graph_builder::assign_image(
     image_to_texture_map &texture
@@ -619,31 +786,42 @@ std::string to_string( const compiled_shader_graph &src ) {
     std::queue< graph_type::vertex_descriptor > v_cur;
     std::unordered_set< graph_type::vertex_descriptor > visited;
     for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
-      if( (*graph)[ v ].create_info ) {
-        if( (*graph)[ v ].create_info->independent() ) {
+      if( (*graph)[ v ].command.index() == 0 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+        if( create_info->independent() ) {
           v_cur.push( v );
           independent_vertex.push_back( v );
           visited.insert( v );
         }
       }
-      else if( (*graph)[ v ].fill_create_info ) {
-        if( (*graph)[ v ].fill_create_info->independent ) {
+      else if( (*graph)[ v ].command.index() == 1 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+        if( create_info->independent ) {
+          v_cur.push( v );
+          independent_vertex.push_back( v );
+          visited.insert( v );
+        }
+      }
+      else if( (*graph)[ v ].command.index() == 2 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+        if( create_info->independent ) {
           v_cur.push( v );
           independent_vertex.push_back( v );
           visited.insert( v );
         }
       }
       else {
-        throw -1;
+        throw exception::invalid_argument( "shader_graph_builder::assign_image : Corrupted vertex", __FILE__, __LINE__ );
       }
     }
     if( v_cur.empty() ) {
-      throw -1;
+      throw exception::runtime_error( "shader_graph_builder::assign_image : At least one vertex must be independent", __FILE__, __LINE__ );
     }
     while( !v_cur.empty() ) {
       const auto &v = v_cur.front();
-      if( (*graph)[ v ].create_info ) {
-        for( const auto &inout: (*graph)[ v ].create_info->get_inout() ) {
+      if( (*graph)[ v ].command.index() == 0 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+        for( const auto &inout: create_info->get_inout() ) {
           const std::string &name = inout.first;
           const auto &desc = inout.second;
           const auto view = resource->image->get( desc );
@@ -661,7 +839,7 @@ std::string to_string( const compiled_shader_graph &src ) {
             texture
           );
         }
-        for( const auto &out: (*graph)[ v ].create_info->get_plan().output ) {
+        for( const auto &out: create_info->get_plan().output ) {
           const std::string &name = out.first;
           if( out.second.index() == 1u ) {
             const auto &ai = std::get< image_allocate_info >( out.second );
@@ -709,9 +887,59 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      else if( (*graph)[ v ].fill_create_info ) {
-        const std::string &name = (*graph)[ v ].fill_create_info->name;
-        auto &out = (*graph)[ v ].fill_create_info->output;
+      else if( (*graph)[ v ].command.index() == 1 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+        const std::string &name = create_info->name;
+        auto &out = create_info->output;
+        if( out.index() == 1u ) {
+          const auto &ai = std::get< image_allocate_info >( out );
+          bool solved = false;
+          for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+            cur = std::find_if(
+              cur,
+              binding.end(),
+              [&]( const auto &b ) -> bool {
+                return *b.allocate_info == ai;
+              }
+            );
+            if( cur == binding.end() ) {
+              break;
+            }
+            else {
+              if( shareable( *cur->used_by, v ) ) {
+                reuse( cur, v, name, texture );
+                solved = true;
+                break;
+              }
+            }
+          }
+          if( !solved ) {
+            const auto view = resource->image->allocate( ai ).linear;
+            bind( v, name, view, ai, true, texture );
+          }
+        }
+        else if( out.index() == 0u ) {
+          const auto &desc = std::get< image_pool::image_descriptor >( out );
+          const auto view = resource->image->get( desc );
+          bind( v, name, desc,
+            image_allocate_info()
+              .set_create_info( view->get_factory()->get_props() )
+              .set_range(
+                subview_range()
+                  .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                  .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                  .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                  .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+              ),
+            false,
+            texture
+          );
+        }
+      }
+      else if( (*graph)[ v ].command.index() == 2 ) {
+        const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+        const std::string &name = create_info->output_name;
+        auto &out = create_info->output;
         if( out.index() == 1u ) {
           const auto &ai = std::get< image_allocate_info >( out );
           bool solved = false;
@@ -774,8 +1002,9 @@ std::string to_string( const compiled_shader_graph &src ) {
     const image_to_texture_map &texture
   ) {
     unsigned int score = 0;
-    if( (*graph)[ v ].create_info ) {
-      for( const auto &i: (*graph)[ v ].create_info->get_input() ) {
+    if( (*graph)[ v ].command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+      for( const auto &i: create_info->get_input() ) {
         const auto &is = state.find( i.second );
         if( is != state.end() ) {
           const bool expected = std::find(
@@ -799,7 +1028,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &i: (*graph)[ v ].create_info->get_sampled() ) {
+      for( const auto &i: create_info->get_sampled() ) {
         const auto i2t = std::find_if(
           texture.begin(),
           texture.end(),
@@ -831,7 +1060,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &i: (*graph)[ v ].create_info->get_inout() ) {
+      for( const auto &i: create_info->get_inout() ) {
         const auto &is = state.find( i.second );
         if( is != state.end() ) {
           const bool expected = std::find(
@@ -855,11 +1084,11 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &o: (*graph)[ v ].create_info->get_plan().output ) {
+      for( const auto &o: create_info->get_plan().output ) {
         const auto &is = state.find( std::get< image_pool::image_descriptor >( o.second ) );
         if( is != state.end() ) {
           if( is->second.generators->size() <= is->second.next_generator ) {
-            throw -1;
+            throw exception::runtime_error( "shader_graph_builder::is_ready_to_execulte : No more generators are expected on this image", __FILE__, __LINE__ );
           }
           const auto &expected_generator = (*is->second.generators)[ is->second.next_generator ];
           if( expected_generator.first != v ) {
@@ -878,12 +1107,37 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].fill_create_info ) {
-      const auto &o = (*graph)[ v ].fill_create_info->output;
+    else if( (*graph)[ v ].command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+      const auto &o = create_info->output;
       const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
       if( is != state.end() ) {
         if( is->second.generators->size() <= is->second.next_generator ) {
-          throw -1;
+          throw exception::runtime_error( "shader_graph_builder::is_ready_to_execulte : No more generators are expected on this image", __FILE__, __LINE__ );
+        }
+        const auto &expected_generator = (*is->second.generators)[ is->second.next_generator ];
+        if( expected_generator.first != v ) {
+          return std::make_pair( false, 0 );
+        }
+        const bool ready =
+          is->second.mode == image_mode::writable_without_sync ||
+          is->second.mode == image_mode::readable_without_sync_writable_after_sync ||
+          is->second.mode == image_mode::readable_after_sync_writable_after_sync;
+        if( !ready ) {
+          return std::make_pair( false, 0 );
+        }
+        if( is->second.mode != image_mode::writable_without_sync ) {
+          score += 65536;
+        }
+      }
+    }
+    else if( (*graph)[ v ].command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+      const auto &o = create_info->output;
+      const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
+      if( is != state.end() ) {
+        if( is->second.generators->size() <= is->second.next_generator ) {
+          throw exception::runtime_error( "shader_graph_builder::is_ready_to_execulte : No more generators are expected on this image", __FILE__, __LINE__ );
         }
         const auto &expected_generator = (*is->second.generators)[ is->second.next_generator ];
         if( expected_generator.first != v ) {
@@ -909,8 +1163,9 @@ std::string to_string( const compiled_shader_graph &src ) {
     const image_to_texture_map &texture
   ) {
     shader_graph_command_list list;
-    if( (*graph)[ v ].create_info ) {
-      for( const auto &i: (*graph)[ v ].create_info->get_input() ) {
+    if( (*graph)[ v ].command.index() == 0 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+      for( const auto &i: create_info->get_input() ) {
         const auto &is = state.find( i.second );
         if( is != state.end() ) {
           if( is->second.mode != image_mode::readable_without_sync_writable_after_sync ) {
@@ -986,7 +1241,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &i: (*graph)[ v ].create_info->get_sampled() ) {
+      for( const auto &i: create_info->get_sampled() ) {
         const auto i2t = std::find_if(
           texture.begin(),
           texture.end(),
@@ -1067,7 +1322,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &i: (*graph)[ v ].create_info->get_inout() ) {
+      for( const auto &i: create_info->get_inout() ) {
         const auto &is = state.find( i.second );
         if( is != state.end() ) {
           if( is->second.mode != image_mode::readable_after_sync_writable_after_sync ) {
@@ -1187,7 +1442,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      for( const auto &o: (*graph)[ v ].create_info->get_plan().output ) {
+      for( const auto &o: create_info->get_plan().output ) {
         const auto &is = state.find( std::get< image_pool::image_descriptor >( o.second ) );
         if( is != state.end() ) {
           if( is->second.mode != image_mode::writable_without_sync ) {
@@ -1247,12 +1502,13 @@ std::string to_string( const compiled_shader_graph &src ) {
       }
       list.push_back(
         std::make_shared< image_io >(
-          *(*graph)[ v ].create_info
+          *create_info
         )
       );
     }
-    else if( (*graph)[ v ].fill_create_info ) {
-      const auto &o = (*graph)[ v ].fill_create_info->output;
+    else if( (*graph)[ v ].command.index() == 1 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+      const auto &o = create_info->output;
       const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
       if( is != state.end() ) {
         if( is->second.mode != image_mode::writable_without_sync ) {
@@ -1284,7 +1540,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           is->second.mode = image_mode::writable_without_sync;
         }
         ++is->second.next_generator;
-        is->second.last_generator_type = image_generator_type::output;
+        is->second.last_generator_type = image_generator_type::transfer;
         const auto [out_begin,out_end] = out_edges( v, *graph );
         for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
           const auto &sub = (*graph)[ edge ];
@@ -1292,7 +1548,7 @@ std::string to_string( const compiled_shader_graph &src ) {
             sub.begin(),
             sub.end(),
             [&]( const auto &e ) {
-              return e.from == (*graph)[ v ].fill_create_info->name;
+              return e.from == create_info->name;
             }
           );
           if( match != sub.end() ) {
@@ -1310,7 +1566,148 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
       list.push_back(
-        (*graph)[ v ].fill_create_info
+        create_info
+      );
+    }
+    else if( (*graph)[ v ].command.index() == 2 ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+      {
+        const auto &is = state.find( std::get< image_pool::image_descriptor >( create_info->input ) );
+        if( is != state.end() ) {
+          if( is->second.mode != image_mode::readable_without_sync_writable_after_sync ) {
+            if( is->second.last_generator_type == image_generator_type::transfer ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask( vk::AccessFlagBits::eTransferWrite )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            else if( is->second.last_generator_type == image_generator_type::output ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask( vk::AccessFlagBits::eShaderWrite )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            else if( is->second.last_generator_type == image_generator_type::inout ) {
+              list.push_back(
+                shader_graph_barrier()
+                  .set_state(
+                    barrier_state()
+                      .set_config(
+                        barrier_config()
+                          .set_src_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eShaderWrite
+                          )
+                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                      )
+                      .set_data(
+                        resource->image->get( is->first )
+                      )
+                  )
+                  .add_view( is->first )
+              );
+            }
+            is->second.mode = image_mode::readable_without_sync_writable_after_sync;
+          }
+          const auto consumed = std::find(
+            is->second.expected_consumer.begin(),
+            is->second.expected_consumer.end(),
+            v
+          );
+          if( consumed != is->second.expected_consumer.end() ) {
+            is->second.expected_consumer.erase( consumed );
+          }
+        }
+      }
+      {
+        const auto &o = create_info->output;
+        const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
+        if( is != state.end() ) {
+          if( is->second.mode != image_mode::writable_without_sync ) {
+            list.push_back(
+              shader_graph_barrier()
+                .set_state(
+                  barrier_state()
+                    .set_config(
+                      barrier_config()
+                        .set_src_access_mask(
+                          vk::AccessFlagBits::eTransferRead |
+                          vk::AccessFlagBits::eTransferWrite |
+                          vk::AccessFlagBits::eShaderRead |
+                          vk::AccessFlagBits::eShaderWrite
+                        )
+                        .set_dest_access_mask( vk::AccessFlagBits::eTransferWrite )
+                        .set_src_stage(
+                          vk::PipelineStageFlagBits::eTransfer |
+                          vk::PipelineStageFlagBits::eComputeShader
+                        )
+                        .set_dest_stage( vk::PipelineStageFlagBits::eTransfer )
+                    )
+                    .set_data(
+                      resource->image->get( is->first )
+                    )
+                )
+                .add_view( is->first )
+            );
+            is->second.mode = image_mode::writable_without_sync;
+          }
+          ++is->second.next_generator;
+          is->second.last_generator_type = image_generator_type::transfer;
+          const auto [out_begin,out_end] = out_edges( v, *graph );
+          for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
+            const auto &sub = (*graph)[ edge ];
+            const auto match = std::find_if(
+              sub.begin(),
+              sub.end(),
+              [&]( const auto &e ) {
+                return e.from == create_info->output_name;
+              }
+            );
+            if( match != sub.end() ) {
+              const auto dest = target( edge, *graph );
+              const auto existing = std::find(
+                is->second.next_expected_consumer.begin(),
+                is->second.next_expected_consumer.end(),
+                dest
+              );
+              if( existing == is->second.next_expected_consumer.end() ) {
+                is->second.expected_consumer.push_back( dest );
+              }
+              break;
+            }
+          }
+        }
+      }
+      list.push_back(
+        create_info
       );
     }
     return list;
@@ -1332,13 +1729,13 @@ std::string to_string( const compiled_shader_graph &src ) {
     for( const auto &v: independent_vertex ) {
       const auto [ready,priority] = is_ready_to_execulte( is, v, texture );
       if( !ready ) {
-        throw -1;
+        throw exception::runtime_error( "shader_graph_builder::build_command_list : Independent verex should always ready to execute", __FILE__, __LINE__ );
       }
       v_cur.insert( std::make_pair( priority, v ) );
       visited.insert( v );
     }
     if( v_cur.empty() ) {
-      throw -1;
+      throw exception::runtime_error( "shader_graph_builder::build_command_list : At least one vertex must be independent", __FILE__, __LINE__ );
     }
     shader_graph_command_list list;
     while( !v_cur.empty() ) {
@@ -1380,6 +1777,15 @@ std::string to_string( const compiled_shader_graph &src ) {
       else if( c.index() == 2 ) {
         const auto fill = std::get< std::shared_ptr< image_fill_create_info > >( c );
         rec.fill( resource->image->get( std::get< image_pool::image_descriptor >( fill->output ) ), fill->color );
+      }
+      else if( c.index() == 3 ) {
+        const auto blit = std::get< std::shared_ptr< image_blit_create_info > >( c );
+        rec.blit(
+          resource->image->get( std::get< image_pool::image_descriptor >( blit->input ) ),
+          resource->image->get( std::get< image_pool::image_descriptor >( blit->output ) ),
+          blit->region,
+          blit->filter
+        );
       }
     }
   }

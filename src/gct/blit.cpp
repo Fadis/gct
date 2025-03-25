@@ -112,4 +112,24 @@ namespace gct {
     }
     blit( src, dest,ranges, vk::Filter::eNearest );
   }
+  void command_buffer_recorder_t::blit(
+    const std::shared_ptr< image_view_t > &src,
+    const std::shared_ptr< image_view_t > &dest,
+    const std::vector< vk::ImageBlit > &range,
+    vk::Filter filter
+  ) {
+    auto range_ = range;
+    for( auto &r : range_ ) {
+      r.srcSubresource.baseArrayLayer += src->get_props().get_basic().subresourceRange.baseArrayLayer;
+      r.srcSubresource.mipLevel += src->get_props().get_basic().subresourceRange.baseMipLevel;
+      r.dstSubresource.baseArrayLayer += dest->get_props().get_basic().subresourceRange.baseArrayLayer;
+      r.dstSubresource.mipLevel += dest->get_props().get_basic().subresourceRange.baseMipLevel;
+    }
+    blit(
+      src->get_factory(),
+      dest->get_factory(),
+      range_,
+      filter
+    );
+  }
 }
