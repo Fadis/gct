@@ -10,30 +10,6 @@
 
 namespace gct {
 
-void to_json( nlohmann::json &dest, const image_io_dimension &src ) {
-  dest = nlohmann::json::object();
-  if( src.relative_to ) {
-    dest[ "relative_to" ] = *src.relative_to;
-  }
-  dest[ "size_transform" ] = nlohmann::json::array();
-  dest[ "size_transform" ].push_back( src.size_transform[ 0 ][ 0 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 0 ][ 1 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 0 ][ 2 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 0 ][ 3 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 1 ][ 0 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 1 ][ 1 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 1 ][ 2 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 1 ][ 3 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 2 ][ 0 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 2 ][ 1 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 2 ][ 2 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 2 ][ 3 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 0 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 1 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 2 ] );
-  dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 3 ] );
-}
-
 void to_json( nlohmann::json &dest, const image_io_plan &src ) {
   dest = nlohmann::json::object();
   dest[ "input" ] = nlohmann::json::array();
@@ -47,6 +23,9 @@ void to_json( nlohmann::json &dest, const image_io_plan &src ) {
     }
     else if( v.second.index() == 1u ) {
       dest[ "output" ][ v.first ] = std::get< image_allocate_info >( v.second );
+    }
+    else if( v.second.index() == 2u ) {
+      dest[ "output" ][ v.first ] = std::get< dynamic_size_image_allocate_info >( v.second );
     }
   }
   dest[ "inout" ] = nlohmann::json::array();
@@ -253,8 +232,10 @@ image_io_create_info &image_io_create_info::add_output(
     throw exception::invalid_argument( "image_io_create_info::add_output : Output image " + name + " is already attached", __FILE__, __LINE__ );
   }
   const auto view = resource->image->get( desc );
-  if( std::get< image_allocate_info >( ci->second ).create_info != view->get_factory()->get_props() ) {
-    throw exception::invalid_argument( "image_io_create_info::add_output : Output image " + name + " is incompatible", __FILE__, __LINE__ );
+  if( ci->second.index() == 1u ) {
+    if( std::get< image_allocate_info >( ci->second ).create_info != view->get_factory()->get_props() ) {
+      throw exception::invalid_argument( "image_io_create_info::add_output : Output image " + name + " is incompatible", __FILE__, __LINE__ );
+    }
   }
   plan.output[ name ] = desc;
   update_pc( name, desc );

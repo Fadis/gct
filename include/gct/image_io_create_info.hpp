@@ -15,6 +15,8 @@
 #include <gct/texture_pool.hpp>
 #include <gct/image_allocate_info.hpp>
 #include <gct/spv_member_pointer.hpp>
+#include <gct/image_io_dimension.hpp>
+#include <gct/dynamic_size_image_allocate_info.hpp>
 
 namespace gct {
 
@@ -24,21 +26,6 @@ class image_view_t;
 namespace scene_graph {
   class scene_graph_resource;
 }
-
-struct image_io_dimension {
-  LIBGCT_SETTER( relative_to )
-  LIBGCT_SETTER( size_transform )
-  std::optional< std::string > relative_to;
-  glm::mat4x4 size_transform = glm::mat4x4(
-    1.f, 0.f, 0.f, 0.f,
-    0.f, 1.f, 0.f, 0.f,
-    0.f, 0.f, 1.f, 0.f,
-    0.f, 0.f, 0.f, 1.f
-  );
-};
-
-void to_json( nlohmann::json&, const image_io_dimension& );
-
 
 struct image_io_plan {
   LIBGCT_SETTER( input )
@@ -60,11 +47,30 @@ struct image_io_plan {
       basic.usage |
       vk::ImageUsageFlagBits::eTransferSrc |
       vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage
+      vk::ImageUsageFlagBits::eStorage|
+      vk::ImageUsageFlagBits::eSampled
     );
     auto desc_ = desc;
     desc_.create_info.set_basic( basic );
     desc_.set_layout( vk::ImageLayout::eGeneral );
+    output.insert( std::make_pair( name, desc_ ) );
+    return *this;
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const dynamic_size_image_allocate_info &desc
+  ) {
+    auto basic = desc.allocate_info.create_info.get_basic();
+    basic.setUsage(
+      basic.usage |
+      vk::ImageUsageFlagBits::eTransferSrc |
+      vk::ImageUsageFlagBits::eTransferDst |
+      vk::ImageUsageFlagBits::eStorage|
+      vk::ImageUsageFlagBits::eSampled
+    );
+    auto desc_ = desc;
+    desc_.allocate_info.create_info.set_basic( basic );
+    desc_.allocate_info.set_layout( vk::ImageLayout::eGeneral );
     output.insert( std::make_pair( name, desc_ ) );
     return *this;
   }
@@ -83,6 +89,61 @@ struct image_io_plan {
                 width,
                 height
               )
+            )
+        )
+    );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    float scale
+  ) {
+    return add_output(
+      name,
+      dynamic_size_image_allocate_info()
+        .set_dim(
+          image_io_dimension()
+            .set_relative_to( relative_to )
+            .set_size_transform(
+              glm::mat4(
+                scale, 0.0f, 0.0f, 0.0f,
+                0.0f, scale, 0.0f, 0.0f,
+                0.0f, 0.0f, scale, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+              )
+            )
+        )
+    );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    float scale,
+    vk::Format format
+  ) {
+    return add_output(
+      name,
+      dynamic_size_image_allocate_info()
+        .set_dim(
+          image_io_dimension()
+            .set_relative_to( relative_to )
+            .set_size_transform(
+              glm::mat4(
+                scale, 0.0f, 0.0f, 0.0f,
+                0.0f, scale, 0.0f, 0.0f,
+                0.0f, 0.0f, scale, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+              )
+            )
+        )
+        .set_allocate_info(
+          image_allocate_info()
+            .set_create_info(
+              image_create_info_t()
+                .set_basic(
+                  vk::ImageCreateInfo()
+                    .setFormat( format )
+                )
             )
         )
     );
@@ -158,7 +219,7 @@ struct image_io_plan {
     );
   }
   std::unordered_set< std::string > input;
-  std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info > > output;
+  std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > > output;
   std::unordered_set< std::string > inout;
   std::unordered_map< std::string, sampler_pool::sampler_descriptor > sampled;
   image_io_dimension dim;

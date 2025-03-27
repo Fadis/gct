@@ -244,10 +244,18 @@ add_library( gct SHARED
   gct/nnef_data.cpp
   gct/numeric_type_to_oiio_type.cpp
   gct/cubemap_matrix_generator.cpp
+  gct/image_io_dimension.cpp
+  gct/dynamic_size_image_allocation_info.cpp
   gct/image_io_create_info.cpp
   gct/image_io.cpp
   gct/image_fill_create_info.cpp
   gct/image_blit_create_info.cpp
+  gct/image_mode.cpp
+  gct/image_generator_type.cpp
+  gct/shader_graph_subedge.cpp
+  gct/shader_graph_barrier.cpp
+  gct/shader_graph_vertex_command.cpp
+  gct/shader_graph_command.cpp
   gct/shader_graph.cpp
   gct/image_filter.cpp
   gct/image_filter_create_info.cpp
@@ -259,8 +267,10 @@ add_library( gct SHARED
   gct/graphics_create_info.cpp
   gct/tone_mapping_create_info.cpp
   gct/tone_mapping.cpp
+  gct/shader_set.cpp
   gct/hbao_create_info.cpp
   gct/hbao.cpp
+  gct/hbao2_create_info.cpp
   gct/rtao_create_info.cpp
   gct/rtao.cpp
   gct/epipolar_mesh_create_info.cpp

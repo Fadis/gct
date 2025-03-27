@@ -6,6 +6,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/image_pool.hpp>
+#include <gct/dynamic_size_image_allocate_info.hpp>
 
 namespace gct {
 
@@ -14,84 +15,6 @@ struct image_blit_create_info {
   LIBGCT_SETTER( output_name )
   LIBGCT_SETTER( region )
   LIBGCT_SETTER( filter )
-  image_blit_create_info &set_input(
-    const std::string &n,
-    const image_allocate_info &desc
-  ) {
-    auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage |
-      vk::ImageUsageFlagBits::eSampled
-    );
-    auto desc_ = desc;
-    desc_.create_info.set_basic( basic );
-    desc_.set_layout( vk::ImageLayout::eGeneral );
-    input = desc_;
-    input_name = n;
-    return *this;
-  }
-  image_blit_create_info &set_input(
-    const std::string &name,
-    unsigned int width,
-    unsigned int height
-  ) {
-    return set_input(
-      name,
-      gct::image_allocate_info()
-        .set_create_info(
-          gct::image_create_info_t()
-            .set_basic(
-              gct::basic_2d_image(
-                width,
-                height
-              )
-            )
-        )
-    );
-  }
-  image_blit_create_info &set_input(
-    const image_allocate_info &desc
-  ) {
-    auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage |
-      vk::ImageUsageFlagBits::eSampled
-    );
-    auto desc_ = desc;
-    desc_.create_info.set_basic( basic );
-    desc_.set_layout( vk::ImageLayout::eGeneral );
-    input = desc_;
-    return *this;
-  }
-  image_blit_create_info &set_input(
-    unsigned int width,
-    unsigned int height
-  ) {
-    return set_input(
-      gct::image_allocate_info()
-        .set_create_info(
-          gct::image_create_info_t()
-            .set_basic(
-              gct::basic_2d_image(
-                width,
-                height
-              )
-            )
-        )
-    );
-  }
-  image_blit_create_info &set_input(
-    const image_pool::image_descriptor &desc
-  ) {
-    input = desc;
-    return *this;
-  }
   image_blit_create_info &set_output(
     const std::string &n,
     const image_allocate_info &desc
@@ -178,8 +101,8 @@ struct image_blit_create_info {
   }
   std::string input_name = "input";
   std::string output_name = "output";
-  std::variant< image_pool::image_descriptor, image_allocate_info > input;
-  std::variant< image_pool::image_descriptor, image_allocate_info > output;
+  image_pool::image_descriptor input;
+  std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > output;
   std::vector< vk::ImageBlit > region;
   vk::Filter filter = vk::Filter::eLinear;
   bool independent = true;

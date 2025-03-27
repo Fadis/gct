@@ -7,39 +7,30 @@
 #include <boost/property_map/property_map.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
-#include <gct/image_io_create_info.hpp>
 #include <gct/barrier_config.hpp>
-#include <gct/image_fill_create_info.hpp>
-#include <gct/image_blit_create_info.hpp>
+#include <gct/image_pool.hpp>
+#include <gct/sampler_pool.hpp>
+#include <gct/texture_pool.hpp>
+#include <gct/image_io_create_info.hpp>
 #include <gct/color.hpp>
+#include <gct/shader_graph_subedge.hpp>
+#include <gct/shader_graph_barrier.hpp>
+#include <gct/shader_graph_vertex_command.hpp>
+#include <gct/shader_graph_command.hpp>
+#include <gct/image_mode.hpp>
+#include <gct/image_generator_type.hpp>
 
 namespace gct {
 
 class compute;
 class image_view_t;
 class image_io;
+class image_io_create_info;
+class image_fill_create_info;
+class image_blit_create_info;
 namespace scene_graph {
   class scene_graph_resource;
 }
-
-using shader_graph_vertex_list = std::vector< image_io_create_info >;
-
-struct shader_graph_subedge {
-  LIBGCT_SETTER( from )
-  LIBGCT_SETTER( to )
-  std::string from;
-  std::string to;
-};
-
-using shader_graph_subedge_list = std::vector< shader_graph_subedge >;
-
-using shader_graph_vertex_command = std::variant<
-  std::shared_ptr< image_io_create_info >,
-  std::shared_ptr< image_fill_create_info >,
-  std::shared_ptr< image_blit_create_info >
->;
-
-void to_json( nlohmann::json &dest, const shader_graph_vertex_command &src );
 
 struct shader_graph_vertex_type {
   LIBGCT_SETTER( command )
@@ -56,36 +47,6 @@ using shader_graph_graph_type =  boost::adjacency_list<
   shader_graph_subedge_list
 >;
 
-struct shader_graph_barrier {
-  LIBGCT_SETTER( state )
-  LIBGCT_SETTER( view )
-  barrier_state state;
-  shader_graph_barrier &add_view( const image_pool::image_descriptor &v ) {
-    view.push_back( v );
-    return *this;
-  }
-  std::vector< image_pool::image_descriptor > view;
-};
-
-void to_json( nlohmann::json &dest, const shader_graph_barrier& );
-
-using shader_graph_command = std::variant<
-  std::shared_ptr< image_io >,
-  shader_graph_barrier,
-  std::shared_ptr< image_fill_create_info >,
-  std::shared_ptr< image_blit_create_info >
->;
-
-void to_json( nlohmann::json &dest, const shader_graph_command& );
-std::string to_string( const shader_graph_command& );
-
-using shader_graph_command_list = std::vector<
-  shader_graph_command
->;
-
-void to_json( nlohmann::json &dest, const shader_graph_command_list& );
-std::string to_string( const shader_graph_command_list& );
-
 class shader_graph_vertex {
 public:
   using graph_type = shader_graph_graph_type;
@@ -98,6 +59,9 @@ public:
       const shader_graph_vertex_command &ci,
       const std::string &n
     ) : vertex_id( v ), command( ci ), name( n ) {}
+    subresult_type(
+      const image_pool::image_descriptor &im
+    ) : command( im ) {}
     graph_type::vertex_descriptor vertex_id;
     shader_graph_vertex_command command;
     std::string name;
@@ -116,11 +80,26 @@ public:
     graph_type::vertex_descriptor vertex_id;
     shader_graph_vertex_command command;
   };
+  class combined_result_type {
+  public:
+    combined_result_type &add(
+      const std::string &n,
+      const subresult_type &r
+    ) {
+      input.insert( std::make_pair( n, r ) );
+      return *this;
+    }
+    subresult_type operator[]( const std::string name ) const;
+    operator subresult_type() const;
+  private:
+    std::unordered_map< std::string, subresult_type > input;
+  };
   shader_graph_vertex(
+    const std::shared_ptr< scene_graph::scene_graph_resource > &r,
     const std::shared_ptr< graph_type > &g,
     graph_type::vertex_descriptor id,
     const shader_graph_vertex_command &ci
-  ) : graph( g ), vertex_id( id ), command( ci ) {}
+  ) : resource( r ), graph( g ), vertex_id( id ), command( ci ) {}
   result_type operator()(
     const std::unordered_map< std::string, subresult_type > &input
   );
@@ -129,20 +108,12 @@ public:
   );
   result_type operator()();
 private:
+  std::shared_ptr< scene_graph::scene_graph_resource > resource;
   std::shared_ptr< graph_type > graph;
   graph_type::vertex_descriptor vertex_id;
   shader_graph_vertex_command command;
   bool called = false;
 };
-
-enum class image_mode {
-  writable_without_sync = 0,
-  readable_after_sync = 1,
-  readable_without_sync_writable_after_sync = 2,
-  readable_after_sync_writable_after_sync = 3
-};
-
-void to_json( nlohmann::json &dest, const image_mode& );
 
 class compiled_shader_graph {
 public:
@@ -159,12 +130,6 @@ public:
 private:
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
   shader_graph_command_list list;
-};
-
-enum class image_generator_type {
-  transfer = 0,
-  output = 1,
-  inout = 2
 };
 
 void to_json( nlohmann::json &dest, const compiled_shader_graph& );
@@ -230,24 +195,14 @@ public:
   ) {
     return image_io_create_info( e, resource, p );
   }
-  auto get_image_fill( const image_fill_create_info &v ) {
-    auto desc = add_vertex( *graph );
-    auto shared_v = std::make_shared< image_fill_create_info >( v );
-    (*graph)[ desc ].set_command( shared_v );
-    return shader_graph_vertex( graph, desc, shared_v );
-  }
-  auto get_image_blit( const image_blit_create_info &v ) {
-    auto desc = add_vertex( *graph );
-    auto shared_v = std::make_shared< image_blit_create_info >( v );
-    (*graph)[ desc ].set_command( shared_v );
-    return shader_graph_vertex( graph, desc, shared_v );
-  }
-  auto get_image_io( const image_io_create_info &v ) {
-    auto desc = add_vertex( *graph );
-    auto shared_v = std::make_shared< image_io_create_info >( v );
-    (*graph)[ desc ].set_command( shared_v );
-    return shader_graph_vertex( graph, desc, shared_v );
-  }
+  shader_graph_vertex fill( const image_fill_create_info &v );
+  shader_graph_vertex fill( std::uint32_t width, std::uint32_t height = 1u, const std::array< float, 4u > &color = color::special::transparent );
+  shader_graph_vertex blit( const image_blit_create_info &v );
+  shader_graph_vertex call( const image_io_create_info &v );
+  shader_graph_vertex call(
+    const std::shared_ptr< compute > &e,
+    const image_io_plan &p
+  );
   compiled_shader_graph operator()() {
     auto list = build_command_list();
     reset();

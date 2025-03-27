@@ -13,179 +13,17 @@
 #include <gct/image_io.hpp>
 #include <gct/image_view.hpp>
 #include <gct/image.hpp>
+#include <gct/image_io_create_info.hpp>
+#include <gct/image_fill_create_info.hpp>
+#include <gct/image_blit_create_info.hpp>
+#include <gct/scene_graph_resource.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/shader_graph.hpp>
 
 namespace gct {
 
-void to_json( nlohmann::json &dest, const image_mode &src ) {
-  if( src == image_mode::writable_without_sync ) {
-    dest = "writable_without_sync";
-  }
-  else if( src == image_mode::readable_after_sync ) {
-    dest = "readable_after_sync";
-  }
-  else if( src == image_mode::readable_without_sync_writable_after_sync ) {
-    dest = "readable_without_sync_writable_after_sync";
-  }
-  else if( src == image_mode::readable_after_sync_writable_after_sync ) {
-    dest = "readable_after_sync_writable_after_sync";
-  }
-  else {
-    dest = "unknown";
-  }
-}
-void to_json( nlohmann::json &dest, const shader_graph_barrier &src ) {
-  dest = nlohmann::json::object();
-  dest[ "state" ] = src.state;
-  dest[ "view" ] = nlohmann::json::array();
-  for( const auto &v: src.view ) {
-    dest[ "view" ].push_back( *v );
-  }
-}
-
-void to_json( nlohmann::json &dest, const shader_graph_vertex_command &src ) {
-  dest = nlohmann::json::object();
-  if( src.index() == 0 ) {
-    dest[ "type" ] = "image_io";
-    if( std::get< std::shared_ptr< image_io_create_info > >( src ) ) {
-      dest[ "value" ] = *std::get< std::shared_ptr< image_io_create_info > >( src );
-    }
-    else {
-      dest[ "value" ] = nullptr;
-    }
-  }
-  else if( src.index() == 1 ) {
-    dest[ "type" ] = "fill";
-    if( std::get< std::shared_ptr< image_fill_create_info > >( src ) ) {
-      dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
-    }
-    else {
-      dest[ "value" ] = nullptr;
-    }
-  }
-  else if( src.index() == 2 ) {
-    dest[ "type" ] = "blit";
-    if( std::get< std::shared_ptr< image_blit_create_info > >( src ) ) {
-      dest[ "value" ] = *std::get< std::shared_ptr< image_blit_create_info > >( src );
-    }
-    else {
-      dest[ "value" ] = nullptr;
-    }
-  }
-
-}
-
-void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
-  dest = nlohmann::json::object();
-  if( src.index() == 0 ) {
-    dest[ "type" ] = "image_io";
-    dest[ "value" ] = *std::get< std::shared_ptr< image_io > >( src );
-  }
-  else if( src.index() == 1 ) {
-    dest[ "type" ] = "barrier";
-    dest[ "value" ] = std::get< shader_graph_barrier >( src );
-  }
-  else if( src.index() == 2 ) {
-    dest[ "type" ] = "fill";
-    dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
-  }
-  else if( src.index() == 3 ) {
-    dest[ "type" ] = "blit";
-    dest[ "value" ] = *std::get< std::shared_ptr< image_blit_create_info > >( src );
-  }
-}
-
-void to_json( nlohmann::json &dest, const shader_graph_command_list &src ) {
-  dest = nlohmann::json::array();
-  for( const auto &v: src ) {
-    dest.push_back( v );
-  }
-}
-
 void to_json( nlohmann::json &dest, const compiled_shader_graph &src ) {
   dest = src.get_list();
-}
-
-std::string to_string( const shader_graph_command &src ) {
-  std::string dest;
-  if( src.index() == 0 ) {
-    const auto &io = *std::get< std::shared_ptr< image_io > >( src );
-    dest += "image_io( ";
-    bool initial = true;
-    for( const auto &i: io.get_props().get_input() ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += "in " + i.first + ":" + std::to_string( *i.second );
-    }
-    for( const auto &i: io.get_props().get_inout() ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += "inout " + i.first + ":" + std::to_string( *i.second );
-    }
-    for( const auto &i: io.get_props().get_sampled() ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += "sampled " + i.first + ":" + std::to_string( *i.second );
-    }
-    dest += " ) -> ( ";
-    initial = true;
-    for( const auto &i: io.get_props().get_plan().output ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += "out " + i.first + ":" + std::to_string( *std::get< image_pool::image_descriptor >( i.second ) );
-    }
-    for( const auto &i: io.get_props().get_inout() ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += "inout " + i.first + ":" + std::to_string( *i.second );
-    }
-    dest += " );\n";
-  }
-  else if( src.index() == 1 ) {
-    const auto &b = std::get< shader_graph_barrier >( src );
-    dest += "barrier< " + nlohmann::json( b.state.config ).dump() + " >( ";
-    bool initial = true;
-    for( const auto &v: b.view ) {
-      if( initial ) initial = false;
-      else dest += ", ";
-      dest += std::to_string( *v );
-    }
-    dest += " );\n";
-  }
-  else if( src.index() == 2 ) {
-    const auto &fill = *std::get< std::shared_ptr< image_fill_create_info > >( src );
-    dest += "fill( color:( ";
-    dest += std::to_string( fill.color[ 0 ] ) + ", ";
-    dest += std::to_string( fill.color[ 1 ] ) + ", ";
-    dest += std::to_string( fill.color[ 2 ] ) +  ", ";
-    dest += std::to_string( fill.color[ 3 ] ) + " ),";
-    dest += " independent:";
-    dest += ( fill.independent ? "true" :"false" ) + std::string( " ) -> ( " );
-    dest += fill.name + ":";
-    dest += std::to_string( *std::get< image_pool::image_descriptor >( fill.output ) );
-    dest += " );\n";
-  }
-  else if( src.index() == 3 ) {
-    const auto &blit = *std::get< std::shared_ptr< image_blit_create_info > >( src );
-    dest += "blit( ";
-    dest += blit.input_name + ":";
-    dest += std::to_string( *std::get< image_pool::image_descriptor >( blit.input ) );
-    dest += ", independent:";
-    dest += ( blit.independent ? "true" :"false" ) + std::string( " ) -> ( " );
-    dest += blit.output_name + ":";
-    dest += std::to_string( *std::get< image_pool::image_descriptor >( blit.output ) );
-    dest += " );\n";
-  }
-  return dest;
-}
-
-std::string to_string( const shader_graph_command_list &src ) {
-  std::string dest;
-  for( const auto &v: src ) {
-    dest += to_string( v );
-  }
-  return dest;
 }
 
 std::string to_string( const compiled_shader_graph &src ) {
@@ -195,7 +33,7 @@ std::string to_string( const compiled_shader_graph &src ) {
 
 
   shader_graph_vertex::subresult_type shader_graph_vertex::result_type::operator[]( const std::string name ) const {
-    if( command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if( create_info->get_plan().output.find( name ) == create_info->get_plan().output.end() ) {
         if( create_info->get_plan().inout.find( name ) == create_info->get_plan().inout.end() ) {
@@ -208,7 +46,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         name
       );
     }
-    else if( command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &fill_create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       if( name != fill_create_info->name ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator[] : Output image " + name + "does not exist", __FILE__, __LINE__ );
@@ -219,7 +57,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         name
       );
     }
-    else if( command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
       if( name != create_info->output_name ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator[] : Output image " + name + "does not exist", __FILE__, __LINE__ );
@@ -235,7 +73,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     }
   }
   shader_graph_vertex::result_type:: operator subresult_type() const {
-    if( command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if( create_info->get_plan().output.size() == 1u && create_info->get_plan().inout.size() == 0u ) {
         return shader_graph_vertex::subresult_type(
@@ -255,7 +93,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator subresult_type : result_type has multiple output images", __FILE__, __LINE__ );
       }
     }
-    else if( command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       return shader_graph_vertex::subresult_type(
         vertex_id,
@@ -263,7 +101,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         create_info->name
       );
     }
-    else if( command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
       return shader_graph_vertex::subresult_type(
         vertex_id,
@@ -275,12 +113,25 @@ std::string to_string( const compiled_shader_graph &src ) {
       throw exception::invalid_argument( "shader_graph_vertex::result_type::operator subresult_type : broken result_type", __FILE__, __LINE__ );
     }
   }
+  shader_graph_vertex::subresult_type shader_graph_vertex::combined_result_type::operator[]( const std::string name ) const {
+    const auto match = input.find( name );
+    if( match == input.end() ) {
+      throw exception::invalid_argument( "shader_graph_vertex::combined_result_type::operator[] : Unknown subresult name "+name, __FILE__, __LINE__ );
+    }
+    return match->second;
+  }
+  shader_graph_vertex::combined_result_type:: operator subresult_type() const {
+    if( input.size() != 1u ) {
+      throw exception::invalid_argument( "shader_graph_vertex::combined_result_type::operator subresult_type : result_type has multiple output images", __FILE__, __LINE__ );
+    }
+    return input.begin()->second;
+  }
 
   shader_graph_vertex::result_type shader_graph_vertex::operator()(
     const subresult_type &input
   ) {
     std::string name;
-    if( command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       if(
         create_info->get_plan().input.size() == 1u &&
@@ -304,10 +155,10 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_vertex::operator() : vertex has multiple input images", __FILE__, __LINE__ );
       }
     }
-    else if( command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::fill ) {
       throw exception::invalid_argument( "shader_graph_vertex::operator() : vertex has no input images", __FILE__, __LINE__ );
     }
-    else if( command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
       name = create_info->input_name;
     }
@@ -326,7 +177,7 @@ std::string to_string( const compiled_shader_graph &src ) {
       throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Vertex must not be called multiple times", __FILE__, __LINE__ );
     }
     std::unordered_set< graph_type::vertex_descriptor > incoming_fill;
-    if( command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
       for( const auto &i: input ) {
         if( create_info->get_plan().input.find( i.first ) == create_info->get_plan().input.end() ) {
@@ -336,18 +187,18 @@ std::string to_string( const compiled_shader_graph &src ) {
             }
           }
         }
-        if( i.second.command.index() == 1 ) {
+        if( shader_graph_vertex_command_id( i.second.command.index() ) == shader_graph_vertex_command_id::fill ) {
           incoming_fill.insert( i.second.vertex_id );
         }
       }
     }
-    else if( command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
       if( !input.empty() ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Fill does not take any inputs", __FILE__, __LINE__ );
       }
     }
-    else if( command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
       if( input.size() != 1 ) {
         throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Blit take only one input", __FILE__, __LINE__ );
@@ -357,10 +208,47 @@ std::string to_string( const compiled_shader_graph &src ) {
       }
     }
     else {
-      throw exception::runtime_error( "shader_graph_vertex::result_type::operator() : Broken result_type", __FILE__, __LINE__ );
+      throw exception::runtime_error( "shader_graph_vertex::result_type::operator() : Broken vertex", __FILE__, __LINE__ );
+    }
+    std::unordered_set< std::string > immediate;
+    for( const auto &i: input ) {
+      if( shader_graph_vertex_command_id( i.second.command.index() ) == shader_graph_vertex_command_id::immediate ) {
+        immediate.insert( i.first );
+        const auto &view = std::get< image_pool::image_descriptor >( i.second.command );
+        if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::call ) {
+          const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
+          const auto sampler = create_info->get_plan().sampled.find( i.first );
+          if( sampler != create_info->get_plan().sampled.end() ) {
+            const auto tex = resource->texture->allocate(
+              sampler->second,
+              view
+            );
+            create_info->add( i.first, tex );
+          }
+          else {
+            create_info->add( i.first, view );
+          }
+        }
+        else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::fill ) {
+          throw exception::invalid_argument( "shader_graph_vertex::result_type::operator() : Fill does not take any inputs", __FILE__, __LINE__ );
+        }
+        else if( shader_graph_vertex_command_id( command.index() ) == shader_graph_vertex_command_id::blit ) {
+          const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+          if( create_info->input_name == i.first ) {
+            create_info->input = view;
+          }
+        }
+        else {
+          throw exception::runtime_error( "shader_graph_vertex::result_type::operator() : Broken vertex", __FILE__, __LINE__ );
+        }
+      }
+    }
+    auto input_ = input;
+    for( const auto &i: immediate ) {
+      input_.erase( i );
     }
     std::unordered_map< graph_type::vertex_descriptor, graph_type::edge_descriptor > unique_edge;
-    for( const auto &i: input ) {
+    for( const auto &i: input_ ) {
       if( unique_edge.find( i.second.vertex_id ) == unique_edge.end() ) {
         auto [desc,inserted] = add_edge( i.second.vertex_id, vertex_id, *graph );
         if( !inserted ) {
@@ -373,7 +261,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         unique_edge.insert( std::make_pair( i.second.vertex_id, desc ) );
       }
     }
-    for( const auto &i: input ) {
+    for( const auto &i: input_ ) {
       (*graph)[ unique_edge[ i.second.vertex_id ] ].push_back(
         shader_graph_subedge()
           .set_from( i.second.name )
@@ -420,7 +308,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           );
           if( connected != (*graph)[ edge ].end() ) {
             const auto dest = target( edge, *graph );
-            if( (*graph)[ dest ].command.index() == 0 ) {
+            if( shader_graph_vertex_command_id( (*graph)[ dest ].command.index() ) == shader_graph_vertex_command_id::call ) {
               const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ dest ].command );
               const auto inout = std::find_if(
                 create_info->get_plan().inout.begin(),
@@ -459,9 +347,9 @@ std::string to_string( const compiled_shader_graph &src ) {
                 }
               }
             }
-            else if( (*graph)[ dest ].command.index() == 1 ) {
+            else if( shader_graph_vertex_command_id( (*graph)[ dest ].command.index() ) == shader_graph_vertex_command_id::fill ) {
             }
-            else if( (*graph)[ dest ].command.index() == 2 ) {
+            else if( shader_graph_vertex_command_id( (*graph)[ dest ].command.index() ) == shader_graph_vertex_command_id::blit ) {
               const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ dest ].command );
               if( create_info->input_name == connected->to ) {
                 next_depth.insert( std::make_pair( dest, connected->to ) );
@@ -489,6 +377,38 @@ std::string to_string( const compiled_shader_graph &src ) {
       consumer.end()
     );
   }
+
+  shader_graph_vertex shader_graph_builder::fill( const image_fill_create_info &v ) {
+    auto desc = add_vertex( *graph );
+    auto shared_v = std::make_shared< image_fill_create_info >( v );
+    (*graph)[ desc ].set_command( shared_v );
+    return shader_graph_vertex( resource, graph, desc, shared_v );
+  }
+  shader_graph_vertex shader_graph_builder::fill( std::uint32_t width, std::uint32_t height, const std::array< float, 4u > &color ) {
+    return fill(
+      gct::image_fill_create_info()
+        .set_output( width, height )
+        .set_color( color )
+    );
+  }
+  shader_graph_vertex shader_graph_builder::blit( const image_blit_create_info &v ) {
+    auto desc = add_vertex( *graph );
+    auto shared_v = std::make_shared< image_blit_create_info >( v );
+    (*graph)[ desc ].set_command( shared_v );
+    return shader_graph_vertex( resource, graph, desc, shared_v );
+  }
+  shader_graph_vertex shader_graph_builder::call( const image_io_create_info &v ) {
+    auto desc = add_vertex( *graph );
+    auto shared_v = std::make_shared< image_io_create_info >( v );
+    (*graph)[ desc ].set_command( shared_v );
+    return shader_graph_vertex( resource, graph, desc, shared_v );
+  }
+  shader_graph_vertex shader_graph_builder::call(
+    const std::shared_ptr< compute > &e,
+    const image_io_plan &p
+  ) {
+    return call( get_image_io_create_info( e, p ) );
+  }
   bool shader_graph_builder::shareable(
     const graph_type::vertex_descriptor &first_generator,
     const std::string &first_subedge,
@@ -496,7 +416,7 @@ std::string to_string( const compiled_shader_graph &src ) {
   ) const {
     const auto &vertex = (*graph)[ first_generator ];
     unsigned int id = 0u;
-    if( vertex.command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( vertex.command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( vertex.command );
       const auto &out = create_info->get_plan().output.find( first_subedge );
       if( out != create_info->get_plan().output.end() ) {
@@ -527,7 +447,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_builder::shareable : Source generator does not have an output image named " + first_subedge, __FILE__, __LINE__ );
       }
     }
-    else if( vertex.command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( vertex.command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( vertex.command );
       const auto &out = create_info->output;
       if( create_info->name == first_subedge ) {
@@ -558,7 +478,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         throw exception::invalid_argument( "shader_graph_builder::shareable : Source generator does not have an output image named " + first_subedge, __FILE__, __LINE__ );
       }
     }
-    else if( vertex.command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( vertex.command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( vertex.command );
       const auto &out = create_info->output;
       if( create_info->output_name == first_subedge ) {
@@ -625,16 +545,16 @@ std::string to_string( const compiled_shader_graph &src ) {
     image_to_texture_map &texture
   ) {
     iter->add_used_by( v, name );
-    if( (*graph)[ v ].command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
       std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command )->add( name, iter->view );
     }
-    else if( (*graph)[ v ].command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
       if( create_info->name == name ) {
         create_info->output = iter->view;
       }
     }
-    else if( (*graph)[ v ].command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
       if( create_info->input_name == name ) {
         create_info->input = iter->view;
@@ -653,7 +573,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     image_to_texture_map &texture
   ) {
     for( const auto &c: get_consumer_of( v, name, true ) ) {
-      if( (*graph)[ c.first ].command.index() == 0 ) {
+      if( shader_graph_vertex_command_id( (*graph)[ c.first ].command.index() ) == shader_graph_vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ c.first ].command );
         const auto tex_config = create_info->get_plan().sampled.find( c.second );
           create_info->get_plan().sampled.end();
@@ -675,9 +595,9 @@ std::string to_string( const compiled_shader_graph &src ) {
           create_info->add( c.second, view );
         }
       }
-      else if( (*graph)[ c.first ].command.index() == 1 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ c.first ].command.index() ) == shader_graph_vertex_command_id::fill ) {
       }
-      else if( (*graph)[ c.first ].command.index() == 2 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ c.first ].command.index() ) == shader_graph_vertex_command_id::blit ) {
         const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ c.first ].command );
         if( c.second == create_info->input_name ) {
           create_info->input = view;
@@ -704,7 +624,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         .add_used_by( v, name )
         .set_shareable( shareable )
     );
-    if( (*graph)[ v ].command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
       if( !create_info->is_ready( name ) ) {
         create_info->add( name, view );
@@ -724,12 +644,15 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
       if( create_info->name != name ) {
         throw exception::runtime_error( "shader_graph_builder::bind : unknown resource name " + name, __FILE__, __LINE__ );
       }
       if( create_info->output.index() == 1 ) {
+        create_info->output = view;
+      }
+      else if( create_info->output.index() == 2 ) {
         create_info->output = view;
       }
       else if( create_info->output.index() == 0 ) {
@@ -742,13 +665,16 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
       if( create_info->input_name != name || create_info->output_name != name ) {
         throw exception::runtime_error( "shader_graph_builder::bind : unknown resource name " + name, __FILE__, __LINE__ );
       }
       if( create_info->output_name == name ) {
         if( create_info->output.index() == 1 ) {
+          create_info->output = view;
+        }
+        if( create_info->output.index() == 2 ) {
           create_info->output = view;
         }
         else if( create_info->output.index() == 0 ) {
@@ -762,19 +688,8 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
       else if( create_info->input_name == name ) {
-        if( create_info->input.index() == 1 ) {
           create_info->input = view;
           create_info->independent = false;
-        }
-        else if( create_info->input.index() == 0 ) {
-          const auto existing = std::get< image_pool::image_descriptor >( create_info->output );
-          if( !existing ) {
-            throw exception::runtime_error( "shader_graph_builder::bind : unable to get bound image view", __FILE__, __LINE__ );
-          }
-          if( existing != view ) {
-            throw exception::runtime_error( "shader_graph_builder::bind : inconsistent image binding", __FILE__, __LINE__ );
-          }
-        }
       }
     }
     set_image_on_consumer( v, name, view, texture );
@@ -786,7 +701,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     std::queue< graph_type::vertex_descriptor > v_cur;
     std::unordered_set< graph_type::vertex_descriptor > visited;
     for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
-      if( (*graph)[ v ].command.index() == 0 ) {
+      if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
         if( create_info->independent() ) {
           v_cur.push( v );
@@ -794,7 +709,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           visited.insert( v );
         }
       }
-      else if( (*graph)[ v ].command.index() == 1 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
         const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
         if( create_info->independent ) {
           v_cur.push( v );
@@ -802,7 +717,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           visited.insert( v );
         }
       }
-      else if( (*graph)[ v ].command.index() == 2 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
         const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
         if( create_info->independent ) {
           v_cur.push( v );
@@ -819,7 +734,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     }
     while( !v_cur.empty() ) {
       const auto &v = v_cur.front();
-      if( (*graph)[ v ].command.index() == 0 ) {
+      if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
         for( const auto &inout: create_info->get_inout() ) {
           const std::string &name = inout.first;
@@ -868,6 +783,126 @@ std::string to_string( const compiled_shader_graph &src ) {
               bind( v, name, view, ai, true, texture );
             }
           }
+          if( out.second.index() == 2u ) {
+            auto ai = std::get< dynamic_size_image_allocate_info >( out.second );
+            glm::vec4 size( 0.0f, 0.0f, 0.0f, 1.0f );
+            std::optional< vk::ImageType > image_type;
+            std::optional< vk::Format > format;
+            if( ai.dim.relative_to ) {
+              if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
+                const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+                const auto image_or_tex = create_info->get( *ai.dim.relative_to );
+                std::shared_ptr< image_view_t > view;
+                if( image_or_tex.index() == 0 ) {
+                  view = resource->image->get( std::get< image_pool::image_descriptor >( image_or_tex ) );
+                }
+                else {
+                  view = resource->texture->get( std::get< texture_pool::texture_descriptor >( image_or_tex ) ).first;
+                }
+                const auto s = view->get_factory()->get_props().get_basic().extent;
+                size.x = s.width;
+                size.y = s.height;
+                size.z = s.depth;
+                if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e1D ) {
+                  size.y = view->get_props().get_basic().subresourceRange.layerCount;
+                  size.z = 0.0f;
+                  image_type = vk::ImageType::e1D;
+                }
+                if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e2D ) {
+                  size.z = view->get_props().get_basic().subresourceRange.layerCount;
+                  image_type = vk::ImageType::e2D;
+                }
+                else {
+                  image_type = vk::ImageType::e3D;
+                }
+                format = view->get_factory()->get_props().get_basic().format;
+              }
+              else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
+                throw exception::runtime_error( "shader_graph_builder::assign_image : image size depends on unknown image "+*ai.dim.relative_to, __FILE__, __LINE__ );
+              }
+              else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
+                const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+                if( *ai.dim.relative_to == create_info->input_name ) {
+                  const auto view = resource->image->get( create_info->input );
+                  const auto s = view->get_factory()->get_props().get_basic().extent;
+                  size.x = s.width;
+                  size.y = s.height;
+                  size.z = s.depth;
+                  if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e1D ) {
+                    size.y = view->get_props().get_basic().subresourceRange.layerCount;
+                    size.z = 0.0f;
+                    image_type = vk::ImageType::e1D;
+                  }
+                  if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e2D ) {
+                    size.z = view->get_props().get_basic().subresourceRange.layerCount;
+                    image_type = vk::ImageType::e2D;
+                  }
+                  else {
+                    image_type = vk::ImageType::e3D;
+                  }
+                }
+                else {
+                  throw exception::runtime_error( "shader_graph_builder::assign_image : image size depends on unknown image "+*ai.dim.relative_to, __FILE__, __LINE__ );
+                }
+              }
+            }
+            auto modified = ai.allocate_info;
+            size = ai.dim.size_transform * size;
+            size /= size.w;
+            auto sized_basic = ai.allocate_info.create_info.get_basic();
+            if( image_type ) {
+              sized_basic.setImageType( *image_type );
+            }
+            if( sized_basic.format == vk::Format::eUndefined && format ) {
+              sized_basic.format = *format;
+            }
+            if( sized_basic.imageType == vk::ImageType::e1D ) {
+              sized_basic.extent.width = std::max( size.x, 1.0f );
+              sized_basic.extent.height = 1;
+              sized_basic.extent.depth = 1;
+              sized_basic.arrayLayers = std::max( size.y, 1.0f );
+              sized_basic.mipLevels = 1;
+            }
+            else if( sized_basic.imageType == vk::ImageType::e2D ) {
+              sized_basic.extent.width = std::max( size.x, 1.0f );
+              sized_basic.extent.height = std::max( size.y, 1.0f );
+              sized_basic.extent.depth = 1;
+              sized_basic.arrayLayers = std::max( size.z, 1.0f );
+              sized_basic.mipLevels = 1;
+            }
+            else if( sized_basic.imageType == vk::ImageType::e2D ) {
+              sized_basic.extent.width = std::max( size.x, 1.0f );
+              sized_basic.extent.height = std::max( size.y, 1.0f );
+              sized_basic.extent.depth = std::max( size.z, 1.0f );
+              sized_basic.arrayLayers = 1;
+              sized_basic.mipLevels = 1;
+            }
+            modified.create_info.set_basic( sized_basic );
+            bool solved = false;
+            for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+              cur = std::find_if(
+                cur,
+                binding.end(),
+                [&]( const auto &b ) -> bool {
+                  return *b.allocate_info == modified;
+                }
+              );
+              if( cur == binding.end() ) {
+                break;
+              }
+              else {
+                if( shareable( *cur->used_by, v ) ) {
+                  reuse( cur, v, name, texture );
+                  solved = true;
+                  break;
+                }
+              }
+            }
+            if( !solved ) {
+              const auto view = resource->image->allocate( modified ).linear;
+              bind( v, name, view, modified, true, texture );
+            }
+          }
           else if( out.second.index() == 0u ) {
             const auto &desc = std::get< image_pool::image_descriptor >( out.second );
             const auto view = resource->image->get( desc );
@@ -887,7 +922,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           }
         }
       }
-      else if( (*graph)[ v ].command.index() == 1 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
         const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
         const std::string &name = create_info->name;
         auto &out = create_info->output;
@@ -936,7 +971,7 @@ std::string to_string( const compiled_shader_graph &src ) {
           );
         }
       }
-      else if( (*graph)[ v ].command.index() == 2 ) {
+      else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
         const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
         const std::string &name = create_info->output_name;
         auto &out = create_info->output;
@@ -1002,7 +1037,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     const image_to_texture_map &texture
   ) {
     unsigned int score = 0;
-    if( (*graph)[ v ].command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
       for( const auto &i: create_info->get_input() ) {
         const auto &is = state.find( i.second );
@@ -1107,7 +1142,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
       const auto &o = create_info->output;
       const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
@@ -1131,7 +1166,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         }
       }
     }
-    else if( (*graph)[ v ].command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
       const auto &o = create_info->output;
       const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
@@ -1163,7 +1198,7 @@ std::string to_string( const compiled_shader_graph &src ) {
     const image_to_texture_map &texture
   ) {
     shader_graph_command_list list;
-    if( (*graph)[ v ].command.index() == 0 ) {
+    if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
       for( const auto &i: create_info->get_input() ) {
         const auto &is = state.find( i.second );
@@ -1506,7 +1541,7 @@ std::string to_string( const compiled_shader_graph &src ) {
         )
       );
     }
-    else if( (*graph)[ v ].command.index() == 1 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
       const auto &o = create_info->output;
       const auto &is = state.find( std::get< image_pool::image_descriptor >( o ) );
@@ -1569,10 +1604,10 @@ std::string to_string( const compiled_shader_graph &src ) {
         create_info
       );
     }
-    else if( (*graph)[ v ].command.index() == 2 ) {
+    else if( shader_graph_vertex_command_id( (*graph)[ v ].command.index() ) == shader_graph_vertex_command_id::blit ) {
       const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
       {
-        const auto &is = state.find( std::get< image_pool::image_descriptor >( create_info->input ) );
+        const auto &is = state.find( create_info->input );
         if( is != state.end() ) {
           if( is->second.mode != image_mode::readable_without_sync_writable_after_sync ) {
             if( is->second.last_generator_type == image_generator_type::transfer ) {
@@ -1768,20 +1803,20 @@ std::string to_string( const compiled_shader_graph &src ) {
     command_buffer_recorder_t &rec
   ) const {
     for( const auto &c: list ) {
-      if( c.index() == 0 ) {
+      if( shader_graph_command_id( c.index() ) == shader_graph_command_id::call ) {
         (*std::get< std::shared_ptr< image_io > >( c ))( rec );
       }
-      else if( c.index() == 1 ) {
+      else if( shader_graph_command_id( c.index() ) == shader_graph_command_id::barrier ) {
         rec.barrier( std::get< shader_graph_barrier >( c ).state );
       }
-      else if( c.index() == 2 ) {
+      else if( shader_graph_command_id( c.index() ) == shader_graph_command_id::fill ) {
         const auto fill = std::get< std::shared_ptr< image_fill_create_info > >( c );
         rec.fill( resource->image->get( std::get< image_pool::image_descriptor >( fill->output ) ), fill->color );
       }
-      else if( c.index() == 3 ) {
+      else if( shader_graph_command_id( c.index() ) == shader_graph_command_id::blit ) {
         const auto blit = std::get< std::shared_ptr< image_blit_create_info > >( c );
         rec.blit(
-          resource->image->get( std::get< image_pool::image_descriptor >( blit->input ) ),
+          resource->image->get( blit->input ),
           resource->image->get( std::get< image_pool::image_descriptor >( blit->output ) ),
           blit->region,
           blit->filter

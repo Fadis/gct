@@ -7,6 +7,7 @@
 #include <gct/setter.hpp>
 #include <gct/image_pool.hpp>
 #include <gct/color.hpp>
+#include <gct/dynamic_size_image_allocate_info.hpp>
 
 namespace gct {
 struct image_fill_create_info {
@@ -91,7 +92,7 @@ struct image_fill_create_info {
     return *this;
   }
   std::string name = "default";
-  std::variant< image_pool::image_descriptor, image_allocate_info > output;
+  std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > output;
   std::array< float, 4u > color = color::web::pink;
   bool independent = true;
 };

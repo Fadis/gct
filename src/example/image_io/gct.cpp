@@ -178,6 +178,7 @@ int main( int argc, const char *argv[] ) {
             )
               .setUsage(
                 vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eSampled|
                 vk::ImageUsageFlagBits::eTransferSrc|
                 vk::ImageUsageFlagBits::eTransferDst
               )
@@ -268,44 +269,40 @@ int main( int argc, const char *argv[] ) {
   }
 
   gct::shader_graph_builder opt( sg->get_resource() );
-  auto s0 = opt.get_image_io(
-    opt.get_image_io_create_info(
-      shrink,
-      gct::image_io_plan()
-        .add_input( "input_image" )
-        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
-        .set_dim( "output_image" )
-    )
-    .add_input( "input_image", src_desc.normalized )
-  );
-  auto f0 = opt.get_image_fill(
-    gct::image_fill_create_info()
-      .set_output( src_extent.width / 2, src_extent.height / 2 )
-  );
-  auto s1 = opt.get_image_io(
+  auto s0r = opt.call(
+    shrink,
+    gct::image_io_plan()
+      .add_input( "input_image" )
+      .add_output( "output_image", "input_image", 0.5f, vk::Format::eR32G32B32A32Sfloat )
+      .set_dim( "output_image" )
+  )( src_desc.normalized );
+  auto f0r = opt.fill(
+    src_extent.width / 2, src_extent.height / 2,
+    gct::color::web::pink
+  )();
+  auto s1r = opt.call(
     opt.get_image_io_create_info(
       shrink,
       gct::image_io_plan()
         .add_input( "input_image" )
         .add_inout( "output_image" )
-        //.add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
         .set_dim( "output_image", 0.5f )
     )
     .set_push_constant( "x_offset", src_extent.width / 4 )
     .set_push_constant( "y_offset", src_extent.height / 4 )
-  );
-  auto s2 = opt.get_image_io(
+  )( { { "input_image", s0r }, { "output_image", f0r } } );
+  auto s2r = opt.call(
     opt.get_image_io_create_info(
       shrink,
       gct::image_io_plan()
         .add_input( "input_image" )
-        .add_output( "output_image", src_extent.width / 2, src_extent.height / 2 )
+        .add_output( "output_image", "input_image", 1.0f )
         .set_dim( "output_image", 0.5f )
     )
     .set_push_constant( "x_offset", src_extent.width / 4 )
     .set_push_constant( "y_offset", src_extent.height / 4 )
-  );
-  auto s3 = opt.get_image_io(
+  )( s1r );
+  auto s3r = opt.call(
     opt.get_image_io_create_info(
       shrink,
       gct::image_io_plan()
@@ -315,22 +312,14 @@ int main( int argc, const char *argv[] ) {
     )
     .set_push_constant( "x_offset", src_extent.width / 4 )
     .set_push_constant( "y_offset", src_extent.height / 4 )
-  );
-  auto s4 = opt.get_image_io(
-    opt.get_image_io_create_info(
-      rotate,
-      gct::image_io_plan()
-        .add_sampled( "input_image", linear_sampler_desc )
-        .add_output( "output_image", dest3_desc.linear )
-        .set_dim( "output_image" )
-    )
-  );
-  auto s0r = s0();
-  auto f0r = f0();
-  auto s1r = s1( { { "input_image", s0r }, { "output_image", f0r } } );
-  auto s2r = s2( s1r );
-  auto s3r = s3( s2r );
-  auto s4r = s4( s3r );
+  )( s2r );
+  auto s4r = opt.call(
+    rotate,
+    gct::image_io_plan()
+      .add_sampled( "input_image", linear_sampler_desc )
+      .add_output( "output_image", dest3_desc.linear )
+      .set_dim( "output_image" )
+  )( s3r );
   auto compiled = opt();
   std::cout << to_string( compiled ) << std::endl;
   {
@@ -368,6 +357,5 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-  std::cout << nlohmann::json( compiled ).dump( 2 ) << std::endl;
 }
 

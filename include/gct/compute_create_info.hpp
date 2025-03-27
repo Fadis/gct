@@ -1,7 +1,6 @@
 #ifndef GCT_COMPUTE_CREATE_INFO_HPP
 #define GCT_COMPUTE_CREATE_INFO_HPP
 
-#include "gct/scene_graph_resource.hpp"
 #include <memory>
 #include <vector>
 #include <unordered_map>
