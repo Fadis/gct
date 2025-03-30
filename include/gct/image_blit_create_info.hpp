@@ -11,10 +11,12 @@
 namespace gct {
 
 struct image_blit_create_info {
+  LIBGCT_SETTER( node_name )
   LIBGCT_SETTER( input_name )
   LIBGCT_SETTER( output_name )
   LIBGCT_SETTER( region )
   LIBGCT_SETTER( filter )
+  LIBGCT_SETTER( shareable )
   image_blit_create_info &set_output(
     const std::string &n,
     const image_allocate_info &desc
@@ -106,6 +108,8 @@ struct image_blit_create_info {
   std::vector< vk::ImageBlit > region;
   vk::Filter filter = vk::Filter::eLinear;
   bool independent = true;
+  bool shareable = true;
+  std::string node_name;
 };
 
 void to_json( nlohmann::json&, const image_blit_create_info& );

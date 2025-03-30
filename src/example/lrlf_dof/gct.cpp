@@ -48,7 +48,7 @@
 #include <gct/compute.hpp>
 #include <gct/common_sample_setup.hpp>
 #include <gct/tone_mapping.hpp>
-#include <gct/hbao.hpp>
+#include <gct/hbao2.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/gltf2.hpp>
 #include <gct/gltf2_create_info.hpp>
@@ -463,12 +463,15 @@ int main( int argc, const char *argv[] ) {
     r32ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  
-  const auto nearest_position = res.allocator->create_image_view(
-    rgba32ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
+ 
+  /*const auto nearest_position_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_layout( vk::ImageLayout::eGeneral )
+      .set_create_info( rgba32ici )
+  ).linear;
 
+  const auto nearest_position = sg->get_resource()->image->get( nearest_position_desc );
+  */
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
     {
@@ -479,7 +482,7 @@ int main( int argc, const char *argv[] ) {
       recorder.set_image_layout( dof_temporary, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( coc, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( coc_temporary, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( nearest_position, vk::ImageLayout::eGeneral );
+      //recorder.set_image_layout( nearest_position, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -496,7 +499,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
   );
 
-  const auto generate_nearest_position = gct::compute(
+  /*const auto generate_nearest_position = gct::compute(
     gct::compute_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
@@ -505,19 +508,43 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
       .add_resource( { "position", nearest_position, vk::ImageLayout::eGeneral } )
-  );
-
-  gct::hbao hbao(
-    gct::hbao_create_info()
+  );*/
+  
+  gct::hbao2 hbao(
+    gct::hbao2_create_info()
       .set_allocator( res.allocator )
       .set_pipeline_cache( res.pipeline_cache )
       .set_descriptor_pool( res.descriptor_pool )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/ao/" )
-      .set_input_name( "position" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ nearest_position } )
+      .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } ) 
-      .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
   );
+  
+  gct::shader_graph_builder builder( sg->get_resource() );
+
+  const auto np = builder.call(
+    std::make_shared< gct::compute >(
+      gct::compute_create_info()
+        .set_allocator_set( res.allocator_set )
+        .set_shader( CMAKE_CURRENT_BINARY_DIR "/nearest_position/nearest_position.comp.spv" )
+        .set_scene_graph( sg->get_resource() )
+    ),
+    gct::image_io_plan()
+      .add_input( "src" )
+      .add_output( "dest", "src", glm::vec4( 1.f, 1.f, 1.f, 0.f ), vk::Format::eR32G32B32A32Sfloat )
+      .set_dim( "src", glm::vec4( 1.f, 1.f, 1.f, 0.f ) )
+      .set_node_name( "nearest_position" )
+  )( extended_gbuffer_desc.linear );
+
+  const auto ao_out_desc = hbao(
+    builder,
+    np
+  );
+  builder.output( ao_out_desc );
+  const auto compiled_hbao = builder();
+  const auto ao_out = compiled_hbao.get_view( ao_out_desc );
+ 
+  std::cout << to_string( compiled_hbao ) << std::endl;
 
   gct::skyview skyview(
     gct::skyview_create_info()
@@ -599,7 +626,7 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv" )
       .set_swapchain_image_count( 1u )
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
-      .add_resource( { "occlusion", hbao.get_output(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "occlusion", ao_out, vk::ImageLayout::eGeneral } )
       .add_resource( { "scattering", skyview_froxel.get_output(), vk::ImageLayout::eGeneral } )
       .add_resource( { "diffuse_image", diffuse } )
       .add_resource( { "specular_image", specular } )
@@ -1037,50 +1064,48 @@ int main( int argc, const char *argv[] ) {
             vk::ImageLayout::eGeneral
           );
         }
-        if( walk.light_moved() || walk.camera_moved() || frame_counter <= 2u ) {
-          {
-            auto &pc = lighting.get_push_constant();
-            pc.data()->*diffuse_pcmp = *diffuse_desc.linear;
-            pc.data()->*specular_pcmp = *specular_desc.linear;
-          }
-          lighting( rec, 0, res.width, res.height, 4u );
-      
-          rec.compute_barrier( diffuse );
-     
-          generate_nearest_position( rec, 0, res.width, res.height, 1u );
-
-          rec.compute_barrier( nearest_position );
-
-          hbao( rec, 0 );
-        
-          rec.compute_barrier(
-            gct::syncable()
-              .add( hbao.get_output()[ 0 ] )
-              .add( diffuse )
-              .add( specular )
-          );
-
-          const glm::mat4 world_to_screen = projection * walk.get_lookat();
-          const glm::mat4 screen_to_world = glm::inverse( world_to_screen );
-          skyview_froxel(
-            rec,
-            gct::skyview_froxel_param()
-              .set_world_to_screen( world_to_screen )
-              .set_screen_to_world( screen_to_world )
-              .set_sigma_ma( skyview_param.sigma_ma )
-              .set_sigma_oa( skyview_param.sigma_oa )
-              .set_sigma_rs( skyview_param.sigma_rs )
-              .set_sigma_ms( skyview_param.sigma_ms )
-              .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-              .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
-              .set_ground_radius( skyview_param.ground_radius )
-              .set_top_radius( skyview_param.top_radius )
-              .set_g( skyview_param.g )
-              .set_altitude( skyview_param.ground_radius + skyview_param.altitude )
-              .set_light_energy( walk.get_light_energy() )
-          );
-          rec.compute_barrier( skyview_froxel.get_output() );
+        {
+          auto &pc = lighting.get_push_constant();
+          pc.data()->*diffuse_pcmp = *diffuse_desc.linear;
+          pc.data()->*specular_pcmp = *specular_desc.linear;
         }
+        lighting( rec, 0, res.width, res.height, 4u );
+      
+        rec.compute_barrier( diffuse );
+     
+        //generate_nearest_position( rec, 0, res.width, res.height, 1u );
+
+        //rec.compute_barrier( nearest_position );
+
+        compiled_hbao( rec );
+        
+        rec.compute_barrier(
+          gct::syncable()
+            .add( ao_out )
+            .add( diffuse )
+            .add( specular )
+        );
+
+        const glm::mat4 world_to_screen = projection * walk.get_lookat();
+        const glm::mat4 screen_to_world = glm::inverse( world_to_screen );
+        skyview_froxel(
+          rec,
+          gct::skyview_froxel_param()
+            .set_world_to_screen( world_to_screen )
+            .set_screen_to_world( screen_to_world )
+            .set_sigma_ma( skyview_param.sigma_ma )
+            .set_sigma_oa( skyview_param.sigma_oa )
+            .set_sigma_rs( skyview_param.sigma_rs )
+            .set_sigma_ms( skyview_param.sigma_ms )
+            .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+            .set_light_pos( glm::vec4( walk.get_light_pos(), 1.0 ) )
+            .set_ground_radius( skyview_param.ground_radius )
+            .set_top_radius( skyview_param.top_radius )
+            .set_g( skyview_param.g )
+            .set_altitude( skyview_param.ground_radius + skyview_param.altitude )
+            .set_light_energy( walk.get_light_energy() )
+        );
+        rec.compute_barrier( skyview_froxel.get_output() );
 
         glm::ivec2 focus( res.width/2, res.height/2 );
         rec->pushConstants(

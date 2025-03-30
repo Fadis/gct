@@ -111,7 +111,7 @@ image_io_create_info::image_io_create_info(
         if( range && range->layer_offset + range->layer_count > basic.arrayLayers ) {
           throw exception::invalid_argument( "image_io_create_info::image_io_create_info : Broken image allocate info", __FILE__, __LINE__ );
         }
-        const auto layer_count = range ? range->layer_count : basic.arrayLayers;
+        auto layer_count = range ? range->layer_count : basic.arrayLayers;
         auto size =
           ( basic.imageType == vk::ImageType::e3D ) ?
           plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f ) :
@@ -121,6 +121,14 @@ image_io_create_info::image_io_create_info(
             plan.dim.size_transform * glm::vec4( image_size.width, layer_count, 1.0f, 1.0f )
           );
         size /= size.w;
+        auto layer_count_vec = ( glm::vec2( layer_count, 1.0f ) * plan.dim.layer_transform );
+        layer_count = std::max( layer_count_vec.x / layer_count_vec.y, 1.0f );
+        if( plan.dim.preserve_layer_count && basic.imageType == vk::ImageType::e2D ) {
+          size.z = layer_count;
+        }
+        else if( plan.dim.preserve_layer_count && basic.imageType == vk::ImageType::e1D ) {
+          size.y = layer_count;
+        }
         dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
         size_specified = true;
       }
@@ -145,7 +153,7 @@ void image_io_create_info::update_size(
     const auto &basic = view->get_factory()->get_props().get_basic();
     const auto image_size = basic.extent;
     const auto &range = view->get_props().get_basic().subresourceRange;
-    const auto layer_count = range.layerCount;
+    auto layer_count = range.layerCount;
     auto size =
       ( basic.imageType == vk::ImageType::e3D ) ?
       plan.dim.size_transform * glm::vec4( image_size.width, image_size.height, image_size.depth, 1.0f ) :
@@ -155,6 +163,14 @@ void image_io_create_info::update_size(
         plan.dim.size_transform * glm::vec4( image_size.width, layer_count, 1.0f, 1.0f )
       );
     size /= size.w;
+    auto layer_count_vec = ( glm::vec2( layer_count, 1.0f ) * plan.dim.layer_transform );
+    layer_count = std::max( layer_count_vec.x / layer_count_vec.y, 1.0f );
+    if( plan.dim.preserve_layer_count && basic.imageType == vk::ImageType::e2D ) {
+      size.z = layer_count;
+    }
+    else if( plan.dim.preserve_layer_count && basic.imageType == vk::ImageType::e1D ) {
+      size.y = layer_count;
+    }
     dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
   }
 }
@@ -367,6 +383,17 @@ bool image_io_create_info::filled() const {
 }
 const std::optional< spv_member_pointer > &image_io_create_info::get_push_constant_member_pointer() const {
   return executable->get_push_constant_member_pointer();
+}
+void image_io_create_info::set_shareable( const std::string &name, bool s ) {
+  if( plan.output.find( name ) == plan.output.end() ) {
+    throw exception::invalid_argument( "image_io_create_info::set_shareable : unknown output image "+name, __FILE__, __LINE__ );
+  }
+  shareable.insert( std::make_pair( name, s ) );
+}
+bool image_io_create_info::is_shareable( const std::string &name ) const {
+  const auto match = shareable.find( name );
+  if( match == shareable.end() ) return true;
+  return match->second;
 }
 void to_json( nlohmann::json &dest, const image_io_create_info &src ) {
   dest = nlohmann::json::object();

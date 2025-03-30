@@ -146,7 +146,7 @@ void main()  {
     ( layer_index.w != 0 ) ?
     imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
     vec3( 0.0, 0.0, 0.0 );
-
+  
   const vec4 l0_total = 
     vec4( ( l0_ambient + ( l0_diffuse.rgb + l0_specular ) ) * scat.w + scat.rgb, l0_albedo.a );
   const vec4 l1_total = 

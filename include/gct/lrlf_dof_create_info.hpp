@@ -1,5 +1,5 @@
-#ifndef GCT_HBAO2_CREATE_INFO_HPP
-#define GCT_HBAO2_CREATE_INFO_HPP
+#ifndef GCT_LRLF_DOF_CREATE_INFO_HPP
+#define GCT_LRLF_DOF_CREATE_INFO_HPP
 
 #include <vector>
 #include <filesystem>
@@ -15,7 +15,7 @@ namespace scene_graph {
   class scene_graph_resource;
 }
 
-struct hbao2_create_info {
+struct lrlf_dof_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( shader_set )
@@ -25,8 +25,7 @@ struct hbao2_create_info {
   LIBGCT_SETTER( resources )
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( scene_graph )
-  LIBGCT_SETTER( node_name )
-  hbao2_create_info &set_shader(
+  lrlf_dof_create_info &set_shader(
     const std::filesystem::path &
   );
   allocator_set_t allocator_set;
@@ -34,10 +33,9 @@ struct hbao2_create_info {
   rename_map_t rename;
   std::vector< named_resource > resources;
   std::shared_ptr< scene_graph::scene_graph_resource > scene_graph;
-  std::string node_name;
 };
 
-void to_json( nlohmann::json&, const hbao2_create_info& );
+void to_json( nlohmann::json&, const lrlf_dof_create_info& );
 
 }
 

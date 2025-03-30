@@ -271,8 +271,11 @@ add_library( gct SHARED
   gct/hbao_create_info.cpp
   gct/hbao.cpp
   gct/hbao2_create_info.cpp
+  gct/hbao2.cpp
   gct/rtao_create_info.cpp
   gct/rtao.cpp
+  gct/lrlf_dof_create_info.cpp
+  gct/lrlf_dof.cpp
   gct/epipolar_mesh_create_info.cpp
   gct/epipolar_mesh.cpp
   gct/epipolar_light_scattering_create_info.cpp

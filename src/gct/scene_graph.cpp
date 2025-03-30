@@ -116,6 +116,12 @@ scene_graph::scene_graph(
   }
 #endif
   pipeline_layout_create_info_t pipeline_layout_create_info;
+  pipeline_layout_create_info.add_push_constant_range(
+    vk::PushConstantRange()
+      .setStageFlags( vk::ShaderStageFlagBits::eAll )
+      .setOffset( 0u )
+      .setSize( 128u )
+  );
   std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > vertex_attributes;
   for( const auto &d: props->master_shader  ) {
     for( const auto &f: std::filesystem::directory_iterator( d ) ) {
@@ -127,7 +133,7 @@ scene_graph::scene_graph(
             descriptor_set_layout_create_info[ dsid ].set_indexing( true );
           }
         }
-        pipeline_layout_create_info.add_push_constant_range( reflection );
+        //pipeline_layout_create_info.add_push_constant_range( reflection );
         auto [visci,partial_vertex_attributes,stride] = get_vertex_attributes(
           device,
           reflection

@@ -24,6 +24,12 @@ void to_json( nlohmann::json &dest, const image_io_dimension &src ) {
   dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 1 ] );
   dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 2 ] );
   dest[ "size_transform" ].push_back( src.size_transform[ 3 ][ 3 ] );
+  dest[ "preserve_layer_count" ] = src.preserve_layer_count;
+  dest[ "layer_transform" ] = nlohmann::json::array();
+  dest[ "layer_transform" ].push_back( src.layer_transform[ 0 ][ 0 ] );
+  dest[ "layer_transform" ].push_back( src.layer_transform[ 0 ][ 1 ] );
+  dest[ "layer_transform" ].push_back( src.layer_transform[ 1 ][ 0 ] );
+  dest[ "layer_transform" ].push_back( src.layer_transform[ 1 ][ 1 ] );
 }
 }
 

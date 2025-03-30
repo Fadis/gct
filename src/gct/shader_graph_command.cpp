@@ -38,7 +38,14 @@ std::string to_string( const shader_graph_command &src ) {
   std::string dest;
   if( shader_graph_command_id( src.index() ) == shader_graph_command_id::call ) {
     const auto &io = *std::get< std::shared_ptr< image_io > >( src );
-    dest += "call( ";
+    if( !io.get_props().get_plan().node_name.empty() ) {
+      dest += "call:";
+      dest += io.get_props().get_plan().node_name;
+      dest += "( ";
+    }
+    else {
+      dest += "call( ";
+    }
     bool initial = true;
     for( const auto &i: io.get_props().get_input() ) {
       if( initial ) initial = false;
@@ -82,7 +89,15 @@ std::string to_string( const shader_graph_command &src ) {
   }
   else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::fill ) {
     const auto &fill = *std::get< std::shared_ptr< image_fill_create_info > >( src );
-    dest += "fill( color:( ";
+    if( !fill.node_name.empty() ) {
+      dest += "fill:";
+      dest += fill.node_name;
+      dest += "( ";
+    }
+    else {
+      dest += "fill( ";
+    }
+    dest += "color:( ";
     dest += std::to_string( fill.color[ 0 ] ) + ", ";
     dest += std::to_string( fill.color[ 1 ] ) + ", ";
     dest += std::to_string( fill.color[ 2 ] ) +  ", ";
@@ -95,7 +110,14 @@ std::string to_string( const shader_graph_command &src ) {
   }
   else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::blit ) {
     const auto &blit = *std::get< std::shared_ptr< image_blit_create_info > >( src );
-    dest += "blit( ";
+    if( !blit.node_name.empty() ) {
+      dest += "blit:";
+      dest += blit.node_name;
+      dest += "( ";
+    }
+    else {
+      dest += "blit( ";
+    }
     dest += blit.input_name + ":";
     dest += std::to_string( *blit.input );
     dest += ", independent:";

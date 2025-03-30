@@ -11,8 +11,10 @@
 
 namespace gct {
 struct image_fill_create_info {
+  LIBGCT_SETTER( node_name )
   LIBGCT_SETTER( name )
   LIBGCT_SETTER( color )
+  LIBGCT_SETTER( shareable )
   image_fill_create_info &set_output(
     const std::string &n,
     const image_allocate_info &desc
@@ -95,6 +97,8 @@ struct image_fill_create_info {
   std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > output;
   std::array< float, 4u > color = color::web::pink;
   bool independent = true;
+  bool shareable = true;
+  std::string node_name;
 };
 
 void to_json( nlohmann::json&, const image_fill_create_info& );

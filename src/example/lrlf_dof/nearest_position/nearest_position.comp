@@ -2,17 +2,22 @@
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
-
-layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, rgba32f) writeonly uniform image2D position;
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
+#include <gct/scene_graph/image_pool.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint dest;
+} push_constants;
+
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const bool has_layer = imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x != 0;
-  const uint layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
-  const vec4 pos_depth = imageLoad( gbuffer, ivec3( screen_pos, layer * 8 + 0 ) );
-  imageStore( position, screen_pos, pos_depth );
+  const bool has_layer = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x != 0;
+  const uint layer = max( uint( imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
+  const vec4 pos_depth = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, layer * 8 + 0 ) );
+  imageStore( image_pool32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, pos_depth );
 }
 

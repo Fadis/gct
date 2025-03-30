@@ -37,6 +37,7 @@ struct shader_graph_vertex_type {
   LIBGCT_SETTER( color )
   shader_graph_vertex_command command;
   boost::default_color_type color = boost::white_color; 
+  std::string get_node_name() const;
 };
 
 using shader_graph_graph_type =  boost::adjacency_list<
@@ -55,13 +56,16 @@ public:
     LIBGCT_SETTER( command )
     LIBGCT_SETTER( name )
     subresult_type(
+      const std::shared_ptr< graph_type > &g,
       const graph_type::vertex_descriptor &v,
       const shader_graph_vertex_command &ci,
       const std::string &n
-    ) : vertex_id( v ), command( ci ), name( n ) {}
+    ) : graph( g ), vertex_id( v ), command( ci ), name( n ) {}
     subresult_type(
       const image_pool::image_descriptor &im
     ) : command( im ) {}
+    std::string get_node_name() const;
+    std::shared_ptr< graph_type > graph;
     graph_type::vertex_descriptor vertex_id;
     shader_graph_vertex_command command;
     std::string name;
@@ -74,6 +78,7 @@ public:
       const shader_graph_vertex_command &ci
     ) : graph( g ), vertex_id( id ), command( ci ) {}
     subresult_type operator[]( const std::string name ) const;
+    std::string get_node_name() const;
     operator subresult_type() const;
   private:
     std::shared_ptr< graph_type > graph;
@@ -91,6 +96,9 @@ public:
     }
     subresult_type operator[]( const std::string name ) const;
     operator subresult_type() const;
+    const std::unordered_map< std::string, subresult_type > &get() const {
+      return input;
+    }
   private:
     std::unordered_map< std::string, subresult_type > input;
   };
@@ -104,9 +112,13 @@ public:
     const std::unordered_map< std::string, subresult_type > &input
   );
   result_type operator()(
+    const combined_result_type &input
+  );
+  result_type operator()(
     const subresult_type &input
   );
   result_type operator()();
+  std::string get_node_name() const;
 private:
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
   std::shared_ptr< graph_type > graph;
@@ -115,21 +127,55 @@ private:
   bool called = false;
 };
 
+
+struct shader_graph_image_binding {
+  shader_graph_image_binding() : used_by( new std::vector< std::pair< shader_graph_graph_type::vertex_descriptor, std::string > >() ) {}
+  LIBGCT_SETTER( allocate_info )
+  LIBGCT_SETTER( view )
+  LIBGCT_SETTER( used_by )
+  LIBGCT_SETTER( shareable )
+  shader_graph_image_binding &add_used_by(
+    const shader_graph_graph_type::vertex_descriptor &v,
+    const std::string &n
+  ) {
+    used_by->emplace_back( v, n );
+    return *this;
+  }
+  std::shared_ptr< image_allocate_info > allocate_info;
+  image_pool::image_descriptor view;
+  std::shared_ptr< std::vector< std::pair< shader_graph_graph_type::vertex_descriptor, std::string > > > used_by;
+  bool shareable = true;
+};
+
 class compiled_shader_graph {
+private:
+  using image_binding = shader_graph_image_binding;
 public:
+  using graph_type = shader_graph_graph_type;
   compiled_shader_graph(
     const std::shared_ptr< scene_graph::scene_graph_resource > &r,
+    const std::shared_ptr< graph_type > &g,
+    std::vector< image_binding > &&b,
     shader_graph_command_list &&l
-  ) : resource( r ), list( std::move( l ) ) {}
+  ) : resource( r ), graph( g ), list( l ), binding( std::move( b ) ) {}
   void operator()(
     command_buffer_recorder_t &rec
   ) const;
   const shader_graph_command_list &get_list() const {
     return list;
   }
+  const std::vector< image_binding > &get_binding() const {
+    return binding;
+  }
+  const graph_type &get_graph() const {
+    return *graph;
+  }
+  std::shared_ptr< image_view_t > get_view( const shader_graph_vertex::subresult_type & ) const;
 private:
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
+  std::shared_ptr< graph_type > graph;
   shader_graph_command_list list;
+  std::vector< image_binding > binding;
 };
 
 void to_json( nlohmann::json &dest, const compiled_shader_graph& );
@@ -139,24 +185,7 @@ class shader_graph_builder {
 public:
   using graph_type = shader_graph_graph_type;
 private:
-  struct image_binding {
-    image_binding() : used_by( new std::vector< std::pair< graph_type::vertex_descriptor, std::string > >() ) {}
-    LIBGCT_SETTER( allocate_info )
-    LIBGCT_SETTER( view )
-    LIBGCT_SETTER( used_by )
-    LIBGCT_SETTER( shareable )
-    image_binding &add_used_by(
-      const graph_type::vertex_descriptor &v,
-      const std::string &n
-    ) {
-      used_by->emplace_back( v, n );
-      return *this;
-    }
-    std::shared_ptr< image_allocate_info > allocate_info;
-    image_pool::image_descriptor view;
-    std::shared_ptr< std::vector< std::pair< graph_type::vertex_descriptor, std::string > > > used_by;
-    bool shareable = true;
-  };
+  using image_binding = shader_graph_image_binding;
   struct image_state {
     image_state(
       const image_binding &b
@@ -203,10 +232,12 @@ public:
     const std::shared_ptr< compute > &e,
     const image_io_plan &p
   );
+  void output( const shader_graph_vertex::subresult_type & );
   compiled_shader_graph operator()() {
     auto list = build_command_list();
+    const auto compiled = compiled_shader_graph( resource, graph, std::move( binding ), std::move( list ) );
     reset();
-    return compiled_shader_graph( resource, std::move( list ) );
+    return compiled;
   }
 private:
   std::vector< std::pair< graph_type::vertex_descriptor, std::string > > get_consumer_of(
@@ -245,7 +276,7 @@ private:
     const std::string &name,
     image_to_texture_map &texture
   );
-  std::pair< bool, unsigned int > is_ready_to_execulte(
+  std::pair< bool, unsigned int > is_ready_to_execute(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
     const graph_type::vertex_descriptor &v,
     const image_to_texture_map &texture

@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
+#include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 #include <gct/exception.hpp>
 #include <gct/setter.hpp>
@@ -31,7 +32,7 @@ struct image_io_plan {
   LIBGCT_SETTER( input )
   LIBGCT_SETTER( output )
   LIBGCT_SETTER( inout )
-  LIBGCT_SETTER( dim )
+  LIBGCT_SETTER( node_name )
   image_io_plan &add_input(
     const std::string &name
   ) {
@@ -112,6 +113,7 @@ struct image_io_plan {
                 0.0f, 0.0f, 0.0f, 1.0f
               )
             )
+            .set_preserve_layer_count( true )
         )
     );
   }
@@ -135,6 +137,7 @@ struct image_io_plan {
                 0.0f, 0.0f, 0.0f, 1.0f
               )
             )
+            .set_preserve_layer_count( true )
         )
         .set_allocate_info(
           image_allocate_info()
@@ -148,6 +151,77 @@ struct image_io_plan {
         )
     );
   }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    const glm::vec4 &scale
+  ) {
+    return add_output(
+      name,
+      dynamic_size_image_allocate_info()
+        .set_dim(
+          image_io_dimension()
+            .set_relative_to( relative_to )
+            .set_size_transform(
+              glm::mat4(
+                scale.x, 0.0f, 0.0f, 0.0f,
+                0.0f, scale.y, 0.0f, 0.0f,
+                0.0f, 0.0f, scale.z, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+              )
+            )
+            .set_layer_transform(
+              glm::mat2(
+                scale.w, 0.f,
+                0.f, 1.f
+              )
+            )
+            .set_preserve_layer_count( true )
+        )
+    );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    glm::vec4 scale,
+    vk::Format format
+  ) {
+    return add_output(
+      name,
+      dynamic_size_image_allocate_info()
+        .set_dim(
+          image_io_dimension()
+            .set_relative_to( relative_to )
+            .set_size_transform(
+              glm::mat4(
+                scale.x, 0.0f, 0.0f, 0.0f,
+                0.0f, scale.y, 0.0f, 0.0f,
+                0.0f, 0.0f, scale.z, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+              )
+            )
+            .set_layer_transform(
+              glm::mat2(
+                scale.w, 0.f,
+                0.f, 1.f
+              )
+            )
+            .set_preserve_layer_count( true )
+        )
+        .set_allocate_info(
+          image_allocate_info()
+            .set_create_info(
+              image_create_info_t()
+                .set_basic(
+                  vk::ImageCreateInfo()
+                    .setFormat( format )
+                )
+            )
+        )
+    );
+  }
+
+
   image_io_plan &add_output(
     const std::string &name,
     const image_pool::image_descriptor &desc
@@ -166,6 +240,12 @@ struct image_io_plan {
     const sampler_pool::sampler_descriptor &s
   ) {
     sampled.insert( std::make_pair( name, s ) );
+    return *this;
+  }
+  image_io_plan &set_dim(
+    const image_io_dimension &d
+  ) {
+    dim = d;
     return *this;
   }
   image_io_plan &set_dim(
@@ -195,10 +275,11 @@ struct image_io_plan {
           glm::mat4(
             scale, 0.0f, 0.0f, 0.0f,
             0.0f, scale, 0.0f, 0.0f,
-            0.0f, 0.0f,  1.0f, 0.0f,
+            0.0f, 0.0f,  scale, 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
           )
         )
+        .set_preserve_layer_count( true )
     );
   }
   image_io_plan &set_dim(
@@ -212,8 +293,57 @@ struct image_io_plan {
           glm::mat4(
             scale, 0.0f, 0.0f, 0.0f,
             0.0f, scale, 0.0f, 0.0f,
-            0.0f, 0.0f,  1.0f, 0.0f,
+            0.0f, 0.0f,  scale, 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+        .set_preserve_layer_count( true )
+    );
+  }
+  image_io_plan &set_dim(
+    const std::string &name,
+    const glm::vec4 &scale
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+        .set_size_transform(
+          glm::mat4(
+            scale.x, 0.0f, 0.0f, 0.0f,
+            0.0f, scale.y, 0.0f, 0.0f,
+            0.0f, 0.0f,  scale.z, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+        .set_preserve_layer_count( true )
+        .set_layer_transform(
+          glm::mat2(
+            scale.w, 0.0f,
+            0.0f, 1.0f
+          )
+        )
+    );
+  }
+  image_io_plan &set_dim(
+    const char *name,
+    const glm::vec4 &scale
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_relative_to( name )
+        .set_size_transform(
+          glm::mat4(
+            scale.x, 0.0f, 0.0f, 0.0f,
+            0.0f, scale.y, 0.0f, 0.0f,
+            0.0f, 0.0f,  scale.z, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+        .set_preserve_layer_count( true )
+        .set_layer_transform(
+          glm::mat2(
+            scale.w, 0.0f,
+            0.0f, 1.0f
           )
         )
     );
@@ -223,6 +353,7 @@ struct image_io_plan {
   std::unordered_set< std::string > inout;
   std::unordered_map< std::string, sampler_pool::sampler_descriptor > sampled;
   image_io_dimension dim;
+  std::string node_name;
 };
 
 void to_json( nlohmann::json&, const image_io_plan& );
@@ -269,6 +400,8 @@ struct image_io_create_info {
   [[nodiscard]] const image_io_plan &get_plan() const {
     return plan;
   }
+  void set_shareable( const std::string &name, bool s );
+  bool is_shareable( const std::string &name ) const;
   [[nodiscard]] const std::unordered_map< std::string, image_pool::image_descriptor > get_input() const {
     return input;
   }
@@ -339,6 +472,7 @@ private:
   std::unordered_map< std::string, texture_pool::texture_descriptor > sampled;
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
   std::vector< std::uint8_t > push_constant;
+  std::unordered_map< std::string, bool > shareable;
 };
 
 void to_json( nlohmann::json&, const image_io_create_info& );
