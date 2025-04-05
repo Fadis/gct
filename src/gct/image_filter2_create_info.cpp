@@ -16,39 +16,7 @@ image_filter2_create_info &image_filter2_create_info::set_scene_graph(
    const std::shared_ptr< scene_graph::scene_graph_resource > &r
 ) {
   scene_graph = r;
-  {
-    const auto iter = r->descriptor_set_layout.find( r->image_descriptor_set_id );
-    if( iter != r->descriptor_set_layout.end() && r->image_descriptor_set ) {
-      descriptor_set_layout[ r->image_descriptor_set_id ] = iter->second;
-      external_descriptor_set[ r->image_descriptor_set_id ] = r->image_descriptor_set;
-    }
-  }
-  {
-    const auto iter = r->descriptor_set_layout.find( r->texture_descriptor_set_id );
-    if( iter != r->descriptor_set_layout.end() && r->texture_descriptor_set ) {
-      descriptor_set_layout[ r->texture_descriptor_set_id ] = iter->second;
-      external_descriptor_set[ r->texture_descriptor_set_id ] = r->texture_descriptor_set;
-    }
-  }
-  if( r->matrix ) {
-    add_resource( { "matrix_pool", r->matrix->get_buffer() } );
-  }
-  if( r->aabb ) {
-    add_resource( { "aabb_pool", r->aabb->get_buffer() } );
-  }
-  if( r->primitive_resource_index ) {
-    add_resource( { "primitive_resource_index", r->primitive_resource_index->get_buffer() } );
-  }
-  if( r->instance_resource_index ) {
-    add_resource( { "instance_resource_index", r->instance_resource_index->get_buffer() } );
-  }
-  if( r->visibility ) {
-    add_resource( { "visibility", r->visibility->get_buffer() } );
-  }
-  if( r->light ) {
-    add_resource( { "light_pool", r->light->get_buffer() } );
-  }
-  ignore_unused_descriptor = true;
+  LIBGCT_SET_SCENE_GRAPH_IMPL( r )
   return *this;
 }
 

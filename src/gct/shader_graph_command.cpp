@@ -4,29 +4,29 @@
 #include <gct/image_blit_create_info.hpp>
 #include <gct/shader_graph_command.hpp>
 
-namespace gct {
+namespace gct::shader_graph {
 
-void to_json( nlohmann::json &dest, const shader_graph_command &src ) {
+void to_json( nlohmann::json &dest, const command &src ) {
   dest = nlohmann::json::object();
-  if( shader_graph_command_id( src.index() ) == shader_graph_command_id::call ) {
+  if( command_id( src.index() ) == command_id::call ) {
     dest[ "type" ] = "call";
     dest[ "value" ] = *std::get< std::shared_ptr< image_io > >( src );
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::barrier ) {
+  else if( command_id( src.index() ) == command_id::barrier ) {
     dest[ "type" ] = "barrier";
-    dest[ "value" ] = std::get< shader_graph_barrier >( src );
+    dest[ "value" ] = std::get< barrier >( src );
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::fill ) {
+  else if( command_id( src.index() ) == command_id::fill ) {
     dest[ "type" ] = "fill";
     dest[ "value" ] = *std::get< std::shared_ptr< image_fill_create_info > >( src );
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::blit ) {
+  else if( command_id( src.index() ) == command_id::blit ) {
     dest[ "type" ] = "blit";
     dest[ "value" ] = *std::get< std::shared_ptr< image_blit_create_info > >( src );
   }
 }
 
-void to_json( nlohmann::json &dest, const shader_graph_command_list &src ) {
+void to_json( nlohmann::json &dest, const command_list &src ) {
   dest = nlohmann::json::array();
   for( const auto &v: src ) {
     dest.push_back( v );
@@ -34,9 +34,9 @@ void to_json( nlohmann::json &dest, const shader_graph_command_list &src ) {
 }
 
 
-std::string to_string( const shader_graph_command &src ) {
+std::string to_string( const command &src ) {
   std::string dest;
-  if( shader_graph_command_id( src.index() ) == shader_graph_command_id::call ) {
+  if( command_id( src.index() ) == command_id::call ) {
     const auto &io = *std::get< std::shared_ptr< image_io > >( src );
     if( !io.get_props().get_plan().node_name.empty() ) {
       dest += "call:";
@@ -76,8 +76,8 @@ std::string to_string( const shader_graph_command &src ) {
     }
     dest += " );\n";
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::barrier ) {
-    const auto &b = std::get< shader_graph_barrier >( src );
+  else if( command_id( src.index() ) == command_id::barrier ) {
+    const auto &b = std::get< barrier >( src );
     dest += "barrier< " + nlohmann::json( b.state.config ).dump() + " >( ";
     bool initial = true;
     for( const auto &v: b.view ) {
@@ -87,7 +87,7 @@ std::string to_string( const shader_graph_command &src ) {
     }
     dest += " );\n";
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::fill ) {
+  else if( command_id( src.index() ) == command_id::fill ) {
     const auto &fill = *std::get< std::shared_ptr< image_fill_create_info > >( src );
     if( !fill.node_name.empty() ) {
       dest += "fill:";
@@ -108,7 +108,7 @@ std::string to_string( const shader_graph_command &src ) {
     dest += std::to_string( *std::get< image_pool::image_descriptor >( fill.output ) );
     dest += " );\n";
   }
-  else if( shader_graph_command_id( src.index() ) == shader_graph_command_id::blit ) {
+  else if( command_id( src.index() ) == command_id::blit ) {
     const auto &blit = *std::get< std::shared_ptr< image_blit_create_info > >( src );
     if( !blit.node_name.empty() ) {
       dest += "blit:";
@@ -129,7 +129,7 @@ std::string to_string( const shader_graph_command &src ) {
   return dest;
 }
 
-std::string to_string( const shader_graph_command_list &src ) {
+std::string to_string( const command_list &src ) {
   std::string dest;
   for( const auto &v: src ) {
     dest += to_string( v );

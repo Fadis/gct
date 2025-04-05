@@ -10,6 +10,7 @@
 #include <gct/compute_pipeline.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/skyview.hpp>
+#include <gct/color_space.hpp>
 
 namespace gct {
 
@@ -92,12 +93,13 @@ void skyview::operator()(
   rec.set_image_layout( transmittance, vk::ImageLayout::eGeneral );
   rec.set_image_layout( multiscat, vk::ImageLayout::eGeneral );
   rec.set_image_layout( output, vk::ImageLayout::eGeneral );
+  const auto rgb_to_xyz = get_rgb_to_xyz( param.space );
   {
     auto params = transmittance_pc()
-      .set_sigma_ma( param.sigma_ma )
-      .set_sigma_oa( param.sigma_oa )
-      .set_sigma_rs( param.sigma_rs )
-      .set_sigma_ms( param.sigma_ms )
+      .set_sigma_ma( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ma : param.sigma_ma )
+      .set_sigma_oa( param.convert_to_xyz ? rgb_to_xyz * param.sigma_oa : param.sigma_oa )
+      .set_sigma_rs( param.convert_to_xyz ? rgb_to_xyz * param.sigma_rs : param.sigma_rs )
+      .set_sigma_ms( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ms : param.sigma_ms )
       .set_ground_radius( param.ground_radius )
       .set_top_radius( param.top_radius );
     rec->pushConstants(
@@ -115,10 +117,10 @@ void skyview::operator()(
   );
   {
     auto params = multiscat_pc()
-      .set_sigma_ma( param.sigma_ma )
-      .set_sigma_oa( param.sigma_oa )
-      .set_sigma_rs( param.sigma_rs )
-      .set_sigma_ms( param.sigma_ms )
+      .set_sigma_ma( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ma : param.sigma_ma )
+      .set_sigma_oa( param.convert_to_xyz ? rgb_to_xyz * param.sigma_oa : param.sigma_oa )
+      .set_sigma_rs( param.convert_to_xyz ? rgb_to_xyz * param.sigma_rs : param.sigma_rs )
+      .set_sigma_ms( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ms : param.sigma_ms )
       .set_ground_radius( param.ground_radius )
       .set_top_radius( param.top_radius )
       .set_g( param.g )
@@ -138,10 +140,10 @@ void skyview::operator()(
   );
   {
     auto params = skyview_pc()
-      .set_sigma_ma( param.sigma_ma )
-      .set_sigma_oa( param.sigma_oa )
-      .set_sigma_rs( param.sigma_rs )
-      .set_sigma_ms( param.sigma_ms )
+      .set_sigma_ma( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ma : param.sigma_ma )
+      .set_sigma_oa( param.convert_to_xyz ? rgb_to_xyz * param.sigma_oa : param.sigma_oa )
+      .set_sigma_rs( param.convert_to_xyz ? rgb_to_xyz * param.sigma_rs : param.sigma_rs )
+      .set_sigma_ms( param.convert_to_xyz ? rgb_to_xyz * param.sigma_ms : param.sigma_ms )
       .set_light_pos( light_pos )
       .set_ground_radius( param.ground_radius )
       .set_top_radius( param.top_radius )

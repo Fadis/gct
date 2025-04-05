@@ -9,7 +9,7 @@ layout (binding = 2, rgba32f) readonly uniform image2DArray diffuse_image;
 layout (binding = 3, rgba32f) readonly uniform image2DArray specular_image;
 layout (binding = 4, rgba32f) writeonly uniform image2DArray dest_image;
 layout (binding = 5, r32f) writeonly uniform image2DArray coc_image;
-layout (binding = 10, rgba32f) readonly uniform image2D scattering;
+layout (binding = 10, rgba32f) readonly uniform image2DArray scattering;
 
 #include "push_constants.h"
 
@@ -47,8 +47,6 @@ void main()  {
   
   vec4 layer_index = imageLoad( gbuffer, ivec3( screen_pos, 32 ) );
   
-  const vec4 scat = imageLoad( scattering, screen_pos ).rgba;
-
   const float l0_depth =
     ( layer_index.x != 0 ) ?
     decode_depth(
@@ -147,15 +145,36 @@ void main()  {
     imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
     vec3( 0.0, 0.0, 0.0 );
   
+  const vec4 l0_scat =
+    ( layer_index.x != 0 ) ?
+    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l1_scat =
+    ( layer_index.y != 0 ) ?
+    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l2_scat =
+    ( layer_index.z != 0 ) ?
+    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
+  const vec4 l3_scat =
+    ( layer_index.w != 0 ) ?
+    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ) :
+    vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l0_total = 
-    vec4( ( l0_ambient + ( l0_diffuse.rgb + l0_specular ) ) * scat.w + scat.rgb, l0_albedo.a );
+    vec4( ( l0_ambient + ( l0_diffuse.rgb + l0_specular ) ) * l0_scat.w + l0_scat.rgb, l0_albedo.a );
   const vec4 l1_total = 
-    vec4( ( l1_ambient + ( l1_diffuse.rgb + l1_specular ) ) * scat.w + scat.rgb, l1_albedo.a );
+    vec4( ( l1_ambient + ( l1_diffuse.rgb + l1_specular ) ) * l1_scat.w + l1_scat.rgb, l1_albedo.a );
   const vec4 l2_total = 
-    vec4( ( l2_ambient + ( l2_diffuse.rgb + l2_specular ) ) * scat.w + scat.rgb, l2_albedo.a );
+    vec4( ( l2_ambient + ( l2_diffuse.rgb + l2_specular ) ) * l2_scat.w + l2_scat.rgb, l2_albedo.a );
   const vec4 l3_total = 
-    vec4( ( l3_ambient + ( l3_diffuse.rgb + l3_specular ) ) * scat.w + scat.rgb, l3_albedo.a );
+    vec4( ( l3_ambient + ( l3_diffuse.rgb + l3_specular ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
 
+/*  const vec4 l0_total = vec4( l0_scat.rgb, l0_albedo.a );
+  const vec4 l1_total = vec4( l1_scat.rgb, l1_albedo.a );
+  const vec4 l2_total = vec4( l2_scat.rgb, l2_albedo.a );
+  const vec4 l3_total = vec4( l3_scat.rgb, l3_albedo.a );
+*/
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   near_total =
     vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) : near_total.a );

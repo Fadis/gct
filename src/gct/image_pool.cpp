@@ -410,6 +410,32 @@ image_pool::views image_pool::state_type::allocate(
     .set_linear( linear_desc );
 }
 
+image_pool::image_descriptor image_pool::state_type::allocate(
+  const std::shared_ptr< image_view_t > &view
+) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "image_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  auto &device = get_device( *props.allocator_set.allocator );
+  const auto linear_index = allocate_index();
+  image_descriptor linear_desc;
+  image_state[ linear_index ] =
+    image_state_type()
+      .set_valid( true )
+      .set_image( view );
+  linear_desc = image_descriptor(
+    new image_index_t( linear_index ),
+    [self=shared_from_this()]( const image_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  used_on_gpu.push_back( linear_desc );
+  return linear_desc;
+}
+
 
 void image_pool::state_type::release( image_index_t index ) {
   image_state_type removed;
@@ -707,7 +733,12 @@ image_pool::views image_pool::allocate(
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( ci );
 }
-
+image_pool::image_descriptor image_pool::allocate(
+  const std::shared_ptr< image_view_t > &view
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( view );
+}
 
 std::shared_ptr< image_view_t > image_pool::get(
   const image_descriptor &desc

@@ -113,6 +113,7 @@ public:
   [[nodiscard]] views allocate( const image_load_info& );
   [[nodiscard]] views allocate();
   [[nodiscard]] views allocate( const image_allocate_info& );
+  [[nodiscard]] image_descriptor allocate( const std::shared_ptr< image_view_t >& );
   [[nodiscard]] const image_pool_create_info &get_props() const { return state->props; }
   [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
   void dump( const image_descriptor&, const image_dump_info& );
@@ -126,6 +127,7 @@ private:
     [[nodiscard]] views allocate( const image_load_info& );
     [[nodiscard]] views allocate();
     [[nodiscard]] views allocate( const image_allocate_info& );
+    [[nodiscard]] image_descriptor allocate( const std::shared_ptr< image_view_t >& );
     [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
     void dump( const image_descriptor&, const image_dump_info& );
     void release( image_index_t );

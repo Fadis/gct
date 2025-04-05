@@ -14,29 +14,33 @@ class image_io;
 class image_fill_create_info;
 class image_blit_create_info;
 
-enum class shader_graph_command_id {
+namespace shader_graph {
+
+enum class command_id {
   call = 0,
   barrier = 1,
   fill = 2,
   blit = 3
 };
 
-using shader_graph_command = std::variant<
+using command = std::variant<
   std::shared_ptr< image_io >,
-  shader_graph_barrier,
+  barrier,
   std::shared_ptr< image_fill_create_info >,
   std::shared_ptr< image_blit_create_info >
 >;
 
-void to_json( nlohmann::json &dest, const shader_graph_command& );
-std::string to_string( const shader_graph_command& );
+void to_json( nlohmann::json &dest, const command& );
+std::string to_string( const command& );
 
-using shader_graph_command_list = std::vector<
-  shader_graph_command
+using command_list = std::vector<
+  command
 >;
 
-void to_json( nlohmann::json &dest, const shader_graph_command_list& );
-std::string to_string( const shader_graph_command_list& );
+void to_json( nlohmann::json &dest, const command_list& );
+std::string to_string( const command_list& );
+
+}
 
 }
 

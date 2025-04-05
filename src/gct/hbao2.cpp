@@ -53,9 +53,9 @@ hbao2::hbao2(
       .set_scene_graph( props.scene_graph )
   );
 }
-shader_graph_vertex::subresult_type hbao2::operator()(
-  shader_graph_builder &b,
-  const shader_graph_vertex::subresult_type &input
+shader_graph::vertex::combined_result_type hbao2::operator()(
+  shader_graph::builder &b,
+  const shader_graph::vertex::subresult_type &input
 ) const {
   std::string node_prefix;
   if( props.node_name.empty() ) {
@@ -76,8 +76,8 @@ shader_graph_vertex::subresult_type hbao2::operator()(
       p0,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, 1.f )
-        .set_dim( src_name )
+        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
         .set_node_name( node_prefix + "0" )
     )
   )( input );
@@ -86,8 +86,8 @@ shader_graph_vertex::subresult_type hbao2::operator()(
       p45,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, 1.f )
-        .set_dim( src_name )
+        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
         .set_node_name( node_prefix + "45" )
     )
   )( input );
@@ -96,8 +96,8 @@ shader_graph_vertex::subresult_type hbao2::operator()(
       p90,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, 1.f )
-        .set_dim( src_name )
+        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
         .set_node_name( node_prefix + "90" )
     )
   )( input );
@@ -106,8 +106,8 @@ shader_graph_vertex::subresult_type hbao2::operator()(
       p135,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, 1.f )
-        .set_dim( src_name )
+        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
         .set_node_name( node_prefix + "135" )
     )
   )( input );
@@ -129,7 +129,13 @@ shader_graph_vertex::subresult_type hbao2::operator()(
      { partial90_name, r90 },
      { partial135_name, r135 }
   } );
-  return rmix[ dest_name ]; 
+  return
+    shader_graph::vertex::combined_result_type()
+      .add( partial0_name, r0 )
+      .add( partial45_name, r45 )
+      .add( partial90_name, r90 )
+      .add( partial135_name, r135 )
+      .add( dest_name, rmix );
 }
 
 }

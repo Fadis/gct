@@ -47,6 +47,8 @@ private:
   using request_range = index_range;
 public:
   sampler_pool( const sampler_pool_create_info & );
+  [[nodiscard]] sampler_descriptor allocate_nearest();
+  [[nodiscard]] sampler_descriptor allocate_linear();
   [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
   [[nodiscard]] const sampler_pool_create_info &get_props() const { return state->props; }
   [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
@@ -57,6 +59,8 @@ private:
     state_type( const sampler_pool_create_info & );
     [[nodiscard]] sampler_index_t allocate_index();
     void release_index( sampler_index_t );
+    [[nodiscard]] sampler_descriptor allocate_nearest();
+    [[nodiscard]] sampler_descriptor allocate_linear();
     [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
     [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
     void release( sampler_index_t );
@@ -68,6 +72,8 @@ private:
     std::vector< sampler_descriptor > used_on_gpu;
     bool execution_pending = false;
     std::mutex guard;
+    sampler_descriptor standard_nearest_sampler;
+    sampler_descriptor standard_linear_sampler;
   };
   std::shared_ptr< state_type > state;
 };

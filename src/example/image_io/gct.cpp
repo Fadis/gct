@@ -268,7 +268,7 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
 
-  gct::shader_graph_builder opt( sg->get_resource() );
+  gct::shader_graph::builder opt( sg->get_resource() );
   auto s0r = opt.call(
     shrink,
     gct::image_io_plan()

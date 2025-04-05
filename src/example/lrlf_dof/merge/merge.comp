@@ -37,7 +37,7 @@ void main()  {
     ( latitude_longitude.y + pi ) / ( 2.0 * pi ),
     1.0 - skyview_latitude_to_texcoord( latitude_longitude.x )
   );
-  vec3 total = bt709_to_xyz * texture( skyview, skyview_texcoord ).rgb;
+  vec3 total = /*bt709_to_xyz **/ texture( skyview, skyview_texcoord ).rgb;
   //vec3 total = vec3( 0.0, 0.0, 0.0 );
 
   vec4 far = max(

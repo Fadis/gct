@@ -92,6 +92,63 @@ struct scene_graph_resource {
 
 void to_json( nlohmann::json&, const scene_graph_resource& );
 
+#define LIBGCT_SET_SCENE_GRAPH_IMPL( r ) \
+  if( ( r ) ) { \
+    external_pipeline_layout = ( r ) ->pipeline_layout; \
+    { \
+      const auto iter = ( r ) ->descriptor_set_layout.find( ( r ) ->image_descriptor_set_id ); \
+      if( iter != ( r ) ->descriptor_set_layout.end() && ( r ) ->image_descriptor_set ) { \
+        descriptor_set_layout[ ( r ) ->image_descriptor_set_id ] = iter->second; \
+        external_descriptor_set[ ( r ) ->image_descriptor_set_id ] = ( r ) ->image_descriptor_set; \
+      } \
+    } \
+    { \
+      const auto iter = ( r ) ->descriptor_set_layout.find( ( r ) ->texture_descriptor_set_id ); \
+      if( iter != ( r ) ->descriptor_set_layout.end() && ( r ) ->texture_descriptor_set ) { \
+        descriptor_set_layout[ ( r ) ->texture_descriptor_set_id ] = iter->second; \
+        external_descriptor_set[ ( r ) ->texture_descriptor_set_id ] = ( r ) ->texture_descriptor_set; \
+      } \
+    } \
+    if( ( r ) ->matrix ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->matrix->get_props().allocator_set ); \
+      } \
+      add_resource( { "matrix_pool", ( r ) ->matrix->get_buffer() } ); \
+    } \
+    if( ( r ) ->aabb ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->aabb->get_props().allocator_set ); \
+      } \
+      add_resource( { "aabb_pool", ( r ) ->aabb->get_buffer() } ); \
+    } \
+    if( ( r ) ->primitive_resource_index ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->primitive_resource_index->get_props().allocator_set ); \
+      } \
+      add_resource( { "primitive_resource_index", ( r ) ->primitive_resource_index->get_buffer() } ); \
+    } \
+    if( ( r ) ->instance_resource_index ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->instance_resource_index->get_props().allocator_set ); \
+      } \
+      add_resource( { "instance_resource_index", ( r ) ->instance_resource_index->get_buffer() } ); \
+    } \
+    if( ( r ) ->visibility ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->visibility->get_props().allocator_set ); \
+      } \
+      add_resource( { "visibility", ( r ) ->visibility->get_buffer() } ); \
+    } \
+    if( ( r ) ->light ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->light->get_props().allocator_set ); \
+      } \
+      add_resource( { "light_pool", ( r ) ->light->get_buffer() } ); \
+    } \
+    ignore_unused_descriptor = true; \
+  }
+
+
 }
 
 #endif

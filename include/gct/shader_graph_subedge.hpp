@@ -5,17 +5,17 @@
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 
-namespace gct {
-struct shader_graph_subedge {
+namespace gct::shader_graph {
+struct subedge {
   LIBGCT_SETTER( from )
   LIBGCT_SETTER( to )
   std::string from;
   std::string to;
 };
 
-using shader_graph_subedge_list = std::vector< shader_graph_subedge >;
+using subedge_list = std::vector< subedge >;
 
-void to_json( nlohmann::json &dest, const shader_graph_subedge &src );
+void to_json( nlohmann::json &dest, const subedge &src );
 
 }
 

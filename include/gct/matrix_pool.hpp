@@ -80,6 +80,7 @@ private:
   using request_range = index_range;
 public:
   matrix_pool( const matrix_pool_create_info & );
+  [[nodiscard]] matrix_descriptor allocate(); // identity
   [[nodiscard]] matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
   [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
   [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );

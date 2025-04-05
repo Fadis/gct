@@ -731,6 +731,10 @@ matrix_pool::matrix_pool( const matrix_pool_create_info &ci ) :
   state( new state_type( ci ) ) {
 }
 
+matrix_pool::matrix_descriptor matrix_pool::allocate() {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( glm::mat4( 1 ) );
+}
 matrix_pool::matrix_descriptor matrix_pool::allocate( const glm::mat4 &value ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( value );

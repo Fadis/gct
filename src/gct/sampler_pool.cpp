@@ -30,6 +30,24 @@ void sampler_pool::state_type::release_index( sampler_pool::sampler_index_t inde
   sampler_state[ index ].valid = false;
   index_allocator.release( index );
 }
+sampler_pool::sampler_descriptor sampler_pool::state_type::allocate_nearest(
+) {
+  if( !standard_nearest_sampler ) {
+    standard_nearest_sampler = allocate(
+      get_basic_nearest_sampler_create_info()
+    );
+  }
+  return standard_nearest_sampler;
+}
+sampler_pool::sampler_descriptor sampler_pool::state_type::allocate_linear(
+) {
+  if( !standard_linear_sampler ) {
+    standard_linear_sampler = allocate(
+      get_basic_linear_sampler_create_info()
+    );
+  }
+  return standard_linear_sampler;
+}
 
 sampler_pool::sampler_descriptor sampler_pool::state_type::allocate(
   const sampler_create_info_t &ci
@@ -146,6 +164,18 @@ sampler_pool::state_type::state_type( const sampler_pool_create_info &ci ) :
 
 sampler_pool::sampler_pool( const sampler_pool_create_info &ci ) :
   state( new state_type( ci ) ) {
+}
+
+sampler_pool::sampler_descriptor sampler_pool::allocate_nearest(
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate_nearest();
+}
+
+sampler_pool::sampler_descriptor sampler_pool::allocate_linear(
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate_linear();
 }
 
 sampler_pool::sampler_descriptor sampler_pool::allocate(

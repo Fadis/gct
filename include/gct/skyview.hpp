@@ -5,6 +5,7 @@
 #include <glm/vec4.hpp>
 #include <gct/setter.hpp>
 #include <gct/skyview_create_info.hpp>
+#include <gct/color_space.hpp>
 
 namespace gct {
 
@@ -19,6 +20,8 @@ struct skyview_parameter {
   LIBGCT_SETTER( light_energy )
   LIBGCT_SETTER( g )
   LIBGCT_SETTER( sun_angle )
+  LIBGCT_SETTER( space )
+  LIBGCT_SETTER( convert_to_xyz )
   glm::vec4 sigma_ma = glm::vec4( 4.40e-6, 4.40e-6, 4.40e-6, 0.0 );
   glm::vec4 sigma_oa = glm::vec4( 0.650e-6, 1.881e-6, 0.085e-6, 0.0 );
   glm::vec4 sigma_rs = glm::vec4( 5.802e-6, 13.558e-6, 33.1e-6, 0.0 );
@@ -29,6 +32,8 @@ struct skyview_parameter {
   float light_energy = 20.f;
   float g = 0.8f;
   float sun_angle = M_PI/3.0;
+  color_space space = color_space::bt709;
+  bool convert_to_xyz = false;
 };
 
 class image_view_t;

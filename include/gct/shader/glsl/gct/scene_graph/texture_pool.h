@@ -9,7 +9,7 @@
 
 layout(set = GCT_SHADER_SCENE_GRAPH_TEXTURE_SET_ID, binding = 0) uniform sampler1D texture_pool_1d[];
 layout(set = GCT_SHADER_SCENE_GRAPH_TEXTURE_SET_ID, binding = 0) uniform sampler2D texture_pool[];
-layout(set = GCT_SHADER_SCENE_GRAPH_TEXTURE_SET_ID, binding = 0) uniform sampler2D texture_pool_3d[];
+layout(set = GCT_SHADER_SCENE_GRAPH_TEXTURE_SET_ID, binding = 0) uniform sampler3D texture_pool_3d[];
 layout(set = GCT_SHADER_SCENE_GRAPH_TEXTURE_SET_ID, binding = 0) uniform samplerCube texture_pool_cube[];
 
 #endif

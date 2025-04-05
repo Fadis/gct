@@ -147,7 +147,7 @@ void image_io_create_info::update_size(
 ) {
   if( plan.dim.relative_to && name == *plan.dim.relative_to ) {
     if( !resource->image ) {
-      throw exception::invalid_argument( "image_io_create_info::add_input : Broken scene graph resource", __FILE__, __LINE__ );
+      throw exception::invalid_argument( "image_io_create_info::update_size : Broken scene graph resource", __FILE__, __LINE__ );
     }
     const auto view = resource->image->get( desc );
     const auto &basic = view->get_factory()->get_props().get_basic();
@@ -181,7 +181,7 @@ void image_io_create_info::update_size(
 ) {
   if( plan.dim.relative_to && name == *plan.dim.relative_to ) {
     if( !resource->image ) {
-      throw exception::invalid_argument( "image_io_create_info::add_input : Broken scene graph resource", __FILE__, __LINE__ );
+      throw exception::invalid_argument( "image_io_create_info::update_size : Broken scene graph resource", __FILE__, __LINE__ );
     }
     const auto t = resource->texture->get( desc );
     const auto &basic = t.first->get_factory()->get_props().get_basic();

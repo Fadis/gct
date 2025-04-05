@@ -101,10 +101,10 @@ lrlf_dof::lrlf_dof(
       .set_resources( props.resources )
   );
 }
-shader_graph_vertex::subresult_type lrlf_dof::operator()(
-  shader_graph_builder &b,
-  const shader_graph_vertex::subresult_type &input,
-  const shader_graph_vertex::subresult_type &coc
+shader_graph::vertex::subresult_type lrlf_dof::operator()(
+  shader_graph::builder &b,
+  const shader_graph::vertex::subresult_type &input,
+  const shader_graph::vertex::subresult_type &coc
 ) const {
   LIBGCT_SHADER_SET_RENAME( rename, "coc", coc_name )
   LIBGCT_SHADER_SET_RENAME( rename, "src", src_name )
@@ -125,7 +125,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, input )
       .add( coc_name, coc )
   );
@@ -139,7 +139,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, input )
       .add( coc_name, coc )
   );
@@ -153,7 +153,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, input )
       .add( coc_name, coc )
   );
@@ -167,7 +167,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, input )
       .add( coc_name, coc )
   );
@@ -181,7 +181,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, input )
       .add( coc_name, coc )
   );
@@ -195,7 +195,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, t0 )
       .add( coc_name, coc )
   );
@@ -209,7 +209,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, t1 )
       .add( coc_name, coc )
   );
@@ -223,7 +223,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, t2 )
       .add( coc_name, coc )
   );
@@ -237,7 +237,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, t3 )
       .add( coc_name, coc )
   );
@@ -251,7 +251,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( src_name, t4 )
       .add( coc_name, coc )
   );
@@ -268,7 +268,7 @@ shader_graph_vertex::subresult_type lrlf_dof::operator()(
         .set_dim( src_name )
     )
   )(
-    shader_graph_vertex::combined_result_type()
+    shader_graph::vertex::combined_result_type()
       .add( partial0_name, p0 )
       .add( partial1_name, p1 )
       .add( partial2_name, p2 )

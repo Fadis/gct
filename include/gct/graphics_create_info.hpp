@@ -57,8 +57,11 @@ struct graphics_create_info {
     external_descriptor_set.insert( std::make_pair( id, v ) );
     return *this;
   }
-  graphics_create_info &set_scene_graph(
+  [[deprecated]] graphics_create_info &set_scene_graph(
      const scene_graph::scene_graph_resource &r
+  );
+  graphics_create_info &set_scene_graph(
+     const std::shared_ptr< scene_graph::scene_graph_resource > &r
   );
   graphics_create_info &clear_shader();
   allocator_set_t allocator_set;

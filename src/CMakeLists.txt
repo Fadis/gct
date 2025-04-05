@@ -283,7 +283,11 @@ add_library( gct SHARED
   gct/skyview_create_info.cpp
   gct/skyview.cpp
   gct/skyview_froxel_create_info.cpp
+  gct/skyview_froxel_param.cpp
   gct/skyview_froxel.cpp
+  gct/skyview_froxel2_create_info.cpp
+  gct/skyview_froxel2_param.cpp
+  gct/skyview_froxel2.cpp
   gct/nohc_benchmark_create_info.cpp
   gct/nohc_benchmark.cpp
   gct/occlusion_query_create_info.cpp

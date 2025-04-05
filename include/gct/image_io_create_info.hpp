@@ -97,63 +97,6 @@ struct image_io_plan {
   image_io_plan &add_output(
     const std::string &name,
     const std::string &relative_to,
-    float scale
-  ) {
-    return add_output(
-      name,
-      dynamic_size_image_allocate_info()
-        .set_dim(
-          image_io_dimension()
-            .set_relative_to( relative_to )
-            .set_size_transform(
-              glm::mat4(
-                scale, 0.0f, 0.0f, 0.0f,
-                0.0f, scale, 0.0f, 0.0f,
-                0.0f, 0.0f, scale, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f
-              )
-            )
-            .set_preserve_layer_count( true )
-        )
-    );
-  }
-  image_io_plan &add_output(
-    const std::string &name,
-    const std::string &relative_to,
-    float scale,
-    vk::Format format
-  ) {
-    return add_output(
-      name,
-      dynamic_size_image_allocate_info()
-        .set_dim(
-          image_io_dimension()
-            .set_relative_to( relative_to )
-            .set_size_transform(
-              glm::mat4(
-                scale, 0.0f, 0.0f, 0.0f,
-                0.0f, scale, 0.0f, 0.0f,
-                0.0f, 0.0f, scale, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f
-              )
-            )
-            .set_preserve_layer_count( true )
-        )
-        .set_allocate_info(
-          image_allocate_info()
-            .set_create_info(
-              image_create_info_t()
-                .set_basic(
-                  vk::ImageCreateInfo()
-                    .setFormat( format )
-                )
-            )
-        )
-    );
-  }
-  image_io_plan &add_output(
-    const std::string &name,
-    const std::string &relative_to,
     const glm::vec4 &scale
   ) {
     return add_output(
@@ -164,15 +107,15 @@ struct image_io_plan {
             .set_relative_to( relative_to )
             .set_size_transform(
               glm::mat4(
-                scale.x, 0.0f, 0.0f, 0.0f,
-                0.0f, scale.y, 0.0f, 0.0f,
-                0.0f, 0.0f, scale.z, 0.0f,
+                ( scale.x < 0 ) ? 0.0f : scale.x, 0.0f, 0.0f, ( scale.x < 0 ) ? -scale.x : 0.0f,
+                0.0f, ( scale.y < 0 ) ? 0.0f : scale.y, 0.0f, ( scale.y < 0 ) ? -scale.y : 0.0f,
+                0.0f, 0.0f, ( scale.z < 0 ) ? 0.0f : scale.z, ( scale.z < 0 ) ? -scale.z : 0.0f,
                 0.0f, 0.0f, 0.0f, 1.0f
               )
             )
             .set_layer_transform(
               glm::mat2(
-                scale.w, 0.f,
+                ( scale.w < 0 ) ? 0.0f: scale.w, ( scale.w < 0 ) ? -scale.w : 0.f,
                 0.f, 1.f
               )
             )
@@ -194,15 +137,15 @@ struct image_io_plan {
             .set_relative_to( relative_to )
             .set_size_transform(
               glm::mat4(
-                scale.x, 0.0f, 0.0f, 0.0f,
-                0.0f, scale.y, 0.0f, 0.0f,
-                0.0f, 0.0f, scale.z, 0.0f,
+                ( scale.x < 0 ) ? 0.0f : scale.x, 0.0f, 0.0f, ( scale.x < 0 ) ? -scale.x : 0.0f,
+                0.0f, ( scale.y < 0 ) ? 0.0f : scale.y, 0.0f, ( scale.y < 0 ) ? -scale.y : 0.0f,
+                0.0f, 0.0f, ( scale.z < 0 ) ? 0.0f : scale.z, ( scale.z < 0 ) ? -scale.z : 0.0f,
                 0.0f, 0.0f, 0.0f, 1.0f
               )
             )
             .set_layer_transform(
               glm::mat2(
-                scale.w, 0.f,
+                ( scale.w < 0 ) ? 0.0f: scale.w, ( scale.w < 0 ) ? -scale.w : 0.f,
                 0.f, 1.f
               )
             )
@@ -219,6 +162,36 @@ struct image_io_plan {
             )
         )
     );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    const glm::vec2 &scale
+  ) {
+    return add_output( name, relative_to, glm::vec4( scale.x, scale.x, scale.x, scale.y ) );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    glm::vec2 scale,
+    vk::Format format
+  ) {
+    return add_output( name, relative_to, glm::vec4( scale.x, scale.x, scale.x, scale.y ), format );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    float scale
+  ) {
+    return add_output( name, relative_to, glm::vec4( scale, scale, scale, 1.0f ) );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    const std::string &relative_to,
+    float scale,
+    vk::Format format
+  ) {
+    return add_output( name, relative_to, glm::vec4( scale, scale, scale, 1.0f ), format );
   }
 
 
@@ -266,87 +239,57 @@ struct image_io_plan {
   }
   image_io_plan &set_dim(
     const std::string &name,
-    float scale
+    const glm::vec4 &scale
   ) {
     return set_dim(
       gct::image_io_dimension()
         .set_relative_to( name )
         .set_size_transform(
           glm::mat4(
-            scale, 0.0f, 0.0f, 0.0f,
-            0.0f, scale, 0.0f, 0.0f,
-            0.0f, 0.0f,  scale, 0.0f,
+            ( scale.x < 0 ) ? 0.0f : scale.x, 0.0f, 0.0f, ( scale.x < 0 ) ? -scale.x : 0.0f,
+            0.0f, ( scale.y < 0 ) ? 0.0f : scale.y, 0.0f, ( scale.y < 0 ) ? -scale.y : 0.0f,
+            0.0f, 0.0f, ( scale.z < 0 ) ? 0.0f : scale.z, ( scale.z < 0 ) ? -scale.z : 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
           )
         )
         .set_preserve_layer_count( true )
+        .set_layer_transform(
+          glm::mat2(
+            ( scale.w < 0 ) ? 0.0f: scale.w, ( scale.w < 0 ) ? -scale.w : 0.f,
+            0.f, 1.f
+          )
+        )
     );
   }
   image_io_plan &set_dim(
     const char *name,
-    float scale
+    const glm::vec4 &scale
   ) {
-    return set_dim(
-      gct::image_io_dimension()
-        .set_relative_to( name )
-        .set_size_transform(
-          glm::mat4(
-            scale, 0.0f, 0.0f, 0.0f,
-            0.0f, scale, 0.0f, 0.0f,
-            0.0f, 0.0f,  scale, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-          )
-        )
-        .set_preserve_layer_count( true )
-    );
+    return set_dim( std::string( name ), scale );
   }
   image_io_plan &set_dim(
     const std::string &name,
-    const glm::vec4 &scale
+    float scale
   ) {
-    return set_dim(
-      gct::image_io_dimension()
-        .set_relative_to( name )
-        .set_size_transform(
-          glm::mat4(
-            scale.x, 0.0f, 0.0f, 0.0f,
-            0.0f, scale.y, 0.0f, 0.0f,
-            0.0f, 0.0f,  scale.z, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-          )
-        )
-        .set_preserve_layer_count( true )
-        .set_layer_transform(
-          glm::mat2(
-            scale.w, 0.0f,
-            0.0f, 1.0f
-          )
-        )
-    );
+    return set_dim( name, glm::vec4( scale, scale, scale, 1.0f ) );
   }
   image_io_plan &set_dim(
     const char *name,
-    const glm::vec4 &scale
+    float scale
   ) {
-    return set_dim(
-      gct::image_io_dimension()
-        .set_relative_to( name )
-        .set_size_transform(
-          glm::mat4(
-            scale.x, 0.0f, 0.0f, 0.0f,
-            0.0f, scale.y, 0.0f, 0.0f,
-            0.0f, 0.0f,  scale.z, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-          )
-        )
-        .set_preserve_layer_count( true )
-        .set_layer_transform(
-          glm::mat2(
-            scale.w, 0.0f,
-            0.0f, 1.0f
-          )
-        )
-    );
+    return set_dim( name, glm::vec4( scale, scale, scale, 1.0f ) );
+  }
+  image_io_plan &set_dim(
+    const std::string &name,
+    const glm::vec2 &scale
+  ) {
+    return set_dim( name, glm::vec4( scale.x, scale.x, scale.x, scale.y ) );
+  }
+  image_io_plan &set_dim(
+    const char *name,
+    const glm::vec2 &scale
+  ) {
+    return set_dim( name, glm::vec4( scale.x, scale.x, scale.x, scale.y ) );
   }
   std::unordered_set< std::string > input;
   std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > > output;
