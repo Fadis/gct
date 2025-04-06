@@ -7,14 +7,30 @@
 
 layout (binding = 1, rgba16f) readonly uniform image2DArray src_image;
 layout (binding = 2, r16f) readonly uniform image2DArray coc;
-layout (binding = 3, rgba16f) writeonly uniform image2DArray dest_image;
+layout (binding = 3, rgba16f) writeonly uniform image2DArray dest_image0;
+layout (binding = 4, rgba16f) writeonly uniform image2DArray dest_image1;
+layout (binding = 5, rgba16f) writeonly uniform image2DArray dest_image2;
+layout (binding = 6, rgba16f) writeonly uniform image2DArray dest_image3;
+layout (binding = 7, rgba16f) writeonly uniform image2DArray dest_image4;
 
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 int lrlfilter_size = 65;
 // 特異値分解で求めた分離可能なフィルタのパラメータ
-float lrlfilter[65*33] = float[](
+float lrlfilter0[65*33] = float[](
 #include "h0.inc"
+);
+float lrlfilter1[65*33] = float[](
+#include "h1.inc"
+);
+float lrlfilter2[65*33] = float[](
+#include "h2.inc"
+);
+float lrlfilter3[65*33] = float[](
+#include "h3.inc"
+);
+float lrlfilter4[65*33] = float[](
+#include "h4.inc"
 );
 
 const int kernel_size = 32;
@@ -33,12 +49,24 @@ void main() {
     cache[ hcpos ] = imageLoad( src_image, ivec3( sample_pos.zw, layer ) );
   }
   barrier();
-  vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 sum0 = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 sum1 = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 sum2 = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 sum3 = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 sum4 = vec4( 0.0, 0.0, 0.0, 0.0 );
   const uint coc_ = min( uint( max( imageLoad( coc, ivec3( screen_pos, layer ) ).r, 0.0 ) ), 32u ) * lrlfilter_size;
   for( uint i = 0; i != lrlfilter_size; i++ ) {
     // CoCの大きさに対応する係数を使ってフィルタをかける
-    sum += cache[ lcpos + i ] * lrlfilter[ i + coc_ ];
+    sum0 += cache[ lcpos + i ] * lrlfilter0[ i + coc_ ];
+    sum1 += cache[ lcpos + i ] * lrlfilter1[ i + coc_ ];
+    sum2 += cache[ lcpos + i ] * lrlfilter2[ i + coc_ ];
+    sum3 += cache[ lcpos + i ] * lrlfilter3[ i + coc_ ];
+    sum4 += cache[ lcpos + i ] * lrlfilter4[ i + coc_ ];
   }
-  imageStore( dest_image, ivec3( screen_pos, layer ), sum );
+  imageStore( dest_image0, ivec3( screen_pos, layer ), sum0 );
+  imageStore( dest_image1, ivec3( screen_pos, layer ), sum1 );
+  imageStore( dest_image2, ivec3( screen_pos, layer ), sum2 );
+  imageStore( dest_image3, ivec3( screen_pos, layer ), sum3 );
+  imageStore( dest_image4, ivec3( screen_pos, layer ), sum4 );
 }
 

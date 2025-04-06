@@ -21,11 +21,11 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const float h0 = imageLoad( image_pool32f[ nonuniformEXT( push_constants.partial0 ) ], screen_pos ).r;
-  const float h45 = imageLoad( image_pool32f[ nonuniformEXT( push_constants.partial45 ) ], screen_pos ).r;
-  const float h90 = imageLoad( image_pool32f[ nonuniformEXT( push_constants.partial90 ) ], screen_pos ).r;
-  const float h135 = imageLoad( image_pool32f[ nonuniformEXT( push_constants.partial135 ) ], screen_pos ).r;
+  const float h0 = imageLoad( image_poolr8[ nonuniformEXT( push_constants.partial0 ) ], screen_pos ).r;
+  const float h45 = imageLoad( image_poolr8[ nonuniformEXT( push_constants.partial45 ) ], screen_pos ).r;
+  const float h90 = imageLoad( image_poolr8[ nonuniformEXT( push_constants.partial90 ) ], screen_pos ).r;
+  const float h135 = imageLoad( image_poolr8[ nonuniformEXT( push_constants.partial135 ) ], screen_pos ).r;
   const float visibility = h0 * h90 * h45 * h135;
-  imageStore( image_pool32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( visibility, 1.0, 0.0, 1.0 ) );
+  imageStore( image_poolr8[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( visibility, 1.0, 0.0, 1.0 ) );
 }
 

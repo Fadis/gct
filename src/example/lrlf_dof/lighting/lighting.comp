@@ -15,31 +15,42 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 #include <gct/scene_graph/k+buffer.h>
 
 layout(push_constant) uniform PushConstants {
-  uint diffuse;
-  uint specular;
+  uint src;
+  uint dest;
 } push_constants;
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const uint layer = gl_GlobalInvocationID.z;
-  const uint gbuffer_id = global_uniforms.gbuffer;
-  const gbuffer_value p = read_kplus_buffer( global_uniforms.gbuffer, screen_pos, layer );
+  gbuffer_value p;
+  p.pos = read_kplus_buffer_pos_depth( push_constants.src, screen_pos, layer ).xyz;
+  p.albedo = read_kplus_buffer_albedo( push_constants.src, screen_pos, layer );
+  vec2 material = read_kplus_buffer_mrid( push_constants.src, screen_pos, layer ).xy;
+  p.metallic = material.x;
+  p.roughness = material.y;
+  p.normal = read_kplus_buffer_normal( push_constants.src, screen_pos, layer ).xyz;
+  p.emissive = read_kplus_buffer_eo( push_constants.src, screen_pos, layer ).xyz;
+  p.shadow_level = read_kplus_buffer_shadow_level( push_constants.src, screen_pos, layer );
+
+  if( p.albedo.a == 0.0 ) {
+    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 0.0 ) );
+    return;
+  }
  
-  const vec3 N = p.normal;
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
   const vec3 L = normalize(light_pool[global_uniforms.light ].world_position.xyz-p.pos);
 
   vec3 diffuse = diffuse_with_mask(
-    L, V, N, p.albedo.rgb, p.roughness, p.metallic, p.emissive,
+    L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic, p.emissive,
     light_pool[global_uniforms.light].energy.xyz,
     p.shadow_level.x
   );
+  
   vec3 specular = specular_with_mask(
-    L, V, N, p.albedo.rgb, p.roughness, p.metallic,
+    L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic,
     light_pool[global_uniforms.light].energy.xyz,
     p.shadow_level.x
   );
-  imageStore( image_pool32f_array[ nonuniformEXT( push_constants.diffuse ) ], ivec3( screen_pos, layer ), vec4( diffuse, p.albedo.a ) );
-  imageStore( image_pool32f_array[ nonuniformEXT( push_constants.specular ) ], ivec3( screen_pos, layer ), vec4( specular, 1.0 ) );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( specular + diffuse, p.albedo.a ) );
 }
 

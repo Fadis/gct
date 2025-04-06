@@ -23,6 +23,10 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const uint layer = gl_GlobalInvocationID.z;
   const gbuffer_value p = read_kplus_buffer( push_constants.src, screen_pos, layer );
+  if( p.albedo.a == 0.0 ) {
+    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 1.0 ) );
+    return;
+  }
  
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
   const vec3 L = normalize(light_pool[global_uniforms.light ].world_position.xyz-p.pos);
@@ -32,6 +36,6 @@ void main()  {
     light_pool[global_uniforms.light].energy.xyz,
     p.shadow_level.x
   );
-  imageStore( image_pool32f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( specular, 1.0 ) );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( specular, 1.0 ) );
 }
 

@@ -18,6 +18,7 @@ struct skyview_create_info {
   LIBGCT_SETTER( multiscat_size )
   LIBGCT_SETTER( skyview_width )
   LIBGCT_SETTER( skyview_height )
+  LIBGCT_SETTER( format )
   LIBGCT_SETTER( transmittance_shader )
   LIBGCT_SETTER( multiscat_shader )
   LIBGCT_SETTER( skyview_shader )
@@ -32,6 +33,7 @@ struct skyview_create_info {
   unsigned int multiscat_size = 32u;
   unsigned int skyview_width = 256u;
   unsigned int skyview_height = 128u;
+  vk::Format format = vk::Format::eR32G32B32A32Sfloat;
   std::filesystem::path transmittance_shader;
   std::filesystem::path multiscat_shader;
   std::filesystem::path skyview_shader;

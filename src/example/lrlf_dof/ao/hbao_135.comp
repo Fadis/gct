@@ -20,8 +20,17 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 void main() {
-  const ivec2 image_size = imageSize( image_pool32f[ nonuniformEXT( push_constants.dest ) ] ).xy;
+  const ivec2 image_size = imageSize( image_poolr8[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.x, ( -int( gl_GlobalInvocationID.x ) + int( gl_GlobalInvocationID.y + image_size.y * 3 ) ) % image_size.y );
+  const mat4 screen_to_cam =
+    matrix_pool[ global_uniforms.camera_matrix ] *
+    matrix_pool[ global_uniforms.screen_to_world_matrix ] *
+    mat4(
+      2.0, 0.0, 0.0, 0.0,
+      0.0, 2.0, 0.0, 0.0,
+      0.0, 0.0, 2.0, 0.0,
+      -1.0, -1.0, -1.0, 1.0
+    );
   const uint lcpos = gl_LocalInvocationID.x;
   {
     const uint hcpos = lcpos + gl_WorkGroupSize.x;
@@ -37,15 +46,19 @@ void main() {
     hsample_pos.x = max( min( hsample_pos.x, image_size.x - 1 ), 0 );
     hsample_pos.y += image_size.y;
     hsample_pos.y %= image_size.y;
-    hbao_cache[ lcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool32f[ nonuniformEXT( push_constants.src ) ], lsample_pos ).xyz, 1.0 ) ).xyz;
+    vec4 lpos4 = screen_to_cam * vec4( vec2( lsample_pos )/vec2( image_size ), imageLoad( image_pool32f[ nonuniformEXT( push_constants.src ) ], lsample_pos ).r, 1.0 );
+    lpos4 /= lpos4.w;
+    hbao_cache[ lcpos ] = lpos4.xyz;
+    //hbao_cache[ lcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool32f[ nonuniformEXT( push_constants.src ) ], lsample_pos ).xyz, 1.0 ) ).xyz;
     if( hcpos < gl_WorkGroupSize.x+hbao_kernel_size*2+1 ) {
-      hbao_cache[ hcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool32f[ nonuniformEXT( push_constants.src ) ], hsample_pos ).xyz, 1.0 ) ).xyz;
+      vec4 hpos4 = screen_to_cam * vec4( vec2( hsample_pos )/vec2( image_size ), imageLoad( image_poolr32f[ nonuniformEXT( push_constants.src ) ], hsample_pos ).r, 1.0 );
+      hpos4 /= hpos4.w;
+      hbao_cache[ hcpos ] = hpos4.xyz;
+      //hbao_cache[ hcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool32f[ nonuniformEXT( push_constants.src ) ], hsample_pos ).xyz, 1.0 ) ).xyz;
     }
     barrier();
   }
-  if( screen_pos.x >= image_size.x ) return;
-  if( screen_pos.y >= image_size.y ) return;
-  const float sum = hbao( lcpos + hbao_kernel_size );
-  imageStore( image_pool32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 0.0, 0.0, 0.0 ) );
+  const float sum = max( min( hbao( lcpos + hbao_kernel_size ), 1.0 ), 0.0 );
+  imageStore( image_poolr8[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 0.0, 0.0, 0.0 ) );
 }
 

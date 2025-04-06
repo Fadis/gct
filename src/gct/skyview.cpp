@@ -29,7 +29,7 @@ skyview::skyview(
             vk::ImageUsageFlagBits::eSampled|
             vk::ImageUsageFlagBits::eTransferSrc
           )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
+          .setFormat( props.format )
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );
@@ -42,7 +42,7 @@ skyview::skyview(
             vk::ImageUsageFlagBits::eSampled|
             vk::ImageUsageFlagBits::eTransferSrc
           )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
+          .setFormat( props.format )
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );
@@ -55,7 +55,7 @@ skyview::skyview(
             vk::ImageUsageFlagBits::eSampled|
             vk::ImageUsageFlagBits::eTransferSrc
           )
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
+          .setFormat( props.format )
       ),
     VMA_MEMORY_USAGE_GPU_ONLY
   );

@@ -71,13 +71,15 @@ shader_graph::vertex::combined_result_type hbao2::operator()(
   LIBGCT_SHADER_SET_RENAME( rename, "partial90", partial90_name )
   LIBGCT_SHADER_SET_RENAME( rename, "partial135", partial135_name )
 
+  const auto format = vk::Format::eR8Unorm;//vk::Format::eR16G16B16A16Sfloat;
+
   auto r0 = b.call(
     b.get_image_io_create_info(
       p0,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
-        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .add_output( dest_name, src_name, glm::vec2( 1.f, -1.f ), format )
+        .set_dim( src_name, glm::vec2( 1.f, -1.f ) )
         .set_node_name( node_prefix + "0" )
     )
   )( input );
@@ -86,8 +88,8 @@ shader_graph::vertex::combined_result_type hbao2::operator()(
       p45,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
-        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .add_output( dest_name, src_name, glm::vec2( 1.f, -1.f ), format )
+        .set_dim( src_name, glm::vec2( 1.f, -1.f ) )
         .set_node_name( node_prefix + "45" )
     )
   )( input );
@@ -96,8 +98,8 @@ shader_graph::vertex::combined_result_type hbao2::operator()(
       p90,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
-        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .add_output( dest_name, src_name, glm::vec2( 1.f, -1.f ), format )
+        .set_dim( src_name, glm::vec2( 1.f, -1.f ) )
         .set_node_name( node_prefix + "90" )
     )
   )( input );
@@ -106,8 +108,8 @@ shader_graph::vertex::combined_result_type hbao2::operator()(
       p135,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
-        .set_dim( src_name, glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+        .add_output( dest_name, src_name, glm::vec2( 1.f, -1.f ), format )
+        .set_dim( src_name, glm::vec2( 1.f, -1.f ) )
         .set_node_name( node_prefix + "135" )
     )
   )( input );

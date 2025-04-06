@@ -268,6 +268,8 @@ add_library( gct SHARED
   gct/tone_mapping_create_info.cpp
   gct/tone_mapping.cpp
   gct/shader_set.cpp
+  gct/gauss_create_info.cpp
+  gct/gauss.cpp
   gct/hbao_create_info.cpp
   gct/hbao.cpp
   gct/hbao2_create_info.cpp

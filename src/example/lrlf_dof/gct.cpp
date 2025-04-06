@@ -1,4 +1,5 @@
 #include "gct/skyview_froxel2_create_info.hpp"
+#include <chrono>
 #include <iostream>
 #include <algorithm>
 #include <boost/program_options.hpp>
@@ -49,6 +50,7 @@
 #include <gct/common_sample_setup.hpp>
 #include <gct/tone_mapping.hpp>
 #include <gct/hbao2.hpp>
+#include <gct/gauss.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/gltf2.hpp>
 #include <gct/gltf2_create_info.hpp>
@@ -65,6 +67,7 @@
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
   std::shared_ptr< gct::semaphore_t > draw_complete;
+  std::shared_ptr< gct::semaphore_t > render_complete;
   std::shared_ptr< gct::semaphore_t > image_ownership;
   std::shared_ptr< gct::bound_command_buffer_t > command_buffer;
   bool initial = true;
@@ -209,7 +212,7 @@ int main( int argc, const char *argv[] ) {
       .set_layer( 1u )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( 0u )
-      .set_format( vk::Format::eR32G32B32A32Sfloat ) 
+      .set_format( vk::Format::eR16G16B16A16Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
@@ -222,7 +225,7 @@ int main( int argc, const char *argv[] ) {
       .set_layer( 0u )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( gbuf_count )
-      .set_format( vk::Format::eR32G32B32A32Sfloat ) 
+      .set_format( vk::Format::eR16G16B16A16Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
@@ -270,7 +273,7 @@ int main( int argc, const char *argv[] ) {
       .set_layer( 0u )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( 0u )
-      .set_format( vk::Format::eR32G32B32A32Sfloat ) 
+      .set_format( vk::Format::eR16G16B16A16Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_external_depth( depth_gbuffer.get_depth_views() )
   );
@@ -360,50 +363,54 @@ int main( int argc, const char *argv[] ) {
     { "condition", sg->get_resource()->last_visibility->get_buffer() }
   });
 
-  const auto rgba32ici =
+  const auto rgba16ici =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
+          .setFormat( vk::Format::eR16G16B16A16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
       );
  
-  const auto rgba32ici2 =
+  const auto rgba16ici2 =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
+          .setFormat( vk::Format::eR16G16B16A16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
           .setArrayLayers( 2 )
       );
   
-  const auto r32ici =
+  const auto r16ici =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
-          .setFormat( vk::Format::eR32Sfloat )
+          .setFormat( vk::Format::eR16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
       );
   
-  const auto r32ici2 =
+  const auto r16ici2 =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
-          .setFormat( vk::Format::eR32Sfloat )
+          .setFormat( vk::Format::eR16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
           .setArrayLayers( 2 )
       );
 
-  const auto rgba32ici4 =
+  const auto rgba16ici4 =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
+          .setFormat( vk::Format::eR16G16B16A16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
           .setArrayLayers( 4u )
       );
   
-  const auto rgba32ici10 =
+  const auto rgba16ici10 =
     gct::image_create_info_t()
       .set_basic(
         gct::basic_2d_image( res.width, res.height )
+          .setFormat( vk::Format::eR16G16B16A16Sfloat )
           .setUsage( vk::ImageUsageFlagBits::eStorage )
           .setArrayLayers( 10u )
       );
@@ -415,6 +422,7 @@ int main( int argc, const char *argv[] ) {
         res.device->get_semaphore(),
         res.device->get_semaphore(),
         res.device->get_semaphore(),
+        res.device->get_semaphore(),
         res.queue->get_command_pool()->allocate()
       }
     );
@@ -422,7 +430,7 @@ int main( int argc, const char *argv[] ) {
  
   /*const auto diffuse_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
-      .set_create_info( rgba32ici4 )
+      .set_create_info( rgba16ici4 )
       .set_range(
         gct::subview_range()
           .set_layer_count( 4u )
@@ -433,7 +441,7 @@ int main( int argc, const char *argv[] ) {
 
   const auto specular_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
-      .set_create_info( rgba32ici4 )
+      .set_create_info( rgba16ici4 )
       .set_range(
         gct::subview_range()
           .set_layer_count( 4u )
@@ -443,33 +451,34 @@ int main( int argc, const char *argv[] ) {
   const auto specular = sg->get_resource()->image->get( specular_desc.linear );*/
 
   const auto dof = res.allocator->create_image_view(
-    rgba32ici10,
+    rgba16ici10,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   
   const auto dof_sliced = dof->get_factory()->get_thin_views( 2u );
 
   const auto dof_temporary = res.allocator->create_image_view(
-    rgba32ici10,
+    rgba16ici10,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
   const auto dof_temporary_sliced = dof_temporary->get_factory()->get_thin_views( 2u );
 
-  const auto coc = res.allocator->create_image_view(
-    r32ici2,
+  const auto coc_temporary = res.allocator->create_image_view(
+    r16ici2,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
-  const auto coc_temporary = res.allocator->create_image_view(
-    r32ici2,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
+  std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
+    res.allocator->create_mappable_buffer(
+      sizeof( gct::af_state ),
+      vk::BufferUsageFlagBits::eStorageBuffer
+    );
  
   /*const auto nearest_position_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_layout( vk::ImageLayout::eGeneral )
-      .set_create_info( rgba32ici )
+      .set_create_info( rgba16ici )
   ).linear;
 
   const auto nearest_position = sg->get_resource()->image->get( nearest_position_desc );
@@ -482,25 +491,12 @@ int main( int argc, const char *argv[] ) {
       //recorder.set_image_layout( specular, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( dof, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( dof_temporary, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( coc, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( coc_temporary, vk::ImageLayout::eGeneral );
       //recorder.set_image_layout( nearest_position, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
 
-
-  const auto lighting = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv" )
-      .set_swapchain_image_count( 1u )
-      .set_scene_graph( sg->get_resource() )
-      .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
-  );
 
   gct::hbao2 hbao(
     gct::hbao2_create_info()
@@ -517,6 +513,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_pipeline_cache( res.pipeline_cache )
       .set_descriptor_pool( res.descriptor_pool )
+      .set_format( vk::Format::eR16G16B16A16Sfloat )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
   );
   const auto transmittance_desc = sg->get_resource()->image->allocate( skyview.get_transmittance() );
@@ -526,33 +523,41 @@ int main( int argc, const char *argv[] ) {
   
   gct::skyview_froxel2 skyview_froxel2(
     gct::skyview_froxel2_create_info()
-      .set_allocator( res.allocator )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_descriptor_pool( res.descriptor_pool )
+      .set_allocator_set( res.allocator_set )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
       .set_sigma( sigma_desc )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
+      .set_node_name( "skyview_froxel" )
   );
-  
+ 
+  gct::gauss coc_gauss(
+    gct::gauss_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .set_node_name( "coc_gauss" )
+  );
+
   gct::shader_graph::builder builder( sg->get_resource() );
 
-  const auto diffuse_desc = builder.call(
+  const auto lighting_desc = builder.call(
     std::make_shared< gct::compute >(
       gct::compute_create_info()
         .set_allocator_set( res.allocator_set )
-        .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/diffuse.comp.spv" )
+        .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv" )
         .set_scene_graph( sg->get_resource() )
         .add_resource( { "global_uniforms", global_uniform } )
     ),
     gct::image_io_plan()
       .add_input( "src" )
-      .add_output( "dest", "src", { 1.f, -4.f }, vk::Format::eR32G32B32A32Sfloat )
+      .add_output( "dest", "src", { 1.f, -4.f }, vk::Format::eR16G16B16A16Sfloat )
       .set_dim( "src", { 1.f, -4.f } )
-      .set_node_name( "diffuse" )
+      .set_node_name( "lighting" )
   )( extended_gbuffer_desc.linear );
-  
-  const auto specular_desc = builder.call(
+
+  /*const auto specular_desc = builder.call(
     std::make_shared< gct::compute >(
       gct::compute_create_info()
         .set_allocator_set( res.allocator_set )
@@ -562,10 +567,10 @@ int main( int argc, const char *argv[] ) {
     ),
     gct::image_io_plan()
       .add_input( "src" )
-      .add_output( "dest", "src", { 1.f, -4.f }, vk::Format::eR32G32B32A32Sfloat )
+      .add_output( "dest", "src", { 1.f, -4.f }, vk::Format::eR16G16B16A16Sfloat )
       .set_dim( "src", { 1.f, -4.f } )
       .set_node_name( "specular" )
-  )( extended_gbuffer_desc.linear );
+  )( extended_gbuffer_desc.linear );*/
 
   const auto np_desc = builder.call(
     std::make_shared< gct::compute >(
@@ -576,8 +581,8 @@ int main( int argc, const char *argv[] ) {
     ),
     gct::image_io_plan()
       .add_input( "src" )
-      .add_output( "dest", "src", glm::vec4( 1.f, 1.f, 1.f, -1.f ), vk::Format::eR32G32B32A32Sfloat )
-      .set_dim( "src", glm::vec4( 1.f, 1.f, 1.f, -1.f ) )
+      .add_output( "dest", "src", glm::vec2( 1.f, -1.f ), vk::Format::eR32Sfloat )
+      .set_dim( "src", glm::vec2( 1.f, -1.f ) )
       .set_node_name( "nearest_position" )
   )( extended_gbuffer_desc.linear );
 
@@ -590,20 +595,42 @@ int main( int argc, const char *argv[] ) {
     extended_gbuffer_desc.linear,
     transmittance_desc
   );
-  builder.output( diffuse_desc );
-  builder.output( specular_desc );
-  builder.output( ao_out_desc[ "dest" ] );
-  builder.output( skyview_froxel_out_desc[ "dest" ] );
+
+  const auto mix_ao_desc = builder.call(
+    std::make_shared< gct::compute >(
+      gct::compute_create_info()
+        .set_allocator_set( res.allocator_set )
+        .set_shader( CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv" )
+        .set_scene_graph( sg->get_resource() )
+        .add_resource( { "global_uniforms", global_uniform } )
+        .add_resource( { "af_state", af_state_buffer } )
+    ),
+    gct::image_io_plan()
+      .add_input( "gbuffer" )
+      .add_input( "occlusion" )
+      .add_input( "scattering" )
+      .add_input( "lighting_image" )
+      .add_output( "coc_image", "gbuffer", glm::vec2( 1.0f, -2.0f ) )
+      .add_output( "dest_image", "gbuffer", glm::vec2( 1.0f, -2.0f ) )
+      .set_dim( "gbuffer", glm::vec2( 1.0f, -1.0f ) )
+      .set_node_name( "mix_ao" )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "gbuffer", extended_gbuffer_desc.linear )
+      .add( "occlusion", ao_out_desc[ "dest" ] )
+      .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
+      .add( "lighting_image", lighting_desc )
+  );
+
+  const auto filtered_coc = coc_gauss( builder, mix_ao_desc[ "coc_image" ]  );
+
+  builder.output( filtered_coc );
+  builder.output( mix_ao_desc[ "dest_image" ] );
   const auto compiled_hbao = builder();
   std::cout << builder.get_log() << std::endl;
-  const auto ao_out = compiled_hbao.get_view( ao_out_desc[ "dest" ] );
-  const auto diffuse = compiled_hbao.get_view( diffuse_desc );
-  const auto specular = compiled_hbao.get_view( specular_desc );
-  const auto skyview_froxel2_generate = compiled_hbao.get_image_io( skyview_froxel_out_desc[ "froxel" ].get_vertex_id() );
-  const auto skyview_froxel2_generate_pcmp = skyview_froxel2_generate->get_push_constant_member_pointer();
-  const auto skyview_froxel_rendered = compiled_hbao.get_view( skyview_froxel_out_desc[ "dest" ] );
- 
   std::cout << to_string( compiled_hbao ) << std::endl;
+  const auto mixed_view = compiled_hbao.get_view( mix_ao_desc[ "dest_image" ] );
+  const auto coc_view = compiled_hbao.get_view( filtered_coc );
   
   const auto skyview_param =
     gct::skyview_parameter()
@@ -623,7 +650,7 @@ int main( int argc, const char *argv[] ) {
   }
   
   const auto mixed_out = res.allocator->create_image_view(
-    rgba32ici,
+    rgba16ici,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
 
@@ -645,13 +672,7 @@ int main( int argc, const char *argv[] ) {
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out } )
   );
   
-  std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
-    res.allocator->create_mappable_buffer(
-      sizeof( gct::af_state ),
-      vk::BufferUsageFlagBits::eStorageBuffer
-    );
-  
-  const auto update_af = gct::compute(
+  auto update_af = gct::compute(
     gct::compute_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
@@ -661,28 +682,26 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
       .add_resource( { "af_state", af_state_buffer } )
   );
-  
 
-  const auto mix_ao = gct::compute(
+  update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
+  
+  const auto dof_h = gct::compute(
     gct::compute_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/mix_ao/mix_ao.comp.spv" )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
-      .add_resource( { "occlusion", ao_out, vk::ImageLayout::eGeneral } )
-      .add_resource( { "scattering", skyview_froxel_rendered, vk::ImageLayout::eGeneral } )
-      .add_resource( { "diffuse_image", diffuse, vk::ImageLayout::eGeneral } )
-      .add_resource( { "specular_image", specular, vk::ImageLayout::eGeneral } )
-      .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "coc_image", coc } )
-      .add_resource( { "af_state", af_state_buffer } )
-      .add_resource( { "dest_image", dof_sliced[ 0 ] } )
-      .add_resource( { "light_pool", sg->get_resource()->light->get_buffer() } )
-      .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
+      .add_resource( { "dest_image0", dof_temporary_sliced[ 0 ] } )
+      .add_resource( { "dest_image1", dof_temporary_sliced[ 1 ] } )
+      .add_resource( { "dest_image2", dof_temporary_sliced[ 2 ] } )
+      .add_resource( { "dest_image3", dof_temporary_sliced[ 3 ] } )
+      .add_resource( { "dest_image4", dof_temporary_sliced[ 4 ] } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
-  
+
+
   const auto dof_h0 = gct::compute(
     gct::compute_create_info()
       .set_allocator( res.allocator )
@@ -690,9 +709,9 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h0.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", dof_sliced[ 0 ] } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", dof_temporary_sliced[ 0 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto dof_h1 = gct::compute(
@@ -702,9 +721,9 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h1.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", dof_sliced[ 0 ] } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", dof_temporary_sliced[ 1 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
   
   const auto dof_h2 = gct::compute(
@@ -714,9 +733,9 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h2.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", dof_sliced[ 0 ] } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", dof_temporary_sliced[ 2 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
   
   const auto dof_h3 = gct::compute(
@@ -726,9 +745,9 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h3.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", dof_sliced[ 0 ] } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", dof_temporary_sliced[ 3 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto dof_h4 = gct::compute(
@@ -738,10 +757,23 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/h4.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", dof_sliced[ 0 ] } )
+      .add_resource( { "src_image", mixed_view, vk::ImageLayout::eGeneral } )
       .add_resource( { "dest_image", dof_temporary_sliced[ 4 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
+  
+  const auto dof_v = gct::compute(
+    gct::compute_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/v.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .add_resource( { "src_image", dof_temporary } )
+      .add_resource( { "dest_image", dof_sliced[ 0 ] } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
+  );
+
 
   const auto dof_v0 = gct::compute(
     gct::compute_create_info()
@@ -752,7 +784,7 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", dof_temporary_sliced[ 0 ] } )
       .add_resource( { "dest_image", dof_sliced[ 0 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto dof_v1 = gct::compute(
@@ -764,7 +796,7 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", dof_temporary_sliced[ 1 ] } )
       .add_resource( { "dest_image", dof_sliced[ 1 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto dof_v2 = gct::compute(
@@ -776,7 +808,7 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", dof_temporary_sliced[ 2 ] } )
       .add_resource( { "dest_image", dof_sliced[ 2 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
   
   const auto dof_v3 = gct::compute(
@@ -788,7 +820,7 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", dof_temporary_sliced[ 3 ] } )
       .add_resource( { "dest_image", dof_sliced[ 3 ] } )
-      .add_resource( { "coc", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto dof_v4 = gct::compute(
@@ -800,29 +832,7 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .add_resource( { "src_image", dof_temporary_sliced[ 4 ] } )
       .add_resource( { "dest_image", dof_sliced[ 4 ] } )
-      .add_resource( { "coc", coc } )
-  );
-  
-  const auto coc_hgauss = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/h12_32.comp.spv" )
-      .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", coc } )
-      .add_resource( { "dest_image", coc_temporary } )
-  );
-
-  const auto coc_vgauss = gct::compute(
-    gct::compute_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/v12_32.comp.spv" )
-      .set_swapchain_image_count( 1u )
-      .add_resource( { "src_image", coc_temporary } )
-      .add_resource( { "dest_image", coc } )
+      .add_resource( { "coc", coc_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto bloom_gauss = gct::image_filter(
@@ -833,13 +843,14 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
       .set_input_name( "src_image" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ dof } )
-      .set_output_create_info( rgba32ici )
+      .set_output_create_info( rgba16ici )
       .set_output_name( "bloom_image" )
       .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
       .add_resource( { "dest_image", mixed_out } )
       .add_resource( { "tone", tone.get_buffer() } )
       .add_resource( { "global_uniforms", global_uniform } )
       .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
+      .add_resource( { "af_state", af_state_buffer } )
   )(
     gct::image_filter_create_info()
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv" )
@@ -927,55 +938,49 @@ int main( int argc, const char *argv[] ) {
     { "matrices", shadow_mat.get_buffer()[ 0 ] }
   });
 
-  const auto lighting_pcmp = lighting.get_push_constant_member_pointer();
-  const auto diffuse_pcmp = (*lighting_pcmp)[ "diffuse" ];
-  const auto specular_pcmp = (*lighting_pcmp)[ "specular" ];
-
   std::uint32_t current_frame = 0u;
   std::uint32_t frame_counter = 0u;
   bool update_optflow = false;
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   while( !walk.end() ) {
+    const auto begin_date = std::chrono::high_resolution_clock::now();
+    auto &sync = framebuffers[ current_frame ];
     gct::blocking_timer frame_rate;
     ++walk;
-    const auto global_data = global_uniforms_t()
-      .set_projection_matrix( *proj_desc )
-      .set_camera_matrix( *camera_desc )
-      .set_previous_projection_matrix( * previous_proj_desc )
-      .set_previous_camera_matrix( *previous_camera_desc )
-      .set_screen_to_world_matrix( *screen_to_world_desc )
-      .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-      .set_light_count( res.light_count )
-      .set_ambient( res.ambient_level )
-      .set_frame_counter( frame_counter )
-      .set_light( *light_desc )
-      .set_gbuffer( *extended_gbuffer_desc.linear );
-    {
-      sg->get_resource()->matrix->set( proj_desc, projection );
-      sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
-      sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
-      sg->get_resource()->light->set(
-        light_desc,
-        gct::punctual_light_parameter()
-          .set_type( gct::punctual_light_type::point )
-          .set_light_size( light_size )
-          .set_local_position( glm::vec4( walk.get_light_pos(), 1.0 ) * glm::vec4( 1.0, -1.0, 1.0, 1.0 ) )
-          .set_energy( glm::vec4( walk.get_light_energy(),walk.get_light_energy(),walk.get_light_energy(), 1.0 ) )
-          .set_shadow_map( *shadow_map_texture_desc )
-      );
-      {
-        auto rec = command_buffer->begin();
-        (*sg)( rec );
-        rec.copy( global_data, global_uniform );
-        rec.transfer_to_graphics_barrier( global_uniform );
-      }
-      command_buffer->execute_and_wait();
-    }
     // depth
-    if( walk.camera_moved() ) {
+    /*if( walk.camera_moved() )*/ {
       {
         auto rec = command_buffer->begin();
+        const auto global_data = global_uniforms_t()
+          .set_projection_matrix( *proj_desc )
+          .set_camera_matrix( *camera_desc )
+          .set_previous_projection_matrix( * previous_proj_desc )
+          .set_previous_camera_matrix( *previous_camera_desc )
+          .set_screen_to_world_matrix( *screen_to_world_desc )
+          .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+          .set_light_count( res.light_count )
+          .set_ambient( res.ambient_level )
+          .set_frame_counter( frame_counter )
+          .set_light( *light_desc )
+          .set_gbuffer( *extended_gbuffer_desc.linear );
+        {
+          sg->get_resource()->matrix->set( proj_desc, projection );
+          sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
+          sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
+          sg->get_resource()->light->set(
+            light_desc,
+            gct::punctual_light_parameter()
+              .set_type( gct::punctual_light_type::point )
+              .set_light_size( light_size )
+              .set_local_position( glm::vec4( walk.get_light_pos(), 1.0 ) * glm::vec4( 1.0, -1.0, 1.0, 1.0 ) )
+              .set_energy( glm::vec4( walk.get_light_energy(),walk.get_light_energy(),walk.get_light_energy(), 1.0 ) )
+              .set_shadow_map( *shadow_map_texture_desc )
+          );
+          (*sg)( rec );
+          rec.copy( global_data, global_uniform );
+          rec.transfer_to_graphics_barrier( global_uniform );
+        }
         {
           auto render_pass_token = rec.begin_render_pass(
             depth_gbuffer.get_render_pass_begin_info( 0 ),
@@ -993,16 +998,8 @@ int main( int argc, const char *argv[] ) {
           );
           (*il)( rec, *depth_csg, true );
         }
-      }
-      command_buffer->execute_and_wait();
-    }
-    // occlusion query
-    if( walk.get_current_camera() == 0 ) {
-      if( walk.camera_moved() ) {
+        // occlusion query
         {
-          auto rec = command_buffer->begin();
-          rec.copy( global_data, global_uniform );
-          rec.transfer_to_graphics_barrier( global_uniform );
           il->setup_resource_pair_buffer( rec );
           {
             auto render_pass_token = rec.begin_render_pass(
@@ -1026,14 +1023,8 @@ int main( int argc, const char *argv[] ) {
             vk::ImageLayout::eGeneral
           );
         }
-        command_buffer->execute_and_wait();
-      }
-    }
-    {
-      {
-        auto rec = command_buffer->begin();
         tone.set( rec, 0 );
-        if( walk.light_moved() ) {
+        /*if( walk.light_moved() )*/ {
           const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
             .set_camera_matrix( *camera_desc )
@@ -1078,7 +1069,7 @@ int main( int argc, const char *argv[] ) {
             }
           );
         }
-        if( walk.light_moved() || walk.camera_moved() ) {
+        /*if( walk.light_moved() || walk.camera_moved() )*/ {
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
           {
@@ -1109,56 +1100,43 @@ int main( int argc, const char *argv[] ) {
             vk::ImageLayout::eGeneral
           );
         }
+        
+        glm::ivec2 focus( res.width/2, res.height/2 );
+        
+        update_af( rec, 0, 16, 16, 1u );
+        rec.compute_barrier( af_state_buffer );
 
         compiled_hbao( rec );
         
         rec.compute_barrier(
           gct::syncable()
-            .add( ao_out )
-            .add( diffuse )
-            .add( specular )
-            .add( skyview_froxel_rendered )
+            .add( mixed_view )
+            .add( coc_view )
         );
-
-        glm::ivec2 focus( res.width/2, res.height/2 );
-        rec->pushConstants(
-          **update_af.get_pipeline()->get_props().get_layout(),
-          update_af.get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-          0u,
-          sizeof( glm::ivec2 ),
-          &focus
-        );
-        update_af( rec, 0, 16, 16, 1u );
-        rec.compute_barrier( af_state_buffer );
-        mix_ao( rec, 0, res.width, res.height, 1u );
-        rec.compute_barrier( coc );
-        coc_hgauss( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier( coc_temporary );
-        coc_vgauss( rec, 0, res.width, res.height, 2u );
-        rec.compute_barrier(
-          gct::syncable()
-            .add( coc )
-            .add( dof )
-        );
+        ////dof_h( rec, 0, res.width, res.height, 2u );
         dof_h0( rec, 0, res.width, res.height, 2u );
         dof_h1( rec, 0, res.width, res.height, 2u );
         dof_h2( rec, 0, res.width, res.height, 2u );
         dof_h3( rec, 0, res.width, res.height, 2u );
         dof_h4( rec, 0, res.width, res.height, 2u );
         rec.compute_barrier( dof_temporary );
-        dof_v0( rec, 0, res.width, res.height, 2u );
+        dof_v( rec, 0, res.width, res.height, 2u );
+        /*dof_v0( rec, 0, res.width, res.height, 2u );
         dof_v1( rec, 0, res.width, res.height, 2u );
         dof_v2( rec, 0, res.width, res.height, 2u );
         dof_v3( rec, 0, res.width, res.height, 2u );
-        dof_v4( rec, 0, res.width, res.height, 2u );
+        dof_v4( rec, 0, res.width, res.height, 2u );:*/
         rec.compute_barrier( dof );
+        
         bloom_gauss( rec, 0 );
         rec.compute_barrier( mixed_out );
         tone.get( rec, 0 );
       }
-      command_buffer->execute_and_wait();
+      command_buffer->execute(
+        gct::submit_info_t()
+          .add_signal_to( sync.render_complete )
+      );
     }
-    auto &sync = framebuffers[ current_frame ];
     if( !sync.initial ) {
       sync.command_buffer->wait_for_executed();
     }
@@ -1175,6 +1153,7 @@ int main( int argc, const char *argv[] ) {
     }
     sync.command_buffer->execute(
       gct::submit_info_t()
+        .add_wait_for( sync.render_complete, vk::PipelineStageFlagBits::eAllCommands )
         .add_wait_for( sync.image_acquired, vk::PipelineStageFlagBits::eColorAttachmentOutput )
         .add_signal_to( sync.draw_complete )
     );
@@ -1183,7 +1162,8 @@ int main( int argc, const char *argv[] ) {
         .add_wait_for( sync.draw_complete )
         .add_swapchain( res.swapchain, image_index )
     );
-
+    const auto end_date = std::chrono::high_resolution_clock::now();
+    std::cout << "elapsed : " << std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() << std::endl;
     glfwPollEvents();
     ++current_frame;
     ++frame_counter;

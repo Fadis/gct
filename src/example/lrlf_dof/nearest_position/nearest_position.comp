@@ -7,6 +7,7 @@
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
 #include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/k+buffer.h>
 
 layout(push_constant) uniform PushConstants {
   uint src;
@@ -17,7 +18,7 @@ void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const bool has_layer = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x != 0;
   const uint layer = max( uint( imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
-  const vec4 pos_depth = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, layer * 8 + 0 ) );
-  imageStore( image_pool32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, pos_depth );
+  const vec4 pos_depth = read_kplus_buffer_pos_depth( push_constants.src, screen_pos, layer );
+  imageStore( image_poolr32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( pos_depth.w, 0.0, 0.0, 0.0 ) );
 }
 

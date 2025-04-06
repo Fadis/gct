@@ -1,5 +1,5 @@
-#ifndef GCT_LRLF_DOF_CREATE_INFO_HPP
-#define GCT_LRLF_DOF_CREATE_INFO_HPP
+#ifndef GCT_GAUSS_CREATE_INFO_HPP
+#define GCT_GAUSS_CREATE_INFO_HPP
 
 #include <vector>
 #include <filesystem>
@@ -15,7 +15,7 @@ namespace scene_graph {
   class scene_graph_resource;
 }
 
-struct lrlf_dof_create_info {
+struct gauss_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( shader_set )
@@ -26,7 +26,7 @@ struct lrlf_dof_create_info {
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( scene_graph )
   LIBGCT_SETTER( node_name )
-  lrlf_dof_create_info &set_shader(
+  gauss_create_info &set_shader(
     const std::filesystem::path &
   );
   allocator_set_t allocator_set;
@@ -37,7 +37,7 @@ struct lrlf_dof_create_info {
   std::string node_name;
 };
 
-void to_json( nlohmann::json&, const lrlf_dof_create_info& );
+void to_json( nlohmann::json&, const gauss_create_info& );
 
 }
 

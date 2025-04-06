@@ -7,6 +7,19 @@
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
+layout (std430, binding = 13) buffer Output {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+  float visible_range;
+} af_state;
+
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
 void main() {

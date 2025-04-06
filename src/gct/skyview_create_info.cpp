@@ -1,3 +1,4 @@
+#include <vulkan2json/Format.hpp>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/descriptor_pool.hpp>
@@ -24,6 +25,7 @@ void to_json( nlohmann::json &dest, const skyview_create_info &src ) {
   dest[ "multiscat_size" ] = src.multiscat_size;
   dest[ "skyview_width" ] = src.skyview_width;
   dest[ "skyview_height" ] = src.skyview_height;
+  dest[ "format" ] = src.format;
   dest[ "transmittance_shader" ] = src.transmittance_shader.string();
   dest[ "multiscat_shader" ] = src.multiscat_shader.string();
   dest[ "skyview_shader" ] = src.skyview_shader.string();

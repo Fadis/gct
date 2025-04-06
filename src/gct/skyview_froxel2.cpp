@@ -77,7 +77,7 @@ shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
                       vk::ImageUsageFlagBits::eStorage |
                       vk::ImageUsageFlagBits::eSampled
                     )
-                    .setFormat( vk::Format::eR32G32B32A32Sfloat )
+                    .setFormat( vk::Format::eR16G16B16A16Sfloat )
                     .setSamples( vk::SampleCountFlagBits::e1 )
                     .setMipLevels( 1u )
                     .setArrayLayers( 1u )
@@ -105,7 +105,7 @@ shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
       gct::image_io_plan()
         .add_input( gbuffer_name )
         .add_sampled( froxel_name, linear_sampler )
-        .add_output( dest_name, gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ), vk::Format::eR32G32B32A32Sfloat )
+        .add_output( dest_name, gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ), vk::Format::eR16G16B16A16Sfloat )
         .set_dim( gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ) )
         .set_node_name( node_prefix + "render" )
     )

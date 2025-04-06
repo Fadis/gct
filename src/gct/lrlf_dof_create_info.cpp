@@ -33,6 +33,7 @@ void to_json( nlohmann::json &dest, const lrlf_dof_create_info &src ) {
   dest[ "rename" ] = src.rename;
   dest[ "resources" ] = src.resources;
   dest[ "scene_graph" ] = *src.scene_graph;
+  dest[ "node_name" ] = src.node_name;
 }
 
 }

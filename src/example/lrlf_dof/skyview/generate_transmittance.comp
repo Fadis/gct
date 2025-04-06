@@ -3,7 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 
-layout (binding = 0, rgba32f) writeonly uniform image2D dest_image;
+layout (binding = 0, rgba16f) writeonly uniform image2D dest_image;
 
 //const float ground_radius = 6360000;
 //const float top_radius = 6460000;

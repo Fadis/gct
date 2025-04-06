@@ -2,27 +2,26 @@
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
-layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
-layout (binding = 1, r32f) readonly uniform image2D occlusion;
-layout (binding = 2, rgba32f) readonly uniform image2DArray diffuse_image;
-layout (binding = 3, rgba32f) readonly uniform image2DArray specular_image;
-layout (binding = 4, rgba32f) writeonly uniform image2DArray dest_image;
-layout (binding = 5, r32f) writeonly uniform image2DArray coc_image;
-layout (binding = 10, rgba32f) readonly uniform image2DArray scattering;
+layout(local_size_x = 16, local_size_y = 16 ) in;
 
-#include "push_constants.h"
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/light_pool.h>
+#include <gct/scene_graph/k+buffer.h>
 
-layout(binding = 11,std430) buffer MatrixPool {
-  mat4 matrix_pool[];
-};
+layout(push_constant) uniform PushConstants {
+  uint gbuffer;
+  uint occlusion;
+  uint lighting_image;
+  uint scattering;
+  uint dest_image;
+  uint coc_image;
+} push_constants;
 
 #include <gct/depth.h>
-#include <gct/punctual_light_parameter.h>
-
-layout(binding = 12,std430) buffer LightPool {
-  punctual_light_parameter light_pool[];
-};
 
 layout (std430, binding = 13) buffer Output {
   uint history;
@@ -41,62 +40,56 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const ivec2 image_size = imageSize( gbuffer ).xy;
+  const ivec2 image_size = imageSize( image_pool32f_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy;
   
   const float far_threshold = af_state.depth;
+
+  vec4 layer_index = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.gbuffer ) ], ivec3( screen_pos, 32 ) );
+
+  const float depth[4] = float[](
+    read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, 0 ).w,
+    read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, 1 ).w,
+    read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, 2 ).w,
+    read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, 3 ).w
+  );
   
-  vec4 layer_index = imageLoad( gbuffer, ivec3( screen_pos, 32 ) );
-  
+  const vec4 albedo[4] = vec4[](
+    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 0 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 1 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 2 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 3 )
+  );
+
   const float l0_depth =
     ( layer_index.x != 0 ) ?
-    decode_depth(
-      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.x ) - 1 ) * 8 + 0 ) ).w,
-      af_state.znear, af_state.zfar
-    ) :
+    decode_depth( depth[ uint( layer_index.x ) - 1 ], af_state.znear, af_state.zfar ) :
     af_state.zfar;
   const float l1_depth =
     ( layer_index.y != 0 ) ?
-    decode_depth(
-      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.y ) - 1 ) * 8 + 0 ) ).w,
-      af_state.znear, af_state.zfar
-    ) :
+    decode_depth( depth[ uint( layer_index.y ) - 1 ], af_state.znear, af_state.zfar ) :
     af_state.zfar;
   const float l2_depth =
     ( layer_index.z != 0 ) ?
-    decode_depth(
-      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.z ) - 1 ) * 8 + 0 ) ).w,
-      af_state.znear, af_state.zfar
-    ) :
+    decode_depth( depth[ uint( layer_index.z ) - 1 ], af_state.znear, af_state.zfar ) :
     af_state.zfar;
   const float l3_depth =
     ( layer_index.w != 0 ) ?
-    decode_depth(
-      imageLoad( gbuffer, ivec3( screen_pos, ( uint( layer_index.w ) - 1 ) * 8 + 0 ) ).w,
-      af_state.znear, af_state.zfar
-    ) :
+    decode_depth( depth[ uint( layer_index.w ) - 1 ], af_state.znear, af_state.zfar ) :
     af_state.zfar;
 
   const vec4 l0_albedo =
-    ( layer_index.x != 0 ) ?
-    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) * 8 + 1 ) ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 );
+    ( layer_index.x != 0 ) ? albedo[ uint( layer_index.x ) - 1 ] : vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l1_albedo =
-    ( layer_index.y != 0 ) ?
-    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) * 8 + 1 ) ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 );
+    ( layer_index.y != 0 ) ? albedo[ uint( layer_index.y ) - 1 ] : vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l2_albedo =
-    ( layer_index.z != 0 ) ?
-    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) * 8 + 1 ) ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 );
+    ( layer_index.z != 0 ) ? albedo[ uint( layer_index.z ) - 1 ] : vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l3_albedo =
-    ( layer_index.w != 0 ) ?
-    imageLoad( gbuffer, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) * 8 + 1 ) ) :
-    vec4( 0.0, 0.0, 0.0, 0.0 );
+    ( layer_index.w != 0 ) ? albedo[ uint( layer_index.w ) - 1 ] : vec4( 0.0, 0.0, 0.0, 0.0 );
 
   const vec3 l0_ambient =
     global_uniforms.ambient *
     light_pool[ global_uniforms.light ].energy.xyz *
-    imageLoad( occlusion, screen_pos ).r *
+    imageLoad( image_poolr8[ nonuniformEXT( push_constants.occlusion ) ], screen_pos ).r *
     l0_albedo.xyz;
   const vec3 l1_ambient =
     global_uniforms.ambient *
@@ -111,70 +104,72 @@ void main()  {
     light_pool[ global_uniforms.light ].energy.xyz *
     l2_albedo.xyz;
 
-  const vec3 l0_diffuse =
+  const vec3 l0_lighting =
     ( layer_index.x != 0 ) ?
-    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ).xyz :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.lighting_image ) ],
+      ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) )
+    ).xyz :
     vec3( 0.0, 0.0, 0.0 );
-  const vec3 l1_diffuse =
+  const vec3 l1_lighting =
     ( layer_index.y != 0 ) ?
-    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ).xyz :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.lighting_image ) ],
+      ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) )
+    ).xyz :
     vec3( 0.0, 0.0, 0.0 );
-  const vec3 l2_diffuse =
+  const vec3 l2_lighting =
     ( layer_index.z != 0 ) ?
-    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ).xyz :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.lighting_image ) ],
+      ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) )
+    ).xyz :
     vec3( 0.0, 0.0, 0.0 );
-  const vec3 l3_diffuse =
+  const vec3 l3_lighting =
     ( layer_index.w != 0 ) ?
-    imageLoad( diffuse_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
-    vec3( 0.0, 0.0, 0.0 );
-
-  const vec3 l0_specular =
-    ( layer_index.x != 0 ) ?
-    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ).xyz :
-    vec3( 0.0, 0.0, 0.0 );
-  const vec3 l1_specular =
-    ( layer_index.y != 0 ) ?
-    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ).xyz :
-    vec3( 0.0, 0.0, 0.0 );
-  const vec3 l2_specular =
-    ( layer_index.z != 0 ) ?
-    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ).xyz :
-    vec3( 0.0, 0.0, 0.0 );
-  const vec3 l3_specular =
-    ( layer_index.w != 0 ) ?
-    imageLoad( specular_image, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ).xyz :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.lighting_image ) ],
+      ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) )
+    ).xyz :
     vec3( 0.0, 0.0, 0.0 );
   
   const vec4 l0_scat =
     ( layer_index.x != 0 ) ?
-    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) ) ) :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.scattering ) ],
+      ivec3( screen_pos, max( uint( layer_index.x ) - 1, 0 ) )
+    ) :
     vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l1_scat =
     ( layer_index.y != 0 ) ?
-    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) ) ) :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.scattering ) ],
+      ivec3( screen_pos, max( uint( layer_index.y ) - 1, 0 ) )
+    ) :
     vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l2_scat =
     ( layer_index.z != 0 ) ?
-    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) ) ) :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.scattering ) ],
+      ivec3( screen_pos, max( uint( layer_index.z ) - 1, 0 ) )
+    ) :
     vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l3_scat =
     ( layer_index.w != 0 ) ?
-    imageLoad( scattering, ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) ) ) :
+    imageLoad(
+      image_pool16f_array[ nonuniformEXT( push_constants.scattering ) ],
+      ivec3( screen_pos, max( uint( layer_index.w ) - 1, 0 ) )
+    ) :
     vec4( 0.0, 0.0, 0.0, 0.0 );
   const vec4 l0_total = 
-    vec4( ( l0_ambient + ( l0_diffuse.rgb + l0_specular ) ) * l0_scat.w + l0_scat.rgb, l0_albedo.a );
+    vec4( ( l0_ambient + ( l0_lighting.rgb ) ) * l0_scat.w + l0_scat.rgb, l0_albedo.a );
   const vec4 l1_total = 
-    vec4( ( l1_ambient + ( l1_diffuse.rgb + l1_specular ) ) * l1_scat.w + l1_scat.rgb, l1_albedo.a );
+    vec4( ( l1_ambient + ( l1_lighting.rgb ) ) * l1_scat.w + l1_scat.rgb, l1_albedo.a );
   const vec4 l2_total = 
-    vec4( ( l2_ambient + ( l2_diffuse.rgb + l2_specular ) ) * l2_scat.w + l2_scat.rgb, l2_albedo.a );
+    vec4( ( l2_ambient + ( l2_lighting.rgb ) ) * l2_scat.w + l2_scat.rgb, l2_albedo.a );
   const vec4 l3_total = 
-    vec4( ( l3_ambient + ( l3_diffuse.rgb + l3_specular ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
+    vec4( ( l3_ambient + ( l3_lighting.rgb ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
 
-/*  const vec4 l0_total = vec4( l0_scat.rgb, l0_albedo.a );
-  const vec4 l1_total = vec4( l1_scat.rgb, l1_albedo.a );
-  const vec4 l2_total = vec4( l2_scat.rgb, l2_albedo.a );
-  const vec4 l3_total = vec4( l3_scat.rgb, l3_albedo.a );
-*/
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   near_total =
     vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) : near_total.a );
@@ -209,9 +204,9 @@ void main()  {
   const float near_coc = min( max( ( af_state.lens_size * abs( near_depth - af_state.depth )/( near_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
   const float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
  
-  imageStore( dest_image, ivec3( screen_pos, 0 ), near_total );
-  imageStore( dest_image, ivec3( screen_pos, 1 ), far_total );
-  imageStore( coc_image, ivec3( screen_pos, 0 ), vec4( near_coc, 0.0, 0.0, 0.0 ) );
-  imageStore( coc_image, ivec3( screen_pos, 1 ), vec4( far_coc, 0.0, 0.0, 0.0 ) );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 0 ), near_total );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 1 ), far_total );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.coc_image ) ], ivec3( screen_pos, 0 ), vec4( near_coc, 0.0, 0.0, 0.0 ) );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.coc_image ) ], ivec3( screen_pos, 1 ), vec4( far_coc, 0.0, 0.0, 0.0 ) );
 }
 

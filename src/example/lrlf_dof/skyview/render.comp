@@ -24,22 +24,25 @@ layout(push_constant) uniform PushConstants {
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const uint layer = gl_GlobalInvocationID.z;
-  const gbuffer_value p = read_kplus_buffer( push_constants.gbuffer, screen_pos, layer );
-  // スクリーン空間の座標に対応するワールド空間の座標を取得
-  const vec3 pos = p.pos.xyz;
+  const vec3 pos = read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, layer ).xyz;
+  const float albedo_alpha = read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, layer ).a;
+  if( albedo_alpha == 0.0 ) {
+    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 1.0 ) );
+    return;
+  }
   
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
-  float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 256.0;
+  float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 32.0;
   const mat4 world_to_screen = 
       matrix_pool[ global_uniforms.projection_matrix ] *
       matrix_pool[ global_uniforms.camera_matrix ];
   const uint shadow_map = light_pool[global_uniforms.light].shadow_map;
   const vec3 light_pos = light_pool[global_uniforms.light].world_position.xyz;
   // 視点からワールド空間での座標までの間を256分割
-  for( uint i = 0; i != 256; i++ ) {
+  for( uint i = 0; i != 32.f; i++ ) {
     // 各分割点の座標
-    const vec3 sample_pos = mix( global_uniforms.eye_pos.xyz, pos.xyz, float( i ) / 256.0 );
-    const float visibility = simple_shadow_omni( shadow_map, sample_pos, light_pos );
+    const vec3 sample_pos = mix( global_uniforms.eye_pos.xyz, pos.xyz, float( i ) / 32.0 );
+    const float visibility = 1.0;// simple_shadow_omni( shadow_map, sample_pos, light_pos );
     vec4 sample_pos_in_screen = world_to_screen * vec4( sample_pos, 1.0 );
     sample_pos_in_screen /= sample_pos_in_screen.w;
     const vec3 sample_pos_in_froxel = sample_pos_in_screen.xyz * 0.5 + 0.5;
@@ -57,6 +60,6 @@ void main() {
     transmittance = texture( texture_pool_3d[ nonuniformEXT( push_constants.froxel ) ], sample_pos_in_froxel ).w;
   }
 
-  imageStore( image_pool32f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( sum, transmittance ) );
+  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( sum, transmittance ) );
 }
 

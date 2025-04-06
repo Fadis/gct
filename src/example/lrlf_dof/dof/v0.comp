@@ -5,11 +5,11 @@
 
 #include <gct/filter_cache.h>
 
-layout (binding = 1, rgba32f) readonly uniform image2DArray src_image;
-layout (binding = 2, r32f) readonly uniform image2DArray coc;
-layout (binding = 3, rgba32f) writeonly uniform image2DArray dest_image;
+layout (binding = 1, rgba16f) readonly uniform image2DArray src_image;
+layout (binding = 2, r16f) readonly uniform image2DArray coc;
+layout (binding = 3, rgba16f) writeonly uniform image2DArray dest_image;
 
-layout(local_size_x = 1, local_size_y = 256 ) in;
+layout(local_size_x = 1, local_size_y = 128 ) in;
 
 int lrlfilter_size = 65;
 // 特異値分解で求めた分離可能なフィルタのパラメータ

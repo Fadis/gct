@@ -7,7 +7,7 @@
 
 #include <gct/constants.h>
 
-layout (binding = 0, rgba32f) readonly uniform image2D src_image;
+layout (binding = 0, rgba16f) readonly uniform image2D src_image;
 layout (std430, binding = 1) buffer Output {
   uint value;
   float scale;
