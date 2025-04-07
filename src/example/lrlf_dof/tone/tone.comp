@@ -19,7 +19,7 @@ shared float[ 16 ] smax;
 
 void main()  {
   ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const ivec2 image_size = imageSize( src_image );
+  const ivec2 image_size = imageSize( src_image ).xy;
   if( screen_pos.x >= image_size.x ) screen_pos.x = image_size.x - 1;
   if( screen_pos.y >= image_size.y ) screen_pos.y = image_size.y - 1;
   const vec3 color = imageLoad( src_image, screen_pos ).rgb;

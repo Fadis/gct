@@ -7,7 +7,12 @@
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
-layout (std430, binding = 13) buffer Output {
+layout (std430, binding = 7) buffer Tone {
+  uint value;
+  float scale;
+} tone;
+
+layout (std430, binding = 13) buffer AFState {
   uint history;
   uint max_history;
   float depth;

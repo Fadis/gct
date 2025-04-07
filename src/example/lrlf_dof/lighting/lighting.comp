@@ -19,7 +19,6 @@ layout(push_constant) uniform PushConstants {
   uint src;
   uint depth;
   uint dest;
-  uint unproject;
 } push_constants;
 
 void main()  {
@@ -28,12 +27,7 @@ void main()  {
   const uint layer = gl_GlobalInvocationID.z;
   gbuffer_value p;
 
-  const mat4 screen_to_world = matrix_pool[ push_constants.unproject ];
-  vec4 pos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), read_kplus_buffer_depth( push_constants.depth, screen_pos, layer ), 1.0 );
-  pos4 /= pos4.w;
-  p.pos = pos4.xyz;
-
-  //p.pos = read_kplus_buffer_pos_depth( push_constants.src, screen_pos, layer ).xyz;
+  p.pos = read_kplus_buffer_pos_depth( push_constants.src, screen_pos, layer ).xyz;
   p.albedo = read_kplus_buffer_albedo( push_constants.src, screen_pos, layer );
   vec2 material = read_kplus_buffer_mrid( push_constants.src, screen_pos, layer ).xy;
   p.metallic = material.x;

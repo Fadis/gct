@@ -64,7 +64,7 @@ bool update_kplus_buffer(
   );
   if( new_sample_pos < 4 ) {
     imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
     imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
     imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
     imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
@@ -133,7 +133,7 @@ bool update_kplus_buffer16(
   );
   if( new_sample_pos < 4 ) {
     imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
     imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
     imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
     imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );

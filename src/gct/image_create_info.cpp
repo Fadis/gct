@@ -323,7 +323,8 @@ namespace gct {
     if( l.get_basic().imageType != r.get_basic().imageType ) return false;
     if( l.get_basic().format != r.get_basic().format ) return false;
     if( l.get_basic().extent != r.get_basic().extent ) return false;
-    if( l.get_basic().mipLevels != r.get_basic().arrayLayers ) return false;
+    if( l.get_basic().arrayLayers != r.get_basic().arrayLayers ) return false;
+    if( l.get_basic().mipLevels != r.get_basic().mipLevels ) return false;
     if( l.get_basic().samples != r.get_basic().samples ) return false;
     if( l.get_basic().tiling != r.get_basic().tiling ) return false;
     if( l.get_basic().usage != r.get_basic().usage ) return false;

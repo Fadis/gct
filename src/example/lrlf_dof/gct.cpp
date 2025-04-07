@@ -399,7 +399,7 @@ int main( int argc, const char *argv[] ) {
   
   const auto tone_buffer =
     res.allocator->create_mappable_buffer(
-      8u,
+      16u,
       vk::BufferUsageFlagBits::eStorageBuffer|
       vk::BufferUsageFlagBits::eTransferSrc|
       vk::BufferUsageFlagBits::eTransferDst
@@ -532,10 +532,16 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
       .set_node_name( "dof" )
   );
+  
+  gct::gauss bloom_gauss(
+    gct::gauss_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/" )
+      .set_scene_graph( sg->get_resource() )
+      .set_node_name( "bloom_gauss" )
+  );
 
   gct::shader_graph::builder builder( sg->get_resource() );
-
-  const auto unproject_to_world_desc = sg->get_resource()->matrix->allocate();
 
   const auto lighting_desc = builder.call(
     builder.get_image_io_create_info(
@@ -553,7 +559,6 @@ int main( int argc, const char *argv[] ) {
         .set_dim( "src", { 1.f, -4.f } )
         .set_node_name( "lighting" )
     )
-    .set_push_constant( "unproject", *unproject_to_world_desc )
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", extended_gbuffer_desc.linear )
@@ -622,34 +627,9 @@ int main( int argc, const char *argv[] ) {
   const auto dof_desc = dof(
     builder,
     mix_ao_desc[ "dest_image" ],
-    mix_ao_desc[ "coc_image" ]
+    filtered_coc
   );
-/*
-  const auto bloom_gauss = gct::image_filter(
-    gct::image_filter_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
-      .set_input_name( "src_image" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ dof_view } ) ///
-      .set_output_create_info( rgba16ici )
-      .set_output_name( "bloom_image" )
-      .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", mixed_out } )
-      .add_resource( { "tone", tone.get_buffer() } )
-      .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
-      .add_resource( { "af_state", af_state_buffer } )
-  )(
-    gct::image_filter_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv" )
-  )(
-    gct::image_filter_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv" )
-  );
-  */
-  /*
+
   const auto merge_desc = builder.call(
     std::make_shared< gct::compute >(
       gct::compute_create_info()
@@ -658,29 +638,30 @@ int main( int argc, const char *argv[] ) {
         .set_scene_graph( sg->get_resource() )
         .add_resource( { "global_uniforms", global_uniform } )
         .add_resource( { "af_state", af_state_buffer } )
-        .add_resource( { "tone", tone.get_buffer() } )
+        .add_resource( { "tone", tone_buffer->get_buffer() } )
     ),
     gct::image_io_plan()
       .add_input( "src" )
       .add_sampled( "skyview", linear_sampler_desc )
-      .add_output( "dest", "src", 1.f )
-      .set_dim( "src", 1.f )
+      .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
+      .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
+      .set_dim( "src", glm::vec2( 1.f, -1.f ) )
       .set_node_name( "merge" )
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", dof_desc )
       .add( "skyview", skyview_desc )
   );
-  */
+  
+  const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
 
-
-  builder.output( dof_desc );
-  builder.output( mix_ao_desc[ "dest_image" ] );
-  const auto compiled_hbao = builder();
+  builder.output( merge_desc[ "dest" ] );
+  builder.output( filtered_bloom );
+  const auto compiled = builder();
   std::cout << builder.get_log() << std::endl;
-  std::cout << to_string( compiled_hbao ) << std::endl;
-  const auto mixed_view = compiled_hbao.get_view( mix_ao_desc[ "dest_image" ] );
-  const auto dof_view = compiled_hbao.get_view( dof_desc );
+  std::cout << to_string( compiled ) << std::endl;
+  const auto merged_view = compiled.get_view( merge_desc[ "dest" ] );
+  const auto bloom_view = compiled.get_view( filtered_bloom );
   
   const auto skyview_param =
     gct::skyview_parameter()
@@ -726,40 +707,25 @@ int main( int argc, const char *argv[] ) {
   );
 
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
-
+  
   const gct::tone_mapping tone(
     gct::tone_mapping_create_info()
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out } )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ merged_view } )
       .set_output( tone_buffer )
   );
 
-  const auto bloom_gauss = gct::image_filter(
-    gct::image_filter_create_info()
-      .set_allocator( res.allocator )
-      .set_descriptor_pool( res.descriptor_pool )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
-      .set_input_name( "src_image" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ dof_view } ) ///
-      .set_output_create_info( rgba16ici )
-      .set_output_name( "bloom_image" )
-      .add_resource( { "skyview", linear_sampler, skyview.get_output(), vk::ImageLayout::eShaderReadOnlyOptimal } )
-      .add_resource( { "dest_image", mixed_out } )
-      .add_resource( { "tone", tone_buffer->get_buffer() } )
-      .add_resource( { "global_uniforms", global_uniform } )
-      .add_resource( { "matrix_pool", sg->get_resource()->matrix->get_buffer() } )
-      .add_resource( { "af_state", af_state_buffer } )
-  )(
-    gct::image_filter_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/h12_32.comp.spv" )
-  )(
-    gct::image_filter_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/v12_32.comp.spv" )
-  );
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto recorder = command_buffer->begin();
+      recorder.set_image_layout( merged_view, vk::ImageLayout::eGeneral );
+    }
+    command_buffer->execute_and_wait();
+  }
   
   const auto gamma = gct::image_filter(
     gct::image_filter_create_info()
@@ -767,9 +733,9 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv" )
-      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >( res.swapchain_images.size(), mixed_out ) )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >( res.swapchain_images.size(), merged_view ) )
       .set_output( res.swapchain_image_views )
-      .add_resource( { "bloom_image", bloom_gauss.get_output(), vk::ImageLayout::eGeneral } )
+      .add_resource( { "bloom_image", bloom_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto scene_aabb = sg->get_root_node()->get_initial_world_aabb();
@@ -815,16 +781,6 @@ int main( int argc, const char *argv[] ) {
   const auto previous_camera_desc = sg->get_resource()->matrix->get_history( camera_desc );
   const auto screen_to_world_desc = sg->get_resource()->matrix->allocate( glm::inverse( projection * walk.get_lookat() ) );
   sg->get_resource()->matrix->set( unproject_desc, glm::inverse(
-    projection *
-    glm::mat4(
-      2.f, 0.f, 0.f, 0.f,
-      0.f, 2.f, 0.f, 0.f,
-      0.f, 0.f, 2.f, 0.f,
-      -1.f, -1.f, -1.f, 1.f
-    )
-  ) );
-  sg->get_resource()->matrix->set( unproject_to_world_desc, glm::inverse(
-    walk.get_lookat() *
     projection *
     glm::mat4(
       2.f, 0.f, 0.f, 0.f,
@@ -891,16 +847,6 @@ int main( int argc, const char *argv[] ) {
           sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
           sg->get_resource()->matrix->set( world_to_screen_desc, projection * walk.get_lookat() );
           sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
-          sg->get_resource()->matrix->set( unproject_to_world_desc, glm::inverse(
-            walk.get_lookat() *
-            projection *
-            glm::mat4(
-              2.f, 0.f, 0.f, 0.f,
-              0.f, 2.f, 0.f, 0.f,
-              0.f, 0.f, 2.f, 0.f,
-              -1.f, -1.f, -1.f, 1.f
-            )
-          ) );
           sg->get_resource()->light->set(
             light_desc,
             gct::punctual_light_parameter()
@@ -1036,16 +982,14 @@ int main( int argc, const char *argv[] ) {
         update_af( rec, 0, 16, 16, 1u );
         rec.compute_barrier( af_state_buffer );
 
-        compiled_hbao( rec );
+        compiled( rec );
         
         rec.compute_barrier(
           gct::syncable()
-            .add( mixed_view )
-            .add( dof_view )
+            .add( merged_view )
+            .add( bloom_view )
         );
         
-        bloom_gauss( rec, 0 );
-        rec.compute_barrier( mixed_out );
         tone.get( rec, 0 );
       }
       command_buffer->execute(

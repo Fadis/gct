@@ -184,7 +184,7 @@ void main()  {
     vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), ( l1_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) : near_total.a );
   near_total =
     vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), ( l0_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) : near_total.a );
-  //near_total = vec4(l0_lighting, 1.0 );
+  //near_total = vec4(l0_albedo.xyz, 1.0 );
 
   float near_depth = af_state.depth;
   near_depth = min( l3_depth, near_depth );

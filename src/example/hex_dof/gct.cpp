@@ -518,6 +518,13 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
 
+  const auto tone_buffer =
+    res.allocator->create_mappable_buffer(
+      16u,
+      vk::BufferUsageFlagBits::eStorageBuffer|
+      vk::BufferUsageFlagBits::eTransferSrc|
+      vk::BufferUsageFlagBits::eTransferDst
+    );
   const gct::tone_mapping tone(
     gct::tone_mapping_create_info()
       .set_allocator( res.allocator )
@@ -525,6 +532,7 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ mixed_out } )
+      .set_output( tone_buffer )
   );
   
   auto linear_sampler = res.device->get_sampler(

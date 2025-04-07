@@ -71,10 +71,8 @@ add_shader( lrlf_dof light_pool/write.comp )
 add_shader( lrlf_dof light_pool/read.comp )
 add_shader( lrlf_dof light_pool/update.comp )
 
-add_shader( lrlf_dof gauss/h5_16.comp )
-add_shader( lrlf_dof gauss/v5_16.comp )
-add_shader( lrlf_dof gauss/h12_32.comp )
-add_shader( lrlf_dof gauss/v12_32.comp )
+add_shader( lrlf_dof gauss/horizontal.comp )
+add_shader( lrlf_dof gauss/vertical.comp )
 
 add_shader( lrlf_dof lighting/lighting.comp )
 add_shader( lrlf_dof lighting/diffuse.comp )
