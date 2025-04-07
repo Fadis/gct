@@ -7,6 +7,8 @@
 #include "global_uniforms.h"
 #include <gct/scene_graph.h>
 
+layout(early_fragment_tests) in;
+
 layout(binding = 6,set=1,std430) buffer Condition {
   uint condition[];
 };

@@ -30,6 +30,7 @@ struct skyview_froxel2_create_info {
   LIBGCT_SETTER( froxel_xy_resolution )
   LIBGCT_SETTER( froxel_z_resolution )
   LIBGCT_SETTER( sigma )
+  LIBGCT_SETTER( world_to_screen )
   LIBGCT_SETTER( g )
   LIBGCT_SETTER( ground_radius )
   LIBGCT_SETTER( top_radius )
@@ -46,6 +47,7 @@ struct skyview_froxel2_create_info {
   std::uint32_t froxel_xy_resolution = 32u;
   std::uint32_t froxel_z_resolution = 32u;
   matrix_pool::matrix_descriptor sigma;
+  matrix_pool::matrix_descriptor world_to_screen;
   float ground_radius = 6360000.f;
   float top_radius = 6460000.f;
   float altitude = 100.f;

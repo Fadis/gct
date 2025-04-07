@@ -16,6 +16,7 @@ layout(binding=8) uniform GlobalUniforms {
   float ambient;
   int light;
   int gbuffer;
+  int depth;
 } global_uniforms;
 
 

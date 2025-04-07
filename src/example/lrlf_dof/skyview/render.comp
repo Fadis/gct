@@ -19,6 +19,7 @@ layout(push_constant) uniform PushConstants {
   uint gbuffer;
   uint froxel;
   uint dest;
+  uint world_to_screen;
 } push_constants;
 
 void main() {
@@ -33,11 +34,10 @@ void main() {
   
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
   float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 32.0;
-  const mat4 world_to_screen = 
-      matrix_pool[ global_uniforms.projection_matrix ] *
-      matrix_pool[ global_uniforms.camera_matrix ];
-  const uint shadow_map = light_pool[global_uniforms.light].shadow_map;
-  const vec3 light_pos = light_pool[global_uniforms.light].world_position.xyz;
+  const mat4 world_to_screen =
+    matrix_pool[ push_constants.world_to_screen ];
+  //const uint shadow_map = light_pool[global_uniforms.light].shadow_map;
+  //const vec3 light_pos = light_pool[global_uniforms.light].world_position.xyz;
   // 視点からワールド空間での座標までの間を256分割
   for( uint i = 0; i != 32.f; i++ ) {
     // 各分割点の座標

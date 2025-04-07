@@ -4,6 +4,8 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
+layout(early_fragment_tests) in;
+
 void main()  {
 }
 

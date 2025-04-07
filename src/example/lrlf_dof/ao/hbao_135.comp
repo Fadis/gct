@@ -17,20 +17,13 @@ shared vec3[gl_WorkGroupSize.x+hbao_kernel_size*2+1] hbao_cache;
 layout(push_constant) uniform PushConstants {
   uint src;
   uint dest;
+  uint unproject;
 } push_constants;
 
 void main() {
   const ivec2 image_size = imageSize( image_poolr8[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.x, ( -int( gl_GlobalInvocationID.x ) + int( gl_GlobalInvocationID.y + image_size.y * 3 ) ) % image_size.y );
-  const mat4 screen_to_cam =
-    matrix_pool[ global_uniforms.camera_matrix ] *
-    matrix_pool[ global_uniforms.screen_to_world_matrix ] *
-    mat4(
-      2.0, 0.0, 0.0, 0.0,
-      0.0, 2.0, 0.0, 0.0,
-      0.0, 0.0, 2.0, 0.0,
-      -1.0, -1.0, -1.0, 1.0
-    );
+  const mat4 screen_to_cam = matrix_pool[ push_constants.unproject ];
   const uint lcpos = gl_LocalInvocationID.x;
   {
     const uint hcpos = lcpos + gl_WorkGroupSize.x;

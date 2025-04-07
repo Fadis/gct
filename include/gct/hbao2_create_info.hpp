@@ -8,6 +8,7 @@
 #include <gct/named_resource.hpp>
 #include <gct/allocator_set.hpp>
 #include <gct/shader_set.hpp>
+#include <gct/matrix_pool.hpp>
 
 namespace gct {
 
@@ -22,6 +23,8 @@ struct hbao2_create_info {
   LIBGCT_SHADER_SET( shader_set )
   LIBGCT_SETTER( rename )
   LIBGCT_RENAME_MAP( rename )
+  LIBGCT_SETTER( unproject )
+  LIBGCT_SETTER( format )
   LIBGCT_SETTER( resources )
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( scene_graph )
@@ -32,6 +35,8 @@ struct hbao2_create_info {
   allocator_set_t allocator_set;
   shader_set_t shader_set;
   rename_map_t rename;
+  matrix_pool::matrix_descriptor unproject;
+  vk::Format format = vk::Format::eR8Unorm;
   std::vector< named_resource > resources;
   std::shared_ptr< scene_graph::scene_graph_resource > scene_graph;
   std::string node_name;

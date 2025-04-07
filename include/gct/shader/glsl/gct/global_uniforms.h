@@ -24,6 +24,7 @@ layout(set=GCT_SHADER_SCENE_GRAPH_GLOBAL_UNIFORMS_SET_ID, binding = GCT_SHADER_S
   float ambient;
   int light;
   int gbuffer;
+  int depth;
 } global_uniforms;
 
 #endif

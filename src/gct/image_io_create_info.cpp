@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/compute.hpp>
@@ -57,6 +58,7 @@ image_io_create_info::image_io_create_info(
   }
   const auto pcmp = executable->get_push_constant_member_pointer();
   if( !pcmp ) {
+    std::cout << executable->get_props().shader << std::endl;
     throw exception::invalid_argument( "image_io_create_info::image_io_create_info : Push constants reflection is not available", __FILE__, __LINE__ );
   }
   std::unordered_set< std::string > duplicated_name;

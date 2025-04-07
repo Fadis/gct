@@ -5,7 +5,8 @@
 //#extension GL_KHR_shader_subgroup : enable
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
-layout (binding = 0, rgba32f) readonly uniform image2DArray gbuffer;
+layout (binding = 0, rgba16f) readonly uniform image2DArray gbuffer;
+layout (binding = 2, r32f) readonly uniform image2DArray depth;
 layout (std430, binding = 1) buffer Output {
   uint history;
   uint max_history;
@@ -42,7 +43,7 @@ void main()  {
   ivec2 screen_pos = ( push_constants.focus_pos - 8 ) + ivec2( gl_GlobalInvocationID.xy );
   const uint nearest_layer = max( uint( imageLoad( gbuffer, ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
   uint first_far_layer = nearest_layer;
-  const float encoded_depth = imageLoad( gbuffer, ivec3( screen_pos, nearest_layer * 8 + 0 ) ).w;
+  const float encoded_depth = imageLoad( depth, ivec3( screen_pos, nearest_layer ) ).x;
   const float linear_depth = ( encoded_depth == 0.0 ) ? ( ( af_state.znear + af_state.zfar ) / 2.0 ) : decode_depth( encoded_depth, af_state.znear, af_state.zfar );
   const float subgroup_sum = subgroupAdd( linear_depth );
   temp[ gl_SubgroupID ] = subgroup_sum;

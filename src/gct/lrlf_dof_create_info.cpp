@@ -17,12 +17,7 @@ lrlf_dof_create_info &lrlf_dof_create_info::set_shader(
   add_shader( "h2", dir / "h2.comp.spv" );
   add_shader( "h3", dir / "h3.comp.spv" );
   add_shader( "h4", dir / "h4.comp.spv" );
-  add_shader( "v0", dir / "h0.comp.spv" );
-  add_shader( "v1", dir / "h1.comp.spv" );
-  add_shader( "v2", dir / "h2.comp.spv" );
-  add_shader( "v3", dir / "h3.comp.spv" );
-  add_shader( "v4", dir / "h4.comp.spv" );
-  add_shader( "mix", dir / "mix.comp.spv" );
+  add_shader( "v", dir / "v.comp.spv" );
   return *this;
 }
 

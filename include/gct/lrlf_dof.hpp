@@ -24,11 +24,7 @@ namespace gct {
     std::shared_ptr< compute > h2;
     std::shared_ptr< compute > h3;
     std::shared_ptr< compute > h4;
-    std::shared_ptr< compute > v0;
-    std::shared_ptr< compute > v1;
-    std::shared_ptr< compute > v2;
-    std::shared_ptr< compute > v3;
-    std::shared_ptr< compute > v4;
+    std::shared_ptr< compute > v;
     std::shared_ptr< compute > mix;
   };
 }

@@ -34,8 +34,9 @@ void main()  {
 
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
   beginInvocationInterlockARB();
-  update_kplus_buffer(
+  update_kplus_buffer16(
     global_uniforms.gbuffer,
+    global_uniforms.depth,
     image_pos,
     p,
     gl_FragCoord.z,

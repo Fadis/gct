@@ -2,6 +2,7 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/image.hpp>
 #include <gct/image_view.hpp>
+#include <gct/mappable_buffer.hpp>
 #include <gct/buffer.hpp>
 #include <gct/compute.hpp>
 #include <gct/tone_mapping.hpp>
@@ -15,23 +16,29 @@ tone_mapping::tone_mapping(
   tone_scale( 1.f, 10, 60 )
 {
   for( std::size_t i = 0u; i != props.input.size(); ++i ) {
-    tone.push_back(
-      props.allocator_set.allocator->create_buffer(
-        sizeof( tone_state_t ),
-        vk::BufferUsageFlagBits::eStorageBuffer|
-        vk::BufferUsageFlagBits::eTransferDst|
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_GPU_ONLY
-      )
-    );
-    tone_staging.push_back(
-      props.allocator_set.allocator->create_buffer(
-        sizeof( tone_state_t ),
-        vk::BufferUsageFlagBits::eTransferDst|
-        vk::BufferUsageFlagBits::eTransferSrc,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
-      )
-    );
+    if( get_props().output ) {
+      tone.push_back( get_props().output->get_buffer() );
+      tone_staging.push_back( get_props().output->get_staging_buffer() );
+    }
+    else {
+      tone.push_back(
+        props.allocator_set.allocator->create_buffer(
+          sizeof( tone_state_t ),
+          vk::BufferUsageFlagBits::eStorageBuffer|
+          vk::BufferUsageFlagBits::eTransferDst|
+          vk::BufferUsageFlagBits::eTransferSrc,
+          VMA_MEMORY_USAGE_GPU_ONLY
+        )
+      );
+      tone_staging.push_back(
+        props.allocator_set.allocator->create_buffer(
+          sizeof( tone_state_t ),
+          vk::BufferUsageFlagBits::eTransferDst|
+          vk::BufferUsageFlagBits::eTransferSrc,
+          VMA_MEMORY_USAGE_CPU_TO_GPU
+        )
+      );
+    }
   }
   calc_tone.reset( new gct::compute(
     gct::compute_create_info()

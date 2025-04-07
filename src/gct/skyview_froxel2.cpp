@@ -109,6 +109,7 @@ shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
         .set_dim( gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ) )
         .set_node_name( node_prefix + "render" )
     )
+    .set_push_constant( "world_to_screen", *props.world_to_screen )
   )(
     shader_graph::vertex::combined_result_type()
       .add( gbuffer_name, gbuffer )
