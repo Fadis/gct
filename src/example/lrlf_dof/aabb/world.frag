@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#include "global_uniforms.h"
+#include <gct/global_uniforms.h>
 #include <gct/scene_graph.h>
 
 layout(early_fragment_tests) in;

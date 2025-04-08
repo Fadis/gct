@@ -889,6 +889,7 @@ int main( int argc, const char *argv[] ) {
   bool update_optflow = false;
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
+  float average = 0.f;
   while( !walk.end() ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     auto &sync = framebuffers[ current_frame ];
@@ -1112,7 +1113,10 @@ int main( int argc, const char *argv[] ) {
     command_buffer->wait_for_executed();
     sync.command_buffer->wait_for_executed();
     const auto end_date = std::chrono::high_resolution_clock::now();
-    std::cout << "elapsed : " << std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() << std::endl;
+    average = ( average * frame_counter + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( frame_counter + 1 );
+    if( frame_counter % 300 == 0 ) {
+      std::cout << "elapsed : " << average << std::endl;
+    }
     glfwPollEvents();
     ++current_frame;
     ++frame_counter;

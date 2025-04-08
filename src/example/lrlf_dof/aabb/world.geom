@@ -8,7 +8,7 @@
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#include "global_uniforms.h"
+#include <gct/global_uniforms.h>
 #include <gct/scene_graph.h>
 
 layout(binding = 6,set=1,std430) buffer Condition {

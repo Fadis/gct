@@ -75,8 +75,6 @@ add_shader( lrlf_dof gauss/horizontal.comp )
 add_shader( lrlf_dof gauss/vertical.comp )
 
 add_shader( lrlf_dof lighting/lighting.comp )
-add_shader( lrlf_dof lighting/diffuse.comp )
-add_shader( lrlf_dof lighting/specular.comp )
 add_shader( lrlf_dof gamma/gamma.comp )
 
 add_shader( lrlf_dof nearest_position/nearest_position.comp )
@@ -94,18 +92,12 @@ add_shader( lrlf_dof tone/tone.comp )
 
 add_shader( lrlf_dof distance/distance.comp )
 
-add_shader( lrlf_dof dof/h.comp )
 add_shader( lrlf_dof dof/h0.comp )
 add_shader( lrlf_dof dof/h1.comp )
 add_shader( lrlf_dof dof/h2.comp )
 add_shader( lrlf_dof dof/h3.comp )
 add_shader( lrlf_dof dof/h4.comp )
 add_shader( lrlf_dof dof/v.comp )
-add_shader( lrlf_dof dof/v0.comp )
-add_shader( lrlf_dof dof/v1.comp )
-add_shader( lrlf_dof dof/v2.comp )
-add_shader( lrlf_dof dof/v3.comp )
-add_shader( lrlf_dof dof/v4.comp )
 
 add_shader( lrlf_dof merge/merge.comp )
 
