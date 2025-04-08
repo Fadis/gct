@@ -16,6 +16,7 @@ namespace gct {
     shader_graph::vertex::combined_result_type operator()(
       shader_graph::builder &b,
       const shader_graph::vertex::subresult_type &gbuffer,
+      const shader_graph::vertex::subresult_type &depth,
       const shader_graph::vertex::subresult_type &transmittance
     ) const;
   private:

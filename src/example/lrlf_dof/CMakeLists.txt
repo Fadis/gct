@@ -111,3 +111,10 @@ add_shader( lrlf_dof merge/merge.comp )
 
 add_shader( lrlf_dof coc_gauss/horizontal.comp )
 add_shader( lrlf_dof coc_gauss/vertical.comp )
+
+add_shader( lrlf_dof sb/world.vert )
+add_shader( lrlf_dof sb/world.geom )
+add_shader( lrlf_dof sb/world.frag )
+add_shader( lrlf_dof flare/world.vert )
+add_shader( lrlf_dof flare/world.geom )
+add_shader( lrlf_dof flare/world.frag )

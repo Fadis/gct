@@ -1,5 +1,10 @@
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
+#include <gct/scene_graph_resource.hpp>
+#include <gct/matrix_pool.hpp>
+#include <gct/aabb_pool.hpp>
+#include <gct/buffer_pool.hpp>
+#include <gct/light_pool.hpp>
 #include <gct/descriptor_pool.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/pipeline_cache.hpp>
@@ -72,6 +77,13 @@ void to_json( nlohmann::json &dest, const lens_flare_create_info &src ) {
   }
   dest[ "resources" ] = src.resources;
 }
+lens_flare_create_info &lens_flare_create_info::set_scene_graph(
+   const std::shared_ptr< scene_graph::scene_graph_resource > &r
+) {
+  LIBGCT_SET_SCENE_GRAPH_IMPL( r )
+  return *this;
+}
+
 
 }
 

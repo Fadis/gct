@@ -17,15 +17,23 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 layout(push_constant) uniform PushConstants {
   uint gbuffer;
+  uint depth;
   uint froxel;
   uint dest;
   uint world_to_screen;
+  uint unproject;
 } push_constants;
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const uint layer = gl_GlobalInvocationID.z;
-  const vec3 pos = read_kplus_buffer_pos_depth( push_constants.gbuffer, screen_pos, layer ).xyz;
+  const mat4 screen_to_world = matrix_pool[ push_constants.unproject ];
+  const float depth = read_kplus_buffer_depth( push_constants.depth, screen_pos, layer );
+  vec4 pos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), depth, 1.0 );
+  pos4 /= pos4.w;
+  const vec3 pos = pos4.xyz;
+  //const vec3 pos = read_kplus_buffer_depth( push_constants.gbuffer, screen_pos, layer ).xyz;
   const float albedo_alpha = read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, layer ).a;
   if( albedo_alpha == 0.0 ) {
     imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 1.0 ) );
@@ -33,16 +41,16 @@ void main() {
   }
   
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
-  float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 32.0;
+  float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 64.0;
   const mat4 world_to_screen =
     matrix_pool[ push_constants.world_to_screen ];
-  //const uint shadow_map = light_pool[global_uniforms.light].shadow_map;
-  //const vec3 light_pos = light_pool[global_uniforms.light].world_position.xyz;
+  const uint shadow_map = light_pool[global_uniforms.light].shadow_map;
+  const vec3 light_pos = light_pool[global_uniforms.light].world_position.xyz;
   // 視点からワールド空間での座標までの間を256分割
-  for( uint i = 0; i != 32.f; i++ ) {
+  for( uint i = 0; i != 64.f; i++ ) {
     // 各分割点の座標
-    const vec3 sample_pos = mix( global_uniforms.eye_pos.xyz, pos.xyz, float( i ) / 32.0 );
-    const float visibility = 1.0;// simple_shadow_omni( shadow_map, sample_pos, light_pos );
+    const vec3 sample_pos = mix( global_uniforms.eye_pos.xyz, pos.xyz, float( i ) / 64.0 );
+    const float visibility = simple_shadow_omni( shadow_map, sample_pos, light_pos );
     vec4 sample_pos_in_screen = world_to_screen * vec4( sample_pos, 1.0 );
     sample_pos_in_screen /= sample_pos_in_screen.w;
     const vec3 sample_pos_in_froxel = sample_pos_in_screen.xyz * 0.5 + 0.5;

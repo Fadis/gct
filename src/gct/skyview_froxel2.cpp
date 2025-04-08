@@ -37,6 +37,7 @@ skyview_froxel2::skyview_froxel2(
 shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
   shader_graph::builder &b,
   const shader_graph::vertex::subresult_type &gbuffer,
+  const shader_graph::vertex::subresult_type &depth,
   const shader_graph::vertex::subresult_type &transmittance
 ) const {
   std::string node_prefix;
@@ -47,6 +48,7 @@ shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
     node_prefix = "skyview_froxel2." + props.node_name + ".";
   }
   LIBGCT_SHADER_SET_RENAME( rename, "gbuffer", gbuffer_name )
+  LIBGCT_SHADER_SET_RENAME( rename, "depth", depth_name )
   LIBGCT_SHADER_SET_RENAME( rename, "transmittance", transmittance_name )
   LIBGCT_SHADER_SET_RENAME( rename, "froxel", froxel_name )
   LIBGCT_SHADER_SET_RENAME( rename, "dest", dest_name )
@@ -104,15 +106,18 @@ shader_graph::vertex::combined_result_type skyview_froxel2::operator()(
       render,
       gct::image_io_plan()
         .add_input( gbuffer_name )
+        .add_input( depth_name )
         .add_sampled( froxel_name, linear_sampler )
         .add_output( dest_name, gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ), vk::Format::eR16G16B16A16Sfloat )
         .set_dim( gbuffer_name, glm::vec2( 1.0f, 1.0f/8.0f ) )
         .set_node_name( node_prefix + "render" )
     )
     .set_push_constant( "world_to_screen", *props.world_to_screen )
+    .set_push_constant( "unproject", *props.unproject_to_world )
   )(
     shader_graph::vertex::combined_result_type()
       .add( gbuffer_name, gbuffer )
+      .add( depth_name, depth )
       .add( froxel_name, generate_result )
   );
   return

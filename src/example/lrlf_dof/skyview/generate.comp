@@ -44,10 +44,10 @@ void main()  {
   const float distance = ( atmosphere_distance.y - atmosphere_distance.y );
 
   const mat4 sigma = matrix_pool[ push_constants.sigma ];
-  const vec3 sigma_ma = sigma[ 0 ].xyz;
+  const vec3 sigma_ma = sigma[ 0 ].xyz * 500000.0;
   const vec3 sigma_oa = sigma[ 1 ].xyz;
   const vec3 sigma_rs = sigma[ 2 ].xyz;
-  const vec3 sigma_ms = sigma[ 3 ].xyz;
+  const vec3 sigma_ms = sigma[ 3 ].xyz * 500000.0;
 
   vec3 view_transmittance = vec3( 1.0, 1.0, 1.0 );
   view_transmittance *= beer_lambert( sigma_rs, relative_rayleigh_density( push_constants.altitude - push_constants.ground_radius ), distance );

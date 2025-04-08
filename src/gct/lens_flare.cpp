@@ -21,7 +21,7 @@
 #include <gct/lens_flare.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
-
+#include <gct/color.hpp>
 namespace gct {
 
 lens_flare::lens_flare(
@@ -35,7 +35,7 @@ lens_flare::lens_flare(
       .set_layer( 1u )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( 1u )
-      .set_format( vk::Format::eR32G32B32A32Sfloat )
+      .set_format( props.format )
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .disable_depth()
   );
@@ -49,7 +49,7 @@ lens_flare::lens_flare(
     pipeline_vertex_input_state_create_info_t()
       .add_vertex_input_attribute_description(
         vk::VertexInputAttributeDescription()
-          .setFormat( vk::Format::eR32G32B32A32Sfloat )
+          .setFormat( props.format )
       )
       .add_vertex_input_binding_description(
         vk::VertexInputBindingDescription()
@@ -96,7 +96,8 @@ lens_flare::lens_flare(
       .set_allocator_set( props.allocator_set )
       .set_descriptor_set_layout( props.descriptor_set_layout )
       .set_external_descriptor_set( props.external_descriptor_set )
-      .set_ignore_unused_descriptor( true )
+      .set_external_pipeline_layout( props.external_pipeline_layout )
+      .set_ignore_unused_descriptor( props.ignore_unused_descriptor )
       .set_pipeline_create_info(
         graphics_pipeline_create_info_t()
           .set_vertex_input( vertex_input )

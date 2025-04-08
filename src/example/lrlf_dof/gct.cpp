@@ -62,6 +62,7 @@
 #include <gct/skyview_froxel2_create_info.hpp>
 #include <gct/skyview_froxel2_param.hpp>
 #include <gct/lrlf_dof.hpp>
+#include <gct/lens_flare.hpp>
 #include <gct/af_state.hpp>
 #include <gct/image_io.hpp>
 
@@ -469,7 +470,69 @@ int main( int argc, const char *argv[] ) {
       }
     );
   }
- 
+
+  const auto sb_image_desc = sg->get_resource()->image->allocate(
+    gct::image_load_info()
+      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/flare_950.png" )
+      .set_enable_linear( true )
+  );
+  const auto sb_sampler_desc = sg->get_resource()->sampler->allocate(
+    gct::get_basic_linear_sampler_create_info()
+  );
+
+  const auto sb_texture_desc = sg->get_resource()->texture->allocate(
+    sb_sampler_desc,
+    sb_image_desc
+  );
+  
+  gct::lens_flare sb(
+    gct::lens_flare_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_width( res.width/ 4 )
+      .set_height( res.height/ 4 )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/sb/" )
+      .set_texture( sb_texture_desc.linear )
+      .set_matrix_count( 1 )
+      .set_format( vk::Format::eR16G16B16A16Sfloat )
+      .set_lens_size( 0.025 / 2.8 )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
+  );
+
+  const auto sb_rendered_desc = sg->get_resource()->image->allocate( sb.get_image_view() );
+
+  const auto flare_image_desc = sg->get_resource()->image->allocate(
+    gct::image_load_info()
+      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/flare_200.png" )
+      .set_enable_linear( true )
+  );
+  const auto flare_sampler_desc = sg->get_resource()->sampler->allocate(
+    gct::get_basic_linear_sampler_create_info()
+  );
+
+  const auto flare_texture_desc = sg->get_resource()->texture->allocate(
+    flare_sampler_desc,
+    flare_image_desc
+  );
+  
+  gct::lens_flare flare(
+    gct::lens_flare_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_width( res.width / 8 )
+      .set_height( res.height / 8 )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/flare/" )
+      .set_texture( flare_texture_desc.linear )
+      .set_matrix_count( 36 )
+      .set_format( vk::Format::eR16G16B16A16Sfloat )
+      .set_lens_size( 0.025 / 2.8 )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
+  );
+
+  const auto flare_rendered_desc = sg->get_resource()->image->allocate( flare.get_image_view() );
+
   std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
     res.allocator->create_mappable_buffer(
       sizeof( gct::af_state ),
@@ -503,6 +566,7 @@ int main( int argc, const char *argv[] ) {
   const auto sigma = gct::get_default_skyview_sigma();
   const auto sigma_desc = sg->get_resource()->matrix->allocate( sigma );
   const auto world_to_screen_desc = sg->get_resource()->matrix->allocate();
+  const auto unproject_to_world_desc = sg->get_resource()->matrix->allocate();
   
   gct::skyview_froxel2 skyview_froxel2(
     gct::skyview_froxel2_create_info()
@@ -510,6 +574,7 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
       .set_sigma( sigma_desc )
       .set_world_to_screen( world_to_screen_desc )
+      .set_unproject_to_world( unproject_to_world_desc )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .set_node_name( "skyview_froxel" )
@@ -542,7 +607,7 @@ int main( int argc, const char *argv[] ) {
   );
 
   gct::shader_graph::builder builder( sg->get_resource() );
-
+  
   const auto lighting_desc = builder.call(
     builder.get_image_io_create_info(
       std::make_shared< gct::compute >(
@@ -559,6 +624,7 @@ int main( int argc, const char *argv[] ) {
         .set_dim( "src", { 1.f, -4.f } )
         .set_node_name( "lighting" )
     )
+    .set_push_constant( "unproject", *unproject_to_world_desc )
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", extended_gbuffer_desc.linear )
@@ -591,6 +657,7 @@ int main( int argc, const char *argv[] ) {
   const auto skyview_froxel_out_desc = skyview_froxel2(
     builder,
     extended_gbuffer_desc.linear,
+    extended_depth_desc.linear,
     transmittance_desc
   );
 
@@ -639,9 +706,12 @@ int main( int argc, const char *argv[] ) {
         .add_resource( { "global_uniforms", global_uniform } )
         .add_resource( { "af_state", af_state_buffer } )
         .add_resource( { "tone", tone_buffer->get_buffer() } )
+        .add_resource( { "sb", sb.get_image_view(), vk::ImageLayout::eGeneral } )
     ),
     gct::image_io_plan()
       .add_input( "src" )
+      .add_sampled( "star", linear_sampler_desc )
+      .add_sampled( "flare", linear_sampler_desc )
       .add_sampled( "skyview", linear_sampler_desc )
       .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
       .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
@@ -651,6 +721,8 @@ int main( int argc, const char *argv[] ) {
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", dof_desc )
       .add( "skyview", skyview_desc )
+      .add( "star", sb_rendered_desc )
+      .add( "flare", flare_rendered_desc )
   );
   
   const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
@@ -680,20 +752,6 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
   
-  const auto mixed_out = res.allocator->create_image_view(
-    rgba16ici,
-    VMA_MEMORY_USAGE_GPU_ONLY
-  );
-
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( mixed_out, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-
   auto update_af = gct::compute(
     gct::compute_create_info()
       .set_allocator( res.allocator )
@@ -708,6 +766,16 @@ int main( int argc, const char *argv[] ) {
 
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
   
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      rec.convert_image(
+        merged_view->get_factory(), vk::ImageLayout::eGeneral
+      );
+    }
+    command_buffer->execute_and_wait();
+  }
   const gct::tone_mapping tone(
     gct::tone_mapping_create_info()
       .set_allocator( res.allocator )
@@ -723,6 +791,7 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( merged_view, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( sb.get_image_view(), vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -781,13 +850,13 @@ int main( int argc, const char *argv[] ) {
   const auto previous_camera_desc = sg->get_resource()->matrix->get_history( camera_desc );
   const auto screen_to_world_desc = sg->get_resource()->matrix->allocate( glm::inverse( projection * walk.get_lookat() ) );
   sg->get_resource()->matrix->set( unproject_desc, glm::inverse(
-    projection *
     glm::mat4(
-      2.f, 0.f, 0.f, 0.f,
-      0.f, 2.f, 0.f, 0.f,
-      0.f, 0.f, 2.f, 0.f,
-      -1.f, -1.f, -1.f, 1.f
-    )
+      0.5f, 0.f, 0.f, 0.0f,
+      0.f, 0.5f, 0.f, 0.0f,
+      0.f, 0.f, 0.5f, 0.0f,
+      0.5f, 0.5f, 0.5f, 1.f
+    ) *
+    projection
   ) );
   const auto light_desc = sg->get_resource()->light->allocate(
     sg->get_root_node()->matrix,
@@ -847,6 +916,16 @@ int main( int argc, const char *argv[] ) {
           sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
           sg->get_resource()->matrix->set( world_to_screen_desc, projection * walk.get_lookat() );
           sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
+          sg->get_resource()->matrix->set( unproject_to_world_desc, glm::inverse(
+            glm::mat4(
+              0.5f, 0.f, 0.f, 0.0f,
+              0.f, 0.5f, 0.f, 0.0f,
+              0.f, 0.f, 0.5f, 0.0f,
+              0.5f, 0.5f, 0.5f, 1.f
+            ) *
+            projection *
+            walk.get_lookat()
+          ) );
           sg->get_resource()->light->set(
             light_desc,
             gct::punctual_light_parameter()
@@ -976,6 +1055,18 @@ int main( int argc, const char *argv[] ) {
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
         }
+          
+        rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
+        flare( rec );
+        rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
+        rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
+        sb( rec );
+        rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
+        rec.barrier(
+          gct::syncable()
+            .add( flare.get_image_view() )
+            .add( sb.get_image_view() )
+        );
         
         glm::ivec2 focus( res.width/2, res.height/2 );
         

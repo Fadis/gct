@@ -15,6 +15,11 @@ namespace gct {
 
 class shader_module_t;
 class descriptor_set_t;
+
+namespace scene_graph {
+  class scene_graph_resource;
+}
+
 struct lens_flare_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
@@ -26,7 +31,9 @@ struct lens_flare_create_info {
   LIBGCT_SETTER( lens_size )
   LIBGCT_SETTER( sensor_size )
   LIBGCT_SETTER( matrix_count )
+  LIBGCT_SETTER( format )
   LIBGCT_SETTER( external_descriptor_set )
+  LIBGCT_SETTER( external_pipeline_layout )
   LIBGCT_SETTER( resources )
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   lens_flare_create_info &set_shader(
@@ -51,6 +58,9 @@ struct lens_flare_create_info {
     external_descriptor_set.insert( std::make_pair( id, v ) );
     return *this;
   }
+  lens_flare_create_info &set_scene_graph(
+     const std::shared_ptr< scene_graph::scene_graph_resource >&
+  );
   lens_flare_create_info &clear_shader();
   allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
@@ -61,7 +71,10 @@ struct lens_flare_create_info {
   float lens_size = 0.050f / 2.8f; // 50mm lens with F2.8
   glm::vec2 sensor_size = glm::vec2( 0.036f, 0.036f*9.0f/16.0f );
   std::uint32_t matrix_count = 0u;
+  vk::Format format = vk::Format::eR32G32B32A32Sfloat;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
+  std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
+  bool ignore_unused_descriptor = true;
   std::vector< named_resource > resources;
 };
 void to_json( nlohmann::json &dest, const lens_flare_create_info &src );
