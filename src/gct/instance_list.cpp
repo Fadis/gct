@@ -9,6 +9,7 @@
 #include <gct/kdtree.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
+#include <gct/render_pass.hpp>
 #include <gct/conditional_rendering_begin_info.hpp>
 #include <gct/get_device.hpp>
 
@@ -49,6 +50,15 @@ void instance_list::operator()(
   const compiled_scene_graph &compiled,
   bool conditional
 ) const {
+  return (*this)( rec, compiled, std::nullopt, syncable(), conditional );
+}
+void instance_list::operator()(
+  command_buffer_recorder_t &rec,
+  const compiled_scene_graph &compiled,
+  const std::optional< render_pass_begin_info_t > &rp,
+  const syncable &barrier_target,
+  bool conditional
+) const {
   std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
   const auto &prim = compiled.get_primitive();
   rec.bind_descriptor_set(
@@ -69,6 +79,7 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->image_descriptor_set
   );
+  const bool enable_barrier = !barrier_target.empty();
   for( const auto &v: draw_list ) {
     auto p = prim.find( v.prim );
     auto i = resource->inst.get( v.inst );
@@ -82,20 +93,51 @@ void instance_list::operator()(
         push_constant.size(),
         push_constant.data()
       );
-      if( conditional && enable_conditional ) {
+      if( rp ) {
+        {
+          if( conditional && enable_conditional ) {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
-        auto token = rec.begin(
-          conditional_rendering_begin_info_t()
-            .set_buffer( resource->last_visibility->get_buffer() )
-            .set_basic(
-              vk::ConditionalRenderingBeginInfoEXT()
-                .setOffset( *i->descriptor.visibility * sizeof( std::uint32_t ) )
-            )
-        );
+            auto token = rec.begin(
+              conditional_rendering_begin_info_t()
+                .set_buffer( resource->last_visibility->get_buffer() )
+                .set_basic(
+                  vk::ConditionalRenderingBeginInfoEXT()
+                    .setOffset( *i->descriptor.visibility * sizeof( std::uint32_t ) )
+                )
+            );
 #endif
-        (p->second)( rec );
-      }else {
-        (p->second)( rec );
+            auto render_pass_token = rec.begin_render_pass(
+              *rp,
+              vk::SubpassContents::eInline
+            );
+            (p->second)( rec );
+            if( enable_barrier ) {
+              rec.barrier( barrier_target );
+            }
+          }else {
+            (p->second)( rec );
+            if( enable_barrier ) {
+              rec.barrier( barrier_target );
+            }
+          }
+        }
+      }
+      else {
+        if( conditional && enable_conditional ) {
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+          auto token = rec.begin(
+            conditional_rendering_begin_info_t()
+              .set_buffer( resource->last_visibility->get_buffer() )
+              .set_basic(
+                vk::ConditionalRenderingBeginInfoEXT()
+                  .setOffset( *i->descriptor.visibility * sizeof( std::uint32_t ) )
+              )
+          );
+#endif
+          (p->second)( rec );
+        }else {
+          (p->second)( rec );
+        }
       }
     }
   }

@@ -503,6 +503,18 @@ namespace gct {
       s
     );
   }
+  void command_buffer_recorder_t::fragment_barrier(
+    const syncable &s
+  ) {
+    barrier(
+      vk::AccessFlagBits::eShaderWrite,
+      vk::AccessFlagBits::eShaderRead,
+      vk::PipelineStageFlagBits::eFragmentShader,
+      vk::PipelineStageFlagBits::eFragmentShader,
+      vk::DependencyFlagBits( 0 ),
+      s
+    );
+  }
   std::vector< vk::ImageMemoryBarrier > command_buffer_recorder_t::convert_image(
     vk::AccessFlagBits src_access_mask,
     vk::AccessFlagBits dest_access_mask,

@@ -30,7 +30,7 @@ namespace gct {
     bool ignore_unused
   ) {
     auto updates = updates_;
-    std::vector< vk::WriteDescriptorSet > unwrapped;
+    std::unordered_map< vk::DescriptorType, std::vector< vk::WriteDescriptorSet > > unwrapped;
     for( auto &v: updates ) {
       const auto &name = v.get_name();
       if( !name.empty() ) {
@@ -63,12 +63,14 @@ namespace gct {
       auto basic = v.get_basic();
       basic.setDstArrayElement( v.get_index() );
       basic.setDstSet( *handle );
-      unwrapped.push_back( basic );
+      unwrapped[ basic.descriptorType ].push_back( basic );
     }
-    (*get_factory()->get_factory())->updateDescriptorSets(
-      unwrapped,
-      nullptr
-    );
+    for( const auto &u: unwrapped ) {
+      (*get_factory()->get_factory())->updateDescriptorSets(
+        u.second,
+        nullptr
+      );
+    }
   }
   const std::unordered_map< std::string, std::uint32_t > &descriptor_set_t::get_name_to_binding() const {
     const auto & layouts = get_props().get_layout();

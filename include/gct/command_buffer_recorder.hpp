@@ -473,6 +473,9 @@ namespace gct {
     void graphics_to_compute_barrier(
       const syncable&
     );
+    void fragment_barrier(
+      const syncable&
+    );
     /*
     void convert_image(
       const std::shared_ptr< image_t > &image,

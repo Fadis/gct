@@ -177,7 +177,7 @@ void main()  {
     vec4( ( l3_ambient + ( l3_lighting.rgb ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
     //vec4( ( l3_ambient + ( l3_albedo.rgb ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
 
-  vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 near_total = vec4( l0_total.xyz, 0.0 );
   near_total =
     vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) : near_total.a );
   near_total =

@@ -2,13 +2,10 @@
 #define GCT_SAMPLER_POOL_HPP
 #include <glm/mat4x4.hpp>
 #include <cstdint>
-#include <unordered_set>
-#include <unordered_map>
 #include <memory>
 #include <vector>
 #include <cstdint>
 #include <optional>
-#include <functional>
 #include <mutex>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
@@ -49,6 +46,7 @@ public:
   sampler_pool( const sampler_pool_create_info & );
   [[nodiscard]] sampler_descriptor allocate_nearest();
   [[nodiscard]] sampler_descriptor allocate_linear();
+  [[nodiscard]] sampler_descriptor allocate_unnormalized();
   [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
   [[nodiscard]] const sampler_pool_create_info &get_props() const { return state->props; }
   [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
@@ -61,6 +59,7 @@ private:
     void release_index( sampler_index_t );
     [[nodiscard]] sampler_descriptor allocate_nearest();
     [[nodiscard]] sampler_descriptor allocate_linear();
+    [[nodiscard]] sampler_descriptor allocate_unnormalized();
     [[nodiscard]] sampler_descriptor allocate( const sampler_create_info_t& );
     [[nodiscard]] std::shared_ptr< sampler_t > get( const sampler_descriptor& ) const;
     void release( sampler_index_t );
@@ -74,6 +73,7 @@ private:
     std::mutex guard;
     sampler_descriptor standard_nearest_sampler;
     sampler_descriptor standard_linear_sampler;
+    sampler_descriptor standard_unnormalized_sampler;
   };
   std::shared_ptr< state_type > state;
 };

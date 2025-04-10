@@ -79,6 +79,7 @@ subdirs(
   sslf
   prtlf
   image_io
+  half_resolution
 )
 if( DXC_FOUND )
 subdirs(

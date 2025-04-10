@@ -1,3 +1,4 @@
+#include <boost/program_options/value_semantic.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <boost/program_options.hpp>
@@ -43,7 +44,8 @@ common_sample_setup::common_sample_setup(
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
       ( "model,m", po::value< std::string >(), "glTF filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
-      ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" );
+      ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
+      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" );
   }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
@@ -116,6 +118,7 @@ common_sample_setup::common_sample_setup(
       height = 1080;
     }
     light_count = vm[ "light" ].as< unsigned int >();
+    force_geometry = vm[ "geometry" ].as< bool >();
     window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
     gct::glfw::get().poll();
     surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );

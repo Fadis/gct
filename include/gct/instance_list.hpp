@@ -1,5 +1,6 @@
 #ifndef GCT_INSTANCE_LIST_HPP
 #define GCT_INSTANCE_LIST_HPP
+#include <optional>
 #include <unordered_map>
 #include <memory>
 #include <filesystem>
@@ -14,6 +15,8 @@
 #include <gct/kdtree.hpp>
 #include <gct/nohc_parameter.hpp>
 #include <gct/property.hpp>
+#include <gct/syncable.hpp>
+#include <gct/render_pass_begin_info.hpp>
 
 namespace gct {
   class command_buffer_recorder_t;
@@ -22,8 +25,7 @@ namespace gct {
 
 namespace gct::scene_graph {
 
-struct instance_list_create_info {
-};
+struct instance_list_create_info {};
 
 struct resource_pair {
   LIBGCT_SETTER( inst )
@@ -54,6 +56,13 @@ public:
   void operator()(
     command_buffer_recorder_t&,
     const compiled_scene_graph &compiled,
+    bool conditional = false
+  ) const;
+  void operator()(
+    command_buffer_recorder_t&,
+    const compiled_scene_graph &compiled,
+    const std::optional< render_pass_begin_info_t > &rp,
+    const syncable &barrier_target,
     bool conditional = false
   ) const;
   void operator()(

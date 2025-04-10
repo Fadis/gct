@@ -49,6 +49,17 @@ sampler_pool::sampler_descriptor sampler_pool::state_type::allocate_linear(
   return standard_linear_sampler;
 }
 
+sampler_pool::sampler_descriptor sampler_pool::state_type::allocate_unnormalized(
+) {
+  if( !standard_unnormalized_sampler ) {
+    standard_unnormalized_sampler = allocate(
+      get_basic_unnormalized_sampler_create_info()
+    );
+  }
+  return standard_unnormalized_sampler;
+}
+
+
 sampler_pool::sampler_descriptor sampler_pool::state_type::allocate(
   const sampler_create_info_t &ci
 ) {
@@ -176,6 +187,12 @@ sampler_pool::sampler_descriptor sampler_pool::allocate_linear(
 ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate_linear();
+}
+
+sampler_pool::sampler_descriptor sampler_pool::allocate_unnormalized(
+) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate_unnormalized();
 }
 
 sampler_pool::sampler_descriptor sampler_pool::allocate(

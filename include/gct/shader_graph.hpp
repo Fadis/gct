@@ -181,6 +181,7 @@ public:
   const graph_type &get_graph() const {
     return *graph;
   }
+  image_pool::image_descriptor get_image_descriptor( const vertex::subresult_type & ) const;
   std::shared_ptr< image_view_t > get_view( const vertex::subresult_type & ) const;
   [[nodiscard]] std::shared_ptr< image_io > get_image_io( const graph_type::vertex_descriptor& ) const;
 private:

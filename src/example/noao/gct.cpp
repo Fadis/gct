@@ -71,12 +71,12 @@ int main( int argc, const char *argv[] ) {
       .set_basic(
         vk::DescriptorPoolCreateInfo()
           .setFlags( vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet )
-          .setMaxSets( 250 )
+          .setMaxSets( 65536*7 )
       )
-      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 2 )
-      .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 1 )
-      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 9 )
-      .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 8 )
+      .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 16 )
+      .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 65536*2 )
+      .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 65536*2 )
+      .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 65536*2 )
       .rebuild_chain()
   );
 

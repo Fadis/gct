@@ -110,10 +110,10 @@ bool update_kplus_buffer16(
       uint( sample_index.w ) :
       existing_sample_count + 1;
   const uint new_sample_pos =
-    ( depth > sample_depth.x ? 1 : 0 ) +
-    ( depth > sample_depth.y ? 1 : 0 ) +
-    ( depth > sample_depth.z ? 1 : 0 ) +
-    ( depth > sample_depth.w ? 1 : 0 );
+    ( depth >= sample_depth.x ? 1 : 0 ) +
+    ( depth >= sample_depth.y ? 1 : 0 ) +
+    ( depth >= sample_depth.z ? 1 : 0 ) +
+    ( depth >= sample_depth.w ? 1 : 0 );
   sample_index = (
     new_sample_pos == 0 ?
     ivec4( new_sample_index, sample_index.x, sample_index.y, sample_index.z ) :

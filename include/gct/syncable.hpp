@@ -34,6 +34,9 @@ struct syncable {
     image_view.push_back( i );
     return *this;
   }
+  [[nodiscard]] bool empty() const {
+    return buffer.empty() && image.empty() && image_view.empty();
+  }
   std::vector< std::shared_ptr< buffer_t > > buffer;
   std::vector< std::shared_ptr< image_t > > image;
   std::vector< std::shared_ptr< image_view_t > > image_view;

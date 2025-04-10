@@ -896,24 +896,24 @@ int main( int argc, const char *argv[] ) {
     gct::blocking_timer frame_rate;
     ++walk;
     // depth
-    /*if( walk.camera_moved() )*/ {
+    {
       {
         auto rec = command_buffer->begin();
-        const auto global_data = global_uniforms_t()
-          .set_projection_matrix( *proj_desc )
-          .set_camera_matrix( *camera_desc )
-          .set_previous_projection_matrix( * previous_proj_desc )
-          .set_previous_camera_matrix( *previous_camera_desc )
-          .set_screen_to_world_matrix( *screen_to_world_desc )
-          .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
-          .set_light_count( res.light_count )
-          .set_ambient( res.ambient_level )
-          .set_frame_counter( frame_counter )
-          .set_light( *light_desc )
-          .set_gbuffer( *extended_gbuffer_desc.linear )
-          .set_depth( *extended_depth_desc.linear );
-        {
-          //sg->get_resource()->matrix->set( proj_desc, projection );
+        if( res.force_geometry || walk.camera_moved() || walk.light_moved() ) {
+          const auto global_data = global_uniforms_t()
+            .set_projection_matrix( *proj_desc )
+            .set_camera_matrix( *camera_desc )
+            .set_previous_projection_matrix( * previous_proj_desc )
+            .set_previous_camera_matrix( *previous_camera_desc )
+            .set_screen_to_world_matrix( *screen_to_world_desc )
+            .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
+            .set_light_count( res.light_count )
+            .set_ambient( res.ambient_level )
+            .set_frame_counter( frame_counter )
+            .set_light( *light_desc )
+            .set_gbuffer( *extended_gbuffer_desc.linear )
+            .set_depth( *extended_depth_desc.linear );
+
           sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
           sg->get_resource()->matrix->set( world_to_screen_desc, projection * walk.get_lookat() );
           sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
@@ -940,7 +940,7 @@ int main( int argc, const char *argv[] ) {
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
         }
-        {
+        if( res.force_geometry || walk.camera_moved() ) {
           auto render_pass_token = rec.begin_render_pass(
             depth_gbuffer.get_render_pass_begin_info( 0 ),
             vk::SubpassContents::eInline
@@ -958,7 +958,7 @@ int main( int argc, const char *argv[] ) {
           (*il)( rec, *depth_csg, true );
         }
         // occlusion query
-        {
+        if( res.force_geometry || walk.camera_moved() ) {
           il->setup_resource_pair_buffer( rec );
           {
             auto render_pass_token = rec.begin_render_pass(
@@ -983,7 +983,7 @@ int main( int argc, const char *argv[] ) {
           );
         }
         tone.set( rec, 0 );
-        /*if( walk.light_moved() )*/ {
+        if( res.force_geometry || walk.light_moved() ) {
           const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
             .set_camera_matrix( *camera_desc )
@@ -1028,12 +1028,15 @@ int main( int argc, const char *argv[] ) {
             }
           );
         }
-        /*if( walk.light_moved() || walk.camera_moved() )*/ {
-          rec.copy( global_data, global_uniform );
-          rec.transfer_to_graphics_barrier( global_uniform );
+        if( res.force_geometry || walk.light_moved() || walk.camera_moved() ) {
           {
             rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
-            rec.barrier( extended_gbuffer );
+            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.barrier(
+              gct::syncable()
+                .add( extended_gbuffer )
+                .add( extended_depth )
+            );
             auto render_pass_token = rec.begin_render_pass(
               gbuffer.get_render_pass_begin_info( 0 ),
               vk::SubpassContents::eInline
@@ -1048,7 +1051,11 @@ int main( int argc, const char *argv[] ) {
               sg->get_resource()->pipeline_layout,
               global_descriptor_set
             );
-            (*il)( rec, *geometry_csg, true );
+            (*il)(
+              rec,
+              *geometry_csg,
+              true
+            );
           }
           if( walk.get_current_camera() == 0 ) {
             sg->rotate_visibility( rec );

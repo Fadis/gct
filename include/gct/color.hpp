@@ -175,6 +175,7 @@ constexpr std::array< float, 4u > white{ 1.000000f, 1.000000f, 1.000000f, 1.0f }
 }
 namespace gct::color::special {
 constexpr std::array< float, 4u > transparent{ 0.0f, 0.0f, 0.0f, 0.0f };
+constexpr std::array< float, 4u > one{ 1.0f, 1.0f, 1.0f, 1.0f };
 }
 
 #endif

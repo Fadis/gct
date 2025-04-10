@@ -2027,6 +2027,44 @@ std::string to_string( const compiled &src ) {
       }
     }
   }
+  image_pool::image_descriptor compiled::get_image_descriptor( const vertex::subresult_type &r ) const {
+    const auto &v = (*graph)[ r.get_vertex_id() ];
+    if( vertex_command_id( v.command.index() ) == vertex_command_id::call ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( v.command );
+      const auto image_or_tex = create_info->get( r.get_name() );
+      if( image_or_tex.index() == 0u ) {
+        const auto desc = std::get< image_pool::image_descriptor >( image_or_tex );
+        if( !desc ) {
+          throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : unknown image " + r.get_name(), __FILE__, __LINE__ );
+        }
+        return desc;
+      }
+      else if( image_or_tex.index() == 1u ) {
+        throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : " + r.get_name() + " is a texture", __FILE__, __LINE__ );
+      }
+    }
+    else if( vertex_command_id( v.command.index() ) == vertex_command_id::fill ) {
+      const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( v.command );
+      if( create_info->name != r.get_name() ) {
+          throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : unknown image " + r.get_name(), __FILE__, __LINE__ );
+      }
+      if( create_info->output.index() != 0 ) {
+          throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : image " + r.get_name() + " is not allocated", __FILE__, __LINE__ );
+      }
+      return std::get< image_pool::image_descriptor >( create_info->output );
+    }
+    else if( vertex_command_id( v.command.index() ) == vertex_command_id::blit ) {
+      const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( v.command );
+      if( create_info->output_name != r.get_name() ) {
+          throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : unknown image " + r.get_name(), __FILE__, __LINE__ );
+      }
+      if( create_info->output.index() != 0 ) {
+          throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : image " + r.get_name() + " is not allocated", __FILE__, __LINE__ );
+      }
+      return std::get< image_pool::image_descriptor >( create_info->output );;
+    }
+    throw exception::invalid_argument( "shader_graph::compiled::get_image_descriptor : broken vertex", __FILE__, __LINE__ );
+  }
   std::shared_ptr< image_view_t > compiled::get_view( const vertex::subresult_type &r ) const {
     const auto &v = (*graph)[ r.get_vertex_id() ];
     if( vertex_command_id( v.command.index() ) == vertex_command_id::call ) {

@@ -40,7 +40,9 @@ namespace gct::gltf {
     const std::vector< std::shared_ptr< descriptor_set_layout_t > > &env_descriptor_set_layout,
     bool dynamic_cull_mode
   ) {
-    fx::gltf::Document doc = fx::gltf::LoadFromText( path.string() );
+    fx::gltf::ReadQuotas quota;
+    quota.MaxBufferByteLength = 1024 * 1024 * 1024;
+    fx::gltf::Document doc = fx::gltf::LoadFromText( path.string(), quota );
     document_t document;
     std::vector< shader_t > shader;
     for( auto iter = shader_dir.begin(); iter != shader_dir.end(); ++iter ) {
