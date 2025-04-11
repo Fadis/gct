@@ -27,6 +27,7 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "inst_pool_size" ] = src.inst_pool_size;
   dest[ "descriptor_set_id" ] = src.descriptor_set_id;
   dest[ "texture_descriptor_set_id" ] = src.texture_descriptor_set_id;
+  dest[ "vertex_buffer_descriptor_set_id" ] = src.vertex_buffer_descriptor_set_id;
   dest[ "enable_linear" ] = src.enable_linear;
 }
 

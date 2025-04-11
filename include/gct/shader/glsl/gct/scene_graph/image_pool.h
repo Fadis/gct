@@ -25,6 +25,7 @@ layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, rgba16f) uniform
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, rgba32f) uniform image3D image_pool32f_3d[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r16f) uniform image3D image_poolr16f_3d[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32f) uniform image2D image_poolr32f_3d[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r8ui) uniform uimage2D image_poolr8u[];
 
 #endif
 

@@ -44,7 +44,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     std::istreambuf_iterator< char >()
   );
     
-  auto b = props.allocator->create_mappable_buffer(
+  auto b = props.allocator_set.allocator->create_mappable_buffer(
     data.size(),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
@@ -88,7 +88,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
 
-  auto b = props.allocator->create_mappable_buffer(
+  auto b = props.allocator_set.allocator->create_mappable_buffer(
     data.size() * sizeof( glm::vec4 ),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
@@ -135,7 +135,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
 
-  auto b = props.allocator->create_mappable_buffer(
+  auto b = props.allocator_set.allocator->create_mappable_buffer(
     data.size(),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
@@ -185,7 +185,7 @@ void vertex_buffer_pool::state_type::release( vertex_buffer_index_t index ) {
     removed = std::move( vertex_buffer_state[ index ] );
     vertex_buffer_state[ index ] = vertex_buffer_state_type();
     release_index( index );
-    if( props.descriptor_set ) {
+    /*if( props.descriptor_set ) {
       const auto target = (*props.descriptor_set)[ props.descriptor_name ];
       std::vector< write_descriptor_set_t > updates;
       updates.push_back(
@@ -200,7 +200,7 @@ void vertex_buffer_pool::state_type::release( vertex_buffer_index_t index ) {
       props.descriptor_set->update(
         std::move( updates )
       );
-    }
+    };*/
   }
 }
 
@@ -230,11 +230,10 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
   }
-  std::vector< write_descriptor_set_t > updates;
-  for( const auto &req: write_request_list ) {
-    rec.sync_to_device( req.buffer );
-    if( props.descriptor_set ) {
-      const auto target = (*props.descriptor_set)[ props.descriptor_name ];
+  if( props.external_descriptor_set.find( props.vertex_buffer_descriptor_set_id ) != props.external_descriptor_set.end() ) {
+    std::vector< write_descriptor_set_t > updates;
+    for( const auto &req: write_request_list ) {
+      const auto target = (*props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ])[ props.descriptor_name ];
       updates.push_back(
         write_descriptor_set_t()
           .set_basic(
@@ -243,11 +242,10 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
               .setDescriptorCount( 1u )
           )
           .add_buffer( req.buffer->get_buffer() )
+          .set_index( req.index )
       );
     }
-  }
-  if( props.descriptor_set ) {
-    props.descriptor_set->update(
+    props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ]->update(
       std::move( updates )
     );
   }

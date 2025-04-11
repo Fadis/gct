@@ -55,9 +55,11 @@ struct scene_graph_resource {
   LIBGCT_SETTER( descriptor_set )
   LIBGCT_SETTER( texture_descriptor_set )
   LIBGCT_SETTER( image_descriptor_set )
+  LIBGCT_SETTER( vertex_buffer_descriptor_set )
   LIBGCT_SETTER( descriptor_set_id )
   LIBGCT_SETTER( texture_descriptor_set_id )
   LIBGCT_SETTER( image_descriptor_set_id )
+  LIBGCT_SETTER( vertex_buffer_descriptor_set_id )
   LIBGCT_SETTER( pipeline_layout )
   LIBGCT_SETTER( push_constant_mp )
   LIBGCT_SETTER( prim )
@@ -79,9 +81,11 @@ struct scene_graph_resource {
   std::shared_ptr< descriptor_set_t > descriptor_set;
   std::shared_ptr< descriptor_set_t > image_descriptor_set;
   std::shared_ptr< descriptor_set_t > texture_descriptor_set;
+  std::shared_ptr< descriptor_set_t > vertex_buffer_descriptor_set;
   std::uint32_t descriptor_set_id = 0u;
   std::uint32_t texture_descriptor_set_id = 2u;
   std::uint32_t image_descriptor_set_id = 3u;
+  std::uint32_t vertex_buffer_descriptor_set_id = 4u;
   std::shared_ptr< pipeline_layout_t > pipeline_layout;
   std::unordered_map< std::string, uint32_t > attr2index;
   std::optional< spv_member_pointer > push_constant_mp;
@@ -107,6 +111,13 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
       if( iter != ( r ) ->descriptor_set_layout.end() && ( r ) ->texture_descriptor_set ) { \
         descriptor_set_layout[ ( r ) ->texture_descriptor_set_id ] = iter->second; \
         external_descriptor_set[ ( r ) ->texture_descriptor_set_id ] = ( r ) ->texture_descriptor_set; \
+      } \
+    } \
+    { \
+      const auto iter = ( r ) ->descriptor_set_layout.find( ( r ) ->vertex_buffer_descriptor_set_id ); \
+      if( iter != ( r ) ->descriptor_set_layout.end() && ( r ) ->vertex_buffer_descriptor_set ) { \
+        descriptor_set_layout[ ( r ) ->vertex_buffer_descriptor_set_id ] = iter->second; \
+        external_descriptor_set[ ( r ) ->vertex_buffer_descriptor_set_id ] = ( r ) ->vertex_buffer_descriptor_set; \
       } \
     } \
     if( ( r ) ->matrix ) { \

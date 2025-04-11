@@ -164,6 +164,10 @@ scene_graph::scene_graph(
     resource->image_descriptor_set = props->allocator_set.descriptor_pool->allocate( resource->descriptor_set_layout[ props->image_descriptor_set_id ], props->image.max_image_count );
     resource->image_descriptor_set_id = props->image_descriptor_set_id;
   }
+  if( resource->descriptor_set_layout.size() > props->vertex_buffer_descriptor_set_id ) {
+    resource->vertex_buffer_descriptor_set = props->allocator_set.descriptor_pool->allocate( resource->descriptor_set_layout[ props->vertex_buffer_descriptor_set_id ], props->image.max_image_count );
+    resource->vertex_buffer_descriptor_set_id = props->vertex_buffer_descriptor_set_id;
+  }
   
   resource->pipeline_layout = device.get_pipeline_layout( pipeline_layout_create_info );
   if( vertex_attributes.find( vertex_attribute_usage_t::POSITION ) != vertex_attributes.end() ) {
@@ -264,10 +268,18 @@ scene_graph::scene_graph(
     resource->visibility->get_props().max_buffer_count * sizeof( raw_resource_pair_type ),
     vk::BufferUsageFlagBits::eStorageBuffer
   );
-  resource->vertex.reset( new vertex_buffer_pool(
+  auto vbpci =
     vertex_buffer_pool_create_info( props->vertex )
-      .set_allocator( props->allocator_set.allocator )
-  ) );
+      .set_allocator_set( props->allocator_set )
+      .set_descriptor_set_layout( resource->descriptor_set_layout )
+      .set_external_pipeline_layout( resource->pipeline_layout );
+  if( resource->descriptor_set_layout.size() > props->vertex_buffer_descriptor_set_id ) {
+    vbpci
+      .set_vertex_buffer_descriptor_set_id( props->vertex_buffer_descriptor_set_id )
+      .add_external_descriptor_set( props->vertex_buffer_descriptor_set_id, resource->vertex_buffer_descriptor_set );
+  }
+
+  resource->vertex.reset( new vertex_buffer_pool( vbpci ) );
   std::vector< write_descriptor_set_t > u{
     { "primitive_resource_index", resource->primitive_resource_index->get_buffer() },
     { "instance_resource_index", resource->instance_resource_index->get_buffer() },

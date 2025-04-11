@@ -39,6 +39,7 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( descriptor_set_id )
   LIBGCT_SETTER( texture_descriptor_set_id )
   LIBGCT_SETTER( image_descriptor_set_id )
+  LIBGCT_SETTER( vertex_buffer_descriptor_set_id )
   LIBGCT_SETTER( enable_linear )
   scene_graph_create_info();
   scene_graph_create_info &add_master_shader( const std::filesystem::path &p ) {
@@ -63,6 +64,7 @@ struct scene_graph_create_info {
   std::uint32_t descriptor_set_id = 0u;
   std::uint32_t texture_descriptor_set_id = 2u;
   std::uint32_t image_descriptor_set_id = 3u;
+  std::uint32_t vertex_buffer_descriptor_set_id = 4u;
   bool enable_linear = false;
 };
 

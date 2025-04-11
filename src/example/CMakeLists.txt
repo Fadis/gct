@@ -80,6 +80,7 @@ subdirs(
   prtlf
   image_io
   half_resolution
+  bilateral
 )
 if( DXC_FOUND )
 subdirs(
