@@ -48,8 +48,8 @@ shader_graph::vertex::combined_result_type gauss::operator()(
       horizontal,
       gct::image_io_plan()
         .add_input( src_name )
-        .add_output( dest_name, src_name, glm::vec2( 1.0f, 1.0f ) )
-        .set_dim( src_name, glm::vec2( 1.0f, 1.0f ) )
+        .add_output( dest_name, src_name, glm::vec2( props.scale, 1.0f ) )
+        .set_dim( src_name, glm::vec2( props.scale, 1.0f ) )
         .set_node_name( node_prefix + "horizontal" )
     )
   )( input );

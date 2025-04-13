@@ -8,10 +8,8 @@
 #include "io_with_tangent.h"
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
-#include <gct/scene_graph/omnishadow.h>
 
 //layout(early_fragment_tests) in;
-layout(pixel_interlock_ordered) in;
 
 void main() {
   primitive_value p = read_primitive(
@@ -26,7 +24,7 @@ void main() {
   
   if( p.albedo.a <= 0.0 ) discard;
 
-  float shadow_level0 = pcss_omni( light_pool[ global_uniforms.light ].shadow_map, input_position.xyz, light_pool[ global_uniforms.light ].world_position.xyz, light_pool[ global_uniforms.light ].light_size );
+  float shadow_level0 = 0.0;
   float shadow_level1 = 0.0;
   float shadow_level2 = 0.0;
   float shadow_level3 = 1.0;

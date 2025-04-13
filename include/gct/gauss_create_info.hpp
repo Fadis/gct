@@ -26,6 +26,7 @@ struct gauss_create_info {
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( scene_graph )
   LIBGCT_SETTER( node_name )
+  LIBGCT_SETTER( scale )
   gauss_create_info &set_shader(
     const std::filesystem::path &
   );
@@ -35,6 +36,7 @@ struct gauss_create_info {
   std::vector< named_resource > resources;
   std::shared_ptr< scene_graph::scene_graph_resource > scene_graph;
   std::string node_name;
+  float scale = 1.0f;
 };
 
 void to_json( nlohmann::json&, const gauss_create_info& );

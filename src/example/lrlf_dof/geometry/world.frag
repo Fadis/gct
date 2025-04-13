@@ -8,7 +8,6 @@
 #include "io.h"
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph.h>
-#include <gct/scene_graph/omnishadow.h>
 
 //layout(early_fragment_tests) in;
 
@@ -24,7 +23,7 @@ void main()  {
   
   if( p.albedo.a <= 0.0 ) discard;
 
-  float shadow_level0 = pcss_omni( light_pool[ global_uniforms.light ].shadow_map, input_position.xyz, light_pool[ global_uniforms.light ].world_position.xyz, light_pool[ global_uniforms.light ].light_size );
+  float shadow_level0 = 1.0;
   float shadow_level1 = 1.0;
   float shadow_level2 = 1.0;
   float shadow_level3 = 1.0;

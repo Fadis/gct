@@ -17,9 +17,13 @@ layout(push_constant) uniform PushConstants {
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const bool has_layer = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x != 0;
-  const uint layer = max( uint( imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 32 ) ).x ) - 1, 0 );
-  const float depth = read_kplus_buffer_depth( push_constants.depth, screen_pos, layer );
+  const vec2 scale =
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.src ) ] ).xy) /
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
+  const ivec2 src_pos = ivec2( screen_pos * scale );
+  const bool has_layer = imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( src_pos, 32 ) ).x != 0;
+  const uint layer = max( uint( imageLoad( image_pool32f_array[ nonuniformEXT( push_constants.src ) ], ivec3( src_pos, 32 ) ).x ) - 1, 0 );
+  const float depth = read_kplus_buffer_depth( push_constants.depth, src_pos, layer );
   imageStore( image_poolr32f[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, 0.0, 0.0, 0.0 ) );
 }
 

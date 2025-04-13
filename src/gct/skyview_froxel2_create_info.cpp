@@ -27,6 +27,7 @@ void to_json( nlohmann::json &dest, const skyview_froxel2_create_info &src ) {
   dest[ "froxel_xy_resolution" ] = src.froxel_xy_resolution;
   dest[ "froxel_z_resolution" ] = src.froxel_z_resolution;
   dest[ "node_name" ] = src.node_name;
+  dest[ "scale" ] = src.scale;
 }
 
 }

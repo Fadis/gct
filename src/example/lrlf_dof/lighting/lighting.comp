@@ -14,6 +14,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 #include <gct/scene_graph/light_pool.h>
 #include <gct/scene_graph/matrix_pool.h>
 #include <gct/scene_graph/k+buffer.h>
+#include <gct/scene_graph/omnishadow.h>
 
 layout(push_constant) uniform PushConstants {
   uint src;
@@ -24,9 +25,13 @@ layout(push_constant) uniform PushConstants {
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const vec2 scale =
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.src ) ] ).xy) /
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
+  const ivec2 src_pos = ivec2( screen_pos * scale );
   const uint layer = gl_GlobalInvocationID.z;
   gbuffer_value p;
-  p.albedo = read_kplus_buffer_albedo( push_constants.src, screen_pos, layer );
+  p.albedo = read_kplus_buffer_albedo( push_constants.src, src_pos, layer );
   if( p.albedo.a == 0.0 ) {
     imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 0.0 ) );
     return;
@@ -34,17 +39,22 @@ void main()  {
 
   const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const mat4 screen_to_world = matrix_pool[ push_constants.unproject ];
-  const float depth = read_kplus_buffer_depth( push_constants.depth, screen_pos, layer );
+  const float depth = read_kplus_buffer_depth( push_constants.depth, src_pos, layer );
   vec4 lpos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), depth, 1.0 );
   lpos4 /= lpos4.w;
   p.pos = lpos4.xyz;
   
-  vec2 material = read_kplus_buffer_mrid( push_constants.src, screen_pos, layer ).xy;
+  vec2 material = read_kplus_buffer_mrid( push_constants.src, src_pos, layer ).xy;
   p.metallic = material.x;
   p.roughness = material.y;
-  p.normal = read_kplus_buffer_normal( push_constants.src, screen_pos, layer ).xyz;
-  p.emissive = vec3( 0.0, 0.0, 0.0 );// read_kplus_buffer_eo( push_constants.src, screen_pos, layer ).xyz;
-  p.shadow_level = read_kplus_buffer_shadow_level( push_constants.src, screen_pos, layer );
+  p.normal = read_kplus_buffer_normal( push_constants.src, src_pos, layer ).xyz;
+  p.emissive = read_kplus_buffer_eo( push_constants.src, src_pos, layer ).xyz;
+  p.shadow_level.x = pcss_omni( light_pool[ global_uniforms.light ].shadow_map, p.pos.xyz, light_pool[ global_uniforms.light ].world_position.xyz, light_pool[ global_uniforms.light ].light_size );
+
+  if( p.shadow_level.x <= 0.0 ) {
+    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( p.emissive.rgb, p.albedo.a ) );
+    return;
+  }
 
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
   const vec3 L = normalize(light_pool[global_uniforms.light ].world_position.xyz-p.pos);

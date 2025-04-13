@@ -233,6 +233,7 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( props.external_descriptor_set.find( props.vertex_buffer_descriptor_set_id ) != props.external_descriptor_set.end() ) {
     std::vector< write_descriptor_set_t > updates;
     for( const auto &req: write_request_list ) {
+      rec.sync_to_device( req.buffer );
       const auto target = (*props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ])[ props.descriptor_name ];
       updates.push_back(
         write_descriptor_set_t()
@@ -248,6 +249,11 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ]->update(
       std::move( updates )
     );
+  }
+  else {
+    for( const auto &req: write_request_list ) {
+      rec.sync_to_device( req.buffer );
+    }
   }
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {

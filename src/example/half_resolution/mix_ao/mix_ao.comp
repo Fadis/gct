@@ -41,24 +41,28 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy;
+  const vec2 scale =
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy) /
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy);
+  const ivec2 src_pos = ivec2( screen_pos * scale );
+  const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy;
   
   const float far_threshold = af_state.depth;
 
-  vec4 layer_index = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.gbuffer ) ], ivec3( screen_pos, 32 ) );
+  vec4 layer_index = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.gbuffer ) ], ivec3( src_pos, 32 ) );
 
   const float depth[4] = float[](
-    read_kplus_buffer_depth( push_constants.depth, screen_pos, 0 ),
-    read_kplus_buffer_depth( push_constants.depth, screen_pos, 1 ),
-    read_kplus_buffer_depth( push_constants.depth, screen_pos, 2 ),
-    read_kplus_buffer_depth( push_constants.depth, screen_pos, 3 )
+    read_kplus_buffer_depth( push_constants.depth, src_pos, 0 ),
+    read_kplus_buffer_depth( push_constants.depth, src_pos, 1 ),
+    read_kplus_buffer_depth( push_constants.depth, src_pos, 2 ),
+    read_kplus_buffer_depth( push_constants.depth, src_pos, 3 )
   );
   
   const vec4 albedo[4] = vec4[](
-    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 0 ),
-    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 1 ),
-    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 2 ),
-    read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, 3 )
+    read_kplus_buffer_albedo( push_constants.gbuffer, src_pos, 0 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, src_pos, 1 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, src_pos, 2 ),
+    read_kplus_buffer_albedo( push_constants.gbuffer, src_pos, 3 )
   );
 
   const float l0_depth =
@@ -87,11 +91,15 @@ void main()  {
   const vec4 l3_albedo =
     ( layer_index.w != 0 ) ? albedo[ uint( layer_index.w ) - 1 ] : vec4( 0.0, 0.0, 0.0, 0.0 );
 
+  const vec2 occlusion_scale =
+    vec2(imageSize( image_poolr8_array[ nonuniformEXT( push_constants.occlusion ) ] ).xy) /
+    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy);
+
   const vec3 l0_ambient =
     ( layer_index.x != 0 ) ?
     global_uniforms.ambient *
     light_pool[ global_uniforms.light ].energy.xyz *
-    imageLoad( image_poolr8[ nonuniformEXT( push_constants.occlusion ) ], screen_pos ).r *
+    imageLoad( image_poolr8[ nonuniformEXT( push_constants.occlusion ) ], ivec2( screen_pos * occlusion_scale ) ).r *
     l0_albedo.xyz :
     vec3( 0.0, 0.0, 0.0 );
   const vec3 l1_ambient =
@@ -210,8 +218,8 @@ void main()  {
   near_total.rgb = ( near_total.a == 0.0 ) ? far_total.rgb : near_total.rgb;
   
   const float near_coc = min( max( ( af_state.lens_size * abs( near_depth - af_state.depth )/( near_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
-  float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
-
+  const float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
+ 
   imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 0 ), near_total );
   imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 1 ), far_total );
   imageStore( image_pool16f_array[ nonuniformEXT( push_constants.coc_image ) ], ivec3( screen_pos, 0 ), vec4( near_coc, 0.0, 0.0, 0.0 ) );

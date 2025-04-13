@@ -36,6 +36,7 @@ struct skyview_froxel2_create_info {
   LIBGCT_SETTER( ground_radius )
   LIBGCT_SETTER( top_radius )
   LIBGCT_SETTER( altitude )
+  LIBGCT_SETTER( scale )
   skyview_froxel2_create_info &set_shader(
     const std::filesystem::path &
   );
@@ -54,6 +55,7 @@ struct skyview_froxel2_create_info {
   float top_radius = 6460000.f;
   float altitude = 100.f;
   float g = 0.8f;
+  float scale = 1.0f;
 };
 
 void to_json( nlohmann::json&, const skyview_froxel2_create_info& );
