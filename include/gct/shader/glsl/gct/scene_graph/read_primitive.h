@@ -123,5 +123,53 @@ primitive_value read_primitive(
   return temp;
 }
 
+primitive_value read_primitive_reduced(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec3 vert_tangent,
+  vec2 vert_texcoord
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal_ = normalize( vert_normal.xyz );
+  const vec3 tangent_ = normalize( vert_tangent.xyz );
+  vec3 normal;
+  if( prim.normal_texture != 0 ) {
+    const vec3 binormal = cross( tangent_, normal_ );
+    const mat3 its = mat3( tangent_, binormal, normal_ );
+    normal = its * normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 );
+  }
+  else {
+    normal = normal_;
+  }
+
+  const vec3 pos = vert_position.xyz;
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = vec4( 0, 0, 0, 1 );
+  return temp;
+}
+
+primitive_value read_primitive_reduced(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec2 vert_texcoord
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal = normalize( vert_normal.xyz );
+  const vec3 pos = vert_position.xyz;
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = vec4( 0, 0, 0, 1 );
+  return temp;
+}
+
 #endif
 

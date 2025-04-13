@@ -853,8 +853,8 @@ int main( int argc, const char *argv[] ) {
     glm::mat4(
       0.5f, 0.f, 0.f, 0.0f,
       0.f, 0.5f, 0.f, 0.0f,
-      0.f, 0.f, 0.5f, 0.0f,
-      0.5f, 0.5f, 0.5f, 1.f
+      0.f, 0.f, 1.0f, 0.0f,
+      0.5f, 0.5f, 0.0f, 1.f
     ) *
     projection
   ) );
@@ -921,8 +921,8 @@ int main( int argc, const char *argv[] ) {
             glm::mat4(
               0.5f, 0.f, 0.f, 0.0f,
               0.f, 0.5f, 0.f, 0.0f,
-              0.f, 0.f, 0.5f, 0.0f,
-              0.5f, 0.5f, 0.5f, 1.f
+              0.f, 0.f, 1.0f, 0.0f,
+              0.5f, 0.5f, 0.0f, 1.f
             ) *
             projection *
             walk.get_lookat()

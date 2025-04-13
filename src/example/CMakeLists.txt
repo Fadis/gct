@@ -81,6 +81,7 @@ subdirs(
   image_io
   half_resolution
   bilateral
+  bilateral2
 )
 if( DXC_FOUND )
 subdirs(

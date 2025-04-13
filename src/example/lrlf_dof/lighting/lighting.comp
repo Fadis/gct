@@ -43,6 +43,7 @@ void main()  {
   vec4 lpos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), depth, 1.0 );
   lpos4 /= lpos4.w;
   p.pos = lpos4.xyz;
+  //p.pos = read_kplus_buffer_pos_depth16( push_constants.src, src_pos, layer ).xyz;
   
   vec2 material = read_kplus_buffer_mrid( push_constants.src, src_pos, layer ).xy;
   p.metallic = material.x;
