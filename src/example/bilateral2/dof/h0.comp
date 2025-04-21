@@ -19,7 +19,7 @@ layout(push_constant) uniform PushConstants {
 int lrlfilter_size = 65;
 // 特異値分解で求めた分離可能なフィルタのパラメータ
 float lrlfilter[65*33] = float[](
-#include "h0.inc"
+#include <gct/lrlf_dof/h0.inc>
 );
 
 const int kernel_size = 32;

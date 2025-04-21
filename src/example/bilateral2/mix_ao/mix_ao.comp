@@ -185,9 +185,10 @@ void main()  {
     vec4( ( l3_ambient + ( l3_lighting.rgb ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
     //vec4( ( l3_ambient + ( l3_albedo.rgb ) ) * l3_scat.w + l3_scat.rgb, l3_albedo.a );
 
+  float l3_albedo_a = ( l3_albedo.a != 0.0 ) ? 1.0 : 0.0;
   vec4 near_total = vec4( l0_total.xyz, 0.0 );
   near_total =
-    vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) : near_total.a );
+    vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo_a ), ( l3_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo_a ) ) : near_total.a );
   near_total =
     vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), ( l2_depth < far_threshold ) ? 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) : near_total.a );
   near_total =
@@ -204,10 +205,10 @@ void main()  {
   near_depth = min( af_state.depth, near_depth + af_state.visible_range );
 
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  far_total = vec4( mix( near_total.xyz, l3_total.xyz, l3_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l3_albedo.a ) ) );
-  far_total = vec4( mix( near_total.xyz, l2_total.xyz, l2_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l2_albedo.a ) ) );
-  far_total = vec4( mix( near_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l1_albedo.a ) ) );
-  far_total = vec4( mix( near_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - near_total.a ) * ( 1.0 - l0_albedo.a ) ) );
+  far_total = vec4( mix( far_total.xyz, l3_total.xyz, l3_albedo_a ), 1.0 - ( ( 1.0 - far_total.a ) * ( 1.0 - l3_albedo_a ) ) );
+  far_total = vec4( mix( far_total.xyz, l2_total.xyz, l2_albedo.a ), 1.0 - ( ( 1.0 - far_total.a ) * ( 1.0 - l2_albedo.a ) ) );
+  far_total = vec4( mix( far_total.xyz, l1_total.xyz, l1_albedo.a ), 1.0 - ( ( 1.0 - far_total.a ) * ( 1.0 - l1_albedo.a ) ) );
+  far_total = vec4( mix( far_total.xyz, l0_total.xyz, l0_albedo.a ), 1.0 - ( ( 1.0 - far_total.a ) * ( 1.0 - l0_albedo.a ) ) );
   float far_depth = af_state.zfar;
   far_depth = min( ( l3_depth ), far_depth );
   far_depth = min( ( l2_depth ), far_depth );

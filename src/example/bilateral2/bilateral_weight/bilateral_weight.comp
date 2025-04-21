@@ -122,9 +122,9 @@ void main()  {
     */
     const uint pos0 = 0;
     const uint pos1 = 3;
-    const uint pos2 = 4;
-    const uint pos3 = 5;
-    const uint pos4 = 6;
+    const uint pos2 = 6;
+    const uint pos3 = 4;
+    const uint pos4 = 5;
     const float instance_similarity_01 = ( material[ pos0 ].zw == material[ pos1 ].zw ) ? 1.0 : 0.0;
     const float instance_similarity_02 = ( material[ pos0 ].zw == material[ pos2 ].zw ) ? 1.0 : 0.0;
     const float instance_similarity_12 = ( material[ pos1 ].zw == material[ pos2 ].zw ) ? 1.0 : 0.0;

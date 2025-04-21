@@ -18,7 +18,7 @@ layout(push_constant) uniform PushConstants {
 
 int lrlfilter_size = 65;
 float lrlfilter[65*33] = float[](
-#include "h3.inc"
+#include <gct/lrlf_dof/h3.inc>
 );
 
 const int kernel_size = 32;

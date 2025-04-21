@@ -19,19 +19,6 @@ void main() {
   const vec2 texcoord = vec2( screen_pos ) * scale;
   const ivec2 src_pos = ivec2( texcoord );
   const vec2 src_offset = texcoord - src_pos;
-  const vec4 linear = mix(
-    mix(
-      imageLoad( src_image, src_pos ),
-      imageLoad( src_image, src_pos + ivec2( 1, 0 ) ),
-      src_offset.x
-    ),
-    mix(
-      imageLoad( src_image, src_pos + ivec2( 0, 1 ) ),
-      imageLoad( src_image, src_pos + ivec2( 1, 1 ) ),
-      src_offset.x
-    ),
-    src_offset.y
-  );
   const vec3 bloom = mix(
     mix(
       imageLoad( bloom_image, src_pos ).xyz,
@@ -45,6 +32,23 @@ void main() {
     ),
     src_offset.y
   );
+  const vec4 p0 = imageLoad( src_image, src_pos );
+  const vec4 p1 = imageLoad( src_image, src_pos + ivec2( 1, 0 ) );
+  const vec4 p2 = imageLoad( src_image, src_pos + ivec2( 0, 1 ) );
+  const vec4 p3 = imageLoad( src_image, src_pos + ivec2( 1, 1 ) );
+  vec4 linear;
+  if( src_offset.x != 0 && src_offset.y == 0 ) {
+    linear = ( p0 + p1 ) * 0.5;
+  }
+  else if( src_offset.x == 0 && src_offset.y != 0 ) {
+    linear = ( p0 + p2 ) * 0.5;
+  }
+  else if( src_offset.x != 0 && src_offset.y != 0 ) {
+    linear = ( p0 + p1 + p2 + p3 ) * 0.25;
+  }
+  else {
+    linear = p0;
+  }
   imageStore( dest_image, screen_pos, vec4( gamma( min( max( xyz_to_bt709 * ( linear.rgb + bloom ), vec3( 0.0, 0.0, 0.0 ) ), vec3( 1.0, 1.0, 1.0 ) ) ), linear.a ) );
 }
 

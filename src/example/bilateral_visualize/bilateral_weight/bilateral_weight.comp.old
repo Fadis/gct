@@ -1,0 +1,217 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint depth;
+  uint dest;
+} push_constants;
+
+const uint cache_width = gl_WorkGroupSize.x*2+1;
+const uint cache_height = gl_WorkGroupSize.x*2+1;
+shared vec4[cache_width*cache_height] normal_depth_cache;
+shared vec4[cache_width] material_cache;
+
+const ivec2[4] src_offset = ivec2[](
+  ivec2( 0, 0 ),
+  ivec2( 1, 0 ),
+  ivec2( 0, 1 ),
+  ivec2( 1, 1 )
+);
+
+const uint[4] cache_offset = uint[](
+  0 + cache_width * 0,
+  1 + cache_width * 0,
+  0 + cache_width * 1,
+  1 + cache_width * 1
+);
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+
+  const uint cache_pos = gl_LocalInvocationID.x * 2 + gl_LocalInvocationID.y * 2 * cache_width;
+  for( uint i = 0u; i != 4u; i++ ) {
+    const ivec2 image_pos = screen_pos * 2 + src_offset[ i ];
+    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
+    const float depth = read_kplus_buffer_depth( push_constants.depth, image_pos, layer );
+    const vec4 material = read_kplus_buffer_mrid16( push_constants.src, image_pos, layer );
+    const vec3 normal = read_kplus_buffer_normal16( push_constants.src, image_pos, layer ).xyz;
+    normal_depth_cache[ cache_pos + cache_offset[ i ] ] = vec4( normal, depth );
+    material_cache[ cache_pos + cache_offset[ i ] ] = material;
+  }
+  /*if( gl_LocalInvocationID.x == 15 ) {
+    const ivec2 image_pos = screen_pos * 2 + ivec2( 2, 0 );
+    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
+    const float depth = read_kplus_buffer_depth( push_constants.depth, image_pos, layer );
+    const vec4 material = read_kplus_buffer_mrid16( push_constants.src, image_pos, layer );
+    const vec3 normal = read_kplus_buffer_normal16( push_constants.src, image_pos, layer ).xyz;
+    normal_depth_cache[ cache_pos + 2 + cache_width * 0 ] = vec4( normal, depth );
+    material_cache[ cache_pos + 2 + cache_width * 0 ] = material;
+  }*/
+  const uint invocation_index =
+    gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+  const ivec2 image_base_pos = ivec2( gl_WorkGroupID.xy * gl_WorkGroupSize.xy * 2 );
+  const ivec2 edge_image_offset =
+    ( invocation_index < cache_width ) ?
+    ivec2( invocation_index, cache_height - 1u ) :
+    ivec2( cache_width - 1u, invocation_index - cache_width );
+  const ivec2 edge_image_pos = image_base_pos + edge_image_offset;
+  const uint edge_cache_pos = 
+    ( invocation_index < cache_width ) ?
+    invocation_index + cache_width * ( cache_height - 1u ) :
+    ( cache_width - 1u ) + cache_width * ( invocation_index - cache_width );
+  if( invocation_index < ( cache_width + cache_height - 1u ) ) {
+    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( edge_image_pos, 32 ) ).x ) - 1;
+    const float depth = read_kplus_buffer_depth( push_constants.depth, edge_image_pos, layer );
+    const vec4 material = read_kplus_buffer_mrid( push_constants.src, edge_image_pos, layer );
+    const vec3 normal = read_kplus_buffer_normal( push_constants.src, edge_image_pos, layer ).xyz;
+    normal_depth_cache[ edge_cache_pos ] = vec4( normal, depth );
+    material_cache[ edge_cache_pos ] = material;
+  }
+  barrier(); 
+  uint x = 2;
+  { // x
+    const uint cache_pos0 = cache_pos + 0;
+    const uint cache_pos1 = cache_pos + 1;
+    const uint cache_pos2 = cache_pos + 2;
+    const float instance_similarity_01 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos1 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_02 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_12 = ( material_cache[ cache_pos1 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+
+    const float depth_similarity_01 = 1.0 - abs( normal_depth_cache[ cache_pos0 ].w - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_a1 = 1.0 - abs( ( normal_depth_cache[ cache_pos0 ].w + normal_depth_cache[ cache_pos2 ].w ) * 0.5 - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_12 = 1.0 - abs( normal_depth_cache[ cache_pos1 ].w - normal_depth_cache[ cache_pos2 ].w );
+    
+    const float normal_similarity_01 = max( dot( normal_depth_cache[ cache_pos0 ].xyz, normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_a1 = max( dot( normalize( normal_depth_cache[ cache_pos0 ].xyz + normal_depth_cache[ cache_pos2 ].xyz ), normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_12 = max( dot( normal_depth_cache[ cache_pos1 ].xyz, normal_depth_cache[ cache_pos2 ].xyz ), 0.0 );
+    const float metallic_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].x - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].x + material_cache[ cache_pos2 ].x ) * 0.5 - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].x - material_cache[ cache_pos2 ].x );
+
+    const float roughness_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].y - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].y + material_cache[ cache_pos2 ].y ) * 0.5 - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].y - material_cache[ cache_pos2 ].y );
+
+    const float similarity_01 = instance_similarity_01 * depth_similarity_01 /* * normal_similarity_01 * metallic_similarity_01 * roughness_similarity_01 */;
+    const float similarity_a1 = instance_similarity_02 * instance_similarity_01 * depth_similarity_a1 /* * normal_similarity_a1 * metallic_similarity_a1 * roughness_similarity_a1 */;
+    const float similarity_12 = instance_similarity_12 * depth_similarity_12 /* * normal_similarity_12 * metallic_similarity_12 * roughness_similarity_12 */;
+    x =
+      ( similarity_01 <= similarity_a1 ) ? (
+        ( similarity_12 <= similarity_a1 ) ? 2 : 1
+      ) : (
+        ( similarity_12 <= similarity_01 ) ? 0 : 1
+      );
+  }
+  uint y = 2;
+  { // y
+    const uint cache_pos0 = cache_pos + 0 * cache_width;
+    const uint cache_pos1 = cache_pos + 1 * cache_width;
+    const uint cache_pos2 = cache_pos + 2 * cache_width;
+    const float instance_similarity_01 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos1 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_02 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_12 = ( material_cache[ cache_pos1 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+
+    const float depth_similarity_01 = 1.0 - abs( normal_depth_cache[ cache_pos0 ].w - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_a1 = 1.0 - abs( ( normal_depth_cache[ cache_pos0 ].w + normal_depth_cache[ cache_pos2 ].w ) * 0.5 - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_12 = 1.0 - abs( normal_depth_cache[ cache_pos1 ].w - normal_depth_cache[ cache_pos2 ].w );
+    
+    const float normal_similarity_01 = max( dot( normal_depth_cache[ cache_pos0 ].xyz, normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_a1 = max( dot( normalize( normal_depth_cache[ cache_pos0 ].xyz + normal_depth_cache[ cache_pos2 ].xyz ), normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_12 = max( dot( normal_depth_cache[ cache_pos1 ].xyz, normal_depth_cache[ cache_pos2 ].xyz ), 0.0 );
+    const float metallic_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].x - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].x + material_cache[ cache_pos2 ].x ) * 0.5 - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].x - material_cache[ cache_pos2 ].x );
+
+    const float roughness_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].y - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].y + material_cache[ cache_pos2 ].y ) * 0.5 - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].y - material_cache[ cache_pos2 ].y );
+
+    const float similarity_01 = instance_similarity_01 /* * depth_similarity_01 * normal_similarity_01 * metallic_similarity_01 * roughness_similarity_01 */;
+    const float similarity_a1 = instance_similarity_02 * instance_similarity_01 /* * depth_similarity_a1 * normal_similarity_a1 * metallic_similarity_a1 * roughness_similarity_a1 */;
+    const float similarity_12 = instance_similarity_12 /* * depth_similarity_12 * normal_similarity_12 * metallic_similarity_12 * roughness_similarity_12 */;
+    y =
+      ( similarity_01 <= similarity_a1 ) ? (
+        ( similarity_12 <= similarity_a1 ) ? 2 : 1
+      ) : (
+        ( similarity_12 <= similarity_01 ) ? 0 : 1
+      );
+  }
+  uint xy = 4;
+  { // xy
+    /*
+      0 - 3
+      - 1 -
+      4 - 2
+    */
+    const uint cache_pos0 = cache_pos + 0 + 0 * cache_width;
+    const uint cache_pos1 = cache_pos + 1 + 1 * cache_width;
+    const uint cache_pos2 = cache_pos + 2 + 2 * cache_width;
+    const uint cache_pos3 = cache_pos + 2 + 0 * cache_width;
+    const uint cache_pos4 = cache_pos + 0 + 2 * cache_width;
+    const float instance_similarity_01 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos1 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_02 = ( material_cache[ cache_pos0 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_12 = ( material_cache[ cache_pos1 ].zw == material_cache[ cache_pos2 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_34 = ( material_cache[ cache_pos3 ].zw == material_cache[ cache_pos4 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_13 = ( material_cache[ cache_pos1 ].zw == material_cache[ cache_pos3 ].zw ) ? 1.0 : 0.0;
+    const float instance_similarity_14 = ( material_cache[ cache_pos1 ].zw == material_cache[ cache_pos4 ].zw ) ? 1.0 : 0.0;
+
+    const float depth_similarity_01 = 1.0 - abs( normal_depth_cache[ cache_pos0 ].w - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_a1 = 1.0 - abs( ( normal_depth_cache[ cache_pos0 ].w + normal_depth_cache[ cache_pos2 ].w ) * 0.5 - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_12 = 1.0 - abs( normal_depth_cache[ cache_pos1 ].w - normal_depth_cache[ cache_pos2 ].w );
+    const float depth_similarity_b1 = 1.0 - abs( ( normal_depth_cache[ cache_pos3 ].w + normal_depth_cache[ cache_pos4 ].w ) * 0.5 - normal_depth_cache[ cache_pos1 ].w );
+    const float depth_similarity_13 = 1.0 - abs( normal_depth_cache[ cache_pos1 ].w - normal_depth_cache[ cache_pos3 ].w );
+    const float depth_similarity_14 = 1.0 - abs( normal_depth_cache[ cache_pos1 ].w - normal_depth_cache[ cache_pos4 ].w );
+    
+    const float normal_similarity_01 = max( dot( normal_depth_cache[ cache_pos0 ].xyz, normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_a1 = max( dot( normalize( normal_depth_cache[ cache_pos0 ].xyz + normal_depth_cache[ cache_pos2 ].xyz ), normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_12 = max( dot( normal_depth_cache[ cache_pos1 ].xyz, normal_depth_cache[ cache_pos2 ].xyz ), 0.0 );
+    const float normal_similarity_b1 = max( dot( normalize( normal_depth_cache[ cache_pos3 ].xyz + normal_depth_cache[ cache_pos4 ].xyz ), normal_depth_cache[ cache_pos1 ].xyz ), 0.0 );
+    const float normal_similarity_13 = max( dot( normal_depth_cache[ cache_pos1 ].xyz, normal_depth_cache[ cache_pos3 ].xyz ), 0.0 );
+    const float normal_similarity_14 = max( dot( normal_depth_cache[ cache_pos1 ].xyz, normal_depth_cache[ cache_pos4 ].xyz ), 0.0 );
+
+    const float metallic_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].x - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].x + material_cache[ cache_pos2 ].x ) * 0.5 - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].x - material_cache[ cache_pos2 ].x );
+    const float metallic_similarity_b1 = 1.0 - abs( ( material_cache[ cache_pos3 ].x + material_cache[ cache_pos4 ].x ) * 0.5 - material_cache[ cache_pos1 ].x );
+    const float metallic_similarity_13 = 1.0 - abs( material_cache[ cache_pos1 ].x - material_cache[ cache_pos3 ].x );
+    const float metallic_similarity_14 = 1.0 - abs( material_cache[ cache_pos1 ].x - material_cache[ cache_pos4 ].x );
+
+    const float roughness_similarity_01 = 1.0 - abs( material_cache[ cache_pos0 ].y - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_a1 = 1.0 - abs( ( material_cache[ cache_pos0 ].y + material_cache[ cache_pos2 ].y ) * 0.5 - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_12 = 1.0 - abs( material_cache[ cache_pos1 ].y - material_cache[ cache_pos2 ].y );
+    const float roughness_similarity_b1 = 1.0 - abs( ( material_cache[ cache_pos3 ].y + material_cache[ cache_pos4 ].y ) * 0.5 - material_cache[ cache_pos1 ].y );
+    const float roughness_similarity_13 = 1.0 - abs( material_cache[ cache_pos1 ].y - material_cache[ cache_pos3 ].y );
+    const float roughness_similarity_14 = 1.0 - abs( material_cache[ cache_pos1 ].y - material_cache[ cache_pos4 ].y );
+
+    const float similarity_01 = instance_similarity_01 * depth_similarity_01 * normal_similarity_01 * metallic_similarity_01 * roughness_similarity_01;
+    const float similarity_a1 = instance_similarity_02 * instance_similarity_01 * depth_similarity_a1 * normal_similarity_a1 * metallic_similarity_a1 * roughness_similarity_a1;
+    const float similarity_12 = instance_similarity_12 * depth_similarity_12 * normal_similarity_12 * metallic_similarity_12 * roughness_similarity_12;
+    const float similarity_b1 = instance_similarity_34 * instance_similarity_13 * depth_similarity_b1 * normal_similarity_b1 * metallic_similarity_b1 * roughness_similarity_b1;
+    const float similarity_13 = instance_similarity_13 * depth_similarity_13 * normal_similarity_13 * metallic_similarity_13 * roughness_similarity_13;
+    const float similarity_14 = instance_similarity_14 * depth_similarity_14 * normal_similarity_14 * metallic_similarity_14 * roughness_similarity_14;
+    const float similarity_center = max( similarity_a1, similarity_b1 );
+    float highest = similarity_center;
+    xy = 4;
+    xy = ( highest < similarity_01 ) ? 0 : xy;
+    highest = max( highest, similarity_01 );
+    xy = ( highest < similarity_12 ) ? 3 : xy;
+    highest = max( highest, similarity_12 );
+    xy = ( highest < similarity_13 ) ? 1 : xy;
+    highest = max( highest, similarity_13 );
+    xy = ( highest < similarity_14 ) ? 2 : xy;
+    highest = max( highest, similarity_14 );
+  }
+  const uint mode = ( x << 5 ) | ( y << 3 );// | xy;
+
+  imageStore( image_poolr8u[ nonuniformEXT( push_constants.dest ) ], screen_pos, ivec4( mode, 0.0, 0.0, 0.0 ) );
+}
+

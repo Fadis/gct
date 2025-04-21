@@ -82,6 +82,8 @@ subdirs(
   half_resolution
   bilateral
   bilateral2
+  bilateral_visualize
+  nofilter_upscale
 )
 if( DXC_FOUND )
 subdirs(
