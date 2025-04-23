@@ -1,0 +1,10 @@
+#ifndef GCT_SHADER_TYPE_ID_H
+#define GCT_SHADER_TYPE_ID_H
+
+#define GCT_SHADER_TYPE_ID_FLOAT 0
+#define GCT_SHADER_TYPE_ID_U8 1
+#define GCT_SHADER_TYPE_ID_U16 2
+#define GCT_SHADER_TYPE_ID_U32 3
+
+#endif
+

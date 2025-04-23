@@ -47,6 +47,10 @@ struct scene_graph_resource {
   LIBGCT_SETTER( primitive_resource_index )
   LIBGCT_SETTER( instance_resource_index )
   LIBGCT_SETTER( visibility )
+  LIBGCT_SETTER( accessor )
+  LIBGCT_SETTER( vertex_attribute )
+  LIBGCT_SETTER( mesh )
+  LIBGCT_SETTER( lod )
   LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
@@ -73,6 +77,10 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > primitive_resource_index;
   std::shared_ptr< buffer_pool > instance_resource_index;
   std::shared_ptr< buffer_pool > visibility;
+  std::shared_ptr< buffer_pool > accessor;
+  std::shared_ptr< buffer_pool > vertex_attribute;
+  std::shared_ptr< buffer_pool > mesh;
+  std::shared_ptr< buffer_pool > lod;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< mappable_buffer_t > resource_pair;
   std::shared_ptr< vertex_buffer_pool > vertex;
@@ -155,6 +163,30 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->light->get_props().allocator_set ); \
       } \
       add_resource( { "light_pool", ( r ) ->light->get_buffer() } ); \
+    } \
+    if( ( r ) ->accessor ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->accessor->get_props().allocator_set ); \
+      } \
+      add_resource( { "accessor_pool", ( r ) ->accessor->get_buffer() } ); \
+    } \
+    if( ( r ) ->vertex_attribute ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->vertex_attribute->get_props().allocator_set ); \
+      } \
+      add_resource( { "vertex_attribute_pool", ( r ) ->vertex_attribute->get_buffer() } ); \
+    } \
+    if( ( r ) ->mesh ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->mesh->get_props().allocator_set ); \
+      } \
+      add_resource( { "mesh_pool", ( r ) ->mesh->get_buffer() } ); \
+    } \
+    if( ( r ) ->lod ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->lod->get_props().allocator_set ); \
+      } \
+      add_resource( { "lod_pool", ( r ) ->lod->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

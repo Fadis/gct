@@ -191,6 +191,7 @@ add_library( gct SHARED
   gct/spv_member_pointer.cpp
   gct/image_layout.cpp
   gct/numeric_types.cpp
+  gct/type_id.cpp
   gct/get_normalized_vertex_attribute_name.cpp
   gct/vertex_attribute_name_to_usage.cpp
   gct/get_vertex_attributes.cpp

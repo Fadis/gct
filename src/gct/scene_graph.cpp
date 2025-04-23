@@ -84,6 +84,10 @@ scene_graph_create_info::scene_graph_create_info() {
   primitive_resource_index.set_buffer_name( "primitive_resource_index" );
   instance_resource_index.set_buffer_name( "instance_resource_index" );
   visibility.set_buffer_name( "visibility" );  
+  accessor.set_buffer_name( "accessor" );  
+  vertex_attribute.set_buffer_name( "vertex_attribute" );  
+  mesh.set_buffer_name( "mesh" );  
+  lod.set_buffer_name( "lod" );  
 }
 
 scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
@@ -93,6 +97,10 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   primitive_resource_index.set_shader( dir / "primitive_resource_index_pool" );
   instance_resource_index.set_shader( dir / "instance_resource_index_pool" );
   visibility.set_shader( dir / "visibility_pool" );
+  accessor.set_shader( dir / "accessor" );
+  vertex_attribute.set_shader( dir / "vertex_attribute" );
+  mesh.set_shader( dir / "mesh" );
+  lod.set_shader( dir / "lod" );
   light.set_shader( dir / "light_pool" );
   return *this;
 }
@@ -257,6 +265,42 @@ scene_graph::scene_graph(
         .set_matrix_pool( resource->matrix->get_buffer() )
     ) );
   }
+  if(
+    std::filesystem::exists( props->accessor.read_shader ) &&
+    std::filesystem::exists( props->accessor.write_shader )
+  ) {
+    resource->visibility.reset( new buffer_pool(
+      buffer_pool_create_info( props->accessor )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
+  if(
+    std::filesystem::exists( props->vertex_attribute.read_shader ) &&
+    std::filesystem::exists( props->vertex_attribute.write_shader )
+  ) {
+    resource->visibility.reset( new buffer_pool(
+      buffer_pool_create_info( props->vertex_attribute )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
+  if(
+    std::filesystem::exists( props->mesh.read_shader ) &&
+    std::filesystem::exists( props->mesh.write_shader )
+  ) {
+    resource->visibility.reset( new buffer_pool(
+      buffer_pool_create_info( props->mesh )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
+  if(
+    std::filesystem::exists( props->lod.read_shader ) &&
+    std::filesystem::exists( props->lod.write_shader )
+  ) {
+    resource->visibility.reset( new buffer_pool(
+      buffer_pool_create_info( props->lod )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -290,6 +334,21 @@ scene_graph::scene_graph(
   };
   if( resource->light ) {
     u.push_back( { "light_pool", resource->light->get_buffer() } );
+  }
+  if( resource->accessor ) {
+    u.push_back( { "accessor_pool", resource->accessor->get_buffer() } );
+  }
+  if( resource->vertex_attribute ) {
+    u.push_back( { "vertex_attribute_pool", resource->vertex_attribute->get_buffer() } );
+  }
+  if( resource->mesh ) {
+    u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
+  }
+  if( resource->mesh ) {
+    u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
+  }
+  if( resource->lod ) {
+    u.push_back( { "lod_pool", resource->lod->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -332,24 +391,44 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
     }, {} );
     init_visibility = false;
   }
+  syncable s;
   (*resource->matrix)( rec );
   rec.compute_barrier( { resource->matrix->get_buffer() }, {} );
+  s.add( resource->matrix->get_buffer() );
   (*resource->aabb)( rec );
+  s.add( resource->aabb->get_buffer() );
   (*resource->image)( rec );
   (*resource->sampler)();
   (*resource->texture)( rec );
   (*resource->visibility)( rec );
+  s.add( resource->visibility->get_buffer() );
   (*resource->vertex)( rec );
   (*resource->primitive_resource_index)( rec );
+  s.add( resource->primitive_resource_index->get_buffer() );
   (*resource->instance_resource_index)( rec );
+  s.add( resource->instance_resource_index->get_buffer() );
   if( resource->light ) {
     (*resource->light)( rec );
+    s.add( resource->light->get_buffer() );
   }
-  rec.compute_to_graphics_barrier( {
-    resource->matrix->get_buffer(),
-    resource->aabb->get_buffer(),
-    resource->visibility->get_buffer()
-  }, {} );
+  if( resource->accessor ) {
+    (*resource->accessor)( rec );
+    s.add( resource->accessor->get_buffer() );
+  }
+  if( resource->vertex_attribute ) {
+    (*resource->vertex_attribute)( rec );
+    s.add( resource->vertex_attribute->get_buffer() );
+  }
+  if( resource->mesh ) {
+    (*resource->mesh)( rec );
+    s.add( resource->mesh->get_buffer() );
+  }
+  if( resource->lod ) {
+    (*resource->lod)( rec );
+    s.add( resource->lod->get_buffer() );
+  }
+
+  rec.compute_to_graphics_barrier( s );
 }
 
 void scene_graph::rotate_visibility( command_buffer_recorder_t &rec ) const {

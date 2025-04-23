@@ -84,6 +84,7 @@ subdirs(
   bilateral2
   bilateral_visualize
   nofilter_upscale
+  linear_allocator
 )
 if( DXC_FOUND )
 subdirs(

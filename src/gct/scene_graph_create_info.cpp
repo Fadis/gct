@@ -21,6 +21,10 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "sampler" ] = src.sampler;
   dest[ "primitive_resource_index" ] = src.primitive_resource_index;
   dest[ "visibility" ] = src.visibility;
+  dest[ "accessor" ] = src.accessor;
+  dest[ "vertex_attribute" ] = src.vertex_attribute;
+  dest[ "mesh" ] = src.mesh;
+  dest[ "lod" ] = src.lod;
   dest[ "vertex" ] = src.vertex;
   dest[ "light" ] = src.light;
   dest[ "prim_pool_size" ] = src.prim_pool_size;
