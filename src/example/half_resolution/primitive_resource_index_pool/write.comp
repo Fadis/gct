@@ -6,19 +6,7 @@
 
 layout(local_size_x = 1024, local_size_y = 1 ) in;
 
-struct primitive_resource_index_type {
-  vec4 base_color;
-  vec4 emissive;
-  float metallic;
-  float roughness;
-  float normal_scale;
-  float occlusion_strength;
-  uint base_color_texture;
-  uint metallic_roughness_texture;
-  uint normal_texture;
-  uint occlusion_texture;
-  uint emissive_texture;
-};
+#include <gct/scene_graph/primitive_resource_index_type.h>
 
 layout(push_constant) uniform PushConstants {
   uint offset;

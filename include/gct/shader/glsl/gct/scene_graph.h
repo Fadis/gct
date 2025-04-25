@@ -19,9 +19,7 @@ layout(push_constant) uniform PushConstants {
 #include <gct/scene_graph/light_pool.h>
 #include <gct/scene_graph/vertex_buffer_pool.h>
 #include <gct/scene_graph/accessor_pool.h>
-#include <gct/scene_graph/vertex_attribute_pool.h>
 #include <gct/scene_graph/mesh_pool.h>
-#include <gct/scene_graph/lod_pool.h>
 #include <gct/scene_graph/draw_request_pool.h>
 #include <gct/scene_graph/load_filter_cache.h>
 #include <gct/scene_graph/read_primitive.h>

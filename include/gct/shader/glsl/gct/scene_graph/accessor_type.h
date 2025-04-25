@@ -4,13 +4,14 @@
 #include <gct/type_id.h>
 
 struct accessor_type {
-  uint vertex_buffer_id;
+  uint enabled;
+  uint vertex_buffer;
   uint type;
   uint normalized;
   uint length;
   uint offset;
   uint stride;
-  uint reserved[ 2 ];
+  uint reserved;
 };
 
 #endif

@@ -1,4 +1,6 @@
+#include "gct/exception.hpp"
 #include <fstream>
+#include <fx/gltf.h>
 #include <iterator>
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -19,13 +21,134 @@
 #include <gct/gltf.hpp>
 #include <gct/to_matrix.hpp>
 #include <gct/image.hpp>
+#include <gct/scene_graph_accessor.hpp>
+#include <gct/numeric_types.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
 namespace gct::gltf {
 
+vk::PrimitiveTopology gltf_topology_to_vulkan_topology(
+  fx::gltf::Primitive::Mode t
+) {
+  if( t == fx::gltf::Primitive::Mode::Points ) {
+    return vk::PrimitiveTopology::ePointList;
+  }
+  else if( t == fx::gltf::Primitive::Mode::Lines ) {
+    return vk::PrimitiveTopology::eLineList;
+  }
+  else if( t == fx::gltf::Primitive::Mode::LineStrip ) {
+    return vk::PrimitiveTopology::eLineStrip;
+  }
+  else if( t == fx::gltf::Primitive::Mode::Triangles ) {
+    return vk::PrimitiveTopology::eTriangleList;
+  }
+  else if( t == fx::gltf::Primitive::Mode::TriangleStrip ) {
+    return vk::PrimitiveTopology::eTriangleStrip;
+  }
+  else if( t == fx::gltf::Primitive::Mode::TriangleFan ) {
+    return vk::PrimitiveTopology::eTriangleFan;
+  }
+  else {
+    throw exception::invalid_argument( "gltf_topology_to_vulkan_topology : Unsupported topology", __FILE__, __LINE__ );
+  }
+}
+
+scene_graph::mesh_topology_id vulkan_topology_to_topology_id(
+  vk::PrimitiveTopology t
+) {
+  if( t == vk::PrimitiveTopology::ePointList ) {
+    return scene_graph::mesh_topology_id::point;
+  }
+  else if( t == vk::PrimitiveTopology::eLineList ) {
+    return scene_graph::mesh_topology_id::line;
+  }
+  else if( t == vk::PrimitiveTopology::eTriangleList ) {
+    return scene_graph::mesh_topology_id::triangle;
+  }
+  else {
+    throw exception::invalid_argument( "vulkan_topology_to_topology_id : Unsupported topology", __FILE__, __LINE__ );
+  }
+}
+
+numeric_type_t to_numeric_type(
+  fx::gltf::Accessor::ComponentType componentType,
+  fx::gltf::Accessor::Type type,
+  bool normalize
+) {
+  numeric_type_t n;
+  n.sign = true;
+  n.rows = 1u;
+  if( componentType == fx::gltf::Accessor::ComponentType::Byte ) {
+    n.component = numeric_component_type_t::int_;
+    n.depth = 8u;
+  }
+  else if( componentType == fx::gltf::Accessor::ComponentType::UnsignedByte ) {
+    n.component = numeric_component_type_t::int_;
+    n.depth = 8u;
+    n.sign = false;
+  }
+  else if( componentType == fx::gltf::Accessor::ComponentType::Short ) {
+    n.component = numeric_component_type_t::int_;
+    n.depth = 16u;
+  }
+  else if( componentType == fx::gltf::Accessor::ComponentType::UnsignedShort ) {
+    n.component = numeric_component_type_t::int_;
+    n.depth = 16u;
+    n.sign = false;
+  }
+  else if( componentType == fx::gltf::Accessor::ComponentType::UnsignedInt ) {
+    n.component = numeric_component_type_t::int_;
+    n.depth = 32u;
+    n.sign = false;
+  }
+  else if( componentType == fx::gltf::Accessor::ComponentType::Float ) {
+    n.component = numeric_component_type_t::float_;
+    n.depth = 32u;
+  }
+  else {
+    throw exception::invalid_argument( "to_numeric_type : 使用できないアクセサの型", __FILE__, __LINE__ );
+  }
+
+  if( type == fx::gltf::Accessor::Type::Scalar ) {
+    n.composite = numeric_composite_type_t::scalar;
+  }
+  else if( type == fx::gltf::Accessor::Type::Vec2 ) {
+    n.composite = numeric_composite_type_t::vector;
+    n.rows = 2u;
+  }
+  else if( type == fx::gltf::Accessor::Type::Vec3 ) {
+    n.composite = numeric_composite_type_t::vector;
+    n.rows = 3u;
+  }
+  else if( type == fx::gltf::Accessor::Type::Vec4 ) {
+    n.composite = numeric_composite_type_t::vector;
+    n.rows = 4u;
+  }
+  else {
+    throw exception::invalid_argument( "to_numeric_type : 使用できないアクセサの型", __FILE__, __LINE__ );
+  }
+  if( normalize ) {
+    n.attr = integer_attribute_t::scaled;
+  }
+  return n;
+}
+
 gltf2::gltf2(
   const gltf2_create_info &ci
 ) : props( ci ) {
+  if( ci.vertex_attribute_map.empty() ) {
+    props.vertex_attribute_map[ "INDEX" ] = 0;
+    props.vertex_attribute_map[ "POSITION" ] = 1;
+    props.vertex_attribute_map[ "NORMAL" ] = 2;
+    props.vertex_attribute_map[ "TANGENT" ] = 3;
+    props.vertex_attribute_map[ "TEXCOORD_0" ] = 4;
+    props.vertex_attribute_map[ "COLOR_0" ] = 5;
+    props.vertex_attribute_map[ "JOINT_0" ] = 6;
+    props.vertex_attribute_map[ "WEIGHT_0" ] = 7;
+  }
+  for( const auto &v: props.vertex_attribute_map ) {
+    accessor_count = std::max( accessor_count, std::uint32_t( v.second ) );
+  }
   fx::gltf::ReadQuotas quota;
   quota.MaxBufferByteLength = 1024 * 1024 * 1024;
   fx::gltf::Document doc = fx::gltf::LoadFromText( props.filename.string(), quota );
@@ -175,7 +298,7 @@ graphics_pipeline_create_info_t gltf2::create_pipeline(
       pipeline_input_assembly_state_create_info_t()
         .set_basic(
           vk::PipelineInputAssemblyStateCreateInfo()
-            .setTopology( vk::PrimitiveTopology::eTriangleList ) //////////////
+            .setTopology( gltf_topology_to_vulkan_topology( doc_primitive.mode ) )
         )
     )
     .set_viewport(
@@ -231,34 +354,37 @@ scene_graph::primitive gltf2::create_primitive(
   bool has_tangent = false;
   glm::vec3 min( -1, -1, -1 );
   glm::vec3 max( 1, 1, 1 );
+  scene_graph::lod_t l;
   for( const auto &[target,index]: primitive_.attributes ) {
+    if( target == "WEIGHTS_0" ) rigged = true;
+    if( target == "TANGENT" ) has_tangent = true;
+    if( doc.accessors.size() <= size_t( index ) ) throw invalid_gltf( "参照されたaccessorsが存在しない", __FILE__, __LINE__ );
+    const auto &accessor = doc.accessors[ index ];
+    if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw invalid_gltf( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
+    const auto &view = doc.bufferViews[ accessor.bufferView ];
+    const uint32_t default_stride = to_size( accessor.componentType, accessor.type );
+    const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
+    const uint32_t max_count = ( view.byteLength - ( accessor.byteOffset ) ) / stride;
+    if( view.buffer < 0 || doc.buffers.size() <= size_t( view.buffer ) ) throw invalid_gltf( "参照されたbufferが存在しない", __FILE__, __LINE__ );
+    if( accessor.count > max_count ) throw invalid_gltf( "指定された要素数に対してbufferViewが小さすぎる" );
+    vertex_count = std::min( vertex_count, accessor.count );
+    const uint32_t offset = accessor.byteOffset + view.byteOffset;
+    const vk::Format vertex_format = to_vulkan_format( accessor.componentType, accessor.type, accessor.normalized );
+    if( target == "POSITION" ) {
+      if( accessor.min.size() >= 3 ) {
+        min[ 0 ] = accessor.min[ 0 ];
+        min[ 1 ] = accessor.min[ 1 ];
+        min[ 2 ] = accessor.min[ 2 ];
+      }
+      if( accessor.max.size() >= 3 ) {
+        max[ 0 ] = accessor.max[ 0 ];
+        max[ 1 ] = accessor.max[ 1 ];
+        max[ 2 ] = accessor.max[ 2 ];
+      }
+    }
+
     auto binding = props.graph->get_resource()->attr2index.find( target );
     if( binding != props.graph->get_resource()->attr2index.end() ) {
-      if( binding->first == "WEIGHTS_0" ) rigged = true;
-      if( binding->first == "TANGENT" ) has_tangent = true;
-      if( doc.accessors.size() <= size_t( index ) ) throw invalid_gltf( "参照されたaccessorsが存在しない", __FILE__, __LINE__ );
-      const auto &accessor = doc.accessors[ index ];
-      if( binding->second == 0 ) {
-        if( accessor.min.size() >= 3 ) {
-          min[ 0 ] = accessor.min[ 0 ];
-          min[ 1 ] = accessor.min[ 1 ];
-          min[ 2 ] = accessor.min[ 2 ];
-        }
-        if( accessor.max.size() >= 3 ) {
-          max[ 0 ] = accessor.max[ 0 ];
-          max[ 1 ] = accessor.max[ 1 ];
-          max[ 2 ] = accessor.max[ 2 ];
-        }
-      } 
-      if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw invalid_gltf( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
-      const auto &view = doc.bufferViews[ accessor.bufferView ];
-      if( view.buffer < 0 || doc.buffers.size() <= size_t( view.buffer ) ) throw invalid_gltf( "参照されたbufferが存在しない", __FILE__, __LINE__ );
-      const uint32_t default_stride = to_size( accessor.componentType, accessor.type );
-      const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
-      const uint32_t max_count = ( view.byteLength - ( accessor.byteOffset ) ) / stride;
-      if( accessor.count > max_count ) throw invalid_gltf( "指定された要素数に対してbufferViewが小さすぎる" );
-      vertex_count = std::min( vertex_count, accessor.count );
-      const uint32_t offset = accessor.byteOffset + view.byteOffset;
       vertex_input_binding.push_back(
         vk::VertexInputBindingDescription()
           .setBinding( binding->second )
@@ -269,9 +395,35 @@ scene_graph::primitive gltf2::create_primitive(
         vk::VertexInputAttributeDescription()
           .setLocation( binding->second )
           .setBinding( binding->second )
-          .setFormat( to_vulkan_format( accessor.componentType, accessor.type, accessor.normalized ) )
+          .setFormat( vertex_format )
       );
       vertex_buffer.insert( std::make_pair( binding->second, scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) ) );
+    }
+    const auto attribute_index = props.vertex_attribute_map.find( target );
+    if( attribute_index != props.vertex_attribute_map.end() ) {
+      if( l.level.empty() ) {
+        l.level.push_back(
+          std::make_pair(
+            scene_graph::mesh_t()
+              .set_topology( gltf_topology_to_vulkan_topology( primitive_.mode ) )
+              .set_vertex_count( vertex_count ),
+            0.0f
+          )
+        );
+      }
+      else {
+        l.level[ 0 ].first.set_vertex_count( vertex_count );
+      }
+      l.level[ 0 ].first.attribute.insert(
+        std::make_pair(
+          attribute_index->second,
+          scene_graph::accessor_t()
+            .set_buffer( buffer[ view.buffer ] )
+            .set_type(
+              to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
+            )
+        )
+      );
     }
   }
   constexpr static const float eps = 0.01f;
@@ -334,6 +486,23 @@ scene_graph::primitive gltf2::create_primitive(
     p.set_index_buffer( scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) );
     p.set_index_buffer_type( to_vulkan_index_type( accessor.componentType ) );
     p.set_count( accessor.count );
+    const auto accessor_index = props.vertex_attribute_map.find( "INDEX" );
+    if( accessor_index != props.vertex_attribute_map.end() ) {
+      if( l.level.empty() ) {
+        throw invalid_gltf( "At least one vertex attribute is required", __FILE__, __LINE__ );
+      }
+      l.level[ 0 ].first.set_vertex_count( accessor.count );
+      l.level[ 0 ].first.attribute.insert(
+        std::make_pair(
+          accessor_index->second,
+          scene_graph::accessor_t()
+            .set_buffer( buffer[ view.buffer ] )
+            .set_type(
+              to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
+            )
+        )
+      );
+    }
   }
   else {
     p.set_indexed( false );
@@ -505,6 +674,67 @@ scene_graph::primitive gltf2::create_primitive(
     max[ 2 ],
     1.f
   ) );
+  p.lod = l;
+  const bool enable_mesh_shader =
+    props.graph->get_resource()->accessor &&
+    props.graph->get_resource()->mesh;
+  if( enable_mesh_shader ) {
+    auto mmp = props.graph->get_resource()->mesh->get_member_pointer();
+    std::vector< std::uint8_t > mesh( mmp.get_aligned_size(), 0u );
+    auto amp = props.graph->get_resource()->accessor->get_member_pointer();
+    std::vector< std::uint8_t > accessor( amp.get_aligned_size(), 0u );
+    const auto mesh_desc = props.graph->get_resource()->mesh->allocate( l.level.size() );
+    p.descriptor.mesh = mesh_desc;
+    if( rimp.has( "mesh" ) ) {
+      ri.data()->*rimp[ "mesh" ] = *mesh_desc;
+    }
+    for( std::uint32_t lod_id = 0u; lod_id != l.level.size(); ++lod_id ) {
+      const auto accessor_desc = props.graph->get_resource()->accessor->allocate( accessor_count );
+      p.descriptor.accessor.push_back( accessor_desc );
+      {
+        for( std::uint32_t attr_id = 0u; attr_id != accessor_count; ++attr_id ) {
+          const auto attr = l.level[ 0 ].first.attribute.find( attr_id );
+          if( attr != l.level[ 0 ].first.attribute.end() ) {
+            if( amp.has( "enabled" ) ) {
+              accessor.data()->*amp[ "enabled" ] = 1;
+            }
+            if( amp.has( "vertex_buffer" ) ) {
+              accessor.data()->*amp[ "vertex_buffer" ] = *attr->second.buffer;
+            }
+            if( amp.has( "type" ) ) {
+              accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::to_type_id( attr->second.type ) );
+            }
+            if( amp.has( "normalized" ) ) {
+              accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1 : 0;
+            }
+            if( amp.has( "length" ) ) {
+              accessor.data()->*amp[ "length" ] = attr->second.type.rows;
+            }
+            if( amp.has( "offset" ) ) {
+              accessor.data()->*amp[ "offset" ] = attr->second.offset / ( attr->second.type.depth / 8u );
+            }
+            if( amp.has( "stride" ) ) {
+              accessor.data()->*amp[ "stride" ] = attr->second.stride / ( attr->second.type.depth / 8u );
+            }
+            props.graph->get_resource()->accessor->set( accessor_desc, attr_id, accessor.data(), std::next( accessor.data(), accessor.size() ) );
+          }
+        }
+      }
+      if( mmp.has( "accessor" ) ) {
+        mesh.data()->*mmp[ "accessor" ] = *accessor_desc;
+      }
+      if( mmp.has( "vertex_count" ) ) {
+        mesh.data()->*mmp[ "vertex_count" ] = vertex_count;
+      }
+      if( mmp.has( "topology" ) ) {
+        mesh.data()->*mmp[ "topology" ] = int( vulkan_topology_to_topology_id( l.level[ lod_id ].first.topology ) );
+      }
+      if( mmp.has( "occupancy" ) ) {
+        mesh.data()->*mmp[ "occupancy" ] = l.level[ lod_id ].second;
+      }
+      props.graph->get_resource()->mesh->set( mesh_desc, lod_id, mesh.data(), std::next( mesh.data(), mesh.size() ) );
+    }
+  }
   p.descriptor.resource_index = props.graph->get_resource()->primitive_resource_index->allocate( ri.data(), std::next( ri.data(), ri.size() ) );
   p.descriptor.aabb = props.graph->get_resource()->aabb->allocate( p.aabb );
   p.set_pipeline_create_info( create_pipeline( doc, primitive_, p ) );

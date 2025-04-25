@@ -80,14 +80,8 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.accessor ) {
     dest[ "accessor" ] = *src.accessor;
   }
-  if( src.vertex_attribute ) {
-    dest[ "vertex_attribute" ] = *src.vertex_attribute;
-  }
   if( src.mesh ) {
     dest[ "mesh" ] = *src.mesh;
-  }
-  if( src.lod ) {
-    dest[ "lod" ] = *src.lod;
   }
   if( src.vertex ) {
     dest[ "vertex" ] = *src.vertex;

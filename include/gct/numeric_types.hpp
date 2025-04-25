@@ -4,6 +4,7 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <gct/setter.hpp>
 struct SpvReflectTypeDescription;
 namespace gct {
   enum class numeric_component_type_t {
@@ -24,6 +25,13 @@ namespace gct {
     srgb
   };
   struct numeric_type_t {
+    LIBGCT_SETTER( component )
+    LIBGCT_SETTER( depth )
+    LIBGCT_SETTER( sign )
+    LIBGCT_SETTER( attr )
+    LIBGCT_SETTER( composite )
+    LIBGCT_SETTER( rows )
+    LIBGCT_SETTER( cols )
     numeric_component_type_t component = numeric_component_type_t::void_;
     std::uint32_t depth = 0u;
     bool sign = true;

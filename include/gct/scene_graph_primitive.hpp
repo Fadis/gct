@@ -15,6 +15,7 @@
 #include <gct/buffer_pool.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
+#include <gct/scene_graph_accessor.hpp>
 
 namespace gct {
 
@@ -39,6 +40,8 @@ struct primitive_descriptor {
   LIBGCT_SETTER( emissive_texture )
   LIBGCT_SETTER( resource_index )
   LIBGCT_SETTER( aabb )
+  LIBGCT_SETTER( accessor )
+  LIBGCT_SETTER( mesh )
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
   texture_pool::texture_descriptor normal_texture;
@@ -46,6 +49,8 @@ struct primitive_descriptor {
   texture_pool::texture_descriptor emissive_texture;
   buffer_pool::buffer_descriptor resource_index;
   aabb_pool::aabb_descriptor aabb;
+  std::vector< buffer_pool::buffer_descriptor > accessor;
+  buffer_pool::buffer_descriptor mesh;
 };
 
 void to_json( nlohmann::json &dest, const primitive_descriptor &src );
@@ -71,6 +76,7 @@ struct primitive {
   LIBGCT_SETTER( normal_scale )
   LIBGCT_SETTER( occlusion_strength )
   LIBGCT_SETTER( pipeline_create_info )
+  LIBGCT_SETTER( lod )
   LIBGCT_SETTER( descriptor )
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
@@ -92,6 +98,7 @@ struct primitive {
   float normal_scale = 1.f;
   float occlusion_strength = 0.f;
   graphics_pipeline_create_info_t pipeline_create_info;
+  lod_t lod;
   primitive_descriptor descriptor;
 };
 

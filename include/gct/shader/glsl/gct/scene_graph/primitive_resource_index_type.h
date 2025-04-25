@@ -13,6 +13,8 @@ struct primitive_resource_index_type {
   uint normal_texture;
   uint occlusion_texture;
   uint emissive_texture;
+  uint mesh;
+  uint reserved[ 2 ];
 };
 
 #endif

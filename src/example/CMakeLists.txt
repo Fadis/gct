@@ -85,6 +85,7 @@ subdirs(
   bilateral_visualize
   nofilter_upscale
   linear_allocator
+  mesh_shader
 )
 if( DXC_FOUND )
 subdirs(

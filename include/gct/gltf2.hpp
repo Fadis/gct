@@ -64,6 +64,7 @@ private:
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive
   );
+  [[nodiscard]] static const std::string get_attribute_name_in_mesh( const std::string &gltf_name );
   [[nodiscard]] std::shared_ptr< mesh > create_mesh(
     const fx::gltf::Document &doc,
     const fx::gltf::Mesh &mesh
@@ -97,6 +98,7 @@ private:
   std::vector< std::shared_ptr< mesh > > mesh_;
   std::vector< matrix_pool::matrix_descriptor > camera;
   std::filesystem::path cd;
+  std::uint32_t accessor_count = 0u;
 };
 
 void to_json( nlohmann::json&, const gltf2& );
