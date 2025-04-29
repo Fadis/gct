@@ -8,7 +8,7 @@ struct accessor_type {
   uint vertex_buffer;
   uint type;
   uint normalized;
-  uint length;
+  uint component_count;
   uint offset;
   uint stride;
   uint reserved;

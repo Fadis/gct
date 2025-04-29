@@ -77,8 +77,9 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > visibility;
   std::shared_ptr< buffer_pool > accessor;
   std::shared_ptr< buffer_pool > mesh;
+  std::shared_ptr< buffer_pool > resource_pair;
   std::shared_ptr< mappable_buffer_t > last_visibility;
-  std::shared_ptr< mappable_buffer_t > resource_pair;
+  //std::shared_ptr< mappable_buffer_t > resource_pair;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::shared_ptr< light_pool > light;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
@@ -152,7 +153,7 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
       if( !allocator_set.allocator ) { \
         set_allocator_set( ( r ) ->visibility->get_props().allocator_set ); \
       } \
-      add_resource( { "visibility", ( r ) ->visibility->get_buffer() } ); \
+      add_resource( { "visibility_pool", ( r ) ->visibility->get_buffer() } ); \
     } \
     if( ( r ) ->light ) { \
       if( !allocator_set.allocator ) { \
@@ -171,6 +172,12 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->mesh->get_props().allocator_set ); \
       } \
       add_resource( { "mesh_pool", ( r ) ->mesh->get_buffer() } ); \
+    } \
+    if( ( r ) ->resource_pair ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->resource_pair->get_props().allocator_set ); \
+      } \
+      add_resource( { "resource_pair", ( r ) ->resource_pair->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

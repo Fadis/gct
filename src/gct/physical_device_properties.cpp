@@ -129,6 +129,9 @@
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceMeshShaderPropertiesNV.hpp>
 #endif
+#ifdef VK_EXT_MESH_SHADER_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMeshShaderPropertiesEXT.hpp>
+#endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceMultiDrawPropertiesEXT.hpp>
 #endif
@@ -356,6 +359,9 @@ namespace gct {
     LIBGCT_EXTENSION_TO_JSON( maintenance3 )
 #endif
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( mesh_shader_nv )
+#endif
+#ifdef VK_EXT_MESH_SHADER_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( mesh_shader )
 #endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME
@@ -615,7 +621,10 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( maintenance3, 1, 1, 0, "VK_KHR_maintenance3" )
 #endif
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( mesh_shader, "VK_NV_mesh_shader" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( mesh_shader_nv, "VK_NV_mesh_shader" )
+#endif
+#ifdef VK_EXT_MESH_SHADER_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( mesh_shader, "VK_EXT_mesh_shader" )
 #endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( multi_draw, "VK_EXT_multi_draw" )
@@ -910,6 +919,9 @@ namespace gct {
       LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance3 )
 #endif
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
+      LIBGCT_EXTENSION_REBUILD_CHAIN( mesh_shader_nv )
+#endif
+#ifdef VK_EXT_MESH_SHADER_EXTENSION_NAME
       LIBGCT_EXTENSION_REBUILD_CHAIN( mesh_shader )
 #endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME

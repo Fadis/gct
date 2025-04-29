@@ -5,7 +5,7 @@ struct mesh_type {
   uint accessor;
   uint vertex_count;
   uint topology;
-  uint reserved;
+  float occupancy;
 };
 
 #endif

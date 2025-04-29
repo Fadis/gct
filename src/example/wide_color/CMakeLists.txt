@@ -71,6 +71,9 @@ add_shader( wide_color instance_resource_index_pool/read.comp )
 add_shader( wide_color visibility_pool/write.comp )
 add_shader( wide_color visibility_pool/read.comp )
 
+add_shader( wide_color resource_pair/write.comp )
+add_shader( wide_color resource_pair/read.comp )
+
 add_shader( wide_color gauss/h5_16.comp )
 add_shader( wide_color gauss/v5_16.comp )
 add_shader( wide_color gauss/h12_32.comp )

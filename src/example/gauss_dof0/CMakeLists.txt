@@ -67,6 +67,9 @@ add_shader( gauss_dof0 instance_resource_index_pool/read.comp )
 add_shader( gauss_dof0 visibility_pool/write.comp )
 add_shader( gauss_dof0 visibility_pool/read.comp )
 
+add_shader( gauss_dof0 resource_pair/write.comp )
+add_shader( gauss_dof0 resource_pair/read.comp )
+
 add_shader( gauss_dof0 light_pool/write.comp )
 add_shader( gauss_dof0 light_pool/read.comp )
 add_shader( gauss_dof0 light_pool/update.comp )

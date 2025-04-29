@@ -84,8 +84,9 @@ scene_graph_create_info::scene_graph_create_info() {
   primitive_resource_index.set_buffer_name( "primitive_resource_index" );
   instance_resource_index.set_buffer_name( "instance_resource_index" );
   visibility.set_buffer_name( "visibility" );  
-  accessor.set_buffer_name( "accessor" );  
-  mesh.set_buffer_name( "mesh" );  
+  accessor.set_buffer_name( "accessor_pool" );  
+  mesh.set_buffer_name( "mesh_pool" );  
+  resource_pair.set_buffer_name( "resource_pair" );
 }
 
 scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
@@ -97,6 +98,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   visibility.set_shader( dir / "visibility_pool" );
   accessor.set_shader( dir / "accessor" );
   mesh.set_shader( dir / "mesh" );
+  resource_pair.set_shader( dir / "resource_pair" );
   light.set_shader( dir / "light_pool" );
   return *this;
 }
@@ -169,7 +171,7 @@ scene_graph::scene_graph(
     resource->image_descriptor_set_id = props->image_descriptor_set_id;
   }
   if( resource->descriptor_set_layout.size() > props->vertex_buffer_descriptor_set_id ) {
-    resource->vertex_buffer_descriptor_set = props->allocator_set.descriptor_pool->allocate( resource->descriptor_set_layout[ props->vertex_buffer_descriptor_set_id ], props->image.max_image_count );
+    resource->vertex_buffer_descriptor_set = props->allocator_set.descriptor_pool->allocate( resource->descriptor_set_layout[ props->vertex_buffer_descriptor_set_id ], props->vertex.max_vertex_buffer_count );
     resource->vertex_buffer_descriptor_set_id = props->vertex_buffer_descriptor_set_id;
   }
   
@@ -265,7 +267,7 @@ scene_graph::scene_graph(
     std::filesystem::exists( props->accessor.read_shader ) &&
     std::filesystem::exists( props->accessor.write_shader )
   ) {
-    resource->visibility.reset( new buffer_pool(
+    resource->accessor.reset( new buffer_pool(
       buffer_pool_create_info( props->accessor )
         .set_allocator_set( props->allocator_set )
     ) );
@@ -274,8 +276,17 @@ scene_graph::scene_graph(
     std::filesystem::exists( props->mesh.read_shader ) &&
     std::filesystem::exists( props->mesh.write_shader )
   ) {
-    resource->visibility.reset( new buffer_pool(
+    resource->mesh.reset( new buffer_pool(
       buffer_pool_create_info( props->mesh )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
+  if(
+    std::filesystem::exists( props->resource_pair.read_shader ) &&
+    std::filesystem::exists( props->resource_pair.write_shader )
+  ) {
+    resource->resource_pair.reset( new buffer_pool(
+      buffer_pool_create_info( props->resource_pair )
         .set_allocator_set( props->allocator_set )
     ) );
   }
@@ -286,10 +297,10 @@ scene_graph::scene_graph(
       vk::BufferUsageFlagBits::eConditionalRenderingEXT :
       vk::BufferUsageFlagBits::eStorageBuffer
   );
-  resource->resource_pair = props->allocator_set.allocator->create_mappable_buffer(
+  /*resource->resource_pair = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_props().max_buffer_count * sizeof( raw_resource_pair_type ),
     vk::BufferUsageFlagBits::eStorageBuffer
-  );
+  );*/
   auto vbpci =
     vertex_buffer_pool_create_info( props->vertex )
       .set_allocator_set( props->allocator_set )
@@ -315,9 +326,6 @@ scene_graph::scene_graph(
   }
   if( resource->accessor ) {
     u.push_back( { "accessor_pool", resource->accessor->get_buffer() } );
-  }
-  if( resource->mesh ) {
-    u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
   }
   if( resource->mesh ) {
     u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
@@ -390,6 +398,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->mesh ) {
     (*resource->mesh)( rec );
     s.add( resource->mesh->get_buffer() );
+  }
+  if( resource->resource_pair ) {
+    (*resource->resource_pair)( rec );
+    s.add( resource->resource_pair->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

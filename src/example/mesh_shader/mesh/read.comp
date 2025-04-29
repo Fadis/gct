@@ -18,7 +18,7 @@ layout(binding = 0,std430) buffer StagingPrimitiveResourceIndexPool {
 };
 
 layout(binding = 1,std430) buffer PrimitiveResourceIndexPool {
-  mesh_type mesh[];
+  mesh_type mesh_pool[];
 };
 
 struct request_type {
@@ -34,7 +34,7 @@ void main() {
   const uint index = gl_GlobalInvocationID.x;
   if( index < push_constants.count ) {
     staging[ request[ index + push_constants.offset ].staging ] =
-      mesh[ request[ index + push_constants.offset ].source ];
+      mesh_pool[ request[ index + push_constants.offset ].source ];
   }
 }
 

@@ -65,6 +65,9 @@ add_shader( roc instance_resource_index_pool/read.comp )
 add_shader( roc visibility_pool/write.comp )
 add_shader( roc visibility_pool/read.comp )
 
+add_shader( roc resource_pair/write.comp )
+add_shader( roc resource_pair/read.comp )
+
 add_shader( roc gauss/h5_16.comp )
 add_shader( roc gauss/v5_16.comp )
 add_shader( roc gauss/h12_32.comp )

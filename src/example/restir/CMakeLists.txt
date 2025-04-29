@@ -69,6 +69,9 @@ add_shader( restir instance_resource_index_pool/read.comp )
 add_shader( restir visibility_pool/write.comp )
 add_shader( restir visibility_pool/read.comp )
 
+add_shader( restir resource_pair/write.comp )
+add_shader( restir resource_pair/read.comp )
+
 add_shader( restir light_pool/write.comp )
 add_shader( restir light_pool/read.comp )
 add_shader( restir light_pool/update.comp )

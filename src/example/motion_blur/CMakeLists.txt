@@ -67,6 +67,9 @@ add_shader( motion_blur instance_resource_index_pool/read.comp )
 add_shader( motion_blur visibility_pool/write.comp )
 add_shader( motion_blur visibility_pool/read.comp )
 
+add_shader( motion_blur resource_pair/write.comp )
+add_shader( motion_blur resource_pair/read.comp )
+
 add_shader( motion_blur light_pool/write.comp )
 add_shader( motion_blur light_pool/read.comp )
 add_shader( motion_blur light_pool/update.comp )

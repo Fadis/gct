@@ -5,7 +5,7 @@
 #include <gct/scene_graph/accessor_type.h>
 
 layout(set = GCT_SHADER_SCENE_GRAPH_BUFFER_SET_ID, binding = 7, std430) buffer AccessorPool {
-  accessor_type accessor[];
+  accessor_type accessor_pool[];
 };
 
 #endif

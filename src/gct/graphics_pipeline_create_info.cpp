@@ -1,6 +1,3 @@
-#include <fstream>
-#include <iterator>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/device.hpp>
 #include <gct/pipeline_layout.hpp>
@@ -11,6 +8,7 @@
 #include <gct/shader_module.hpp>
 #include <gct/get_device.hpp>
 #include <gct/gbuffer.hpp>
+#include <gct/shader_module_reflection.hpp>
 #include <vulkan2json/GraphicsPipelineCreateInfo.hpp>
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #include <vulkan2json/AttachmentSampleCountInfoAMD.hpp>
@@ -114,7 +112,7 @@ namespace gct {
       basic
         .setPRasterizationState( nullptr );
 
-   if( multisample ) {
+    if( multisample ) {
       multisample->rebuild_chain();
       basic
         .setPMultisampleState( &multisample->get_basic() );
@@ -227,6 +225,25 @@ namespace gct {
         pipeline_shader_stage_create_info_t()
           .set_shader_module( v )
       );
+      if(
+        stage.back().get_shader_module() &&
+        stage.back().get_shader_module()->get_props().get_reflection()->shader_stage == SpvReflectShaderStageFlagBits::SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT
+      ) {
+        const SpvReflectEntryPoint *entry_point = stage.back().get_shader_module()->get_props().get_reflection()->entry_points;
+        if( entry_point ) {
+          if(
+            entry_point->local_size.x != 0 &&
+            entry_point->local_size.y != 0 &&
+            entry_point->local_size.z != 0
+          ) {
+            set_dim( glm::ivec3(
+              entry_point->local_size.x,
+              entry_point->local_size.y,
+              entry_point->local_size.z
+            ) );
+          }
+        }
+      }
     }
     return *this;
   }

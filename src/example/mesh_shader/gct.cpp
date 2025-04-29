@@ -124,7 +124,12 @@ int main( int argc, const char *argv[] ) {
       VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
       VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME,
       VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME,
-      VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+      VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME,
+      VK_KHR_MULTIVIEW_EXTENSION_NAME,
+      VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+      VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
+      VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+      //VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME
     },
     gct::descriptor_pool_create_info_t()
       .set_basic(
@@ -133,10 +138,10 @@ int main( int argc, const char *argv[] ) {
             vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet|
             vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind
           )
-          .setMaxSets( 65536 * 7 )
+          .setMaxSets( 65536 * 10 )
       )
       .set_descriptor_pool_size( vk::DescriptorType::eUniformBuffer, 16 )
-      .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 65536*2 )
+      .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 65536*5 )
       .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 65536*2 )
       .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 65536*2 )
       .rebuild_chain()
@@ -321,13 +326,13 @@ int main( int argc, const char *argv[] ) {
       .set_aspect_ratio( float( res.width )/float( res.height ) )
   );
 
-  const auto geometry_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
+  /*const auto geometry_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
     gct::scene_graph::compiled_scene_graph_create_info()
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
       .set_render_pass( gbuffer.get_render_pass() )
       .set_dynamic_cull_mode( true ),
     *sg
-  );
+  );*/
   
   const auto depth_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
     gct::scene_graph::compiled_scene_graph_create_info()
@@ -606,6 +611,20 @@ int main( int argc, const char *argv[] ) {
       .set_node_name( "bloom_gauss" )
   );
 
+  gct::graphics geometry(
+    gct::graphics_create_info()
+      .set_pipeline_create_info(
+        gct::graphics_pipeline_create_info_t()
+          .set_gbuffer( gbuffer )
+      )
+      .set_swapchain_image_count( 1u )
+      .add_shader( CMAKE_CURRENT_BINARY_DIR "/geometry/geometry.task.spv" )
+      .add_shader( CMAKE_CURRENT_BINARY_DIR "/geometry/geometry.mesh.spv" )
+      .add_shader( CMAKE_CURRENT_BINARY_DIR "/geometry/geometry.frag.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+
   gct::shader_graph::builder builder( sg->get_resource() );
   
   const auto lighting_desc = builder.call(
@@ -730,8 +749,6 @@ int main( int argc, const char *argv[] ) {
   builder.output( merge_desc[ "dest" ] );
   builder.output( filtered_bloom );
   const auto compiled = builder();
-  std::cout << builder.get_log() << std::endl;
-  std::cout << to_string( compiled ) << std::endl;
   const auto merged_view = compiled.get_view( merge_desc[ "dest" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
   
@@ -829,9 +846,6 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-
-  std::cout << scene_aabb->min[ 0 ] << " " << scene_aabb->min[ 1 ] << " " << scene_aabb->min[ 2 ] << std::endl;
-  std::cout << scene_aabb->max[ 0 ] << " " << scene_aabb->max[ 1 ] << " " << scene_aabb->max[ 2 ] << std::endl;
 
   gct::glfw_walk walk( center, scale, res.walk_state_filename );
   res.window->set_on_key(
@@ -1053,8 +1067,7 @@ int main( int argc, const char *argv[] ) {
             );
             (*il)(
               rec,
-              *geometry_csg,
-              true
+              geometry
             );
           }
           if( walk.get_current_camera() == 0 ) {
@@ -1129,6 +1142,7 @@ int main( int argc, const char *argv[] ) {
     ++frame_counter;
     walk.reset_flags();
     current_frame %= framebuffers.size();
+   // break;
   }
   (*res.queue)->waitIdle();
   walk.save( res.walk_state_filename );

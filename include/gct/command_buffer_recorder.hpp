@@ -712,6 +712,11 @@ namespace gct {
       std::uint32_t y,
       std::uint32_t z
     );
+    void draw_mesh_task(
+      std::uint32_t x,
+      std::uint32_t y,
+      std::uint32_t z
+    );
     void draw(
       std::uint32_t vertex_count,
       std::uint32_t instnce_count,

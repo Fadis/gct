@@ -68,6 +68,9 @@ add_shader( natural_vignetting instance_resource_index_pool/read.comp )
 add_shader( natural_vignetting visibility_pool/write.comp )
 add_shader( natural_vignetting visibility_pool/read.comp )
 
+add_shader( natural_vignetting resource_pair/write.comp )
+add_shader( natural_vignetting resource_pair/read.comp )
+
 add_shader( natural_vignetting light_pool/write.comp )
 add_shader( natural_vignetting light_pool/read.comp )
 add_shader( natural_vignetting light_pool/update.comp )

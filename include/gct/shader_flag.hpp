@@ -22,7 +22,9 @@ namespace gct {
     geometry = ( 1 << 11 ),
     fragment = ( 1 << 12 ),
     compute = ( 1 << 13 ),
-    special = ( 1 << 14 )
+    mesh = ( 1 << 14 ),
+    task = ( 1 << 15 ),
+    special = ( 1 << 16 )
   };
   using shaders_t = std::unordered_map< shader_flag_t, std::shared_ptr< shader_module_t > >;
   [[nodiscard]] std::optional< shader_flag_t > get_shader_flag( const std::filesystem::path &path );

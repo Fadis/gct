@@ -18,6 +18,6 @@ layout(early_fragment_tests) in;
 layout ( location = 0 ) flat in uint input_instance_id;
 
 void main()  {
-  condition[ instance_resource_index[ resource_pair[ input_instance_id ].inst ].visibility ] = 1;
+  condition[ instance_resource_index[ resource_pair[ push_constants.instance + input_instance_id ].inst ].visibility ] = 1;
 }
 

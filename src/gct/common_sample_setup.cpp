@@ -21,6 +21,7 @@
 #include <gct/image_view.hpp>
 #include <gct/vulkanhpp.hpp>
 #include <gct/io_context.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 namespace gct {
 common_sample_setup::common_sample_setup(
@@ -87,6 +88,10 @@ common_sample_setup::common_sample_setup(
     ici.add_layer(
       "VK_LAYER_KHRONOS_validation"
     );
+#ifdef VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME
+    ici.add_extension( VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME );
+    ici.add_validation_feature_enable( vk::ValidationFeatureEnableEXT::eDebugPrintf );
+#endif
   }
   instance.reset( new instance_t( ici ) );
   if( vm[ "validation" ].as< bool >() ) {

@@ -17,6 +17,10 @@ namespace gct {
     else if( v == SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV )
       return vk::ShaderStageFlagBits::eTaskNV;
     else if( v == SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV )
+      return vk::ShaderStageFlagBits::eMeshEXT;
+    else if( v == SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT )
+      return vk::ShaderStageFlagBits::eTaskEXT;
+    else if( v == SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT )
       return vk::ShaderStageFlagBits::eMeshNV;
     else if( v == SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR )
       return vk::ShaderStageFlagBits::eRaygenKHR;

@@ -1,5 +1,4 @@
 #include "gct/exception.hpp"
-#include <fstream>
 #include <fx/gltf.h>
 #include <iterator>
 #include <algorithm>
@@ -147,7 +146,7 @@ gltf2::gltf2(
     props.vertex_attribute_map[ "WEIGHT_0" ] = 7;
   }
   for( const auto &v: props.vertex_attribute_map ) {
-    accessor_count = std::max( accessor_count, std::uint32_t( v.second ) );
+    accessor_count = std::max( accessor_count, std::uint32_t( v.second + 1 ) );
   }
   fx::gltf::ReadQuotas quota;
   quota.MaxBufferByteLength = 1024 * 1024 * 1024;
@@ -407,7 +406,7 @@ scene_graph::primitive gltf2::create_primitive(
             scene_graph::mesh_t()
               .set_topology( gltf_topology_to_vulkan_topology( primitive_.mode ) )
               .set_vertex_count( vertex_count ),
-            0.0f
+            0.0f // occupancy
           )
         );
       }
@@ -422,6 +421,8 @@ scene_graph::primitive gltf2::create_primitive(
             .set_type(
               to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
             )
+            .set_stride( stride )
+            .set_offset( offset )
         )
       );
     }
@@ -491,6 +492,7 @@ scene_graph::primitive gltf2::create_primitive(
       if( l.level.empty() ) {
         throw invalid_gltf( "At least one vertex attribute is required", __FILE__, __LINE__ );
       }
+      vertex_count = accessor.count;
       l.level[ 0 ].first.set_vertex_count( accessor.count );
       l.level[ 0 ].first.attribute.insert(
         std::make_pair(
@@ -500,6 +502,7 @@ scene_graph::primitive gltf2::create_primitive(
             .set_type(
               to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
             )
+            .set_offset( offset )
         )
       );
     }
@@ -693,29 +696,40 @@ scene_graph::primitive gltf2::create_primitive(
       p.descriptor.accessor.push_back( accessor_desc );
       {
         for( std::uint32_t attr_id = 0u; attr_id != accessor_count; ++attr_id ) {
-          const auto attr = l.level[ 0 ].first.attribute.find( attr_id );
-          if( attr != l.level[ 0 ].first.attribute.end() ) {
+          const auto attr = l.level[ lod_id ].first.attribute.find( attr_id );
+          if( attr != l.level[ lod_id ].first.attribute.end() ) {
             if( amp.has( "enabled" ) ) {
-              accessor.data()->*amp[ "enabled" ] = 1;
+              accessor.data()->*amp[ "enabled" ] = 1u;
             }
             if( amp.has( "vertex_buffer" ) ) {
               accessor.data()->*amp[ "vertex_buffer" ] = *attr->second.buffer;
             }
+            else throw -1;
             if( amp.has( "type" ) ) {
               accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::to_type_id( attr->second.type ) );
             }
+            else throw -1;
             if( amp.has( "normalized" ) ) {
-              accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1 : 0;
+              accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1u : 0u;
             }
-            if( amp.has( "length" ) ) {
-              accessor.data()->*amp[ "length" ] = attr->second.type.rows;
+            else throw -1;
+            if( amp.has( "component_count" ) ) {
+              accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.type.rows );
             }
+            else throw -1;
             if( amp.has( "offset" ) ) {
-              accessor.data()->*amp[ "offset" ] = attr->second.offset / ( attr->second.type.depth / 8u );
+              accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / ( attr->second.type.depth / 8u ) );
             }
+            else throw -1;
             if( amp.has( "stride" ) ) {
-              accessor.data()->*amp[ "stride" ] = attr->second.stride / ( attr->second.type.depth / 8u );
+              if( attr->second.stride == 0u ) {
+                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.type.rows );
+              }
+              else {
+                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / ( attr->second.type.depth / 8u ) );
+              }
             }
+            else throw -1;
             props.graph->get_resource()->accessor->set( accessor_desc, attr_id, accessor.data(), std::next( accessor.data(), accessor.size() ) );
           }
         }
@@ -724,10 +738,10 @@ scene_graph::primitive gltf2::create_primitive(
         mesh.data()->*mmp[ "accessor" ] = *accessor_desc;
       }
       if( mmp.has( "vertex_count" ) ) {
-        mesh.data()->*mmp[ "vertex_count" ] = vertex_count;
+        mesh.data()->*mmp[ "vertex_count" ] = std::uint32_t( vertex_count );
       }
       if( mmp.has( "topology" ) ) {
-        mesh.data()->*mmp[ "topology" ] = int( vulkan_topology_to_topology_id( l.level[ lod_id ].first.topology ) );
+        mesh.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( l.level[ lod_id ].first.topology ) );
       }
       if( mmp.has( "occupancy" ) ) {
         mesh.data()->*mmp[ "occupancy" ] = l.level[ lod_id ].second;
@@ -746,6 +760,7 @@ std::shared_ptr< mesh > gltf2::create_mesh(
   const fx::gltf::Mesh &doc_mesh
 ) {
   std::shared_ptr< mesh > m( new mesh() );
+  unsigned int i = 0u;
   for( const auto &primitive_: doc_mesh.primitives ) {
     m->prim.push_back(
       props.graph->get_resource()->prim.allocate(
@@ -757,6 +772,7 @@ std::shared_ptr< mesh > gltf2::create_mesh(
         )
       )
     );
+    ++i;
     /*if( m->prim.size() == 1u ) {
       m->aabb = props.graph->get_resource()->prim.get( m->prim.back() )->aabb;
     }

@@ -50,6 +50,7 @@ public:
     const instance_list_create_info &ci,
     const scene_graph &graph
   );
+  void update_device_side_list();
   void setup_resource_pair_buffer(
     command_buffer_recorder_t &rec
   ) const;
@@ -69,6 +70,10 @@ public:
     command_buffer_recorder_t&,
     const compiled_aabb_scene_graph &compiled
   ) const;
+  void operator()(
+    command_buffer_recorder_t&,
+    const graphics &compiled
+  ) const;
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] std::vector< resource_pair > &get_draw_list() {
     return draw_list;
@@ -84,6 +89,7 @@ private:
   std::shared_ptr< scene_graph_resource > resource;
   std::vector< resource_pair > draw_list;
   bool enable_conditional = false;
+  buffer_pool::buffer_descriptor device_side_list;
 };
 
 void to_json( nlohmann::json &dest, const instance_list &src );

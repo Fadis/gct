@@ -208,7 +208,10 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance3PropertiesKHR , maintenance3 )
 #endif
 #ifdef VK_NV_MESH_SHADER_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMeshShaderPropertiesNV , mesh_shader )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMeshShaderPropertiesNV , mesh_shader_nv )
+#endif
+#ifdef VK_EXT_MESH_SHADER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMeshShaderPropertiesEXT , mesh_shader )
 #endif
 #ifdef VK_EXT_MULTI_DRAW_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMultiDrawPropertiesEXT , multi_draw )

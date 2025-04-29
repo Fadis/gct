@@ -72,6 +72,8 @@ void to_json( nlohmann::json &dest, const primitive &src ) {
   dest[ "vs_flag" ] = int( src.vs_flag );
   dest[ "gs_flag" ] = int( src.gs_flag );
   dest[ "fs_flag" ] = int( src.fs_flag );
+  dest[ "ts_flag" ] = int( src.ts_flag );
+  dest[ "ms_flag" ] = int( src.ms_flag );
   dest[ "cull" ] = src.cull;
   dest[ "blend" ] = src.blend;
   dest[ "roughness" ] = src.roughness;

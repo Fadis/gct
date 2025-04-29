@@ -6,6 +6,7 @@
 #extension GL_ARB_fragment_shader_interlock : enable
 
 #include "io_with_tangent.h"
+#define GCT_MAKE_IMAGE_COHERENT
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
@@ -13,7 +14,7 @@
 
 void main() {
   primitive_value p = read_primitive(
-    push_constants.primitive,
+    uint( input_id.y ),//push_constants.primitive,
     input_position,
     input_normal,
     input_tangent,
@@ -29,7 +30,7 @@ void main() {
   float shadow_level2 = 0.0;
   float shadow_level3 = 1.0;
 
-  const uint visibility_index = instance_resource_index[ push_constants.instance ].visibility;
+  const uint visibility_index = instance_resource_index[ uint( input_id.x )/*push_constants.instance*/ ].visibility;
   visibility_pool[ visibility_index ] = 1;
 
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );

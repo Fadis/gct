@@ -67,6 +67,9 @@ add_shader( lrlf_dof instance_resource_index_pool/read.comp )
 add_shader( lrlf_dof visibility_pool/write.comp )
 add_shader( lrlf_dof visibility_pool/read.comp )
 
+add_shader( lrlf_dof resource_pair/write.comp )
+add_shader( lrlf_dof resource_pair/read.comp )
+
 add_shader( lrlf_dof light_pool/write.comp )
 add_shader( lrlf_dof light_pool/read.comp )
 add_shader( lrlf_dof light_pool/update.comp )

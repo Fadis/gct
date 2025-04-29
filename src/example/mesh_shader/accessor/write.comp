@@ -18,7 +18,7 @@ layout(binding = 0,std430) buffer StagingPrimitiveResourceIndexPool {
 };
 
 layout(binding = 1,std430) buffer PrimitiveResourceIndexPool {
-  accessor_type accessor[];
+  accessor_type accessor_pool[];
 };
 
 struct request_type {
@@ -33,7 +33,7 @@ layout(binding = 2,std430) buffer Request {
 void main() {
   const uint index = gl_GlobalInvocationID.x;
   if( index < push_constants.count ) {
-    accessor[ request[ index + push_constants.offset ].destination ] =
+    accessor_pool[ request[ index + push_constants.offset ].destination ] =
       staging[ request[ index + push_constants.offset ].staging ];
   }
 }

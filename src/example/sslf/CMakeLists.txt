@@ -68,6 +68,9 @@ add_shader( sslf instance_resource_index_pool/read.comp )
 add_shader( sslf visibility_pool/write.comp )
 add_shader( sslf visibility_pool/read.comp )
 
+add_shader( sslf resource_pair/write.comp )
+add_shader( sslf resource_pair/read.comp )
+
 add_shader( sslf light_pool/write.comp )
 add_shader( sslf light_pool/read.comp )
 add_shader( sslf light_pool/update.comp )

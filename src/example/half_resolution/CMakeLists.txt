@@ -67,6 +67,9 @@ add_shader( half_resolution instance_resource_index_pool/read.comp )
 add_shader( half_resolution visibility_pool/write.comp )
 add_shader( half_resolution visibility_pool/read.comp )
 
+add_shader( half_resolution resource_pair/write.comp )
+add_shader( half_resolution resource_pair/read.comp )
+
 add_shader( half_resolution light_pool/write.comp )
 add_shader( half_resolution light_pool/read.comp )
 add_shader( half_resolution light_pool/update.comp )

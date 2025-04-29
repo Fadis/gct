@@ -68,6 +68,9 @@ add_shader( star_burst instance_resource_index_pool/read.comp )
 add_shader( star_burst visibility_pool/write.comp )
 add_shader( star_burst visibility_pool/read.comp )
 
+add_shader( star_burst resource_pair/write.comp )
+add_shader( star_burst resource_pair/read.comp )
+
 add_shader( star_burst light_pool/write.comp )
 add_shader( star_burst light_pool/read.comp )
 add_shader( star_burst light_pool/update.comp )

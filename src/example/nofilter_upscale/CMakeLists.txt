@@ -67,6 +67,9 @@ add_shader( nofilter_upscale instance_resource_index_pool/read.comp )
 add_shader( nofilter_upscale visibility_pool/write.comp )
 add_shader( nofilter_upscale visibility_pool/read.comp )
 
+add_shader( nofilter_upscale resource_pair/write.comp )
+add_shader( nofilter_upscale resource_pair/read.comp )
+
 add_shader( nofilter_upscale light_pool/write.comp )
 add_shader( nofilter_upscale light_pool/read.comp )
 add_shader( nofilter_upscale light_pool/update.comp )

@@ -82,7 +82,7 @@ void main() {
   gl_PrimitiveID = gl_PrimitiveIDIn;
   const mat4 projection_matrix = matrix_pool[ global_uniforms.projection_matrix ];
   const mat4 proj_cam = projection_matrix * matrix_pool[ global_uniforms.camera_matrix ];
-  const aabb_type aabb = aabb_pool[ instance_resource_index[ resource_pair[ input_instance_id[ 0 ] ].inst ].aabb ];
+  const aabb_type aabb = aabb_pool[ instance_resource_index[ resource_pair[ push_constants.instance + input_instance_id[ 0 ] ].inst ].aabb ];
   
   float min_z = 10.0f;
   float max_z = -10.f;
@@ -100,7 +100,7 @@ void main() {
   near_box.min = global_uniforms.eye_pos - vec4( 2.0 * znear, 2.0 * znear, 2.0 * znear, 0.0 );
   near_box.max = global_uniforms.eye_pos + vec4( 2.0 * znear, 2.0 * znear, 2.0 * znear, 0.0 );
   if( aabb_area3( aabb_and3( aabb, near_box ) ) != 0.0 ) {
-    condition[ instance_resource_index[ resource_pair[ input_instance_id[ 0 ] ].inst ].visibility ] = 1;
+    condition[ instance_resource_index[ resource_pair[ push_constants.instance + input_instance_id[ 0 ] ].inst ].visibility ] = 1;
     return;
   }
   for( int f = 0; f < 12; f++ ) {

@@ -1,0 +1,29 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_mesh_shader : enable
+
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+
+layout(local_size_x = 1, local_size_y = 1 ) in;
+
+struct task_data {
+  uint resource_pair_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.x ];
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  const uint visibility = visibility_pool[ inst.visibility ];
+  //if( visibility == 0u ) return;
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+  const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
+  td.resource_pair_id = gl_GlobalInvocationID.x;
+  EmitMeshTasksEXT( invocation_count, 1, 1 );
+}
+

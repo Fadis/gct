@@ -5,6 +5,20 @@
 #define GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID 4
 #endif
 
+#ifdef GCT_ENABLE_8BIT_16BIT_STORAGE
+layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI8 {
+  int8_t data[];
+} vertex_buffer_i8[];
+layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferU8 {
+  uint8_t data[];
+} vertex_buffer_u8[];
+layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI16 {
+  int16_t data[];
+} vertex_buffer_i16[];
+layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferU16 {
+  uint16_t data[];
+} vertex_buffer_u16[];
+#endif
 layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI32 {
   int data[];
 } vertex_buffer_i32[];
@@ -14,24 +28,6 @@ layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) 
 layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferF32 {
   float data[];
 } vertex_buffer_f32[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI32V2 {
-  ivec2 data[];
-} vertex_buffer_i32v2[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferU32V2 {
-  uvec2 data[];
-} vertex_buffer_u32v2[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferF32V2 {
-  vec2 data[];
-} vertex_buffer_f32v2[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI32V4 {
-  ivec4 data[];
-} vertex_buffer_i32v4[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferU32V4 {
-  uvec4 data[];
-} vertex_buffer_u32v4[];
-layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferF32V4 {
-  vec4 data[];
-} vertex_buffer_f32v4[];
 
 #endif
 

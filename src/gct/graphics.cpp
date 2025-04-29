@@ -81,13 +81,26 @@ namespace gct {
         ) == vk::ShaderStageFlagBits::eVertex;
       }
     );
-    if( vs == props.pipeline_create_info.get_stage().end() ) {
-      throw -1;
+    if( vs == props.pipeline_create_info.get_stage().end() ) { /////
+      const auto ms = std::find_if(
+        props.pipeline_create_info.get_stage().begin(),
+        props.pipeline_create_info.get_stage().end(),
+        []( const auto &s ) -> bool {
+          return spv2vk(
+            s.get_shader_module()->get_props().get_reflection()->shader_stage
+          ) == vk::ShaderStageFlagBits::eMeshEXT;
+        }
+      );
+      if( ms == props.pipeline_create_info.get_stage().end() ) {
+        throw -1;
+      }
     }
-    std::tie(vistat,vamap,stride) = gct::get_vertex_attributes(
-      device,
-      vs->get_shader_module()->get_props().get_reflection()
-    );
+    else {
+      std::tie(vistat,vamap,stride) = gct::get_vertex_attributes(
+        device,
+        vs->get_shader_module()->get_props().get_reflection()
+      );
+    }
 
     descriptor_set.resize( props.swapchain_image_count );
     for( auto &d: descriptor_set_layout ) {
@@ -158,6 +171,16 @@ namespace gct {
       pipeline,
       descriptor_set[ image_index ]
     );
+  }
+  void graphics::operator()(
+    command_buffer_recorder_t &rec,
+    unsigned int image_index,
+    unsigned int x,
+    unsigned int y,
+    unsigned int z
+  ) const {
+    bind( rec, image_index );
+    rec.draw_mesh_task( x, y, z );
   }
 }
 

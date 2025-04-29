@@ -67,6 +67,9 @@ add_shader( wide_color2 instance_resource_index_pool/read.comp )
 add_shader( wide_color2 visibility_pool/write.comp )
 add_shader( wide_color2 visibility_pool/read.comp )
 
+add_shader( wide_color2 resource_pair/write.comp )
+add_shader( wide_color2 resource_pair/read.comp )
+
 add_shader( wide_color2 light_pool/write.comp )
 add_shader( wide_color2 light_pool/read.comp )
 add_shader( wide_color2 light_pool/update.comp )

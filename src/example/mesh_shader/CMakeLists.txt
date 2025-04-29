@@ -31,10 +31,9 @@ add_shader( mesh_shader skyview/generate_multiscat.comp )
 add_shader( mesh_shader skyview/generate.comp )
 add_shader( mesh_shader skyview/render.comp )
 
-add_shader( mesh_shader geometry/tangent.frag )
-add_shader( mesh_shader geometry/tangent.vert )
-add_shader( mesh_shader geometry/world.frag )
-add_shader( mesh_shader geometry/world.vert )
+add_shader( mesh_shader geometry/geometry.task )
+add_shader( mesh_shader geometry/geometry.mesh )
+add_shader( mesh_shader geometry/geometry.frag )
 add_shader( mesh_shader geometry/dummy.comp )
 
 add_shader( mesh_shader aabb/world.frag )
@@ -66,6 +65,9 @@ add_shader( mesh_shader instance_resource_index_pool/read.comp )
 
 add_shader( mesh_shader visibility_pool/write.comp )
 add_shader( mesh_shader visibility_pool/read.comp )
+
+add_shader( mesh_shader resource_pair/write.comp )
+add_shader( mesh_shader resource_pair/read.comp )
 
 add_shader( mesh_shader light_pool/write.comp )
 add_shader( mesh_shader light_pool/read.comp )

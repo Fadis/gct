@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include <glm/vec3.hpp>
 #include <gct/extension.hpp>
 #include <gct/pipeline_shader_stage_create_info.hpp>
 #include <gct/pipeline_vertex_input_state_create_info.hpp>
@@ -94,6 +95,7 @@ namespace gct {
     deep_copy_unique_ptr< pipeline_dynamic_state_create_info_t > dynamic;
     std::shared_ptr< pipeline_layout_t > layout;
     std::shared_ptr< render_pass_t > render_pass;
+    glm::ivec3 dim = glm::ivec3( 0, 0, 0 );
     std::uint32_t subpass = 0u;
   public:
     graphics_pipeline_create_info_t &add_stage( const std::shared_ptr< shader_module_t >& );
@@ -133,6 +135,21 @@ namespace gct {
     graphics_pipeline_create_info_t &clear_layout();
     [[nodiscard]] const std::shared_ptr< pipeline_layout_t > &get_layout() const {
       return layout;
+    }
+    graphics_pipeline_create_info_t &set_dim( const glm::vec3 &v ) {
+      dim = v;
+      return *this;
+    }
+    graphics_pipeline_create_info_t &set_dim(
+      std::int32_t x,
+      std::int32_t y,
+      std::int32_t z
+    ) {
+      dim = glm::ivec3( x, y, z );
+      return *this;
+    }
+    [[nodiscard]] const glm::ivec3 &get_dim() const {
+      return dim;
     }
     graphics_pipeline_create_info_t &set_render_pass( const std::shared_ptr< render_pass_t >&, std::uint32_t );
     graphics_pipeline_create_info_t &clear_render_pass();

@@ -67,6 +67,9 @@ add_shader( bilateral instance_resource_index_pool/read.comp )
 add_shader( bilateral visibility_pool/write.comp )
 add_shader( bilateral visibility_pool/read.comp )
 
+add_shader( bilateral resource_pair/write.comp )
+add_shader( bilateral resource_pair/read.comp )
+
 add_shader( bilateral light_pool/write.comp )
 add_shader( bilateral light_pool/read.comp )
 add_shader( bilateral light_pool/update.comp )

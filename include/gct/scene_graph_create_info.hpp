@@ -34,7 +34,7 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( visibility )
   LIBGCT_SETTER( accessor )
   LIBGCT_SETTER( mesh )
-  LIBGCT_SETTER( lod )
+  LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( light )
   LIBGCT_SETTER( prim_pool_size )
@@ -62,7 +62,7 @@ struct scene_graph_create_info {
   buffer_pool_create_info visibility;
   buffer_pool_create_info accessor;
   buffer_pool_create_info mesh;
-  buffer_pool_create_info lod;
+  buffer_pool_create_info resource_pair;
   vertex_buffer_pool_create_info vertex;
   light_pool_create_info light;
   std::uint32_t prim_pool_size = 65536u;

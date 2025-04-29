@@ -67,6 +67,9 @@ add_shader( hex_dof instance_resource_index_pool/read.comp )
 add_shader( hex_dof visibility_pool/write.comp )
 add_shader( hex_dof visibility_pool/read.comp )
 
+add_shader( hex_dof resource_pair/write.comp )
+add_shader( hex_dof resource_pair/read.comp )
+
 add_shader( hex_dof light_pool/write.comp )
 add_shader( hex_dof light_pool/read.comp )
 add_shader( hex_dof light_pool/update.comp )

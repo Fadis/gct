@@ -44,6 +44,7 @@ instance_list::instance_list(
 #else
   enable_conditional = false;
 #endif
+  update_device_side_list();
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
@@ -67,18 +68,22 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->descriptor_set
   );
-  rec.bind_descriptor_set(
-    vk::PipelineBindPoint::eGraphics,
-    resource->texture_descriptor_set_id,
-    resource->pipeline_layout,
-    resource->texture_descriptor_set
-  );
-  rec.bind_descriptor_set(
-    vk::PipelineBindPoint::eGraphics,
-    resource->image_descriptor_set_id,
-    resource->pipeline_layout,
-    resource->image_descriptor_set
-  );
+  if( resource->texture_descriptor_set ) {
+    rec.bind_descriptor_set(
+      vk::PipelineBindPoint::eGraphics,
+      resource->texture_descriptor_set_id,
+      resource->pipeline_layout,
+      resource->texture_descriptor_set
+    );
+  }
+  if( resource->image_descriptor_set ) {
+    rec.bind_descriptor_set(
+      vk::PipelineBindPoint::eGraphics,
+      resource->image_descriptor_set_id,
+      resource->pipeline_layout,
+      resource->image_descriptor_set
+    );
+  }
   const bool enable_barrier = !barrier_target.empty();
   for( const auto &v: draw_list ) {
     auto p = prim.find( v.prim );
@@ -142,27 +147,43 @@ void instance_list::operator()(
     }
   }
 }
+void instance_list::update_device_side_list() {
+  device_side_list = resource->resource_pair->allocate( draw_list.size() );
+  const auto mp = resource->resource_pair->get_member_pointer();
+  std::vector< std::uint8_t > temp( mp.get_aligned_size(), 0u );
+  for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+    if( mp.has( "instance" ) ) {
+      temp.data()->*mp[ "instance" ] = *draw_list[ i ].inst;
+    }
+    else if( mp.has( "inst" ) ) {
+      temp.data()->*mp[ "inst" ] = *draw_list[ i ].inst;
+    }
+    if( mp.has( "primitive" ) ) {
+      temp.data()->*mp[ "primitive" ] = *draw_list[ i ].prim;
+    }
+    else if( mp.has( "prim" ) ) {
+      temp.data()->*mp[ "prim" ] = *draw_list[ i ].prim;
+    }
+    resource->resource_pair->set( device_side_list, i, temp.data(), std::next( temp.data(), temp.size() ) );
+  }
+}
+
 void instance_list::setup_resource_pair_buffer(
   command_buffer_recorder_t &rec
 ) const {
-  {
-    auto mapped = resource->resource_pair->map< raw_resource_pair_type >();
-    std::transform(
-      draw_list.begin(),
-      draw_list.end(),
-      mapped.begin(),
-      []( const auto &v ) -> raw_resource_pair_type {
-        return raw_resource_pair_type()
-          .set_inst( *v.inst )
-          .set_prim( *v.prim );
-      }
-    );
-  }
-  rec.sync_to_device( resource->resource_pair );
-  rec.transfer_to_graphics_barrier( { resource->resource_pair->get_buffer() }, {} );
   std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
-  push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = 0u;
-  push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = 0u;
+  if( resource->push_constant_mp->has( "offset" ) ) {
+    push_constant.data() ->* (*resource->push_constant_mp)[ "offset" ] = *device_side_list;
+  }
+  else if( resource->push_constant_mp->has( "instance" ) ) {
+    push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *device_side_list;
+  }
+  if( resource->push_constant_mp->has( "count" ) ) {
+    push_constant.data() ->* (*resource->push_constant_mp)[ "count" ] = std::uint32_t( draw_list.size() );
+  }
+  else if( resource->push_constant_mp->has( "primitive" ) ) {
+    push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = std::uint32_t( draw_list.size() );
+  }
   rec->pushConstants(
     **resource->pipeline_layout,
     resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
@@ -181,18 +202,22 @@ void instance_list::operator()(
     resource->pipeline_layout,
     resource->descriptor_set
   );
-  rec.bind_descriptor_set(
-    vk::PipelineBindPoint::eGraphics,
-    resource->texture_descriptor_set_id,
-    resource->pipeline_layout,
-    resource->texture_descriptor_set
-  );
-  rec.bind_descriptor_set(
-    vk::PipelineBindPoint::eGraphics,
-    resource->image_descriptor_set_id,
-    resource->pipeline_layout,
-    resource->image_descriptor_set
-  );
+  if( resource->texture_descriptor_set ) {
+    rec.bind_descriptor_set(
+      vk::PipelineBindPoint::eGraphics,
+      resource->texture_descriptor_set_id,
+      resource->pipeline_layout,
+      resource->texture_descriptor_set
+    );
+  }
+  if( resource->image_descriptor_set ) {
+    rec.bind_descriptor_set(
+      vk::PipelineBindPoint::eGraphics,
+      resource->image_descriptor_set_id,
+      resource->pipeline_layout,
+      resource->image_descriptor_set
+    );
+  }
   compiled( rec, draw_list.size() );
   /*for( const auto &i: draw_list ) {
     const auto inst = resource->inst.get( i.inst );
@@ -210,6 +235,13 @@ void instance_list::operator()(
       (p->second)( rec );
     }
   }*/
+}
+void instance_list::operator()(
+  command_buffer_recorder_t &rec,
+  const graphics &compiled
+) const {
+  setup_resource_pair_buffer( rec );
+  compiled( rec, 0u, draw_list.size(), 1u, 1u );
 }
 std::vector< resource_pair > instance_list::get_last_visible_list() const {
   std::unordered_set< std::uint32_t > visible_instance_ids;

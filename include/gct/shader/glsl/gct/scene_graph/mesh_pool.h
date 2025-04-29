@@ -5,7 +5,7 @@
 #include <gct/scene_graph/mesh_type.h>
 
 layout(set = GCT_SHADER_SCENE_GRAPH_BUFFER_SET_ID, binding = 8, std430) buffer MeshPool {
-  mesh_type mesh[];
+  mesh_type mesh_pool[];
 };
 
 #endif

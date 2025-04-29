@@ -87,7 +87,6 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
   if( execution_pending ) {
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
-
   auto b = props.allocator_set.allocator->create_mappable_buffer(
     data.size() * sizeof( glm::vec4 ),
     vk::BufferUsageFlagBits::eVertexBuffer|
@@ -134,6 +133,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
   if( execution_pending ) {
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
+  
 
   auto b = props.allocator_set.allocator->create_mappable_buffer(
     data.size(),

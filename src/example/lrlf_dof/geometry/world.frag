@@ -6,6 +6,7 @@
 #extension GL_ARB_fragment_shader_interlock : enable
 
 #include "io.h"
+#define GCT_MAKE_IMAGE_COHERENT
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph.h>
 

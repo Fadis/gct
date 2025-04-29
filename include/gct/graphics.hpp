@@ -2,7 +2,6 @@
 #define GCT_CUBEMAP_GRAPHICS_HPP
 #include <memory>
 #include <vector>
-#include <filesystem>
 #include <gct/graphics_create_info.hpp>
 #include <gct/vertex_attributes.hpp>
 #include <gct/property.hpp>
@@ -25,6 +24,13 @@ namespace gct {
     void bind(
       command_buffer_recorder_t &rec,
       unsigned int image_index
+    ) const;
+    void operator()(
+      command_buffer_recorder_t &rec,
+      unsigned int image_index,
+      unsigned int x,
+      unsigned int y,
+      unsigned int z
     ) const;
     [[nodiscard]] const std::shared_ptr< graphics_pipeline_t > &get_pipeline() const {
       return pipeline;

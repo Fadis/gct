@@ -67,6 +67,8 @@ struct primitive {
   LIBGCT_SETTER( vs_flag )
   LIBGCT_SETTER( gs_flag )
   LIBGCT_SETTER( fs_flag )
+  LIBGCT_SETTER( ts_flag )
+  LIBGCT_SETTER( ms_flag )
   LIBGCT_SETTER( cull )
   LIBGCT_SETTER( blend )
   LIBGCT_SETTER( roughness )
@@ -89,6 +91,8 @@ struct primitive {
   shader_flag_t vs_flag;
   shader_flag_t gs_flag;
   shader_flag_t fs_flag;
+  shader_flag_t ts_flag;
+  shader_flag_t ms_flag;
   bool cull = false;
   bool blend = false;
   float roughness = 0.f;

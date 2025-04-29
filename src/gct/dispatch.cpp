@@ -19,5 +19,19 @@ namespace gct {
       z / local_size[ 2 ] + ( z % local_size[ 2 ] ? 1u : 0u )
     );
   }
+  void command_buffer_recorder_t::draw_mesh_task(
+    std::uint32_t x,
+    std::uint32_t y,
+    std::uint32_t z
+  ) {
+    if( !local_size_is_available ) {
+      throw exception::invalid_argument( "command_buffer_recorder_t::dispatch_threads : Unable to detect local size.", __FILE__, __LINE__ );
+    }
+    (*get_factory())->drawMeshTasksEXT(
+      x / local_size[ 0 ] + ( x % local_size[ 0 ] ? 1u : 0u ),
+      y / local_size[ 1 ] + ( y % local_size[ 1 ] ? 1u : 0u ),
+      z / local_size[ 2 ] + ( z % local_size[ 2 ] ? 1u : 0u )
+    );
+  }
 }
 

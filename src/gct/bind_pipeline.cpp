@@ -18,7 +18,6 @@ namespace gct {
       vk::PipelineBindPoint::eCompute,
       **pipeline
     );
-    local_size_is_available = false;
     const auto dim = pipeline->get_props().get_dim();
     if(
       dim.x != 0 &&
@@ -30,6 +29,9 @@ namespace gct {
       local_size[ 1 ] = dim.y;
       local_size[ 2 ] = dim.z;
     }
+    else {
+      local_size_is_available = false;
+    }
     get_factory()->unbound()->keep.push_back( pipeline );
   }
   void command_buffer_recorder_t::bind_pipeline(
@@ -39,7 +41,20 @@ namespace gct {
       vk::PipelineBindPoint::eGraphics,
       **pipeline
     );
-    local_size_is_available = false;
+    const auto dim = pipeline->get_props().get_dim();
+    if(
+      dim.x != 0 &&
+      dim.y != 0 &&
+      dim.z != 0
+    ) {
+      local_size_is_available = true;
+      local_size[ 0 ] = dim.x;
+      local_size[ 1 ] = dim.y;
+      local_size[ 2 ] = dim.z;
+    }
+    else {
+      local_size_is_available = false;
+    }
     get_factory()->unbound()->keep.push_back( pipeline );
   }
 #ifdef VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME

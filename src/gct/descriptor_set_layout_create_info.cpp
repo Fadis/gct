@@ -83,7 +83,7 @@ namespace gct {
       binding_flag[ last_binding_index ] |= vk::DescriptorBindingFlagBits::eVariableDescriptorCountEXT;
       binding_flag[ last_binding_index ] |= vk::DescriptorBindingFlagBits::ePartiallyBoundEXT;
 #endif
-      binding[ last_binding_index ].descriptorCount = 16384u;
+      binding[ last_binding_index ].descriptorCount = 65536u;
     }
 #endif
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
