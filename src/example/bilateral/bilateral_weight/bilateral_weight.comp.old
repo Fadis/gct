@@ -1,8 +1,11 @@
-#version 450
+#version 460
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
@@ -40,7 +43,7 @@ void main()  {
   const uint cache_pos = gl_LocalInvocationID.x * 2 + gl_LocalInvocationID.y * 2 * cache_width;
   for( uint i = 0u; i != 4u; i++ ) {
     const ivec2 image_pos = screen_pos * 2 + src_offset[ i ];
-    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
+    const uint layer = uint( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
     const float depth = read_kplus_buffer_depth( push_constants.depth, image_pos, layer );
     const vec4 material = read_kplus_buffer_mrid16( push_constants.src, image_pos, layer );
     const vec3 normal = read_kplus_buffer_normal16( push_constants.src, image_pos, layer ).xyz;
@@ -49,7 +52,7 @@ void main()  {
   }
   /*if( gl_LocalInvocationID.x == 15 ) {
     const ivec2 image_pos = screen_pos * 2 + ivec2( 2, 0 );
-    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
+    const uint layer = uint( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( image_pos, 32 ) ).x ) - 1;
     const float depth = read_kplus_buffer_depth( push_constants.depth, image_pos, layer );
     const vec4 material = read_kplus_buffer_mrid16( push_constants.src, image_pos, layer );
     const vec3 normal = read_kplus_buffer_normal16( push_constants.src, image_pos, layer ).xyz;
@@ -69,7 +72,7 @@ void main()  {
     invocation_index + cache_width * ( cache_height - 1u ) :
     ( cache_width - 1u ) + cache_width * ( invocation_index - cache_width );
   if( invocation_index < ( cache_width + cache_height - 1u ) ) {
-    const uint layer = uint( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.src ) ], ivec3( edge_image_pos, 32 ) ).x ) - 1;
+    const uint layer = uint( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( edge_image_pos, 32 ) ).x ) - 1;
     const float depth = read_kplus_buffer_depth( push_constants.depth, edge_image_pos, layer );
     const vec4 material = read_kplus_buffer_mrid( push_constants.src, edge_image_pos, layer );
     const vec3 normal = read_kplus_buffer_normal( push_constants.src, edge_image_pos, layer ).xyz;
@@ -212,6 +215,6 @@ void main()  {
   }
   const uint mode = ( x << 5 ) | ( y << 3 );// | xy;
 
-  imageStore( image_poolr8u[ nonuniformEXT( push_constants.dest ) ], screen_pos, ivec4( mode, 0.0, 0.0, 0.0 ) );
+  imageStore( image_pool_2du[ nonuniformEXT( push_constants.dest ) ], screen_pos, ivec4( mode, 0.0, 0.0, 0.0 ) );
 }
 

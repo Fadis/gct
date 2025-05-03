@@ -756,8 +756,6 @@ int main( int argc, const char *argv[] ) {
   builder.output( filtered_bloom );
   builder.output( bilateral_weight_desc );
   const auto compiled = builder();
-  std::cout << builder.get_log() << std::endl;
-  std::cout << to_string( compiled ) << std::endl;
   const auto merged_view = compiled.get_view( merge_desc[ "dest" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
   const auto bilateral_weight_view = compiled.get_view( bilateral_weight_desc );
@@ -859,9 +857,6 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-
-  std::cout << scene_aabb->min[ 0 ] << " " << scene_aabb->min[ 1 ] << " " << scene_aabb->min[ 2 ] << std::endl;
-  std::cout << scene_aabb->max[ 0 ] << " " << scene_aabb->max[ 1 ] << " " << scene_aabb->max[ 2 ] << std::endl;
 
   gct::glfw_walk walk( center, scale, res.walk_state_filename );
   res.window->set_on_key(

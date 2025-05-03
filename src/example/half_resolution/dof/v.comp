@@ -1,8 +1,11 @@
-#version 450
+#version 460
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 layout(local_size_x = 1, local_size_y = 128 ) in;
 
@@ -54,26 +57,26 @@ void main() {
   const uint layer = gl_GlobalInvocationID.z;
   const uint lcpos = gl_LocalInvocationID.y;
   const uint hcpos = lcpos + gl_WorkGroupSize.y;
-  const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
+  const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const ivec4 sample_pos = vertical_filter_cache_pos( screen_pos, image_size, gl_WorkGroupSize.y, kernel_size );
   // 縦256ピクセルのフィルタを計算するのに必要な範囲のピクセルとCoCを共有メモリにロードする
-  cache0[ lcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial0 ) ], ivec3( sample_pos.xy, layer ) );
-  cache1[ lcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial1 ) ], ivec3( sample_pos.xy, layer ) );
-  cache2[ lcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial2 ) ], ivec3( sample_pos.xy, layer ) );
-  cache3[ lcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial3 ) ], ivec3( sample_pos.xy, layer ) );
-  cache4[ lcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial4 ) ], ivec3( sample_pos.xy, layer ) );
+  cache0[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial0 ) ], ivec3( sample_pos.xy, layer ) );
+  cache1[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial1 ) ], ivec3( sample_pos.xy, layer ) );
+  cache2[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial2 ) ], ivec3( sample_pos.xy, layer ) );
+  cache3[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial3 ) ], ivec3( sample_pos.xy, layer ) );
+  cache4[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial4 ) ], ivec3( sample_pos.xy, layer ) );
   if( hcpos < gl_WorkGroupSize.y+kernel_size*2+1 ) {
-    cache0[ hcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial0 ) ], ivec3( sample_pos.zw, layer ) );
-    cache1[ hcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial1 ) ], ivec3( sample_pos.zw, layer ) );
-    cache2[ hcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial2 ) ], ivec3( sample_pos.zw, layer ) );
-    cache3[ hcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial3 ) ], ivec3( sample_pos.zw, layer ) );
-    cache4[ hcpos ] = imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.partial4 ) ], ivec3( sample_pos.zw, layer ) );
+    cache0[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial0 ) ], ivec3( sample_pos.zw, layer ) );
+    cache1[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial1 ) ], ivec3( sample_pos.zw, layer ) );
+    cache2[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial2 ) ], ivec3( sample_pos.zw, layer ) );
+    cache3[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial3 ) ], ivec3( sample_pos.zw, layer ) );
+    cache4[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.partial4 ) ], ivec3( sample_pos.zw, layer ) );
   }
   barrier();
   vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
-  const uint coc_ = min( uint( max( imageLoad( image_pool16f_array[ nonuniformEXT( push_constants.coc ) ], ivec3( screen_pos, layer ) ).r, 0.0 ) ), 32u ) * lrlfilter_size;
+  const uint coc_ = min( uint( max( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.coc ) ], ivec3( screen_pos, layer ) ).r, 0.0 ) ), 32u ) * lrlfilter_size;
   if( coc_ == 0 ) {
-    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), cache0[ lcpos + lrlfilter_size / 2 ] );
+    imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), cache0[ lcpos + lrlfilter_size / 2 ] );
     return;
   }
   for( uint i = 0; i != lrlfilter_size; i++ ) {
@@ -84,6 +87,6 @@ void main() {
     sum += cache3[ lcpos + i ] * lrlfilter3[ i + coc_ ];
     sum += cache4[ lcpos + i ] * lrlfilter4[ i + coc_ ];
   }
-  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), sum );
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), sum );
 }
 

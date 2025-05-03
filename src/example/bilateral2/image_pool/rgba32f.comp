@@ -3,6 +3,9 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #include <gct/scene_graph.h>
@@ -24,7 +27,7 @@ float gamma( float v, float f ) {
 
 void main() {
   const ivec2 image_pos = ivec2( gl_GlobalInvocationID.xy );
-  const vec4 non_linear = imageLoad( image_pool32f[ push_constants.from ], image_pos );
+  const vec4 non_linear = imageLoad( image_pool_2d[ push_constants.from ], image_pos );
   const vec4 linear_rgb = vec4(
     gamma( non_linear.r, push_constants.gamma ),
     gamma( non_linear.g, push_constants.gamma ),
@@ -32,6 +35,6 @@ void main() {
     non_linear.a
   );
   const vec4 linear_xyz = matrix_pool[ push_constants.csmat ] * linear_rgb;
-  imageStore( image_pool32f[ push_constants.to ], image_pos, linear_xyz );
+  imageStore( image_pool_2d[ push_constants.to ], image_pos, linear_xyz );
 }
 

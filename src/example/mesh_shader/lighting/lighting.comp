@@ -1,8 +1,11 @@
-#version 450
+#version 460
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
@@ -26,18 +29,18 @@ layout(push_constant) uniform PushConstants {
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec2 scale =
-    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.src ) ] ).xy) /
-    vec2(imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ] ).xy) /
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
   const ivec2 src_pos = ivec2( screen_pos * scale );
   const uint layer = gl_GlobalInvocationID.z;
   gbuffer_value p;
   p.albedo = read_kplus_buffer_albedo( push_constants.src, src_pos, layer );
   if( p.albedo.a == 0.0 ) {
-    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 0.0 ) );
+    imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 0.0 ) );
     return;
   }
 
-  const ivec2 image_size = imageSize( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
+  const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
   const mat4 screen_to_world = matrix_pool[ push_constants.unproject ];
   const float depth = read_kplus_buffer_depth( push_constants.depth, src_pos, layer );
   vec4 lpos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), depth, 1.0 );
@@ -53,7 +56,7 @@ void main()  {
   p.shadow_level.x = pcss_omni( light_pool[ global_uniforms.light ].shadow_map, p.pos.xyz, light_pool[ global_uniforms.light ].world_position.xyz, light_pool[ global_uniforms.light ].light_size );
 
   if( p.shadow_level.x <= 0.0 ) {
-    imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( p.emissive.rgb, p.albedo.a ) );
+    imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( p.emissive.rgb, p.albedo.a ) );
     return;
   }
 
@@ -71,6 +74,6 @@ void main()  {
     light_pool[global_uniforms.light].energy.xyz,
     p.shadow_level.x
   );
-  imageStore( image_pool16f_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( diffuse + specular, p.albedo.a ) );
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( diffuse + specular, p.albedo.a ) );
 }
 

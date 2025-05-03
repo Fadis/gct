@@ -86,6 +86,7 @@ scene_graph_create_info::scene_graph_create_info() {
   visibility.set_buffer_name( "visibility" );  
   accessor.set_buffer_name( "accessor_pool" );  
   mesh.set_buffer_name( "mesh_pool" );  
+  meshlet.set_buffer_name( "meshlet_pool" );  
   resource_pair.set_buffer_name( "resource_pair" );
 }
 
@@ -98,6 +99,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   visibility.set_shader( dir / "visibility_pool" );
   accessor.set_shader( dir / "accessor" );
   mesh.set_shader( dir / "mesh" );
+  meshlet.set_shader( dir / "meshlet" );
   resource_pair.set_shader( dir / "resource_pair" );
   light.set_shader( dir / "light_pool" );
   return *this;
@@ -282,6 +284,15 @@ scene_graph::scene_graph(
     ) );
   }
   if(
+    std::filesystem::exists( props->meshlet.read_shader ) &&
+    std::filesystem::exists( props->meshlet.write_shader )
+  ) {
+    resource->meshlet.reset( new buffer_pool(
+      buffer_pool_create_info( props->meshlet )
+        .set_allocator_set( props->allocator_set )
+    ) );
+  }
+  if(
     std::filesystem::exists( props->resource_pair.read_shader ) &&
     std::filesystem::exists( props->resource_pair.write_shader )
   ) {
@@ -330,6 +341,9 @@ scene_graph::scene_graph(
   }
   if( resource->mesh ) {
     u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
+  }
+  if( resource->meshlet ) {
+    u.push_back( { "meshlet_pool", resource->meshlet->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -399,6 +413,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->mesh ) {
     (*resource->mesh)( rec );
     s.add( resource->mesh->get_buffer() );
+  }
+  if( resource->meshlet ) {
+    (*resource->meshlet)( rec );
+    s.add( resource->meshlet->get_buffer() );
   }
   if( resource->resource_pair ) {
     (*resource->resource_pair)( rec );

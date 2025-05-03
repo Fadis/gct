@@ -34,6 +34,7 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( visibility )
   LIBGCT_SETTER( accessor )
   LIBGCT_SETTER( mesh )
+  LIBGCT_SETTER( meshlet )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( light )
@@ -62,6 +63,7 @@ struct scene_graph_create_info {
   buffer_pool_create_info visibility;
   buffer_pool_create_info accessor;
   buffer_pool_create_info mesh;
+  buffer_pool_create_info meshlet;
   buffer_pool_create_info resource_pair;
   vertex_buffer_pool_create_info vertex;
   light_pool_create_info light;

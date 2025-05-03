@@ -7,6 +7,16 @@
 
 uint kplus_buffer_array_layer_count = 8;
 
+#ifdef GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_R32F image_pool_2d_array
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_32F image_pool_2d_array
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_16F image_pool_2d_array
+#else
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_R32F image_poolr32f_array
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_32F image_pool32f_array
+#define GCT_KPLUS_BUFFER_IMAGE_POOL_16F image_pool16f_array
+#endif
+
 bool update_kplus_buffer(
   uint gbuffer_id,
   uint depth_id,
@@ -16,19 +26,19 @@ bool update_kplus_buffer(
   vec2 input_id,
   vec4 shadow_level
 ) {
-  ivec4 sample_index = ivec4( imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
   vec4 sample_depth = vec4(
     sample_index.x != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
       2.0,
     sample_index.y != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
       2.0,
     sample_index.z != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
       2.0,
     sample_index.w != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
       2.0
   );
   const uint existing_sample_count =
@@ -63,15 +73,15 @@ bool update_kplus_buffer(
     )
   );
   if( new_sample_pos < 4 ) {
-    imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
-    //imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
   }
   return new_sample_pos < 4;
 }
@@ -85,19 +95,19 @@ bool update_kplus_buffer16(
   vec2 input_id,
   vec4 shadow_level
 ) {
-  ivec4 sample_index = ivec4( imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
   vec4 sample_depth = vec4(
     sample_index.x != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
       2.0,
     sample_index.y != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
       2.0,
     sample_index.z != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
       2.0,
     sample_index.w != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
       2.0
   );
   const uint existing_sample_count =
@@ -132,15 +142,15 @@ bool update_kplus_buffer16(
     )
   );
   if( new_sample_pos < 4 ) {
-    imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
-    //imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
   }
   return new_sample_pos < 4;
 }
@@ -154,19 +164,19 @@ bool update_kplus_buffer_reduced(
   vec2 input_id,
   vec4 shadow_level
 ) {
-  ivec4 sample_index = ivec4( imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
   vec4 sample_depth = vec4(
     sample_index.x != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
       2.0,
     sample_index.y != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
       2.0,
     sample_index.z != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
       2.0,
     sample_index.w != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
       2.0
   );
   const uint existing_sample_count =
@@ -201,17 +211,17 @@ bool update_kplus_buffer_reduced(
     )
   );
   if( new_sample_pos < 4 ) {
-    imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     if( ( ( image_pos.x & 0x1 ) == 0 ) && ( ( image_pos.y & 0x1 ) == 0 ) ) {
-      imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-      imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
-      imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
-      //imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
+      //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
     }
-    imageStore( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
   }
   return new_sample_pos < 4;
 }
@@ -225,19 +235,19 @@ bool update_kplus_buffer16_reduced(
   vec2 input_id,
   vec4 shadow_level
 ) {
-  ivec4 sample_index = ivec4( imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
   vec4 sample_depth = vec4(
     sample_index.x != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.x - 1 ) ).x :
       2.0,
     sample_index.y != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.y - 1 ) ).x :
       2.0,
     sample_index.z != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.z - 1 ) ).x :
       2.0,
     sample_index.w != 0 ?
-      imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
+      imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, sample_index.w - 1 ) ).x :
       2.0
   );
   const uint existing_sample_count =
@@ -272,17 +282,17 @@ bool update_kplus_buffer16_reduced(
     )
   );
   if( new_sample_pos < 4 ) {
-    imageStore( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    //imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
+    //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     if( ( ( image_pos.x & 0x1 ) == 0 ) && ( ( image_pos.y & 0x1 ) == 0 ) ) {
-      imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-      imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
-      imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
-      //imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
+      imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
+      //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 6 ), shadow_level );
     }
-    imageStore( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ), vec4( sample_index ) );
   }
   return new_sample_pos < 4;
 }
@@ -295,13 +305,13 @@ gbuffer_value read_kplus_buffer(
   ivec2 screen_pos,
   uint layer
 ) {
-  const vec4 pos = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
-  const vec4 albedo = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
-  const vec3 normal = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
-  const vec4 eo = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
-  const vec4 mrid = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
-  const vec3 optflow = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
-  const vec4 shadow_level = imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) ); 
+  const vec4 pos = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
+  const vec4 albedo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
+  const vec3 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
+  const vec4 eo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
+  const vec4 mrid = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
+  const vec3 optflow = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
+  const vec4 shadow_level = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) ); 
   gbuffer_value p;
   p.pos = pos.xyz;
   p.depth = pos.w;
@@ -322,13 +332,13 @@ gbuffer_value read_kplus_buffer16(
   ivec2 screen_pos,
   uint layer
 ) {
-  const vec4 pos = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
-  const vec4 albedo = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
-  const vec3 normal = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
-  const vec4 eo = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
-  const vec4 mrid = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
-  const vec3 optflow = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
-  const vec4 shadow_level = imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) ); 
+  const vec4 pos = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
+  const vec4 albedo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
+  const vec3 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
+  const vec4 eo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
+  const vec4 mrid = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
+  const vec3 optflow = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
+  const vec4 shadow_level = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) ); 
   gbuffer_value p;
   p.pos = pos.xyz;
   p.depth = pos.w;
@@ -349,7 +359,7 @@ float read_kplus_buffer_depth(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_poolr32f_array[ nonuniformEXT( depth_id ) ], ivec3( screen_pos, layer ) ).x;
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( screen_pos, layer ) ).x;
 }
 
 vec4 read_kplus_buffer_pos_depth(
@@ -357,7 +367,7 @@ vec4 read_kplus_buffer_pos_depth(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
 }
 
 vec4 read_kplus_buffer_albedo(
@@ -365,7 +375,7 @@ vec4 read_kplus_buffer_albedo(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) );
 }
 
 vec4 read_kplus_buffer_normal(
@@ -373,7 +383,7 @@ vec4 read_kplus_buffer_normal(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
 }
 
 vec4 read_kplus_buffer_eo(
@@ -381,7 +391,7 @@ vec4 read_kplus_buffer_eo(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
 }
 
 vec4 read_kplus_buffer_mrid(
@@ -389,7 +399,7 @@ vec4 read_kplus_buffer_mrid(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
 }
 
 vec4 read_kplus_buffer_optflow(
@@ -397,7 +407,7 @@ vec4 read_kplus_buffer_optflow(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) );
 }
 
 vec4 read_kplus_buffer_shadow_level(
@@ -405,7 +415,7 @@ vec4 read_kplus_buffer_shadow_level(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool32f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) );
 }
 
 vec4 read_kplus_buffer_pos_depth16(
@@ -413,7 +423,7 @@ vec4 read_kplus_buffer_pos_depth16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
 }
 
 vec4 read_kplus_buffer_albedo16(
@@ -421,7 +431,7 @@ vec4 read_kplus_buffer_albedo16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) );
 }
 
 vec4 read_kplus_buffer_normal16(
@@ -429,7 +439,7 @@ vec4 read_kplus_buffer_normal16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
 }
 
 vec4 read_kplus_buffer_eo16(
@@ -437,7 +447,7 @@ vec4 read_kplus_buffer_eo16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
 }
 
 vec4 read_kplus_buffer_mrid16(
@@ -445,7 +455,7 @@ vec4 read_kplus_buffer_mrid16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
 }
 
 vec4 read_kplus_buffer_optflow16(
@@ -453,7 +463,7 @@ vec4 read_kplus_buffer_optflow16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) );
 }
 
 vec4 read_kplus_buffer_shadow_level16(
@@ -461,7 +471,7 @@ vec4 read_kplus_buffer_shadow_level16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( image_pool16f_array[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) );
+  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) );
 }
 
 #endif

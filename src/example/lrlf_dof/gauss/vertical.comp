@@ -3,6 +3,9 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 layout(local_size_x = 1, local_size_y = 128 ) in;
 
@@ -23,7 +26,7 @@ void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const uint lcpos = gl_LocalInvocationID.y;
   const uint hcpos = lcpos + gl_WorkGroupSize.y;
-  const ivec2 image_size = imageSize( image_pool16f[ nonuniformEXT( push_constants.src ) ] );
+  const ivec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.src ) ] );
   ivec2 lsample_pos = screen_pos;
   lsample_pos.y = lsample_pos.y - kernel_size;
   ivec2 hsample_pos = lsample_pos;
@@ -32,15 +35,15 @@ void main() {
   lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
   hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
   hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
-  cache[ lcpos ] = imageLoad( image_pool16f[ nonuniformEXT( push_constants.src ) ], lsample_pos ).rgb;
+  cache[ lcpos ] = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], lsample_pos ).rgb;
   if( hcpos < gl_WorkGroupSize.y+kernel_size*2+1 ) {
-    cache[ hcpos ] = imageLoad( image_pool16f[ nonuniformEXT( push_constants.src ) ], hsample_pos ).rgb;
+    cache[ hcpos ] = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], hsample_pos ).rgb;
   }
   barrier();
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
   for( uint i = 0; i != gauss12_32_size; i++ ) {
     sum += cache[ lcpos + i ] * gauss12_32[ i ];
   }
-  imageStore( image_pool16f[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 1.0 ) );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 1.0 ) );
 }
 
