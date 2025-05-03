@@ -17,6 +17,7 @@
 #include <gct/vertex_buffer_pool.hpp>
 #include <gct/pool.hpp>
 #include <gct/scene_graph_resource.hpp>
+#include <gct/mappable_buffer.hpp>
 
 namespace gct::scene_graph {
   

@@ -10,6 +10,7 @@
 #include <gct/descriptor_set.hpp>
 #include <gct/pipeline_layout.hpp>
 #include <gct/specialization_map.hpp>
+#include <gct/mappable_buffer.hpp>
 
 namespace gct {
 image_filter2_create_info &image_filter2_create_info::set_scene_graph(

@@ -317,6 +317,7 @@ scene_graph::scene_graph(
     { "primitive_resource_index", resource->primitive_resource_index->get_buffer() },
     { "instance_resource_index", resource->instance_resource_index->get_buffer() },
     { "visibility_pool", resource->visibility->get_buffer() },
+    { "last_visibility_pool", resource->last_visibility->get_buffer() },
     { "matrix_pool", resource->matrix->get_buffer() },
     { "aabb_pool", resource->aabb->get_buffer() },
     { "resource_pair", resource->resource_pair->get_buffer() }

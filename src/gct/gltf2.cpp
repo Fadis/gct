@@ -664,6 +664,9 @@ scene_graph::primitive gltf2::create_primitive(
     if( rimp.has( "emissive_rgb_to_xyz" ) ) { //////
       ri.data()->*rimp[ "emissive_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
     }
+    if( rimp.has( "cull" ) ) {
+      ri.data()->*rimp[ "cull" ] = p.cull ? 1u : 0u;
+    }
   }
   p.aabb.set_min( glm::vec4(
     min[ 0 ],

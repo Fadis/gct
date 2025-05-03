@@ -10,6 +10,7 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/named_resource.hpp>
 #include <gct/lens_flare_create_info.hpp>
+#include <gct/mappable_buffer.hpp>
 
 namespace gct {
 

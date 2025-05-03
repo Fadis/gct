@@ -155,6 +155,9 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
       } \
       add_resource( { "visibility_pool", ( r ) ->visibility->get_buffer() } ); \
     } \
+    if( ( r ) ->last_visibility ) { \
+      add_resource( { "last_visibility_pool", ( r ) ->last_visibility->get_buffer() } ); \
+    } \
     if( ( r ) ->light ) { \
       if( !allocator_set.allocator ) { \
         set_allocator_set( ( r ) ->light->get_props().allocator_set ); \

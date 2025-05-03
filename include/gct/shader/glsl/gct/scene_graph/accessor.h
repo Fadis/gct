@@ -85,6 +85,15 @@ vertex_attribute read_vertex_attribute( mesh_type mesh, uint i ) {
   v.weight0 = read_vertex( accessor_pool[ mesh.accessor + 7 ], vertex_index, vec4( 0.0, 0.0, 0.0, 0.0 ) );
   return v; 
 }
+const vertex_attribute null_attr = vertex_attribute(
+  vec4( 0, 0, 0, 1 ),
+  vec4( 0, 0, 0, 1 ),
+  vec4( 0, 0, 0, 1 ),
+  vec4( 0, 0, 0, 1 ),
+  vec4( 0, 0, 0, 1 ),
+  vec4( 0, 0, 0, 0 ),
+  vec4( 0, 0, 0, 0 )
+);
 
 #endif
 

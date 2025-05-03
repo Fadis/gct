@@ -11,6 +11,7 @@
 #include <gct/buffer_pool.hpp>
 #include <gct/light_pool.hpp>
 #include <gct/graphics_create_info.hpp>
+#include <gct/mappable_buffer.hpp>
 
 namespace gct {
 

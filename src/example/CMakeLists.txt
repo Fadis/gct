@@ -86,6 +86,7 @@ subdirs(
   nofilter_upscale
   linear_allocator
   mesh_shader
+  mesh_shader_with_backface_culling
   mesh_shader_simple
 )
 if( DXC_FOUND )
