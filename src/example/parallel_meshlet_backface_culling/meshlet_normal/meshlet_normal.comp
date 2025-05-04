@@ -1,0 +1,64 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+
+layout(local_size_x = 1, local_size_y = 32 ) in;
+
+void main() {
+  const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.x ];
+  const uint primitive_id = gl_GlobalInvocationID.y;
+  const uint vertex_id = primitive_id * 3u;
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+  const uint meshlet_count = mesh.vertex_count / ( gl_SubgroupSize * 3 ) + ( ( mesh.vertex_count % ( gl_SubgroupSize * 3 ) == 0 ) ? 0u : 1u );
+
+  const bool in_range = vertex_id < mesh.vertex_count;
+  const uvec4 active_bits = subgroupBallot( in_range );
+  const uint active_count = subgroupBallotBitCount( active_bits );
+ 
+  if( active_count == 0u ) return;
+
+  const vec4 v0 = in_range ? read_vertex_position( mesh, vertex_id ) : vec4( 0, 0, 0, 1 );
+  const vec4 v1 = in_range ? read_vertex_position( mesh, vertex_id + 1u ) : vec4( 0, 0, 0, 1 );
+  const vec4 v2 = in_range ? read_vertex_position( mesh, vertex_id + 2u ) : vec4( 0, 0, 0, 1 );
+  const vec3 face_normal = in_range ? cross( normalize( v2.xyz - v0.xyz ), normalize( v1.xyz - v0.xyz ) ) : vec3( 0, 0, 0 );
+ 
+  const vec3 normal_sum = subgroupAdd( face_normal );
+  //const vec3 average_normal = ( normal_sum != vec3( 0, 0, 0 ) ) ? normalize( normal_sum ) : vec3( 0, 0, 0 );
+  const vec3 average_normal = normalize( normal_sum );
+  const float fa_dot = dot( face_normal, average_normal );
+  const float min_fa_dot = subgroupMin( in_range ? fa_dot : 2.0 );
+  const uvec4 on_edge = subgroupBallot( in_range && min_fa_dot == fa_dot );
+  const uint excentric_normal_index = subgroupBallotFindLSB( on_edge );
+  const vec3 excentric_normal = subgroupBroadcast( face_normal, excentric_normal_index );
+  const float ea_dot = dot( excentric_normal, average_normal );
+  float normal_threshold = ( ea_dot > 0.0 ) ? -sin( acos( ea_dot ) ) : -2.0;
+  normal_threshold = ( normal_threshold < -0.95 ) ? -2.0 : normal_threshold;
+
+  const vec3 center_pos = subgroupAdd( v0.xyz + v1.xyz + v2.xyz )/( active_count * 3u );
+  const float radius = subgroupMax(
+    max(
+      distance( center_pos, v0.xyz ),
+      max(
+        distance( center_pos, v1.xyz ),
+        distance( center_pos, v2.xyz )
+      )
+    )
+  );
+  if( gl_SubgroupInvocationID == 0 ) {
+    meshlet_pool[ mesh.meshlet + primitive_id / gl_SubgroupSize ].normal = vec4( average_normal, normal_threshold );
+    meshlet_pool[ mesh.meshlet + primitive_id / gl_SubgroupSize ].center = vec4( center_pos, radius );
+  }
+}
+

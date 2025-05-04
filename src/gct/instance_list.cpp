@@ -243,7 +243,12 @@ void instance_list::operator()(
   const graphics &compiled
 ) const {
   setup_resource_pair_buffer( rec );
-  compiled( rec, 0u, draw_list.size(), 1u, 1u );
+  if( props.parallel_mode ) {
+    compiled( rec, 0u, 32u, draw_list.size(), 1u );
+  }
+  else {
+    compiled( rec, 0u, draw_list.size(), 1u, 1u );
+  }
 }
 std::vector< resource_pair > instance_list::get_last_visible_list() const {
   std::unordered_set< std::uint32_t > visible_instance_ids;

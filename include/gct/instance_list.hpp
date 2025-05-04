@@ -25,7 +25,10 @@ namespace gct {
 
 namespace gct::scene_graph {
 
-struct instance_list_create_info {};
+struct instance_list_create_info {
+  LIBGCT_SETTER(parallel_mode)
+  bool parallel_mode = false;
+};
 
 struct resource_pair {
   LIBGCT_SETTER( inst )
