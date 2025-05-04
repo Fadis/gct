@@ -50,6 +50,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( accessor )
   LIBGCT_SETTER( mesh )
   LIBGCT_SETTER( meshlet )
+  LIBGCT_SETTER( meshlet_index )
   LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
@@ -79,6 +80,7 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > accessor;
   std::shared_ptr< buffer_pool > mesh;
   std::shared_ptr< buffer_pool > meshlet;
+  std::shared_ptr< buffer_pool > meshlet_index;
   std::shared_ptr< buffer_pool > resource_pair;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   //std::shared_ptr< mappable_buffer_t > resource_pair;
@@ -183,6 +185,12 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->meshlet->get_props().allocator_set ); \
       } \
       add_resource( { "meshlet_pool", ( r ) ->meshlet->get_buffer() } ); \
+    } \
+    if( ( r ) ->meshlet_index ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->meshlet_index->get_props().allocator_set ); \
+      } \
+      add_resource( { "meshlet_index_pool", ( r ) ->meshlet_index->get_buffer() } ); \
     } \
     if( ( r ) ->resource_pair ) { \
       if( !allocator_set.allocator ) { \

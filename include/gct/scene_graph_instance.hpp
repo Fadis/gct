@@ -24,11 +24,13 @@ struct instance_descriptor {
   LIBGCT_SETTER( resource_index )
   LIBGCT_SETTER( prim )
   LIBGCT_SETTER( visibility )
+  LIBGCT_SETTER( meshlet_index )
   matrix_pool::matrix_descriptor matrix;
   aabb_pool::aabb_descriptor aabb;
   buffer_pool::buffer_descriptor resource_index;
   pool< std::shared_ptr< primitive > >::descriptor prim;
   buffer_pool::buffer_descriptor visibility;
+  buffer_pool::buffer_descriptor meshlet_index;
 };
 
 struct instance {

@@ -85,11 +85,18 @@ public:
     return resource;
   }
   [[nodiscard]] std::vector< resource_pair > get_last_visible_list() const;
+  [[nodiscard]] std::uint32_t get_mesh_count() const {
+    return draw_list.size();
+  }
+  [[nodiscard]] std::uint32_t get_max_primitive_count() const {
+    return max_primitive_count;
+  }
 private:
   std::shared_ptr< scene_graph_resource > resource;
   std::vector< resource_pair > draw_list;
   bool enable_conditional = false;
   buffer_pool::buffer_descriptor device_side_list;
+  std::uint32_t max_primitive_count = 0u;
 };
 
 void to_json( nlohmann::json &dest, const instance_list &src );

@@ -4,14 +4,9 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
-layout(local_size_x = 1024, local_size_y = 1 ) in;
+#include <gct/scene_graph/instance_resource_index_type.h>
 
-struct instance_resource_index_type {
-  uint world_matrix;
-  uint visibility;
-  uint aabb;
-  uint previous_world_matrix;
-};
+layout(local_size_x = 1024, local_size_y = 1 ) in;
 
 layout(push_constant) uniform PushConstants {
   uint offset;

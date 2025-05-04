@@ -24,6 +24,9 @@ void to_json( nlohmann::json &dest, const instance_descriptor &src ) {
   if( src.visibility ) {
     dest[ "visibility" ] = *src.visibility;
   }
+  if( src.meshlet_index ) {
+    dest[ "meshlet_index" ] = *src.meshlet_index;
+  }
 };
 
 void to_json( nlohmann::json &dest, const instance &src ) {

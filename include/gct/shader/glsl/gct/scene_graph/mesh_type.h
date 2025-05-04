@@ -6,6 +6,8 @@ struct mesh_type {
   uint vertex_count;
   uint topology;
   float occupancy;
+  uint meshlet;
+  uint reserved[ 3 ];
 };
 
 #endif

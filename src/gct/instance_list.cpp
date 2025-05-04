@@ -28,12 +28,14 @@ instance_list::instance_list(
   const scene_graph &graph
 ) : property_type( ci ), resource( graph.get_resource() ) {
   for( const auto &i: resource->inst.get_descriptor() ) {
-    auto inst = resource->inst.get( i );
+    const auto inst = resource->inst.get( i );
     draw_list.push_back(
       resource_pair()
         .set_inst( i )
         .set_prim( inst->descriptor.prim )
     );
+    const auto prim = resource->prim.get( inst->descriptor.prim );
+    max_primitive_count = std::max( max_primitive_count,  prim->count / 3u );
   }
   if( !resource->push_constant_mp ) {
     throw -1;

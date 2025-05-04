@@ -6,12 +6,7 @@
 
 layout(local_size_x = 1024, local_size_y = 1 ) in;
 
-struct instance_resource_index_type {
-  uint world_matrix;
-  uint visibility;
-  uint aabb;
-  uint previous_world_matrix;
-};
+#include <gct/scene_graph/instance_resource_index_type.h>
 
 layout(push_constant) uniform PushConstants {
   uint offset;

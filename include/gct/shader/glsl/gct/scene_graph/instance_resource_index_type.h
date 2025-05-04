@@ -6,6 +6,8 @@ struct instance_resource_index_type {
   uint visibility;
   uint aabb;
   uint previous_world_matrix;
+  uint meshlet_index;
+  uint reserved[3];
 };
 
 #endif

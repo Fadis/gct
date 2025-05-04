@@ -749,6 +749,12 @@ scene_graph::primitive gltf2::create_primitive(
       if( mmp.has( "occupancy" ) ) {
         mesh.data()->*mmp[ "occupancy" ] = l.level[ lod_id ].second;
       }
+      if( props.graph->get_resource()->meshlet ) {
+        const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / props.meshlet_size + ( ( vertex_count % 32u ) ? 1u : 0u ) );
+        if( mmp.has( "meshlet" ) ) {
+          mesh.data()->*mmp[ "meshlet" ] = *meshlet_desc;
+        }
+      }
       props.graph->get_resource()->mesh->set( mesh_desc, lod_id, mesh.data(), std::next( mesh.data(), mesh.size() ) );
     }
   }
@@ -889,6 +895,14 @@ void gltf2::load_node(
       }
       ri.data()->*rimp[ "aabb" ] = *i->descriptor.aabb;
       ri.data()->*rimp[ "visibility" ] = *i->descriptor.visibility;
+      if( props.graph->get_resource()->meshlet_index ) {
+        i->descriptor.set_meshlet_index( props.graph->get_resource()->meshlet_index->allocate(
+          prim->count / 96u + ( ( prim->count % 96u ) ? 1u : 0u )
+        ) );
+        if( rimp.has( "meshlet_index" ) ) {
+          ri.data()->*rimp[ "meshlet_index" ] = *i->descriptor.meshlet_index;
+        }
+      }
       i->descriptor.resource_index = props.graph->get_resource()->instance_resource_index->allocate( ri.data(), std::next( ri.data(), ri.size() ) );
       i->descriptor.prim = p;
       cur->inst.push_back( props.graph->get_resource()->inst.allocate( i ) );
