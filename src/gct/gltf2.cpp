@@ -750,7 +750,7 @@ scene_graph::primitive gltf2::create_primitive(
         mesh.data()->*mmp[ "occupancy" ] = l.level[ lod_id ].second;
       }
       if( props.graph->get_resource()->meshlet ) {
-        const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / props.meshlet_size + ( ( vertex_count % 32u ) ? 1u : 0u ) );
+        const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );
         if( mmp.has( "meshlet" ) ) {
           mesh.data()->*mmp[ "meshlet" ] = *meshlet_desc;
         }
@@ -897,7 +897,7 @@ void gltf2::load_node(
       ri.data()->*rimp[ "visibility" ] = *i->descriptor.visibility;
       if( props.graph->get_resource()->meshlet_index ) {
         i->descriptor.set_meshlet_index( props.graph->get_resource()->meshlet_index->allocate(
-          prim->count / 96u + ( ( prim->count % 96u ) ? 1u : 0u )
+          prim->count / ( props.meshlet_size * 3u ) + ( ( prim->count % ( props.meshlet_size * 3u ) ) ? 1u : 0u )
         ) );
         if( rimp.has( "meshlet_index" ) ) {
           ri.data()->*rimp[ "meshlet_index" ] = *i->descriptor.meshlet_index;

@@ -49,7 +49,7 @@ void main() {
   
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
-  const uint meshlet_id = gl_WorkGroupID.x;
+  const uint meshlet_id = meshlet_index_pool[ inst.meshlet_index + gl_WorkGroupID.x ];
   const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
   
   const uint output_primitive_id = gl_LocalInvocationID.x;

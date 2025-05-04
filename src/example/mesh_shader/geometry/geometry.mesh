@@ -34,15 +34,7 @@ void main() {
   const resource_pair_type id = resource_pair[ push_constants.instance + td.resource_pair_id ];
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
-  const uint meshlet_id = gl_WorkGroupID.x;
-  const uint vertex_count = min( mesh.vertex_count - meshlet_id * 96, 96 );
-  SetMeshOutputsEXT( vertex_count, vertex_count / 3 );
 
-  const uint local_primitive_id = gl_LocalInvocationID.x;
-  const uint local_vertex_id = local_primitive_id * 3u;
-
-  if( vertex_count <= local_vertex_id ) return; 
-  
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
   
   const mat4 l2w = matrix_pool[ inst.world_matrix ];
@@ -53,32 +45,45 @@ void main() {
   const mat4 l2s =
     w2s *
     l2w;
+  
+  const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
+
+  const uint meshlet_id = gl_WorkGroupID.x;
+  const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
+  
+  const uint output_primitive_id = gl_LocalInvocationID.x;
+  const uint output_vertex_id = output_primitive_id * 3u;
+  
+  SetMeshOutputsEXT( vertex_count, vertex_count / 3 );
+
+  if( vertex_count <= output_vertex_id ) return; 
+  
 
   const vertex_attribute v0 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 0u );
   const vertex_attribute v1 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 1u );
   const vertex_attribute v2 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 2u );
 
-  gl_MeshVerticesEXT[ local_vertex_id ].gl_Position = l2s * v0.position;
-  gl_MeshVerticesEXT[ local_vertex_id + 1u ].gl_Position = l2s * v1.position;
-  gl_MeshVerticesEXT[ local_vertex_id + 2u ].gl_Position = l2s * v2.position;
-  output_position[ local_vertex_id ] = l2w * v0.position;
-  output_position[ local_vertex_id + 1u ] = l2w * v1.position;
-  output_position[ local_vertex_id + 2u ] = l2w * v2.position;
-  output_normal[ local_vertex_id ] = ( l2w * v0.normal ).xyz;
-  output_normal[ local_vertex_id + 1u ] = ( l2w * v1.normal ).xyz;
-  output_normal[ local_vertex_id + 2u ] = ( l2w * v2.normal ).xyz;
-  output_tangent[ local_vertex_id ] = ( l2w * v0.tangent ).xyz;
-  output_tangent[ local_vertex_id + 1u ] = ( l2w * v1.tangent ).xyz;
-  output_tangent[ local_vertex_id + 2u ] = ( l2w * v2.tangent ).xyz;
-  output_tex_coord[ local_vertex_id ] = v0.tex_coord0.xy;
-  output_tex_coord[ local_vertex_id + 1u ] = v1.tex_coord0.xy;
-  output_tex_coord[ local_vertex_id + 2u ] = v2.tex_coord0.xy;
-  output_optflow[ local_vertex_id ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ local_vertex_id + 1u ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ local_vertex_id + 2u ] = vec4( 0, 0, 0, 0 );
-  output_id[ local_vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ local_vertex_id + 1u ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ local_vertex_id + 2u ] = vec4( id.inst, id.prim, 0, 0 );
-  gl_PrimitiveTriangleIndicesEXT[ local_primitive_id ] = uvec3( local_vertex_id, local_vertex_id + 1, local_vertex_id + 2 );
+  gl_MeshVerticesEXT[ output_vertex_id ].gl_Position = l2s * v0.position;
+  gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = l2s * v1.position;
+  gl_MeshVerticesEXT[ output_vertex_id + 2u ].gl_Position = l2s * v2.position;
+  output_position[ output_vertex_id ] = l2w * v0.position;
+  output_position[ output_vertex_id + 1u ] = l2w * v1.position;
+  output_position[ output_vertex_id + 2u ] = l2w * v2.position;
+  output_normal[ output_vertex_id ] = ( l2w * v0.normal ).xyz;
+  output_normal[ output_vertex_id + 1u ] = ( l2w * v1.normal ).xyz;
+  output_normal[ output_vertex_id + 2u ] = ( l2w * v2.normal ).xyz;
+  output_tangent[ output_vertex_id ] = ( l2w * v0.tangent ).xyz;
+  output_tangent[ output_vertex_id + 1u ] = ( l2w * v1.tangent ).xyz;
+  output_tangent[ output_vertex_id + 2u ] = ( l2w * v2.tangent ).xyz;
+  output_tex_coord[ output_vertex_id ] = v0.tex_coord0.xy;
+  output_tex_coord[ output_vertex_id + 1u ] = v1.tex_coord0.xy;
+  output_tex_coord[ output_vertex_id + 2u ] = v2.tex_coord0.xy;
+  output_optflow[ output_vertex_id ] = vec4( 0, 0, 0, 0 );
+  output_optflow[ output_vertex_id + 1u ] = vec4( 0, 0, 0, 0 );
+  output_optflow[ output_vertex_id + 2u ] = vec4( 0, 0, 0, 0 );
+  output_id[ output_vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+  output_id[ output_vertex_id + 1u ] = vec4( id.inst, id.prim, 0, 0 );
+  output_id[ output_vertex_id + 2u ] = vec4( id.inst, id.prim, 0, 0 );
+  gl_PrimitiveTriangleIndicesEXT[ output_primitive_id ] = uvec3( output_vertex_id, output_vertex_id + 1, output_vertex_id + 2 );
 }
 

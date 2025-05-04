@@ -87,7 +87,9 @@ scene_graph_create_info::scene_graph_create_info() {
   accessor.set_buffer_name( "accessor_pool" );  
   mesh.set_buffer_name( "mesh_pool" );  
   meshlet.set_buffer_name( "meshlet_pool" );  
+  meshlet.set_max_buffer_count( 1024u * 1024u * 64u );
   meshlet_index.set_buffer_name( "meshlet_index_pool" );  
+  meshlet_index.set_max_buffer_count( 1024u * 1024u * 64u );
   resource_pair.set_buffer_name( "resource_pair" );
 }
 
