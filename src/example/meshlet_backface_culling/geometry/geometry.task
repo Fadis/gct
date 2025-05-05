@@ -27,7 +27,7 @@ void main() {
   uint visible_invocation_count = 0u;
   for( uint i = 0u; i != invocation_count; ++i ) {
     const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + i ];
-    const bool visible = ( prim.cull == 0 || ( dot( meshlet.normal.xyz, normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) );
+    const bool visible = ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) );
     if( visible ) {
       meshlet_index_pool[ inst.meshlet_index + visible_invocation_count ] = i;
       visible_invocation_count++;

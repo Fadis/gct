@@ -746,9 +746,9 @@ scene_graph::primitive gltf2::create_primitive(
       if( mmp.has( "topology" ) ) {
         mesh.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( l.level[ lod_id ].first.topology ) );
       }
-      if( mmp.has( "occupancy" ) ) {
+      /*if( mmp.has( "occupancy" ) ) {
         mesh.data()->*mmp[ "occupancy" ] = l.level[ lod_id ].second;
-      }
+      }*/
       if( props.graph->get_resource()->meshlet ) {
         const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );
         if( mmp.has( "meshlet" ) ) {
