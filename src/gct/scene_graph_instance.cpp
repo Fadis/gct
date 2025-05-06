@@ -32,6 +32,7 @@ void to_json( nlohmann::json &dest, const instance_descriptor &src ) {
 void to_json( nlohmann::json &dest, const instance &src ) {
   dest = nlohmann::json::object();
   dest[ "descriptor" ] = src.descriptor;
+  dest[ "is_highest_lod" ] = src.is_highest_lod;
 }
 
 }

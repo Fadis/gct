@@ -7,7 +7,7 @@ struct instance_resource_index_type {
   uint aabb;
   uint previous_world_matrix;
   uint meshlet_index;
-  uint lod;
+  float coverage;
   uint reserved[2];
 };
 

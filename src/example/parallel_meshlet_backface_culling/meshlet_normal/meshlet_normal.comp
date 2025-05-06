@@ -43,6 +43,7 @@ void main() {
   const vec3 excentric_normal = subgroupBroadcast( face_normal, excentric_normal_index );
   const float ea_dot = dot( excentric_normal, average_normal );
   float normal_threshold = ( ea_dot > 0.0 ) ? -sin( acos( ea_dot ) ) : -2.0;
+  normal_threshold = ( normal_threshold < -0.5 ) ? -2.0 : normal_threshold;
 
   const vec3 center_pos = subgroupAdd( v0.xyz + v1.xyz + v2.xyz )/( active_count * 3u );
   const float radius = subgroupMax(

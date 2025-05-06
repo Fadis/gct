@@ -44,6 +44,16 @@ struct node {
     ) );
     return child.back();
   }
+  std::shared_ptr< node > add_child_without_link( const glm::mat4 &local_matrix ) {
+    auto c = std::make_shared< node >(
+      props,
+      resource,
+      matrix,
+      initial_world_matrix,
+      local_matrix
+    );
+    return c;
+  }
   void update_matrix( const glm::mat4 &m ) {
     resource->matrix->set( matrix, m );
     for( const auto &v: child ) {
@@ -60,6 +70,11 @@ struct node {
     }
   }
   [[nodiscard]] std::optional< aabb4 > get_initial_world_aabb() const;
+  void add_lod_node(
+    const std::shared_ptr< node > &n
+  ) {
+    lod.push_back( n );
+  }
   void to_json( nlohmann::json& ) const;
   std::string name;
   std::vector< std::shared_ptr< node > > child;
@@ -70,6 +85,7 @@ struct node {
   matrix_pool::matrix_descriptor matrix;
   std::shared_ptr< scene_graph_create_info > props;
   std::shared_ptr< scene_graph_resource > resource;
+  std::vector< std::shared_ptr< node > > lod;
 };
 
 void to_json( nlohmann::json&, const node& );

@@ -1,8 +1,6 @@
 #ifndef GCT_SCENE_GRAPH_PRIMITIVE_HPP
 #define GCT_SCENE_GRAPH_PRIMITIVE_HPP
-#include <string>
 #include <cstdint>
-#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <glm/vec4.hpp>
@@ -78,7 +76,7 @@ struct primitive {
   LIBGCT_SETTER( normal_scale )
   LIBGCT_SETTER( occlusion_strength )
   LIBGCT_SETTER( pipeline_create_info )
-  LIBGCT_SETTER( lod )
+  LIBGCT_SETTER( mesh )
   LIBGCT_SETTER( descriptor )
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
@@ -102,7 +100,7 @@ struct primitive {
   float normal_scale = 1.f;
   float occlusion_strength = 0.f;
   graphics_pipeline_create_info_t pipeline_create_info;
-  lod_t lod;
+  mesh_t mesh;
   primitive_descriptor descriptor;
 };
 

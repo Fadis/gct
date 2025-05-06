@@ -90,6 +90,8 @@ subdirs(
   mesh_shader_simple
   meshlet_backface_culling
   parallel_meshlet_backface_culling
+  parallel_meshlet_backface_culling2
+  parallel_meshlet_backface_culling3
   meshlet_frustum_culling
 )
 if( DXC_FOUND )

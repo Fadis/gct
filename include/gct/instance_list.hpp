@@ -27,7 +27,11 @@ namespace gct::scene_graph {
 
 struct instance_list_create_info {
   LIBGCT_SETTER(parallel_mode)
+  LIBGCT_SETTER(parallel_mode2)
+  LIBGCT_SETTER(parallel_mode3)
   bool parallel_mode = false;
+  bool parallel_mode2 = false;
+  bool parallel_mode3 = false;
 };
 
 struct resource_pair {
@@ -55,7 +59,8 @@ public:
   );
   void update_device_side_list();
   void setup_resource_pair_buffer(
-    command_buffer_recorder_t &rec
+    command_buffer_recorder_t &rec,
+    bool use_meshlet = false
   ) const;
   void operator()(
     command_buffer_recorder_t&,
@@ -99,7 +104,9 @@ private:
   std::vector< resource_pair > draw_list;
   bool enable_conditional = false;
   buffer_pool::buffer_descriptor device_side_list;
+  buffer_pool::buffer_descriptor meshlet_list;
   std::uint32_t max_primitive_count = 0u;
+  std::uint32_t meshlet_list_size;
 };
 
 void to_json( nlohmann::json &dest, const instance_list &src );

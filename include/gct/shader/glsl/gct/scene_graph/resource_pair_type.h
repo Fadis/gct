@@ -4,6 +4,8 @@
 struct resource_pair_type {
   uint inst;
   uint prim;
+  uint offset;
+  uint reserved;
 };
 
 #endif

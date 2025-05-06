@@ -27,6 +27,7 @@ layout (location = 5) flat out vec4 output_id[];
 layout (location = 6) out vec4 output_previous_position[];
 
 struct task_data {
+  uint meshlet_index[ 32 ];
   uint resource_pair_id;
 };
 taskPayloadSharedEXT task_data td;
@@ -49,7 +50,7 @@ void main() {
   
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
-  const uint meshlet_id = meshlet_index_pool[ inst.meshlet_index + gl_WorkGroupID.x ];
+  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
   const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
   
   const uint output_primitive_id = gl_LocalInvocationID.x;
@@ -57,9 +58,11 @@ void main() {
 
   const bool in_range = vertex_count > output_vertex_id;
   
-  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 0u ) : null_attr;
-  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 1u ) : null_attr;
-  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 2u ) : null_attr;
+  const uint input_primitive_id = meshlet_id * 32u + output_primitive_id;
+  
+  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
+  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
+  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
 
   const vec4 wp0 = l2w * v0.position;
   const vec4 wp1 = l2w * v1.position;

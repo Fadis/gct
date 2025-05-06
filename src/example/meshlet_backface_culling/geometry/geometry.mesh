@@ -57,9 +57,11 @@ void main() {
 
   const bool in_range = vertex_count > output_vertex_id;
   
-  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 0u ) : null_attr;
-  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 1u ) : null_attr;
-  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 2u ) : null_attr;
+  const uint input_primitive_id = meshlet_id * 32u + output_primitive_id;
+
+  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
+  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
+  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
 
   const vec4 wp0 = l2w * v0.position;
   const vec4 wp1 = l2w * v1.position;

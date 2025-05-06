@@ -37,9 +37,11 @@ struct instance {
   LIBGCT_SETTER( initial_world_matrix )
   LIBGCT_SETTER( initial_world_aabb )
   LIBGCT_SETTER( descriptor )
+  LIBGCT_SETTER( is_highest_lod )
   glm::mat4 initial_world_matrix;
   aabb4 initial_world_aabb;
   instance_descriptor descriptor;
+  bool is_highest_lod = true;
 };
 
 void to_json( nlohmann::json &dest, const instance &src );

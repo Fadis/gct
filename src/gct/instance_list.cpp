@@ -150,41 +150,94 @@ void instance_list::operator()(
   }
 }
 void instance_list::update_device_side_list() {
-  device_side_list = resource->resource_pair->allocate( draw_list.size() );
   const auto mp = resource->resource_pair->get_member_pointer();
   std::vector< std::uint8_t > temp( mp.get_aligned_size(), 0u );
-  for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
-    if( mp.has( "instance" ) ) {
-      temp.data()->*mp[ "instance" ] = *draw_list[ i ].inst;
+  {
+    device_side_list = resource->resource_pair->allocate( draw_list.size() );
+    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+      const auto inst = resource->inst.get( draw_list[ i ].inst );
+      if( !inst ) throw -1;
+      const auto prim = resource->prim.get( draw_list[ i ].prim );
+      if( !prim ) throw -1;
+      if( mp.has( "instance" ) ) {
+        temp.data()->*mp[ "instance" ] = *inst->descriptor.resource_index;
+      }
+      else if( mp.has( "inst" ) ) {
+        temp.data()->*mp[ "inst" ] = *inst->descriptor.resource_index;
+      }
+      if( mp.has( "primitive" ) ) {
+        temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
+      }
+      else if( mp.has( "prim" ) ) {
+        temp.data()->*mp[ "prim" ] = *prim->descriptor.resource_index;
+      }
+      if( mp.has( "offset" ) ) {
+        temp.data()->*mp[ "offset" ] = 0u;
+      }
+      resource->resource_pair->set( device_side_list, i, temp.data(), std::next( temp.data(), temp.size() ) );
     }
-    else if( mp.has( "inst" ) ) {
-      temp.data()->*mp[ "inst" ] = *draw_list[ i ].inst;
+  }
+  if( props.parallel_mode3 ) {
+    std::uint32_t total_task_count = 0u;
+    std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, std::uint32_t > task_count;
+    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+      const auto prim = resource->prim.get( draw_list[ i ].prim );
+      if( !prim ) throw -1;
+      const std::uint32_t tc = prim->count / ( 3u * 32u * 32u ) + (( prim->count % ( 3u * 32u * 32u ) ) ? 1u : 0u );
+      task_count[ draw_list[ i ].prim ] = tc;
+      total_task_count += tc;
     }
-    if( mp.has( "primitive" ) ) {
-      temp.data()->*mp[ "primitive" ] = *draw_list[ i ].prim;
+    meshlet_list = resource->resource_pair->allocate( total_task_count );
+    std::uint32_t current_task_offset = 0u;
+    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+      const auto inst = resource->inst.get( draw_list[ i ].inst );
+      if( !inst ) throw -1;
+      const auto prim = resource->prim.get( draw_list[ i ].prim );
+      if( !prim ) throw -1;
+      for( std::uint32_t task_index = 0u; task_index != task_count[ draw_list[ i ].prim ]; ++task_index ) {
+        if( mp.has( "instance" ) ) {
+          temp.data()->*mp[ "instance" ] = *inst->descriptor.resource_index;
+        }
+        else if( mp.has( "inst" ) ) {
+          temp.data()->*mp[ "inst" ] = *inst->descriptor.resource_index;
+        }
+        if( mp.has( "primitive" ) ) {
+          temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
+        }
+        else if( mp.has( "prim" ) ) {
+          temp.data()->*mp[ "prim" ] = *prim->descriptor.resource_index;
+        }
+        if( mp.has( "offset" ) ) {
+          temp.data()->*mp[ "offset" ] = task_index;
+        }
+        resource->resource_pair->set(
+          meshlet_list,
+          current_task_offset + task_index,
+          temp.data(), std::next( temp.data(), temp.size() )
+        );
+      }
+      current_task_offset += task_count[ draw_list[ i ].prim ];
     }
-    else if( mp.has( "prim" ) ) {
-      temp.data()->*mp[ "prim" ] = *draw_list[ i ].prim;
-    }
-    resource->resource_pair->set( device_side_list, i, temp.data(), std::next( temp.data(), temp.size() ) );
+    meshlet_list_size = total_task_count;
   }
 }
 
 void instance_list::setup_resource_pair_buffer(
-  command_buffer_recorder_t &rec
+  command_buffer_recorder_t &rec,
+  bool use_meshlet
 ) const {
   std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
   if( resource->push_constant_mp->has( "offset" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "offset" ] = *device_side_list;
+    push_constant.data() ->* (*resource->push_constant_mp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
   }
   else if( resource->push_constant_mp->has( "instance" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = *device_side_list;
+    push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
   }
   if( resource->push_constant_mp->has( "count" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "count" ] = std::uint32_t( draw_list.size() );
+    push_constant.data() ->* (*resource->push_constant_mp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
   }
   else if( resource->push_constant_mp->has( "primitive" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = std::uint32_t( draw_list.size() );
+    push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
   }
   rec->pushConstants(
     **resource->pipeline_layout,
@@ -242,11 +295,20 @@ void instance_list::operator()(
   command_buffer_recorder_t &rec,
   const graphics &compiled
 ) const {
-  setup_resource_pair_buffer( rec );
-  if( props.parallel_mode ) {
+  if( props.parallel_mode3 ) {
+    setup_resource_pair_buffer( rec, true );
+    compiled( rec, 0u, 32u, meshlet_list_size, 1u );
+  }
+  else if( props.parallel_mode2 ) {
+    setup_resource_pair_buffer( rec, false );
+    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), 1u );
+  }
+  else if( props.parallel_mode ) {
+    setup_resource_pair_buffer( rec, false );
     compiled( rec, 0u, 32u, draw_list.size(), 1u );
   }
   else {
+    setup_resource_pair_buffer( rec, false );
     compiled( rec, 0u, draw_list.size(), 1u, 1u );
   }
 }

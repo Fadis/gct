@@ -83,7 +83,6 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > meshlet_index;
   std::shared_ptr< buffer_pool > resource_pair;
   std::shared_ptr< mappable_buffer_t > last_visibility;
-  //std::shared_ptr< mappable_buffer_t > resource_pair;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::shared_ptr< light_pool > light;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;

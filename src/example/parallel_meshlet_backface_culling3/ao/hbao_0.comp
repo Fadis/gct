@@ -1,0 +1,57 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 512, local_size_y = 1 ) in;
+
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/image_pool.h>
+
+const int hbao_kernel_size = 64;
+shared vec3[gl_WorkGroupSize.x+hbao_kernel_size*2+1] hbao_cache;
+#include <gct/hbao.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint dest;
+  uint unproject;
+} push_constants;
+
+void main() {
+  const ivec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.dest ) ] ).xy;
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint lcpos = gl_LocalInvocationID.x;
+  const mat4 screen_to_cam = matrix_pool[ push_constants.unproject ];
+  {
+    const uint hcpos = lcpos + gl_WorkGroupSize.x;
+    ivec2 lsample_pos = screen_pos;
+    lsample_pos.x = lsample_pos.x - hbao_kernel_size;
+    lsample_pos.y = lsample_pos.y;
+    ivec2 hsample_pos = lsample_pos;
+    hsample_pos.x += int( gl_WorkGroupSize.x );
+    lsample_pos.x = max( min( lsample_pos.x, image_size.x - 1 ), 0 );
+    lsample_pos.y = max( min( lsample_pos.y, image_size.y - 1 ), 0 );
+    hsample_pos.x = max( min( hsample_pos.x, image_size.x - 1 ), 0 );
+    hsample_pos.y = max( min( hsample_pos.y, image_size.y - 1 ), 0 );
+    vec4 lpos4 = screen_to_cam * vec4( vec2( lsample_pos )/vec2( image_size ), imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], lsample_pos ).r, 1.0 );
+    lpos4 /= lpos4.w;
+    hbao_cache[ lcpos ] = lpos4.xyz;
+    //hbao_cache[ lcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], lsample_pos ).xyz, 1.0 ) ).xyz;
+    if( hcpos < gl_WorkGroupSize.x+hbao_kernel_size*2+1 ) {
+      vec4 hpos4 = screen_to_cam * vec4( vec2( hsample_pos )/vec2( image_size ), imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], hsample_pos ).r, 1.0 );
+      hpos4 /= hpos4.w;
+      hbao_cache[ hcpos ] = hpos4.xyz;
+      //hbao_cache[ hcpos ] = ( matrix_pool[ global_uniforms.camera_matrix ] * vec4( imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], hsample_pos ).xyz, 1.0 ) ).xyz;
+    }
+    barrier();
+  }
+  const float sum = max( min( hbao( lcpos + hbao_kernel_size ), 1.0 ), 0.0 );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 0.0, 0.0, 0.0 ) );
+}
+

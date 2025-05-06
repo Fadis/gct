@@ -1,0 +1,85 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/volumetric.h>
+#include <gct/sky.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/scene_graph/light_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+
+layout(push_constant) uniform PushConstants {
+  uint transmittance;
+  uint froxel;
+  uint sigma;
+  float g;
+  float ground_radius;
+  float top_radius;
+  float altitude;
+} push_constants;
+
+void main()  {
+  const ivec3 screen_pos = ivec3( gl_GlobalInvocationID.xyz );
+  const vec3 screen_pos_f =
+    vec3( screen_pos ) /
+    vec3( imageSize( image_pool_3d[ nonuniformEXT( push_constants.froxel ) ] ).xyz ) * 2.0 - 1.0;
+  // froxelの各交点において
+  vec4 pos = matrix_pool[ global_uniforms.screen_to_world_matrix ] * vec4( screen_pos_f, 1.0 );
+  pos /= pos.w;
+
+  const vec3 V = normalize( global_uniforms.eye_pos.xyz - pos.xyz );
+  const vec3 L = normalize( light_pool[global_uniforms.light].world_position.xyz - pos.xyz );
+
+  vec3 atmosphere_distance = get_atmosphere_distance( push_constants.altitude, -V, push_constants.ground_radius, push_constants.top_radius );
+  atmosphere_distance.x = min( atmosphere_distance.x, pos.z );
+  atmosphere_distance.y = min( atmosphere_distance.y, pos.z );
+  const float distance = ( atmosphere_distance.y - atmosphere_distance.y );
+
+  const mat4 sigma = matrix_pool[ push_constants.sigma ];
+  const vec3 sigma_ma = sigma[ 0 ].xyz * 500000.0;
+  const vec3 sigma_oa = sigma[ 1 ].xyz;
+  const vec3 sigma_rs = sigma[ 2 ].xyz;
+  const vec3 sigma_ms = sigma[ 3 ].xyz * 500000.0;
+
+  vec3 view_transmittance = vec3( 1.0, 1.0, 1.0 );
+  view_transmittance *= beer_lambert( sigma_rs, relative_rayleigh_density( push_constants.altitude - push_constants.ground_radius ), distance );
+  view_transmittance *= beer_lambert( sigma_ma, relative_mie_density( push_constants.altitude - push_constants.ground_radius ), distance );
+  view_transmittance *= beer_lambert( sigma_ms, relative_mie_density( push_constants.altitude - push_constants.ground_radius ), distance );
+  view_transmittance *= beer_lambert( sigma_oa, relative_ozone_density( push_constants.altitude - push_constants.ground_radius ), distance );
+
+  const float zenith_sun_angle = acos( dot( vec3( 0.0, -1.0, 0.0 ), L ) );
+  const float max_angle = pi / 2.0;
+  const float min_angle = get_min_rad( push_constants.altitude, push_constants.ground_radius );
+  vec3 light_transmittance = vec3( 0.0, 0.0, 0.0 );
+  if( zenith_sun_angle < ( max_angle - min_angle ) ) {
+    vec2 transmittance_texcoord = vec2(
+      zenith_sun_angle/( max_angle - min_angle ),
+      ( push_constants.top_radius - push_constants.altitude )/( push_constants.top_radius - push_constants.ground_radius )
+    );
+    transmittance_texcoord.x = ( -2.0 + sqrt( 4.0 - 4.0 * transmittance_texcoord.x ) )/( -2.0 );
+    transmittance_texcoord.y = 1.0 - ( -2.0 + sqrt( 4.0 - 4.0 * transmittance_texcoord.y ) )/( -2.0 );
+    light_transmittance = texture( texture_pool[ nonuniformEXT( push_constants.transmittance ) ], transmittance_texcoord ).rgb;
+  }
+  
+  const vec3 rayleigh_scattering = sigma_rs.rgb * rayleigh( acos( dot( -L, V ) ) );
+  const vec3 mie_scattering = sigma_ms.rgb * henyey_greenstein_schlick2( push_constants.g, acos( dot( -L, V ) ) );
+
+  vec3 light_energy = light_pool[global_uniforms.light].energy.xyz * max( 0.0, cos( zenith_sun_angle ) );
+  light_energy *= view_transmittance * ( rayleigh_scattering + mie_scattering ) * ( light_transmittance + 0.1 );
+
+  const float view_transmittance_lm = 0.21 * view_transmittance.r + 0.72 * view_transmittance.g + 0.07 * view_transmittance.b;
+
+  imageStore( image_pool_3d[ nonuniformEXT( push_constants.froxel ) ], screen_pos, vec4( light_energy.xyz, view_transmittance_lm ) );
+}
+
