@@ -1,0 +1,46 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+
+layout(local_size_x = 128, local_size_y = 1 ) in;
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+
+layout(push_constant) uniform PushConstants {
+  uint instance;
+  uint primitive;
+  uint position;
+} push_constants;
+
+void main()  {
+  const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.y ];
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  const primitive_resource_index_type prim = primitive_resource_index[ inst.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+  
+  uint vertex_id = gl_GlobalInvocationID.x;
+  if( vertex_id >= mesh.unique_vertex_count ) return;
+  
+  const accessor_type texcoord_accessor = accessor_pool[ mesh.accessor + 4u ];
+  const accessor_type position_accessor = accessor_pool[ mesh.accessor + 1u ];
+  const accessor_type morph_accessor = accessor_pool[ mesh.accessor + 8u ];
+  
+  vec4 position = read_vertex( position_accessor, vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+
+  const vec4 texcoord = read_vertex( texcoord_accessor, vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+
+  const vec4 morph = texture( texture_pool_2d[ push_constants.position ], texcoord.xy );
+
+  write_vertex( morph_accessor, vertex_id, vec4( morph.xyz, 1.0 ) );
+}
+

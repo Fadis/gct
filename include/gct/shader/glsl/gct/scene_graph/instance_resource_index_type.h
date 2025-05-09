@@ -8,7 +8,8 @@ struct instance_resource_index_type {
   uint previous_world_matrix;
   uint meshlet_index;
   float coverage;
-  uint reserved[2];
+  uint prim;
+  uint lowest_lod;
 };
 
 #endif

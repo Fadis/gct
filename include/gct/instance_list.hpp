@@ -29,9 +29,13 @@ struct instance_list_create_info {
   LIBGCT_SETTER(parallel_mode)
   LIBGCT_SETTER(parallel_mode2)
   LIBGCT_SETTER(parallel_mode3)
+  LIBGCT_SETTER(all_lods)
+  LIBGCT_SETTER(unique_prim_list)
   bool parallel_mode = false;
   bool parallel_mode2 = false;
   bool parallel_mode3 = false;
+  bool all_lods = false;
+  bool unique_prim_list = false;
 };
 
 struct resource_pair {
@@ -59,8 +63,25 @@ public:
   );
   void update_device_side_list();
   void setup_resource_pair_buffer(
-    command_buffer_recorder_t &rec,
-    bool use_meshlet = false
+    command_buffer_recorder_t &rec
+  ) const;
+  void setup_resource_pair_buffer(
+    bool use_meshlet,
+    const compute&
+  ) const;
+  void setup_resource_pair_buffer(
+    bool use_meshlet,
+    const std::vector< resource_pair >::const_iterator &i,
+    const compute&
+  ) const;
+  void setup_resource_pair_buffer(
+    bool use_meshlet,
+    const graphics&
+  ) const;
+  void setup_resource_pair_buffer(
+    bool use_meshlet,
+    const std::vector< resource_pair >::const_iterator &i,
+    const graphics&
   ) const;
   void operator()(
     command_buffer_recorder_t&,
@@ -82,6 +103,16 @@ public:
     command_buffer_recorder_t&,
     const graphics &compiled
   ) const;
+  void operator()(
+    command_buffer_recorder_t&,
+    const graphics &compiled,
+    const std::vector< resource_pair >::const_iterator &i
+  ) const;
+  void for_each_unique_vertex(
+    command_buffer_recorder_t &rec,
+    const compute &compiled,
+    const std::vector< resource_pair >::const_iterator &i
+  ) const;
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] std::vector< resource_pair > &get_draw_list() {
     return draw_list;
@@ -98,6 +129,9 @@ public:
   }
   [[nodiscard]] std::uint32_t get_max_primitive_count() const {
     return max_primitive_count;
+  }
+  [[nodiscard]] const std::optional< spv_member_pointer > &get_push_constant_member_pointer() const {
+    return resource->push_constant_mp;
   }
 private:
   std::shared_ptr< scene_graph_resource > resource;

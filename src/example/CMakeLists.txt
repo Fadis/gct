@@ -93,6 +93,8 @@ subdirs(
   parallel_meshlet_backface_culling2
   parallel_meshlet_backface_culling3
   meshlet_frustum_culling
+  lod
+  lod2
 )
 if( DXC_FOUND )
 subdirs(

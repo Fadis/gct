@@ -58,6 +58,7 @@ struct primitive {
   LIBGCT_SETTER( indexed )
   LIBGCT_SETTER( index_buffer )
   LIBGCT_SETTER( count )
+  LIBGCT_SETTER( unique_vertex_count )
   LIBGCT_SETTER( index_buffer_type )
   LIBGCT_SETTER( aabb )
   LIBGCT_SETTER( vertex_input_binding )
@@ -82,6 +83,7 @@ struct primitive {
   bool indexed = false;
   buffer_offset index_buffer;
   uint32_t count = 0u;
+  uint32_t unique_vertex_count = 0u;
   vk::IndexType index_buffer_type;
   aabb4 aabb;
   std::vector< vk::VertexInputBindingDescription > vertex_input_binding;

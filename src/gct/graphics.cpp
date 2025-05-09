@@ -162,6 +162,21 @@ namespace gct {
         .set_layout( pipeline_layout )
         .fill_untouched()
     );
+    for( const auto &s: pipeline->get_props().get_stage() ) {
+      const auto &r = s.get_shader_module()->get_props().get_reflection();
+      auto pcmp = r.get_push_constant_member_pointer_maybe( "PushConstants" );
+      if( pcmp ) {
+        push_constant_mp = *pcmp;
+        break;
+      }
+    }
+  }
+  std::vector< std::uint8_t > &graphics::get_push_constant() const {
+    if( push_constant_mp ) {
+      use_internal_push_constant = true;
+      push_constant.resize( push_constant_mp->get_aligned_size(), 0u );
+    }
+    return push_constant;
   }
   void graphics::bind(
     command_buffer_recorder_t &rec,
@@ -180,6 +195,15 @@ namespace gct {
     unsigned int z
   ) const {
     bind( rec, image_index );
+    if( use_internal_push_constant && push_constant_mp && !push_constant.empty() ) {
+      rec->pushConstants(
+        **pipeline->get_props().get_layout(),
+        pipeline->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
+        push_constant_mp->get_offset(),
+        push_constant.size(),
+        push_constant.data()
+      );
+    }
     rec.draw_mesh_task( x, y, z );
   }
 }

@@ -2,6 +2,7 @@
 #define GCT_GLTF2_HPP
 
 #include <memory>
+#include <unordered_map>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
 #include <fx/gltf.h>
@@ -23,6 +24,7 @@ namespace gct::gltf {
 class descriptor_set_layout_t;
 
 struct mesh {
+  LIBGCT_SETTER( prim )
   std::vector< pool< std::shared_ptr< scene_graph::primitive > >::descriptor > prim;
 };
 
@@ -43,6 +45,22 @@ public:
   [[nodiscard]] const std::vector< texture_pool::views > &get_texture() const {
     return texture;
   }
+  [[nodiscard]] vertex_buffer_pool::vertex_buffer_descriptor
+  get_morph_vertex_buffer() const {
+    return morph_vertex_buffer;
+  }
+  [[nodiscard]] std::pair< std::uint32_t, std::uint32_t >
+  get_morph_vertex_buffer_offset( const pool< std::shared_ptr< scene_graph::primitive > >::descriptor &prim ) const {
+    const auto match = doc_primitive_id.find( prim );
+    if( match == doc_primitive_id.end() ) {
+      return std::make_pair( 0u, 0u );
+    }
+    const auto count = morph_vertex_count.find( match->second );
+    if( count == morph_vertex_count.end() ) {
+      return std::make_pair( 0u, 0u );
+    }
+    return std::make_pair( count->second.first, count->second.second );
+  }
 private:
   void load_buffer(
     const fx::gltf::Document &doc
@@ -60,14 +78,17 @@ private:
   void load_texture(
     const fx::gltf::Document &doc
   );
-  [[nodiscard]] scene_graph::primitive create_primitive(
+  [[nodiscard]] std::pair< scene_graph::primitive, nlohmann::json > create_primitive(
     const fx::gltf::Document &doc,
-    const fx::gltf::Primitive &primitive
+    const fx::gltf::Primitive &primitive,
+    std::uint32_t mesh_id,
+    std::uint32_t prim_id
   );
   [[nodiscard]] static const std::string get_attribute_name_in_mesh( const std::string &gltf_name );
   [[nodiscard]] std::shared_ptr< mesh > create_mesh(
     const fx::gltf::Document &doc,
-    const fx::gltf::Mesh &mesh
+    const fx::gltf::Mesh &mesh,
+    std::uint32_t mesh_id
   );
   void load_mesh(
     const fx::gltf::Document &doc
@@ -88,8 +109,12 @@ private:
     const fx::gltf::Primitive &doc_primitive,
     const scene_graph::primitive &primitive_
   );
+  void get_lod_morph_vertex_count(
+    const fx::gltf::Document &doc
+  );
   gltf2_create_info props;
   std::vector< vertex_buffer_pool::vertex_buffer_descriptor > buffer;
+  vertex_buffer_pool::vertex_buffer_descriptor morph_vertex_buffer;
   sampler_pool::sampler_descriptor default_sampler;
   std::vector< sampler_pool::sampler_descriptor > sampler;
   image_pool::views default_image;
@@ -99,6 +124,13 @@ private:
   std::vector< matrix_pool::matrix_descriptor > camera;
   std::filesystem::path cd;
   std::uint32_t accessor_count = 0u;
+  std::unordered_map<
+    pool< std::shared_ptr< scene_graph::primitive > >::descriptor,
+    nlohmann::json
+  > primitive_ext;
+  std::unordered_map< std::uint64_t, std::pair< std::uint32_t, std::uint32_t > > morph_vertex_count;
+  std::unordered_map< pool< std::shared_ptr< scene_graph::primitive > >::descriptor, std::uint64_t > doc_primitive_id;
+  std::uint32_t total_morph_vertex_count = 0u;
 };
 
 void to_json( nlohmann::json&, const gltf2& );

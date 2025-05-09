@@ -5,6 +5,7 @@
 #include <gct/buffer_pool.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/setter.hpp>
+#include <vulkan/vulkan_enums.hpp>
 namespace gct::scene_graph {
 
 enum class accessor_type_id {
@@ -41,10 +42,12 @@ struct accessor_t {
 struct mesh_t {
   LIBGCT_SETTER( attribute )
   LIBGCT_SETTER( vertex_count )
+  LIBGCT_SETTER( unique_vertex_count )
   LIBGCT_SETTER( topology )
   std::unordered_map< std::uint32_t, accessor_t > attribute;
-  std::uint32_t vertex_count;
-  vk::PrimitiveTopology topology;
+  std::uint32_t vertex_count = 0u;
+  std::uint32_t unique_vertex_count = 0u;
+  vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
 };
 
 struct lod_t {

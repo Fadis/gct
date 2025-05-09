@@ -17,6 +17,21 @@ layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERE
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform image3D image_pool_3d[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform image1DArray image_pool_1d_array[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform image2DArray image_pool_2d_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage1D image_pool_1du[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage2D image_pool_2du[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage3D image_pool_3du[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage1DArray image_pool_1du_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage2DArray image_pool_2du_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32i) GCT_IMAGE_COHERENT_QUALIFIER uniform iimage1D image_pool_1da[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32i) GCT_IMAGE_COHERENT_QUALIFIER uniform iimage2D image_pool_2da[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32i) GCT_IMAGE_COHERENT_QUALIFIER uniform iimage3D image_pool_3da[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32i) GCT_IMAGE_COHERENT_QUALIFIER uniform iimage1DArray image_pool_1da_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32i) GCT_IMAGE_COHERENT_QUALIFIER uniform iimage2DArray image_pool_2da_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage1D image_pool_1dua[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage2D image_pool_2dua[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage3D image_pool_3dua[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage1DArray image_pool_1dua_array[];
+layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage2DArray image_pool_2dua_array[];
 
 #else
 

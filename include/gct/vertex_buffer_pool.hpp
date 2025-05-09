@@ -47,6 +47,7 @@ public:
   [[nodiscard]] vertex_buffer_descriptor allocate( const std::string &filename );
   [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
   [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
+  [[nodiscard]] vertex_buffer_descriptor allocate( std::size_t );
   [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
   [[nodiscard]] std::vector< std::shared_ptr< buffer_t > > get();
   [[nodiscard]] const vertex_buffer_pool_create_info &get_props() const { return state->props; }
@@ -60,6 +61,7 @@ private:
     [[nodiscard]] vertex_buffer_descriptor allocate( const std::string &filename );
     [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< glm::vec4 > &data );
     [[nodiscard]] vertex_buffer_descriptor allocate( const std::vector< std::uint8_t > &data );
+    [[nodiscard]] vertex_buffer_descriptor allocate( std::size_t );
     [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
     std::vector< std::shared_ptr< buffer_t > > get();
     void release( vertex_buffer_index_t );

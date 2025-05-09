@@ -1,0 +1,62 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_mesh_shader : enable
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+layout (location = 0) out vec4 output_position[];
+
+struct task_data {
+  uint meshlet_index[ 32 ];
+  uint instance_id;
+  uint primitive_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  instance_resource_index_type inst = instance_resource_index[ td.instance_id ];
+  const primitive_resource_index_type prim = primitive_resource_index[ td.primitive_id ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
+
+  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
+  
+  const uint output_primitive_id = gl_LocalInvocationID.x;
+  const uint output_vertex_id = output_primitive_id * 3u;
+
+  const bool in_range = vertex_count > output_vertex_id;
+  
+  const uint input_primitive_id = meshlet_id * 32u + output_primitive_id;
+  
+  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
+  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
+  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
+ 
+  SetMeshOutputsEXT( vertex_count, vertex_count / 3 );
+  
+  if( vertex_count <= output_vertex_id ) return; 
+
+  gl_MeshVerticesEXT[ output_vertex_id ].gl_Position = vec4( v0.tex_coord0.xy * 2.0 - 1.0, 0.0, 1.0 );
+  gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = vec4( v1.tex_coord0.xy * 2.0 - 1.0, 0.0, 1.0 );
+  gl_MeshVerticesEXT[ output_vertex_id + 2u ].gl_Position = vec4( v2.tex_coord0.xy * 2.0 - 1.0, 0.0, 1.0 );
+  output_position[ output_vertex_id ] = v0.position;
+  output_position[ output_vertex_id + 1u ] = v1.position;
+  output_position[ output_vertex_id + 2u ] = v2.position;
+  gl_PrimitiveTriangleIndicesEXT[ output_vertex_id / 3 ] = uvec3( output_vertex_id, output_vertex_id + 1, output_vertex_id + 2 );
+}
+

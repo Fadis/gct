@@ -1,3 +1,4 @@
+#include <iostream>
 #include "gct/exception.hpp"
 #include <fx/gltf.h>
 #include <iterator>
@@ -144,6 +145,7 @@ gltf2::gltf2(
     props.vertex_attribute_map[ "COLOR_0" ] = 5;
     props.vertex_attribute_map[ "JOINT_0" ] = 6;
     props.vertex_attribute_map[ "WEIGHT_0" ] = 7;
+    props.vertex_attribute_map[ "_LOD_MORPH" ] = 8;
   }
   for( const auto &v: props.vertex_attribute_map ) {
     accessor_count = std::max( accessor_count, std::uint32_t( v.second + 1 ) );
@@ -152,6 +154,10 @@ gltf2::gltf2(
   quota.MaxBufferByteLength = 1024 * 1024 * 1024;
   fx::gltf::Document doc = fx::gltf::LoadFromText( props.filename.string(), quota );
   cd = props.filename.parent_path();
+  get_lod_morph_vertex_count( doc );
+  for( const auto &v: morph_vertex_count ) {
+    std::cout << ( v.first >> 32u ) << " " << ( v.first & 0xFFFFFFFFu ) << v.second.first << " " << v.second.second << std::endl;
+  }
   load_buffer( doc );
   load_sampler( doc );
   load_image( doc );
@@ -171,6 +177,9 @@ void gltf2::load_buffer(
     buffer.push_back( props.graph->get_resource()->vertex->allocate(
       buffer_path.string()
     ) );
+  }
+  if( !morph_vertex_count.empty() ) {
+    morph_vertex_buffer = props.graph->get_resource()->vertex->allocate( total_morph_vertex_count );
   }
 }
 
@@ -338,10 +347,59 @@ graphics_pipeline_create_info_t gltf2::create_pipeline(
     //.set_render_pass( render_pass, subpass )
     .rebuild_chain();
 }
+void gltf2::get_lod_morph_vertex_count(
+  const fx::gltf::Document &doc
+) {
+  std::unordered_map< std::uint64_t, std::pair< std::uint32_t, std::uint32_t > > temp;
+  std::uint32_t offset = 0u;
+  std::uint32_t mesh_id = 0u;
+  for( const auto &doc_mesh: doc.meshes ) {
+    std::unordered_set< std::uint32_t > used;
+    std::uint32_t primitive_id = 0u;
+    for( const auto &primitive_: doc_mesh.primitives ) {
+      if( used.find( primitive_id ) == used.end() ) {
+        auto ext = primitive_.extensionsAndExtras;
+        if(
+          ( ext.find( "extensions" ) != ext.end() ) &&
+          ( ext[ "extensions" ].find( "GCT_lod" ) != ext[ "extensions" ].end() ) &&
+          ( ext[ "extensions" ][ "GCT_lod" ].find( "ids" ) != ext[ "extensions" ][ "GCT_lod" ].end() ) &&
+          ( ext.find( "extras" ) != ext.end() ) &&
+          ( ext[ "extras" ].find( "GCT_screencoverage" ) != ext[ "extras" ].end() ) &&
+          ( ext[ "extras" ][ "GCT_screencoverage" ].size() == ext[ "extensions" ][ "GCT_lod" ][ "ids" ].size() + 1u )
+        ) {
+          std::vector< std::uint32_t > lod_set;
+          lod_set.push_back( primitive_id );
+          for( const auto &i: ext[ "extensions" ][ "GCT_lod" ][ "ids" ] ) {
+            lod_set.push_back( std::uint32_t( i ) );
+          }
+          lod_set.pop_back();
+          for( const auto &lod_primitive_id: lod_set ) {
+            std::uint32_t vertex_count = std::numeric_limits< std::uint32_t >::max();
+            for( const auto &[target,index]: doc_mesh.primitives[ lod_primitive_id ].attributes ) {
+              const auto &accessor = doc.accessors[ index ];
+              vertex_count = std::min( vertex_count, accessor.count );
+            }
+            const std::uint64_t combined_id = ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( lod_primitive_id );
+            temp[ combined_id ] = std::make_pair( offset, vertex_count );
+            offset += vertex_count;
+            used.insert( lod_primitive_id );
+          }
+        }
+      }
+      ++primitive_id;
+    }
+    ++mesh_id;
+  }
+  morph_vertex_count = temp;
+  total_morph_vertex_count = offset;
+}
 
-scene_graph::primitive gltf2::create_primitive(
+
+std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   const fx::gltf::Document &doc,
-  const fx::gltf::Primitive &primitive_
+  const fx::gltf::Primitive &primitive_,
+  std::uint32_t mesh_id,
+  std::uint32_t prim_id
 ) {
   if( primitive_.material < 0 || doc.materials.size() <= size_t( primitive_.material ) ) throw invalid_gltf( "参照されたmaterialが存在しない", __FILE__, __LINE__ );
   const auto &material = doc.materials[ primitive_.material ];
@@ -349,6 +407,7 @@ scene_graph::primitive gltf2::create_primitive(
   std::vector< vk::VertexInputBindingDescription > vertex_input_binding;
   std::vector< vk::VertexInputAttributeDescription > vertex_input_attribute;
   uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
+  uint32_t unique_vertex_count = std::numeric_limits< uint32_t >::max();
   bool rigged = false;
   bool has_tangent = false;
   glm::vec3 min( -1, -1, -1 );
@@ -401,6 +460,7 @@ scene_graph::primitive gltf2::create_primitive(
     const auto attribute_index = props.vertex_attribute_map.find( target );
     mesh.set_topology( gltf_topology_to_vulkan_topology( primitive_.mode ) );
     mesh.set_vertex_count( vertex_count );
+    mesh.set_unique_vertex_count( vertex_count );
     if( attribute_index != props.vertex_attribute_map.end() ) {
       mesh.attribute.insert(
         std::make_pair(
@@ -416,6 +476,7 @@ scene_graph::primitive gltf2::create_primitive(
       );
     }
   }
+  unique_vertex_count = vertex_count;
   constexpr static const float eps = 0.01f;
   if( min[ 0 ] == max[ 0 ] ) {
     max[ 0 ] += eps;
@@ -434,6 +495,7 @@ scene_graph::primitive gltf2::create_primitive(
   if( vertex_count == 0 )
     throw invalid_gltf( "頂点属性がない", __FILE__, __LINE__ );
   scene_graph::primitive p;
+  nlohmann::json ext = primitive_.extensionsAndExtras;
 
   auto vs_flag = shader_flag_t::vertex;
   if( rigged ) vs_flag = shader_flag_t( int( vs_flag )|int( shader_flag_t::skin ) );
@@ -476,6 +538,7 @@ scene_graph::primitive gltf2::create_primitive(
     p.set_index_buffer( scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) );
     p.set_index_buffer_type( to_vulkan_index_type( accessor.componentType ) );
     p.set_count( accessor.count );
+    p.set_unique_vertex_count( unique_vertex_count );
     const auto accessor_index = props.vertex_attribute_map.find( "INDEX" );
     if( accessor_index != props.vertex_attribute_map.end() ) {
       vertex_count = accessor.count;
@@ -496,6 +559,7 @@ scene_graph::primitive gltf2::create_primitive(
   else {
     p.set_indexed( false );
     p.set_count( vertex_count );
+    p.set_unique_vertex_count( unique_vertex_count );
   }
  
   auto rimp = props.graph->get_resource()->primitive_resource_index->get_member_pointer();
@@ -721,6 +785,78 @@ scene_graph::primitive gltf2::create_primitive(
             else throw -1;
             props.graph->get_resource()->accessor->set( accessor_desc, attr_id, accessor.data(), std::next( accessor.data(), accessor.size() ) );
           }
+          else if( attr_id == 8u ) { // LOD_MORPH
+            const auto mvc = morph_vertex_count.find( ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( prim_id ) );
+            if( mvc == morph_vertex_count.end() ) {
+              const auto attr = mesh.attribute.find( 0u );
+              if( attr != mesh.attribute.end() ) {
+                if( amp.has( "enabled" ) ) {
+                  accessor.data()->*amp[ "enabled" ] = 1u;
+                }
+                if( amp.has( "vertex_buffer" ) ) {
+                  accessor.data()->*amp[ "vertex_buffer" ] = *attr->second.buffer;
+                }
+                else throw -1;
+                if( amp.has( "type" ) ) {
+                  accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::to_type_id( attr->second.type ) );
+                }
+                else throw -1;
+                if( amp.has( "normalized" ) ) {
+                  accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1u : 0u;
+                }
+                else throw -1;
+                if( amp.has( "component_count" ) ) {
+                  accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.type.rows );
+                }
+                else throw -1;
+                if( amp.has( "offset" ) ) {
+                  accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / ( attr->second.type.depth / 8u ) );
+                }
+                else throw -1;
+                if( amp.has( "stride" ) ) {
+                  if( attr->second.stride == 0u ) {
+                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.type.rows );
+                  }
+                  else {
+                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / ( attr->second.type.depth / 8u ) );
+                  }
+                }
+                else throw -1;
+                props.graph->get_resource()->accessor->set( accessor_desc, attr_id, accessor.data(), std::next( accessor.data(), accessor.size() ) );
+              }
+            }
+            else {
+              const auto offset = mvc->second.first;
+              if( amp.has( "enabled" ) ) {
+                accessor.data()->*amp[ "enabled" ] = 1u;
+              }
+              if( amp.has( "vertex_buffer" ) ) {
+                accessor.data()->*amp[ "vertex_buffer" ] = *morph_vertex_buffer;
+              }
+              else throw -1;
+              if( amp.has( "type" ) ) {
+                accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::accessor_type_id::float_ );
+              }
+              else throw -1;
+              if( amp.has( "normalized" ) ) {
+                accessor.data()->*amp[ "normalized" ] = 0u;
+              }
+              else throw -1;
+              if( amp.has( "component_count" ) ) {
+                accessor.data()->*amp[ "component_count" ] = 4u;
+              }
+              else throw -1;
+              if( amp.has( "offset" ) ) {
+                accessor.data()->*amp[ "offset" ] = offset * 4u;
+              }
+              else throw -1;
+              if( amp.has( "stride" ) ) {
+                accessor.data()->*amp[ "stride" ] = 4u;
+              }
+              else throw -1;
+              props.graph->get_resource()->accessor->set( accessor_desc, attr_id, accessor.data(), std::next( accessor.data(), accessor.size() ) );
+            }
+          }
         }
       }
       if( mmp.has( "accessor" ) ) {
@@ -738,32 +874,44 @@ scene_graph::primitive gltf2::create_primitive(
           m.data()->*mmp[ "meshlet" ] = *meshlet_desc;
         }
       }
+      if( mmp.has( "unique_vertex_count" ) ) {
+        m.data()->*mmp[ "unique_vertex_count" ] = std::uint32_t( unique_vertex_count );
+      }
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
     }
   }
   p.descriptor.resource_index = props.graph->get_resource()->primitive_resource_index->allocate( ri.data(), std::next( ri.data(), ri.size() ) );
+  if( p.descriptor.mesh ) {
+    std::cout << "primitive " << *p.descriptor.resource_index << " has mesh " << *p.descriptor.mesh << std::endl;
+  }
   p.descriptor.aabb = props.graph->get_resource()->aabb->allocate( p.aabb );
   p.set_pipeline_create_info( create_pipeline( doc, primitive_, p ) );
-  return p;
+  return std::make_pair( p, ext );
 }
 
 std::shared_ptr< mesh > gltf2::create_mesh(
   const fx::gltf::Document &doc,
-  const fx::gltf::Mesh &doc_mesh
+  const fx::gltf::Mesh &doc_mesh,
+  std::uint32_t mesh_id
 ) {
   std::shared_ptr< mesh > m( new mesh() );
   unsigned int i = 0u;
   for( const auto &primitive_: doc_mesh.primitives ) {
+    auto [p,e] = 
+      create_primitive(
+        doc,
+        primitive_,
+        mesh_id,
+        i
+      );
     m->prim.push_back(
       props.graph->get_resource()->prim.allocate(
-        std::make_shared< scene_graph::primitive >(
-          create_primitive(
-            doc,
-            primitive_
-          )
-        )
+        std::make_shared< scene_graph::primitive >( std::move( p ) )
       )
     );
+    auto desc = m->prim.back();
+    doc_primitive_id[ desc ] = ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( i );
+    primitive_ext[ desc ] = e;
     ++i;
     /*if( m->prim.size() == 1u ) {
       m->aabb = props.graph->get_resource()->prim.get( m->prim.back() )->aabb;
@@ -778,13 +926,16 @@ std::shared_ptr< mesh > gltf2::create_mesh(
 void gltf2::load_mesh(
   const fx::gltf::Document &doc
 ) {
+  std::uint32_t mesh_id = 0u;
   for( const auto &m: doc.meshes ) {
     mesh_.push_back(
       create_mesh(
         doc,
-        m
+        m,
+        mesh_id
       )
     );
+    ++mesh_id;
   }
 }
 
@@ -886,60 +1037,99 @@ void gltf2::load_node(
     if( mesh_.size() <= size_t( doc_node.mesh ) ) throw invalid_gltf( "参照されたmeshが存在しない", __FILE__, __LINE__ );
     aabb4 aabb;
     bool first = true;
+    std::uint32_t prim_id = 0u;
+    std::unordered_set< std::uint32_t > used;
+    std::vector< std::pair< std::uint32_t, float > > current_lod;
     for( const auto &p: mesh_[ doc_node.mesh ]->prim ) {
-      auto i = std::make_shared< scene_graph::instance >();
-      i->descriptor.set_matrix( cur->matrix );
-      const auto prim = props.graph->get_resource()->prim.get( p );
-      i->descriptor.set_aabb( props.graph->get_resource()->aabb->allocate( prim->descriptor.aabb, cur->matrix ) );
-      const std::uint32_t vis = 0u;
-      i->descriptor.set_visibility( props.graph->get_resource()->visibility->allocate() );
-      auto rimp = props.graph->get_resource()->instance_resource_index->get_member_pointer();
-      std::vector< std::uint8_t > ri( rimp.get_aligned_size() );
-   
-      i->initial_world_matrix = cur->initial_world_matrix;
-
-
-      i->descriptor.resource_index = props.graph->get_resource()->instance_resource_index->allocate( 1u );
-      std::uint32_t lod_id = 0u;
-      float coverage = 0.0f;
-
-      i->is_highest_lod = true;
-      ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
-      if( rimp.has( "previous_world_matrix" ) ) {
-        if( props.graph->get_resource()->matrix->copy_enabled() ) {
-          ri.data()->*rimp[ "previous_world_matrix" ] = *props.graph->get_resource()->matrix->get_history( i->descriptor.matrix );
+      if( used.find( prim_id ) == used.end() ) {
+        const auto ext = primitive_ext[ p ];
+        current_lod.clear();
+        bool has_lod = false;
+        if(
+          ( ext.find( "extensions" ) != ext.end() ) &&
+          ( ext[ "extensions" ].find( "GCT_lod" ) != ext[ "extensions" ].end() ) &&
+          ( ext[ "extensions" ][ "GCT_lod" ].find( "ids" ) != ext[ "extensions" ][ "GCT_lod" ].end() ) &&
+          ( ext.find( "extras" ) != ext.end() ) &&
+          ( ext[ "extras" ].find( "GCT_screencoverage" ) != ext[ "extras" ].end() ) &&
+          ( ext[ "extras" ][ "GCT_screencoverage" ].size() == ext[ "extensions" ][ "GCT_lod" ][ "ids" ].size() + 1u )
+        ) {
+          for( std::uint32_t lod_id = 0u; lod_id != ext[ "extras" ][ "GCT_screencoverage" ].size(); ++lod_id ) {
+            const std::uint32_t pid = ( lod_id == 0u ) ? prim_id : std::uint32_t( ext[ "extensions" ][ "GCT_lod" ][ "ids" ][ lod_id - 1u ] );
+            const float coverage = ext[ "extras" ][ "GCT_screencoverage" ][ lod_id ];
+            current_lod.push_back( std::make_pair( pid, coverage ) );
+          }
+          has_lod = true;
+        }
+        if( !has_lod ) {
+          current_lod.push_back( std::make_pair( prim_id, 0.0 ) );
+        }
+       
+        auto instance_resource_index = props.graph->get_resource()->instance_resource_index->allocate( current_lod.size() );
+        const auto prim0 = props.graph->get_resource()->prim.get( p );
+        auto aabb0 = props.graph->get_resource()->aabb->allocate( prim0->descriptor.aabb, cur->matrix );
+        auto visibility0 = props.graph->get_resource()->visibility->allocate();
+        if( first ) {
+          aabb = cur->initial_world_matrix * prim0->aabb;
+          first = false;
         }
         else {
-          ri.data()->*rimp[ "previous_world_matrix" ] = *i->descriptor.matrix;
+          aabb = aabb | cur->initial_world_matrix * prim0->aabb;
+        }
+
+        for( std::uint32_t lod_id = 0u; lod_id != current_lod.size(); ++lod_id ) {
+
+          auto i = std::make_shared< scene_graph::instance >();
+          i->descriptor.set_matrix( cur->matrix );
+          const auto prim = props.graph->get_resource()->prim.get( mesh_[ doc_node.mesh ]->prim[ current_lod[ lod_id ].first ] );
+          i->descriptor.set_aabb( aabb0 );
+          const std::uint32_t vis = 0u;
+          i->descriptor.set_visibility( visibility0 );
+          auto rimp = props.graph->get_resource()->instance_resource_index->get_member_pointer();
+          std::vector< std::uint8_t > ri( rimp.get_aligned_size() );
+          i->initial_world_matrix = cur->initial_world_matrix;
+          i->descriptor.resource_index = instance_resource_index;
+          i->set_lod_id( lod_id );
+
+          float coverage = current_lod[ lod_id ].second;
+
+          i->is_highest_lod = lod_id == 0u;
+          ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
+          if( rimp.has( "previous_world_matrix" ) ) {
+            if( props.graph->get_resource()->matrix->copy_enabled() ) {
+              ri.data()->*rimp[ "previous_world_matrix" ] = *props.graph->get_resource()->matrix->get_history( i->descriptor.matrix );
+            }
+            else {
+              ri.data()->*rimp[ "previous_world_matrix" ] = *i->descriptor.matrix;
+            }
+          }
+          i->initial_world_aabb = cur->initial_world_matrix * prim0->aabb;
+          ri.data()->*rimp[ "aabb" ] = *i->descriptor.aabb;
+          ri.data()->*rimp[ "visibility" ] = *i->descriptor.visibility;
+          if( props.graph->get_resource()->meshlet_index ) {
+            i->descriptor.set_meshlet_index( props.graph->get_resource()->meshlet_index->allocate(
+              prim->count / ( props.meshlet_size * 3u ) + ( ( prim->count % ( props.meshlet_size * 3u ) ) ? 1u : 0u )
+            ) );
+            if( rimp.has( "meshlet_index" ) ) {
+              ri.data()->*rimp[ "meshlet_index" ] = *i->descriptor.meshlet_index;
+            }
+          }
+          if( rimp.has( "coverage" ) ) {
+            ri.data()->*rimp[ "coverage" ] = coverage;
+          }
+          if( rimp.has( "lowest_lod" ) ) {
+            ri.data()->*rimp[ "lowest_lod" ] = ( lod_id == current_lod.size() - 1u ) ? 1u : 0u;
+          }
+          if( rimp.has( "prim" ) ) {
+            std::cout << "instance " << *i->descriptor.resource_index << " + " << lod_id << " has primitive " << *prim->descriptor.resource_index << std::endl; 
+            ri.data()->*rimp[ "prim" ] = *prim->descriptor.resource_index;
+          }
+          props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
+          i->descriptor.set_prim( mesh_[ doc_node.mesh ]->prim[ current_lod[ lod_id ].first ] );
+          cur->inst.push_back( props.graph->get_resource()->inst.allocate( i ) );
+          used.insert( current_lod[ lod_id ].first );
         }
       }
-      i->initial_world_aabb = cur->initial_world_matrix * prim->aabb;
-      if( first ) {
-        aabb = i->initial_world_aabb;
-        first = false;
-      }
-      else {
-        aabb = aabb | i->initial_world_aabb;
-      }
-      ri.data()->*rimp[ "aabb" ] = *i->descriptor.aabb;
-      ri.data()->*rimp[ "visibility" ] = *i->descriptor.visibility;
-      if( props.graph->get_resource()->meshlet_index ) {
-        i->descriptor.set_meshlet_index( props.graph->get_resource()->meshlet_index->allocate(
-          prim->count / ( props.meshlet_size * 3u ) + ( ( prim->count % ( props.meshlet_size * 3u ) ) ? 1u : 0u )
-        ) );
-        if( rimp.has( "meshlet_index" ) ) {
-          ri.data()->*rimp[ "meshlet_index" ] = *i->descriptor.meshlet_index;
-        }
-      }
-      if( rimp.has( "coverage" ) ) {
-        ri.data()->*rimp[ "coverage" ] = coverage;
-      }
-      if( rimp.has( "lowest_lod" ) ) {
-        ri.data()->*rimp[ "lowest_lod" ] = 1u;
-      }
-      props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
-      i->descriptor.set_prim( p );
-      cur->inst.push_back( props.graph->get_resource()->inst.allocate( i ) );
+      ++prim_id;
     }
     cur->prim_aabb = aabb;
   }

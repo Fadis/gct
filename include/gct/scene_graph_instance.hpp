@@ -38,10 +38,16 @@ struct instance {
   LIBGCT_SETTER( initial_world_aabb )
   LIBGCT_SETTER( descriptor )
   LIBGCT_SETTER( is_highest_lod )
+  LIBGCT_SETTER( mesh_task_offset )
+  LIBGCT_SETTER( mesh_task_count )
+  LIBGCT_SETTER( lod_id )
   glm::mat4 initial_world_matrix;
   aabb4 initial_world_aabb;
   instance_descriptor descriptor;
   bool is_highest_lod = true;
+  std::uint32_t mesh_task_offset = 0u;
+  std::uint32_t mesh_task_count = 0u;
+  std::uint32_t lod_id = 0u;
 };
 
 void to_json( nlohmann::json &dest, const instance &src );

@@ -31,15 +31,6 @@ out gl_PerVertex
 layout ( location = 0 ) flat in uint input_instance_id[];
 layout ( location = 0 ) flat out uint output_instance_id;
 
-vec4 get_aabb_vertex( aabb_type aabb, uint i ) {
-  return vec4(
-    ( ( i & 4 ) != 0 ) ? aabb.max.x : aabb.min.x,
-    ( ( i & 2 ) != 0 ) ? aabb.max.y : aabb.min.y,
-    ( ( i & 1 ) != 0 ) ? aabb.max.z : aabb.min.z,
-    1.0
-  );
-}
-
 int vertices[36]=int[](
   0,1,5,
   0,5,4,

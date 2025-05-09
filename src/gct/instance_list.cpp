@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
 #include <gct/mappable_buffer.hpp>
@@ -12,6 +13,7 @@
 #include <gct/render_pass.hpp>
 #include <gct/conditional_rendering_begin_info.hpp>
 #include <gct/get_device.hpp>
+#include <gct/compute.hpp>
 
 namespace gct::scene_graph {
 
@@ -27,13 +29,28 @@ instance_list::instance_list(
   const instance_list_create_info &ci,
   const scene_graph &graph
 ) : property_type( ci ), resource( graph.get_resource() ) {
+  std::unordered_set< pool< std::shared_ptr< primitive > >::descriptor > known_prim;
   for( const auto &i: resource->inst.get_descriptor() ) {
     const auto inst = resource->inst.get( i );
-    draw_list.push_back(
-      resource_pair()
-        .set_inst( i )
-        .set_prim( inst->descriptor.prim )
-    );
+    if( inst->is_highest_lod || props.all_lods ) {
+      if( props.unique_prim_list ) {
+        if( known_prim.find( inst->descriptor.prim ) == known_prim.end() ) {
+          known_prim.insert( inst->descriptor.prim );
+          draw_list.push_back(
+            resource_pair()
+              .set_inst( i )
+              .set_prim( inst->descriptor.prim )
+          );
+        }
+      }
+      else {
+        draw_list.push_back(
+          resource_pair()
+            .set_inst( i )
+            .set_prim( inst->descriptor.prim )
+        );
+      }
+    }
     const auto prim = resource->prim.get( inst->descriptor.prim );
     max_primitive_count = std::max( max_primitive_count,  prim->count / 3u );
   }
@@ -160,10 +177,10 @@ void instance_list::update_device_side_list() {
       const auto prim = resource->prim.get( draw_list[ i ].prim );
       if( !prim ) throw -1;
       if( mp.has( "instance" ) ) {
-        temp.data()->*mp[ "instance" ] = *inst->descriptor.resource_index;
+        temp.data()->*mp[ "instance" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
       }
       else if( mp.has( "inst" ) ) {
-        temp.data()->*mp[ "inst" ] = *inst->descriptor.resource_index;
+        temp.data()->*mp[ "inst" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
       }
       if( mp.has( "primitive" ) ) {
         temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
@@ -181,9 +198,12 @@ void instance_list::update_device_side_list() {
     std::uint32_t total_task_count = 0u;
     std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, std::uint32_t > task_count;
     for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+      const auto inst = resource->inst.get( draw_list[ i ].inst );
       const auto prim = resource->prim.get( draw_list[ i ].prim );
       if( !prim ) throw -1;
       const std::uint32_t tc = prim->count / ( 3u * 32u * 32u ) + (( prim->count % ( 3u * 32u * 32u ) ) ? 1u : 0u );
+      inst->set_mesh_task_offset( total_task_count );
+      inst->set_mesh_task_count( tc );
       task_count[ draw_list[ i ].prim ] = tc;
       total_task_count += tc;
     }
@@ -196,10 +216,10 @@ void instance_list::update_device_side_list() {
       if( !prim ) throw -1;
       for( std::uint32_t task_index = 0u; task_index != task_count[ draw_list[ i ].prim ]; ++task_index ) {
         if( mp.has( "instance" ) ) {
-          temp.data()->*mp[ "instance" ] = *inst->descriptor.resource_index;
+          temp.data()->*mp[ "instance" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
         }
         else if( mp.has( "inst" ) ) {
-          temp.data()->*mp[ "inst" ] = *inst->descriptor.resource_index;
+          temp.data()->*mp[ "inst" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
         }
         if( mp.has( "primitive" ) ) {
           temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
@@ -215,6 +235,7 @@ void instance_list::update_device_side_list() {
           current_task_offset + task_index,
           temp.data(), std::next( temp.data(), temp.size() )
         );
+        std::cout << "update_device_side_list " << current_task_offset + task_index << " " << *inst->descriptor.resource_index << " + " << inst->lod_id << " " << *prim->descriptor.resource_index << " " << task_index << std::endl;
       }
       current_task_offset += task_count[ draw_list[ i ].prim ];
     }
@@ -223,29 +244,125 @@ void instance_list::update_device_side_list() {
 }
 
 void instance_list::setup_resource_pair_buffer(
-  command_buffer_recorder_t &rec,
-  bool use_meshlet
+  command_buffer_recorder_t &rec
 ) const {
-  std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
-  if( resource->push_constant_mp->has( "offset" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
+  const auto &pcmp = resource->push_constant_mp;
+  if( pcmp ) {
+    std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
+    if( pcmp->has( "offset" ) ) {
+      push_constant.data() ->* (*pcmp)[ "offset" ] = *device_side_list;
+    }
+    else if( pcmp->has( "instance" ) ) {
+      push_constant.data() ->* (*pcmp)[ "instance" ] = *device_side_list;
+    }
+    if( pcmp->has( "count" ) ) {
+      push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( draw_list.size() );
+    }
+    else if( pcmp->has( "primitive" ) ) {
+      push_constant.data() ->* (*pcmp)[ "primitive" ] = std::uint32_t( draw_list.size() );
+    }
+    rec->pushConstants(
+      **resource->pipeline_layout,
+      resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
+      pcmp->get_offset(),
+      push_constant.size(),
+      push_constant.data()
+    );
   }
-  else if( resource->push_constant_mp->has( "instance" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
+}
+void instance_list::setup_resource_pair_buffer(
+  bool use_meshlet,
+  const compute &compiled
+) const {
+  const auto &pcmp = compiled.get_push_constant_member_pointer();
+  if( pcmp ) {
+    std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
+    if( pcmp->has( "offset" ) ) {
+      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
+    }
+    else if( pcmp->has( "instance" ) ) {
+      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
+    }
+    if( pcmp->has( "count" ) ) {
+      push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+    }
+    else if( pcmp->has( "primitive" ) ) {
+      push_constant.data() ->* (*pcmp)[ "primitive" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+    }
   }
-  if( resource->push_constant_mp->has( "count" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+}
+void instance_list::setup_resource_pair_buffer( ///
+  bool use_meshlet,
+  const std::vector< resource_pair >::const_iterator &i,
+  const compute &compiled
+) const {
+  const auto &pcmp = compiled.get_push_constant_member_pointer();
+  if( pcmp ) {
+    std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
+    const auto inst = resource->inst.get( i->inst );
+    const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
+    const std::uint32_t dli = std::distance( draw_list.begin(), i );
+    std::cout << "setup_resource_pair_buffer dli = " << dli << " "  << *meshlet_list << " + " << offset << " " << inst->mesh_task_count << std::endl;
+    if( pcmp->has( "offset" ) ) {
+      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+    }
+    else if( pcmp->has( "instance" ) ) {
+      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+    }
+    if( pcmp->has( "count" ) ) {
+      push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
+    }
+    else if( pcmp->has( "primitive" ) ) {
+      push_constant.data() ->* (*pcmp)[ "primitive" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
+    }
   }
-  else if( resource->push_constant_mp->has( "primitive" ) ) {
-    push_constant.data() ->* (*resource->push_constant_mp)[ "primitive" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+}
+void instance_list::setup_resource_pair_buffer(
+  bool use_meshlet,
+  const graphics &compiled
+) const {
+  const auto &pcmp = compiled.get_push_constant_member_pointer();
+  if( pcmp ) {
+    std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
+    if( pcmp->has( "offset" ) ) {
+      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
+    }
+    else if( pcmp->has( "instance" ) ) {
+      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
+    }
+    if( pcmp->has( "count" ) ) {
+      push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+    }
+    else if( pcmp->has( "primitive" ) ) {
+      push_constant.data() ->* (*pcmp)[ "primitive" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
+    }
   }
-  rec->pushConstants(
-    **resource->pipeline_layout,
-    resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
-    resource->push_constant_mp->get_offset(),
-    push_constant.size(),
-    push_constant.data()
-  );
+}
+void instance_list::setup_resource_pair_buffer( ///
+  bool use_meshlet,
+  const std::vector< resource_pair >::const_iterator &i,
+  const graphics &compiled
+) const {
+  const auto &pcmp = compiled.get_push_constant_member_pointer();
+  if( pcmp ) {
+    std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
+    const auto inst = resource->inst.get( i->inst );
+    const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
+    const std::uint32_t dli = std::distance( draw_list.begin(), i );
+    std::cout << "setup_resource_pair_buffer dli = " << dli << " "  << *meshlet_list << " + " << offset << " " << inst->mesh_task_count << std::endl;
+    if( pcmp->has( "offset" ) ) {
+      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+    }
+    else if( pcmp->has( "instance" ) ) {
+      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+    }
+    if( pcmp->has( "count" ) ) {
+      push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
+    }
+    else if( pcmp->has( "primitive" ) ) {
+      push_constant.data() ->* (*pcmp)[ "primitive" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
+    }
+  }
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
@@ -295,22 +412,57 @@ void instance_list::operator()(
   command_buffer_recorder_t &rec,
   const graphics &compiled
 ) const {
+  const auto pcmp = compiled.get_push_constant_member_pointer();
   if( props.parallel_mode3 ) {
-    setup_resource_pair_buffer( rec, true );
+    setup_resource_pair_buffer( true, compiled );
     compiled( rec, 0u, 32u, meshlet_list_size, 1u );
   }
   else if( props.parallel_mode2 ) {
-    setup_resource_pair_buffer( rec, false );
+    setup_resource_pair_buffer( false, compiled );
     compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), 1u );
   }
   else if( props.parallel_mode ) {
-    setup_resource_pair_buffer( rec, false );
+    setup_resource_pair_buffer( false, compiled );
     compiled( rec, 0u, 32u, draw_list.size(), 1u );
   }
   else {
-    setup_resource_pair_buffer( rec, false );
+    setup_resource_pair_buffer( false, compiled );
     compiled( rec, 0u, draw_list.size(), 1u, 1u );
   }
+}
+void instance_list::operator()(
+  command_buffer_recorder_t &rec,
+  const graphics &compiled,
+  const std::vector< resource_pair >::const_iterator &i
+) const {
+  if( props.parallel_mode3 ) {
+    const auto inst = resource->inst.get( i->inst );
+    setup_resource_pair_buffer( true, i, compiled );
+    compiled( rec, 0u, 32u, inst->mesh_task_count, 1u );
+  }
+  else if( props.parallel_mode2 ) {
+    setup_resource_pair_buffer( false, i, compiled );
+    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), 1u );
+  }
+  else if( props.parallel_mode ) {
+    setup_resource_pair_buffer( false, i, compiled );
+    compiled( rec, 0u, 32u, 1u, 1u );
+  }
+  else {
+    setup_resource_pair_buffer( false, i, compiled );
+    compiled( rec, 0u, 1u, 1u, 1u );
+  }
+}
+void instance_list::for_each_unique_vertex(
+  command_buffer_recorder_t &rec,
+  const compute &compiled,
+  const std::vector< resource_pair >::const_iterator &i
+) const {
+  const auto pcmp = compiled.get_push_constant_member_pointer();
+  const auto inst = resource->inst.get( i->inst );
+  const auto prim = resource->prim.get( i->prim );
+  setup_resource_pair_buffer( true, i, compiled );
+  compiled( rec, 0u, prim->mesh.unique_vertex_count, 1u, 1u );
 }
 std::vector< resource_pair > instance_list::get_last_visible_list() const {
   std::unordered_set< std::uint32_t > visible_instance_ids;

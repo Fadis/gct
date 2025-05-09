@@ -1,0 +1,110 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_mesh_shader : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+struct task_data {
+  uint meshlet_index[ 32 ];
+  uint instance_id;
+  uint primitive_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.y ];
+  
+
+  instance_resource_index_type inst = instance_resource_index[ id.inst ];
+
+
+  const mat4 l2w = matrix_pool[ inst.world_matrix ];
+
+  const mat4 w2s =
+    matrix_pool[ global_uniforms.projection_matrix ] *
+    matrix_pool[ global_uniforms.camera_matrix ];
+
+  const mat4 l2s =
+    w2s *
+    l2w;
+
+  const mat4 l2c =
+    matrix_pool[ global_uniforms.camera_matrix ] *
+    l2w;
+
+
+  const aabb_type aabb = aabb_pool[ inst.aabb ];
+
+
+  const aabb_type screen_space_aabb = transform_aabb( l2s, aabb );
+
+  const vec2 screen_space_size_xy = screen_space_aabb.max.xy - screen_space_aabb.min.xy;
+  const float screen_space_size = screen_space_size_xy.x * screen_space_size_xy.y * 0.25;
+
+  uint lod_id = 0u;
+  inst = instance_resource_index[ id.inst + lod_id ];
+  while( inst.lowest_lod == 0 && inst.coverage >= screen_space_size ) {
+    lod_id++;
+    inst = instance_resource_index[ id.inst + lod_id ];
+  }
+
+  const uint visibility = last_visibility_pool[ inst.visibility ];
+  if( visibility == 0u ) return;
+  const primitive_resource_index_type prim = primitive_resource_index[ inst.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+  
+  const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
+  const uint task_offset = id.offset;
+  const uint meshlet_id = gl_LocalInvocationID.x + 32u * task_offset;
+  uint visible_invocation_count = 0u;
+
+  {
+    const bool has_meshlet = ( meshlet_id < invocation_count );
+    const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + ( has_meshlet ? meshlet_id : 0u ) ];
+
+    const vec4 bv0 = vec4( meshlet.center.xyz, 1.0 );
+    const vec4 bv1 = bv0 + vec4( meshlet.center.w, 0, 0, 0 );
+    const vec4 bv2 = bv0 + vec4( 0, meshlet.center.w, 0, 0 );
+    const vec4 bv3 = bv0 + vec4( 0, 0, meshlet.center.w, 0 );
+    vec4 sbv0 = l2s * bv0;
+    vec4 sbv1 = l2s * bv1;
+    vec4 sbv2 = l2s * bv2;
+    vec4 sbv3 = l2s * bv3;
+    sbv0 /= sbv0.w;
+    sbv1 /= sbv1.w;
+    sbv2 /= sbv2.w;
+    sbv3 /= sbv3.w;
+    const float radius = max(
+      distance( sbv0, sbv1 ),
+      max(
+        distance( sbv0, sbv2 ),
+        distance( sbv0, sbv3 )
+      )
+    );
+    const bool inside_of_frustum =
+      ( ( sbv0.x < 0.0 ) ? ( sbv0.x + radius >= -1.0 ) : ( sbv0.x - radius <= 1.0 ) ) &&
+      ( ( sbv0.y < 0.0 ) ? ( sbv0.y + radius >= -1.0 ) : ( sbv0.y - radius <= 1.0 ) ) &&
+      ( ( sbv0.z < 0.0 ) ? ( sbv0.z + radius >= -1.0 ) : ( sbv0.z - radius <= 1.0 ) );
+
+    const bool visible = ( has_meshlet && inside_of_frustum && ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) ) );
+    const uvec4 visible_bits = subgroupBallot( visible );
+    const uint offset = subgroupBallotExclusiveBitCount( visible_bits );
+    const uint total = subgroupBallotBitCount( visible_bits );
+    if( visible ) {
+      td.meshlet_index[ offset ] = meshlet_id;
+    }
+    visible_invocation_count += total;
+  }
+  td.instance_id = id.inst + lod_id;
+  td.primitive_id = inst.prim;
+  EmitMeshTasksEXT( visible_invocation_count, 1, 1 );
+}
+

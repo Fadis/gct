@@ -6,7 +6,8 @@ struct mesh_type {
   uint vertex_count;
   uint topology;
   uint meshlet;
-  uint reserved[ 4 ];
+  uint unique_vertex_count;
+  uint reserved[ 3 ];
 };
 
 #endif

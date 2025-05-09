@@ -1,0 +1,53 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 128, local_size_y = 1 ) in;
+
+#include <gct/constants.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/filter_cache.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint dest;
+  uint coc;
+} push_constants;
+
+int lrlfilter_size = 65;
+float lrlfilter[65*33] = float[](
+#include <gct/lrlf_dof/h3.inc>
+);
+
+const int kernel_size = 32;
+shared vec4[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint layer = gl_GlobalInvocationID.z;
+  const uint lcpos = gl_LocalInvocationID.x;
+  const uint hcpos = lcpos + gl_WorkGroupSize.x;
+  const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ] ).xy;
+  const ivec4 sample_pos = horizontal_filter_cache_pos( screen_pos, image_size, gl_WorkGroupSize.x, kernel_size );
+  cache[ lcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( sample_pos.xy, layer ) );
+  if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
+    cache[ hcpos ] = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( sample_pos.zw, layer ) );
+  }
+  barrier();
+  vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );
+  const uint coc_ = min( uint( max( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.coc ) ], ivec3( screen_pos, layer ) ).r, 0.0 ) ), 32u ) * lrlfilter_size;
+  if( coc_ == 0 ) {
+    imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), cache[ lcpos + lrlfilter_size / 2 ] );
+    return;
+  }
+  for( uint i = 0; i != lrlfilter_size; i++ ) {
+    sum += cache[ lcpos + i ] * lrlfilter[ i + coc_ ];
+  }
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), sum );
+}
+
