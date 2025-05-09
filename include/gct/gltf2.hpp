@@ -2,6 +2,7 @@
 #define GCT_GLTF2_HPP
 
 #include <memory>
+#include <unordered_map>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
 #include <fx/gltf.h>
@@ -23,6 +24,7 @@ namespace gct::gltf {
 class descriptor_set_layout_t;
 
 struct mesh {
+  LIBGCT_SETTER( prim )
   std::vector< pool< std::shared_ptr< scene_graph::primitive > >::descriptor > prim;
 };
 
@@ -60,7 +62,7 @@ private:
   void load_texture(
     const fx::gltf::Document &doc
   );
-  [[nodiscard]] scene_graph::primitive create_primitive(
+  [[nodiscard]] std::pair< scene_graph::primitive, nlohmann::json > create_primitive(
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive
   );
@@ -99,6 +101,10 @@ private:
   std::vector< matrix_pool::matrix_descriptor > camera;
   std::filesystem::path cd;
   std::uint32_t accessor_count = 0u;
+  std::unordered_map<
+    pool< std::shared_ptr< scene_graph::primitive > >::descriptor,
+    nlohmann::json
+  > primitive_ext;
 };
 
 void to_json( nlohmann::json&, const gltf2& );

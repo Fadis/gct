@@ -1,3 +1,4 @@
+#include <iostream>
 #include "gct/exception.hpp"
 #include <fx/gltf.h>
 #include <iterator>
@@ -339,7 +340,7 @@ graphics_pipeline_create_info_t gltf2::create_pipeline(
     .rebuild_chain();
 }
 
-scene_graph::primitive gltf2::create_primitive(
+std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   const fx::gltf::Document &doc,
   const fx::gltf::Primitive &primitive_
 ) {
@@ -434,6 +435,7 @@ scene_graph::primitive gltf2::create_primitive(
   if( vertex_count == 0 )
     throw invalid_gltf( "頂点属性がない", __FILE__, __LINE__ );
   scene_graph::primitive p;
+  nlohmann::json ext = primitive_.extensionsAndExtras;
 
   auto vs_flag = shader_flag_t::vertex;
   if( rigged ) vs_flag = shader_flag_t( int( vs_flag )|int( shader_flag_t::skin ) );
@@ -744,7 +746,7 @@ scene_graph::primitive gltf2::create_primitive(
   p.descriptor.resource_index = props.graph->get_resource()->primitive_resource_index->allocate( ri.data(), std::next( ri.data(), ri.size() ) );
   p.descriptor.aabb = props.graph->get_resource()->aabb->allocate( p.aabb );
   p.set_pipeline_create_info( create_pipeline( doc, primitive_, p ) );
-  return p;
+  return std::make_pair( p, ext );
 }
 
 std::shared_ptr< mesh > gltf2::create_mesh(
@@ -754,16 +756,18 @@ std::shared_ptr< mesh > gltf2::create_mesh(
   std::shared_ptr< mesh > m( new mesh() );
   unsigned int i = 0u;
   for( const auto &primitive_: doc_mesh.primitives ) {
+    auto [p,e] = 
+      create_primitive(
+        doc,
+        primitive_
+      );
     m->prim.push_back(
       props.graph->get_resource()->prim.allocate(
-        std::make_shared< scene_graph::primitive >(
-          create_primitive(
-            doc,
-            primitive_
-          )
-        )
+        std::make_shared< scene_graph::primitive >( std::move( p ) )
       )
     );
+    auto desc = m->prim.back();
+    primitive_ext[ desc ] = e;
     ++i;
     /*if( m->prim.size() == 1u ) {
       m->aabb = props.graph->get_resource()->prim.get( m->prim.back() )->aabb;
@@ -898,6 +902,8 @@ void gltf2::load_node(
    
       i->initial_world_matrix = cur->initial_world_matrix;
 
+      const auto ext = primitive_ext[ p ];
+      std::cout << "ext : " << ext.dump() << std::endl;
 
       i->descriptor.resource_index = props.graph->get_resource()->instance_resource_index->allocate( 1u );
       std::uint32_t lod_id = 0u;
