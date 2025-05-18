@@ -28,6 +28,8 @@ layout (location = 6) out vec4 output_previous_position[];
 
 struct task_data {
   uint resource_pair_id;
+  mat4 l2w;
+  mat4 l2s;
 };
 taskPayloadSharedEXT task_data td;
 
@@ -36,16 +38,9 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
-  
-  const mat4 l2w = matrix_pool[ inst.world_matrix ];
+  const mat4 l2w = td.l2w;
 
-  const mat4 w2s =
-    matrix_pool[ global_uniforms.projection_matrix ] *
-    matrix_pool[ global_uniforms.camera_matrix ];
-  const mat4 l2s =
-    w2s *
-    l2w;
+  const mat4 l2s = td.l2s;
   
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
@@ -65,9 +60,9 @@ void main() {
   const vec4 wp1 = l2w * v1.position;
   const vec4 wp2 = l2w * v2.position;
  
-  const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
+  const vec3 fn = cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz );
 
-  const bool visible = in_range && ( prim.cull == 0 || ( dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0 ) );
+  const bool visible = in_range && ( /*prim.cull == 0 ||*/ ( dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0 ) );
  
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
   const uint filtered_vertex_offset = subgroupExclusiveAdd( visible ? 3 : 0 );
@@ -79,9 +74,9 @@ void main() {
   gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = l2s * v0.position;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = l2s * v1.position;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = l2s * v2.position;
-  output_position[ filtered_vertex_offset ] = l2w * v0.position;
-  output_position[ filtered_vertex_offset + 1u ] = l2w * v1.position;
-  output_position[ filtered_vertex_offset + 2u ] = l2w * v2.position;
+  output_position[ filtered_vertex_offset ] = wp0;
+  output_position[ filtered_vertex_offset + 1u ] = wp1;
+  output_position[ filtered_vertex_offset + 2u ] = wp2;
   output_normal[ filtered_vertex_offset ] = ( l2w * (( v0.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v0.normal ) ).xyz;
   output_normal[ filtered_vertex_offset + 1u ] = ( l2w * (( v1.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v1.normal ) ).xyz;
   output_normal[ filtered_vertex_offset + 2u ] = ( l2w * (( v2.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v2.normal ) ).xyz;

@@ -14,6 +14,8 @@ layout(local_size_x = 32, local_size_y = 1 ) in;
 
 struct task_data {
   uint meshlet_index[ 32 ];
+  mat4 l2w;
+  mat4 l2s;
   uint resource_pair_id;
 };
 taskPayloadSharedEXT task_data td;
@@ -32,6 +34,8 @@ void main() {
   const mat4 l2c =
     matrix_pool[ global_uniforms.camera_matrix ] *
     l2w;
+  td.l2w = l2w;
+  td.l2s = l2s;
 
   const uint visibility = last_visibility_pool[ inst.visibility ];
   if( visibility == 0u ) return;

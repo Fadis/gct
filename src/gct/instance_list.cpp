@@ -235,7 +235,6 @@ void instance_list::update_device_side_list() {
           current_task_offset + task_index,
           temp.data(), std::next( temp.data(), temp.size() )
         );
-        std::cout << "update_device_side_list " << current_task_offset + task_index << " " << *inst->descriptor.resource_index << " + " << inst->lod_id << " " << *prim->descriptor.resource_index << " " << task_index << std::endl;
       }
       current_task_offset += task_count[ draw_list[ i ].prim ];
     }
@@ -302,7 +301,6 @@ void instance_list::setup_resource_pair_buffer( ///
     const auto inst = resource->inst.get( i->inst );
     const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
     const std::uint32_t dli = std::distance( draw_list.begin(), i );
-    std::cout << "setup_resource_pair_buffer dli = " << dli << " "  << *meshlet_list << " + " << offset << " " << inst->mesh_task_count << std::endl;
     if( pcmp->has( "offset" ) ) {
       push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
     }
@@ -349,7 +347,6 @@ void instance_list::setup_resource_pair_buffer( ///
     const auto inst = resource->inst.get( i->inst );
     const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
     const std::uint32_t dli = std::distance( draw_list.begin(), i );
-    std::cout << "setup_resource_pair_buffer dli = " << dli << " "  << *meshlet_list << " + " << offset << " " << inst->mesh_task_count << std::endl;
     if( pcmp->has( "offset" ) ) {
       push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
     }

@@ -27,6 +27,8 @@ layout (location = 6) out vec4 output_previous_position[];
 
 struct task_data {
   uint resource_pair_id;
+  mat4 l2w;
+  mat4 l2s;
 };
 taskPayloadSharedEXT task_data td;
 
@@ -35,16 +37,8 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
-  
-  const mat4 l2w = matrix_pool[ inst.world_matrix ];
-
-  const mat4 w2s =
-    matrix_pool[ global_uniforms.projection_matrix ] *
-    matrix_pool[ global_uniforms.camera_matrix ];
-  const mat4 l2s =
-    w2s *
-    l2w;
+  const mat4 l2w = td.l2w;
+  const mat4 l2s = td.l2s;
   
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 

@@ -14,6 +14,8 @@ layout(local_size_x = 32, local_size_y = 1 ) in;
 
 struct task_data {
   uint meshlet_index[ 32 ];
+  mat4 l2w;
+  mat4 l2s;
   uint resource_pair_id;
 };
 taskPayloadSharedEXT task_data td;
@@ -23,7 +25,18 @@ void main() {
   const uint aligned_meshlet_id = gl_WorkGroupID.x * gl_WorkGroupSize.x;
   const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.y ];
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+
   const mat4 l2w = matrix_pool[ inst.world_matrix ];
+
+  const mat4 w2s =
+    matrix_pool[ global_uniforms.projection_matrix ] *
+    matrix_pool[ global_uniforms.camera_matrix ];
+  const mat4 l2s =
+    w2s *
+    l2w;
+  td.l2w = l2w;
+  td.l2s = l2s;
+
   const uint visibility = last_visibility_pool[ inst.visibility ];
   if( visibility == 0u ) return;
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];

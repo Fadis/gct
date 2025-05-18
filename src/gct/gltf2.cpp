@@ -155,9 +155,6 @@ gltf2::gltf2(
   fx::gltf::Document doc = fx::gltf::LoadFromText( props.filename.string(), quota );
   cd = props.filename.parent_path();
   get_lod_morph_vertex_count( doc );
-  for( const auto &v: morph_vertex_count ) {
-    std::cout << ( v.first >> 32u ) << " " << ( v.first & 0xFFFFFFFFu ) << v.second.first << " " << v.second.second << std::endl;
-  }
   load_buffer( doc );
   load_sampler( doc );
   load_image( doc );
@@ -522,6 +519,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   //if( shader_mask ) fs_flag = shader_flag_t( shader_mask );
   p.set_fs_flag( fs_flag );
 
+  std::cout << "material.doubleSided " << material.doubleSided << std::endl;
   p.set_cull( !material.doubleSided );
   p.set_blend( material.alphaMode == fx::gltf::Material::AlphaMode::Blend );
   p.set_vertex_input_binding( vertex_input_binding );
@@ -715,6 +713,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       ri.data()->*rimp[ "emissive_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
     }
     if( rimp.has( "cull" ) ) {
+      std::cout << "cull " << p.cull << std::endl;
       ri.data()->*rimp[ "cull" ] = p.cull ? 1u : 0u;
     }
   }
@@ -881,9 +880,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     }
   }
   p.descriptor.resource_index = props.graph->get_resource()->primitive_resource_index->allocate( ri.data(), std::next( ri.data(), ri.size() ) );
-  if( p.descriptor.mesh ) {
-    std::cout << "primitive " << *p.descriptor.resource_index << " has mesh " << *p.descriptor.mesh << std::endl;
-  }
   p.descriptor.aabb = props.graph->get_resource()->aabb->allocate( p.aabb );
   p.set_pipeline_create_info( create_pipeline( doc, primitive_, p ) );
   return std::make_pair( p, ext );
@@ -1120,7 +1116,6 @@ void gltf2::load_node(
             ri.data()->*rimp[ "lowest_lod" ] = ( lod_id == current_lod.size() - 1u ) ? 1u : 0u;
           }
           if( rimp.has( "prim" ) ) {
-            std::cout << "instance " << *i->descriptor.resource_index << " + " << lod_id << " has primitive " << *prim->descriptor.resource_index << std::endl; 
             ri.data()->*rimp[ "prim" ] = *prim->descriptor.resource_index;
           }
           props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
