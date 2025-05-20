@@ -30,7 +30,8 @@ common_sample_setup::common_sample_setup(
   const std::vector< const char* > &device_extensions,
   const descriptor_pool_create_info_t &dpci,
   bool enable_glfw,
-  bool enable_device_address
+  bool enable_device_address,
+  bool enable_gltf
 ) {
   namespace po = boost::program_options;
   po::options_description desc( "Options" );
@@ -51,7 +52,7 @@ common_sample_setup::common_sample_setup(
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
   po::notify( vm );
-  if( vm.count( "help" ) || ( enable_glfw && !vm.count( "model" ) ) ) {
+  if( vm.count( "help" ) || ( enable_glfw && enable_gltf && !vm.count( "model" ) ) ) {
     std::cout << desc << std::endl;
     exit( 0 );
   }
@@ -59,7 +60,9 @@ common_sample_setup::common_sample_setup(
   std::vector< const char* > iext{};
   if( enable_glfw ) {
     walk_state_filename = vm[ "walk" ].as< std::string >();
-    model_filename = vm[ "model" ].as< std::string >();
+    if( enable_gltf ) {
+      model_filename = vm[ "model" ].as< std::string >();
+    }
     ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
     glfw::get();
     uint32_t iext_count = 0u;

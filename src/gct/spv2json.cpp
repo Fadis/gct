@@ -86,10 +86,10 @@ void to_json( nlohmann::json &root, const SpvReflectShaderStageFlagBits &v ) {
     root = "Fragment";
   else if( v == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT )
     root = "Compute";
-  else if( v == SPV_REFLECT_SHADER_STAGE_TASK_BIT_NV )
-    root = "TaskNV";
-  else if( v == SPV_REFLECT_SHADER_STAGE_MESH_BIT_NV )
-    root = "MeshNV";
+  else if( v == SPV_REFLECT_SHADER_STAGE_TASK_BIT_EXT )
+    root = "TaskEXT";
+  else if( v == SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT )
+    root = "MeshEXT";
   else if( v == SPV_REFLECT_SHADER_STAGE_RAYGEN_BIT_KHR )
     root = "RayGenerationKHR";
   else if( v == SPV_REFLECT_SHADER_STAGE_ANY_HIT_BIT_KHR )

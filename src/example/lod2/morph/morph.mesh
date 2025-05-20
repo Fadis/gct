@@ -20,9 +20,9 @@ layout(triangles, max_vertices = 96, max_primitives = 32) out;
 layout (location = 0) out vec4 output_position[];
 
 struct task_data {
-  uint meshlet_index[ 32 ];
   uint instance_id;
   uint primitive_id;
+  uint task_offset;
 };
 taskPayloadSharedEXT task_data td;
 
@@ -33,7 +33,7 @@ void main() {
 
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
-  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  const uint meshlet_id = gl_WorkGroupID.x + 32u * td.task_offset;
   const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
   
   const uint output_primitive_id = gl_LocalInvocationID.x;

@@ -46,16 +46,20 @@ void main() {
   const vec2 screen_space_size_xy = screen_space_aabb.max.xy - screen_space_aabb.min.xy;
   const float screen_space_size = screen_space_size_xy.x * screen_space_size_xy.y * 0.25;
 
-  uint lod_id = 0u;
-  inst = instance_resource_index[ id.inst + lod_id ];
+  uint upper_lod_id = 0u;
+  uint lower_lod_id = 0u;
+  inst = instance_resource_index[ id.inst + lower_lod_id ];
   float lod_morph_blend = 1.0;
   while( inst.lowest_lod == 0 && inst.coverage >= screen_space_size ) {
-    lod_id++;
-    float upper_coverage = inst.coverage; 
-    float lower_coverage = instance_resource_index[ id.inst + lod_id ].coverage;
+    upper_lod_id = lower_lod_id;
+    lower_lod_id++;
+    float upper_coverage = inst.coverage;
+    float lower_coverage = instance_resource_index[ id.inst + lower_lod_id ].coverage;
     lod_morph_blend = min( max( ( screen_space_size - lower_coverage )/( upper_coverage - lower_coverage ), 0.0 ), 1.0 );
-    inst = instance_resource_index[ id.inst + lod_id ];
+    inst = instance_resource_index[ id.inst + lower_lod_id ];
   }
+  inst = instance_resource_index[ id.inst + upper_lod_id ];
+  const uint lod_id  = upper_lod_id;
   td.lod_morph_blend = ( inst.lowest_lod == 0 ) ? lod_morph_blend : 1.0;
 
   const uint visibility = last_visibility_pool[ inst.visibility ];

@@ -244,6 +244,26 @@ namespace gct {
           }
         }
       }
+      else if(
+        stage.back().get_shader_module() &&
+        stage.back().get_shader_module()->get_props().get_reflection()->shader_stage == SpvReflectShaderStageFlagBits::SPV_REFLECT_SHADER_STAGE_MESH_BIT_EXT
+      ) {
+        const SpvReflectEntryPoint *entry_point = stage.back().get_shader_module()->get_props().get_reflection()->entry_points;
+        if( entry_point ) {
+          if(
+            entry_point->local_size.x != 0 &&
+            entry_point->local_size.y != 0 &&
+            entry_point->local_size.z != 0 &&
+            dim == glm::ivec3( 0, 0, 0 )
+          ) {
+            set_dim( glm::ivec3(
+              entry_point->local_size.x,
+              entry_point->local_size.y,
+              entry_point->local_size.z
+            ) );
+          }
+        }
+      }
     }
     return *this;
   }

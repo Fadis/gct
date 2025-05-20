@@ -26,7 +26,8 @@ struct common_sample_setup {
     const std::vector< const char* > &device_extensions,
     const descriptor_pool_create_info_t &dpci,
     bool enable_glfw = true,
-    bool enable_device_address = false
+    bool enable_device_address = false,
+    bool enable_gltf =  true
   );
   std::string walk_state_filename;
   std::string model_filename;

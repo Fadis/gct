@@ -1,0 +1,41 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// このシェーダーからは最大で96頂点32プリミティブの三角形を出力する
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+// 頂点属性0に頂点の色を出力する
+layout (location = 0) out vec4 output_color[];
+
+void main() {
+  // 96頂点32プリミティブを出力する事を宣言する
+  SetMeshOutputsEXT( 96, 32 );
+
+  // 自身がローカルワークグループの中で何スレッド目かを取得する
+  const uint i = gl_LocalInvocationID.x;
+
+  // 頂点のスクリーン座標系での座標をセットする
+  gl_MeshVerticesEXT[ i * 3u + 0u ].gl_Position = vec4( i/16.0 - 1.0, 0, 0, 1 );
+  gl_MeshVerticesEXT[ i * 3u + 1u ].gl_Position = vec4( i/16.0 - 1.0, 1, 0, 1 );
+  gl_MeshVerticesEXT[ i * 3u + 2u ].gl_Position = vec4( (i+1)/16.0 - 1.0, 0, 0, 1 );
+
+  // 頂点の色をセットする
+  output_color[ i * 3u + 0u ] = vec4( 0, 0, 1, 1 );
+  output_color[ i * 3u + 1u ] = vec4( 0, 1, 0, 1 );
+  output_color[ i * 3u + 2u ] = vec4( 1, 0, 0, 1 );
+
+  // 上でセットした3つの頂点で1つの三角形になるという情報をセットする
+  gl_PrimitiveTriangleIndicesEXT[ i ] = uvec3(
+    i * 3u + 0u,
+    i * 3u + 1u,
+    i * 3u + 2u
+  );
+}
+

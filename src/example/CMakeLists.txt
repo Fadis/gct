@@ -95,6 +95,15 @@ subdirs(
   meshlet_frustum_culling
   lod
   lod2
+  prepare_mesh_shader
+  simple_mesh_shader1
+  simple_mesh_shader2
+  simple_mesh_shader3
+  simple_mesh_shader4
+  simple_mesh_shader5
+  simple_mesh_shader6
+  task_shader
+  task_payload
 )
 if( DXC_FOUND )
 subdirs(

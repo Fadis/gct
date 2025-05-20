@@ -1,0 +1,25 @@
+#version 460
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 1つのローカルワークグループには1スレッドが含まれる
+layout(local_size_x = 1, local_size_y = 1 ) in;
+
+// このシェーダーからは最大で3頂点1プリミティブの三角形を出力する
+layout(triangles, max_vertices = 3, max_primitives = 1) out;
+
+void main() {
+  // 3頂点1プリミティブを出力する事を宣言する
+  // これでgl_MeshVerticesEXTの0から2要素目とgl_PrimitiveTriangleIndicesEXTの0要素目に書き込めるようになる
+  SetMeshOutputsEXT( 3, 1 );
+
+  // 頂点のスクリーン座標系での座標をセットする
+  gl_MeshVerticesEXT[ 0u ].gl_Position = vec4( 0, 0, 0, 1 );
+  gl_MeshVerticesEXT[ 1u ].gl_Position = vec4( 0, 1, 0, 1 );
+  gl_MeshVerticesEXT[ 2u ].gl_Position = vec4( 1, 0, 0, 1 );
+
+  // 上でセットした3つの頂点で1つの三角形になるという情報をセットする
+  gl_PrimitiveTriangleIndicesEXT[ 0u ] = uvec3( 0u, 1u, 2u );
+}
+
