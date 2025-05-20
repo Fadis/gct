@@ -1151,8 +1151,8 @@ int main( int argc, const char *argv[] ) {
     command_buffer->wait_for_executed();
     sync.command_buffer->wait_for_executed();
     const auto end_date = std::chrono::high_resolution_clock::now();
-    average = ( average * std::min( frame_counter, 300u ) + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( std::min( frame_counter, 300u ) + 1 );
-    if( frame_counter % 300 == 0 ) {
+    average = ( average * std::min( frame_counter, 60u ) + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( std::min( frame_counter, 60u ) + 1 );
+    if( frame_counter % 60 == 0 ) {
       std::cout << "elapsed : " << average << std::endl;
     }
     glfwPollEvents();
