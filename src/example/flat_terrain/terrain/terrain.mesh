@@ -1,0 +1,107 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_mesh_shader : enable
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+//#define GCT_ENABLE_8BIT_16BIT_STORAGE
+//#include <gct/scene_graph.h>
+//#include <gct/scene_graph/accessor.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/global_uniforms.h>
+
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+layout (location = 0) out vec4 output_position[];
+layout (location = 1) out vec3 output_normal[];
+
+struct task_data {
+  uint meshlet_index[ 32 ];
+  mat4 w2s;
+  uint tasklet_id;
+};
+taskPayloadSharedEXT task_data td;
+
+ivec3 index_to_task_offset( uint v ) {
+  const int x_index = int( v & 0x7 ) - 4;
+  const int y_index = int( ( v >> 3 ) & 0xF ) - 8;
+  const int layer = int( v >> 7 );
+  const bool hole =
+    layer >= 1 &&
+    x_index >= -2 &&
+    x_index < 2 &&
+    y_index >= -4 &&
+    y_index < 4;
+  return
+    hole ?
+    ivec3( 0, 0, -1 ) :
+    ivec3( x_index, y_index, layer );
+}
+
+ivec2 index_to_meshlet_offset( uint v, ivec3 task_offset ) {
+  const int x_index = int( v & 0x7u );
+  const int y_index = int( v >> 3 );
+  return ivec2( x_index + task_offset.x * 8, y_index + task_offset.y * 4 );
+}
+
+ivec3 index_to_primitive_offset( uint v, ivec2 meshlet_offset ) {
+  const int x_index = int( ( v >> 1 ) & 0x3 );
+  const int y_index = int( ( v >> 3 ) & 0x3 );
+  const int triangle_index = int( v & 0x1 );
+  return ivec3( x_index + meshlet_offset.x * 4, y_index + meshlet_offset.y * 4, triangle_index );
+}
+
+const vec2 vertices[6] = vec2[](
+  vec2( 0, 0 ),
+  vec2( 0, 1 ),
+  vec2( 1, 0 ),
+  vec2( 1, 0 ),
+  vec2( 0, 1 ),
+  vec2( 1, 1 )
+);
+
+vec4 index_to_vertex( uint v, uint triangle_id, vec2 primitive_pos, float edge_length ) {
+  vec2 pos = vertices[ v + ( ( triangle_id == 0 ) ? 0 : 3 ) ] * edge_length + primitive_pos;
+  return vec4( pos.x, 0.0, pos.y, 1.0 );
+}
+
+void main() {
+  const float grid_width = 0.5;
+  const vec4 world_center = global_uniforms.eye_pos;
+  const ivec2 center_primitive = ivec2( floor( world_center.xz / grid_width ) );
+  const vec2 aligned_world_center = vec2( center_primitive ) * grid_width;
+
+  const ivec3 task_offset = index_to_task_offset( td.tasklet_id );
+  const ivec2 meshlet_offset = index_to_meshlet_offset( td.meshlet_index[ gl_WorkGroupID.x ], task_offset );
+  const ivec3 primitive_offset = index_to_primitive_offset( gl_LocalInvocationID.x, meshlet_offset );
+  const float edge_length = grid_width * ( 1 << task_offset.z );
+  const vec2 primitive_pos = aligned_world_center + vec2( primitive_offset.xy ) * edge_length;
+
+  const mat4 w2s = td.w2s;
+
+  const uint vertex_offset = gl_LocalInvocationID.x * 3u;
+
+  SetMeshOutputsEXT( 96, 96 / 3 );
+
+  const vec4 wp0 = index_to_vertex( 0u, primitive_offset.z, primitive_pos, edge_length );
+  const vec4 wp1 = index_to_vertex( 1u, primitive_offset.z, primitive_pos, edge_length );
+  const vec4 wp2 = index_to_vertex( 2u, primitive_offset.z, primitive_pos, edge_length );
+
+  gl_MeshVerticesEXT[ vertex_offset ].gl_Position = w2s * wp0;
+  gl_MeshVerticesEXT[ vertex_offset + 1u ].gl_Position = w2s * wp1;
+  gl_MeshVerticesEXT[ vertex_offset + 2u ].gl_Position = w2s * wp2;
+  output_position[ vertex_offset ] = wp0;
+  output_position[ vertex_offset + 1u ] = wp1;
+  output_position[ vertex_offset + 2u ] = wp2;
+  output_normal[ vertex_offset ] = vec3( 0, 1, 0 );
+  output_normal[ vertex_offset + 1u ] = vec3( 0, 1, 0 );
+  output_normal[ vertex_offset + 2u ] = vec3( 0, 1, 0 );
+  gl_PrimitiveTriangleIndicesEXT[ vertex_offset / 3 ] = uvec3( vertex_offset, vertex_offset + 1, vertex_offset + 2 );
+}
+

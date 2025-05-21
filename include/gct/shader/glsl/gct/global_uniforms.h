@@ -25,6 +25,9 @@ layout(set=GCT_SHADER_SCENE_GRAPH_GLOBAL_UNIFORMS_SET_ID, binding = GCT_SHADER_S
   int light;
   int gbuffer;
   int depth;
+  int height_map_tex;
+  int height_normal_tex;
+  int terrain_tex;
 } global_uniforms;
 
 #endif

@@ -6,6 +6,16 @@ struct aabb_type {
   vec4 max;
 };
 
+bool inside( aabb_type aabb, vec4 p ) {
+  return
+    p.x < aabb.max.x &&
+    p.x >= aabb.min.x &&
+    p.y < aabb.max.y &&
+    p.y >= aabb.min.y &&
+    p.z < aabb.max.z &&
+    p.z >= aabb.min.z;
+}
+
 vec4 get_aabb_vertex( aabb_type aabb, uint i ) {
   return vec4(
     ( ( i & 4 ) != 0 ) ? aabb.max.x : aabb.min.x,

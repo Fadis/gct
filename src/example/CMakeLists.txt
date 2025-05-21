@@ -104,6 +104,8 @@ subdirs(
   simple_mesh_shader6
   task_shader
   task_payload
+  flat_terrain
+  height_map_terrain
 )
 if( DXC_FOUND )
 subdirs(
