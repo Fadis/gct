@@ -21,6 +21,9 @@ namespace gct {
     graphics_pipeline_t( graphics_pipeline_t&& ) = default;
     graphics_pipeline_t &operator=( const graphics_pipeline_t& ) = delete;
     graphics_pipeline_t &operator=( graphics_pipeline_t&& ) = default;
+    const pipeline_t &get_pipeline() const {
+      return *this;
+    }
   };
   void to_json( nlohmann::json &root, const graphics_pipeline_t &v );
 }

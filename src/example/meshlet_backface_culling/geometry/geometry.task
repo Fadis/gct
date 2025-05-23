@@ -3,50 +3,79 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
 
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
+// 1つのローカルワークグループには1スレッドが含まれる
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
+// タスクペイロード
 struct task_data {
+  // どのノードの下のどのメッシュを描くかを指定するID
   uint resource_pair_id;
+  // ローカル座標系からワールド座標系への変換行列
   mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
   mat4 l2s;
 };
 taskPayloadSharedEXT task_data td;
 
 void main() {
+  // 描画対象のIDの配列から1要素取り出す
+  // タスクシェーダーのn番目のローカルワークグループはn番目の要素を取り出す
   const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.x ];
+  // メッシュが属すノードの情報を得る
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
   
+  // ローカル座標系からワールド座標系への変換行列 
   const mat4 l2w = matrix_pool[ inst.world_matrix ];
-
+  // ワールド座標系からスクリーン座標系への変換行列
   const mat4 w2s =
     matrix_pool[ global_uniforms.projection_matrix ] *
     matrix_pool[ global_uniforms.camera_matrix ];
+  // ローカル座標系からスクリーン座標系への変換行列
   const mat4 l2s =
     w2s *
     l2w;
+  // 変換行列をタスクペイロードに書く
   td.l2w = l2w;
   td.l2s = l2s;
 
+  // オクルージョンカリングの結果(メッシュが見える位置にあるかどうか)を得る
   const uint visibility = last_visibility_pool[ inst.visibility ];
-  if( visibility == 0u ) return;
-  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
-  const mesh_type mesh = mesh_pool[ prim.mesh ];
-  const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
+  
   uint visible_invocation_count = 0u;
-  for( uint i = 0u; i != invocation_count; ++i ) {
-    const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + i ];
-    const bool visible = ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) );
-    if( visible ) {
-      meshlet_index_pool[ inst.meshlet_index + visible_invocation_count ] = i;
-      visible_invocation_count++;
+  // メッシュが見える位置にある場合
+  if( visibility != 0u ) {
+    // メッシュの情報を取得する
+    const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+    const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+    // メッシュの頂点数を96で割ってメッシュレットの数を求める
+    const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
+    // 各メッシュレットについて
+    for( uint i = 0u; i != invocation_count; ++i ) {
+      // メッシュレットの情報(法錐と頂点座標の平均)を得る
+      const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + i ];
+      // 頂点座標の平均から視点へのベクトルと法錐の軸の内積が事前に求めた閾値を下回る場合、メッシュレットに含まれる全てのプリミティブは視点に対して背面を向けている
+      // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
+      const bool visible = ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) );
+      // メッシュレットが見える可能性があったら
+      if( visible ) {
+        // バッファにメッシュレットのIDを記録
+        meshlet_index_pool[ inst.meshlet_index + visible_invocation_count ] = i;
+        // メッシュシェーダーのローカルワークグループの数をインクリメント
+        visible_invocation_count++;
+      }
     }
+    // 描画対象のIDをタスクペイロードに書く
+    td.resource_pair_id = gl_GlobalInvocationID.x;
   }
-  td.resource_pair_id = gl_GlobalInvocationID.x;
+  // 見える可能性があるメッシュレットの数だけメッシュシェーダーを実行する
   EmitMeshTasksEXT( visible_invocation_count, 1, 1 );
 }
 

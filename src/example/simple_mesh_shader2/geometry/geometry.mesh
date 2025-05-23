@@ -8,7 +8,7 @@
 // 1つのローカルワークグループには1スレッドが含まれる
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
-// このシェーダーからは最大で3頂点1プリミティブの三角形を出力する
+// 1つのローカルワークグループから最大で3頂点1プリミティブの三角形を出力する
 layout(triangles, max_vertices = 3, max_primitives = 1) out;
 
 // 頂点属性0に頂点の色を出力する
@@ -25,9 +25,9 @@ void main() {
   gl_MeshVerticesEXT[ 2u ].gl_Position = vec4( 1, 0, 0, 1 );
 
   // 頂点の色をセットする
-  output_color[ 0u ] = vec4( 0, 0, 1, 1 );
-  output_color[ 1u ] = vec4( 0, 1, 0, 1 );
-  output_color[ 2u ] = vec4( 1, 0, 0, 1 );
+  output_color[ 0u ] = vec4( 0, 0, 1, 1 ); // 青
+  output_color[ 1u ] = vec4( 0, 1, 0, 1 ); // 緑
+  output_color[ 2u ] = vec4( 1, 0, 0, 1 ); // 赤
 
   // 上でセットした3つの頂点で1つの三角形になるという情報をセットする
   gl_PrimitiveTriangleIndicesEXT[ 0u ] = uvec3( 0u, 1u, 2u );

@@ -3,7 +3,12 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
 #extension GL_EXT_shader_16bit_storage : enable
 #extension GL_EXT_shader_8bit_storage : enable
 
@@ -13,71 +18,93 @@
 #include <gct/scene_graph/accessor.h>
 #include <gct/global_uniforms.h>
 
+// 1つのローカルワークグループには32スレッドが含まれる
 layout(local_size_x = 32, local_size_y = 1 ) in;
 
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
 layout(triangles, max_vertices = 96, max_primitives = 32) out;
 
-layout (location = 0) out vec4 output_position[];
-layout (location = 1) out vec3 output_normal[];
-layout (location = 2) out vec3 output_tangent[];
-layout (location = 3) out vec2 output_tex_coord[];
+// 頂点属性
+layout (location = 0) out vec4 output_position[]; // 頂点座標
+layout (location = 1) out vec3 output_normal[]; // 法線
+layout (location = 2) out vec3 output_tangent[]; // 接線
+layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
 layout (location = 4) out vec4 output_optflow[];
-layout (location = 5) flat out vec4 output_id[];
+layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
 layout (location = 6) out vec4 output_previous_position[];
 
+// タスクペイロード
 struct task_data {
+  // どのノードの下のどのメッシュを描くかを指定するID
   uint resource_pair_id;
+  // ローカル座標系からワールド座標系への変換行列
   mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
   mat4 l2s;
 };
 taskPayloadSharedEXT task_data td;
 
 void main() {
+  // 描画対象のID
   const resource_pair_type id = resource_pair[ push_constants.instance + td.resource_pair_id ];
+  // メッシュの情報を取得する
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
+  // 変換行列をタスクペイロードから取り出す
   const mat4 l2w = td.l2w;
   const mat4 l2s = td.l2s;
-  
+
+  // メッシュレットの最大頂点数(32*3=96)
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
+  // n番目のローカルワークグループがn個目のメッシュレットを処理する
   const uint meshlet_id = gl_WorkGroupID.x;
+  // メッシュの頂点数からこのメッシュレットの頂点数を求める
+  // 端数の頂点を扱う最後のメッシュレット以外では96頂点になる
   const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
   
+  // ローカルワークグループのn番目のスレッドはプリミティブの出力先のn番目にプリミティブを書く
   const uint output_primitive_id = gl_LocalInvocationID.x;
+  // ローカルワークグループのn番目のスレッドは頂点の出力際のn*3、n*3+1、n*3+2番目に頂点を書く
   const uint output_vertex_id = output_primitive_id * 3u;
   
+  // メッシュレットの頂点数分の頂点とその1/3の数のプリミティブを出力できるようにする
   SetMeshOutputsEXT( vertex_count, vertex_count / 3 );
 
+  // スレッドのIDがメッシュレットの頂点数以上の場合、そのスレッドは何もしないで終了する
   if( vertex_count <= output_vertex_id ) return; 
   
-
+  // 頂点配列から三角形を構成する3つの頂点の情報を読む
   const vertex_attribute v0 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 0u );
   const vertex_attribute v1 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 1u );
   const vertex_attribute v2 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 2u );
 
+  // 頂点のスクリーン座標系での座標を出力先に書く
   gl_MeshVerticesEXT[ output_vertex_id ].gl_Position = l2s * v0.position;
   gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = l2s * v1.position;
   gl_MeshVerticesEXT[ output_vertex_id + 2u ].gl_Position = l2s * v2.position;
+  // 頂点のワールド座標系での座標を出力先に書く
   output_position[ output_vertex_id ] = l2w * v0.position;
   output_position[ output_vertex_id + 1u ] = l2w * v1.position;
   output_position[ output_vertex_id + 2u ] = l2w * v2.position;
+  // 頂点のワールド座標系での法線を出力先に書く
   output_normal[ output_vertex_id ] = ( l2w * v0.normal ).xyz;
   output_normal[ output_vertex_id + 1u ] = ( l2w * v1.normal ).xyz;
   output_normal[ output_vertex_id + 2u ] = ( l2w * v2.normal ).xyz;
+  // 頂点のワールド座標系での接線を出力先に書く
   output_tangent[ output_vertex_id ] = ( l2w * v0.tangent ).xyz;
   output_tangent[ output_vertex_id + 1u ] = ( l2w * v1.tangent ).xyz;
   output_tangent[ output_vertex_id + 2u ] = ( l2w * v2.tangent ).xyz;
+  // 頂点のテクスチャ座標を出力先に書く
   output_tex_coord[ output_vertex_id ] = v0.tex_coord0.xy;
   output_tex_coord[ output_vertex_id + 1u ] = v1.tex_coord0.xy;
   output_tex_coord[ output_vertex_id + 2u ] = v2.tex_coord0.xy;
-  output_optflow[ output_vertex_id ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ output_vertex_id + 1u ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ output_vertex_id + 2u ] = vec4( 0, 0, 0, 0 );
+  // 頂点のIDにノードのIDとメッシュのIDを書いておく
   output_id[ output_vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ output_vertex_id + 1u ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ output_vertex_id + 2u ] = vec4( id.inst, id.prim, 0, 0 );
+  // 上の3頂点で1つの三角形プリミティブになる事を書く
   gl_PrimitiveTriangleIndicesEXT[ output_primitive_id ] = uvec3( output_vertex_id, output_vertex_id + 1, output_vertex_id + 2 );
 }
 

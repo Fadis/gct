@@ -23,6 +23,8 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const bool unknown = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], screen_pos ).w != 1.0;
+  // 入力画像のピクセルに頂点座標が書かれていたらイメージ上でのピクセルの座標を出力
+  // 書かれていなかったら空である事を表す値を出力
   imageStore(
     image_pool_2dua[ nonuniformEXT( push_constants.dest ) ],
     screen_pos,

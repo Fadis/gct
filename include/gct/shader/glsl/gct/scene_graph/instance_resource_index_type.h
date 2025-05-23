@@ -2,8 +2,8 @@
 #define GCT_SHADER_SCENE_GRAPH_INSTANCE_RESOURCE_INDEX_TYPE_H
 
 struct instance_resource_index_type {
-  uint world_matrix;
-  uint visibility;
+  uint world_matrix; // このノードの変換行列
+  uint visibility; // オクルージョンカリングの結果
   uint aabb;
   uint previous_world_matrix;
   uint meshlet_index;

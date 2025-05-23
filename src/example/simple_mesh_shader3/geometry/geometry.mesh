@@ -8,7 +8,7 @@
 // 1つのローカルワークグループには1スレッドが含まれる
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
-// このシェーダーからは最大で96頂点32プリミティブの三角形を出力する
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
 layout(triangles, max_vertices = 96, max_primitives = 32) out;
 
 // 頂点属性0に頂点の色を出力する

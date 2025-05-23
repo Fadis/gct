@@ -21,8 +21,12 @@ uint read_index( accessor_type a, uint i ) {
   return i;
 }
 
+
+// ストレージバッファから頂点の情報を1つ読む
 vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
+  // 情報がなかったらデフォルト値を返す
   if( a.enabled == 0 ) return d;
+  // float型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_FLOAT ) {
     vec4 v = vec4(
       vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride ],
@@ -32,6 +36,7 @@ vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
     );
     return v;
   }
+  // 32bit整数型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_U32 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFFFFFFFu);
     return vec4(
@@ -41,6 +46,7 @@ vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
       ( a.component_count >= 4u ) ? vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] * scale : d.w
     );
   }
+  // 16bit整数型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_U16 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFFFu);
     return vec4(
@@ -50,6 +56,7 @@ vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
       ( a.component_count >= 4u ) ? uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] ) * scale : d.w
     );
   }
+  // 8bit整数型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_U8 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFu);
     return vec4(
@@ -129,9 +136,12 @@ struct vertex_attribute {
 };
 
 
+// 1つの頂点の情報を全て読む
 vertex_attribute read_vertex_attribute( mesh_type mesh, uint i ) {
+  // 頂点インデックスがある場合はインデックスを変換する
   const uint vertex_index = read_index( accessor_pool[ mesh.accessor + 0 ], i );
   vertex_attribute v;
+  // 頂点の情報を読む
   v.position = read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index, vec4( 0.0, 0.0, 0.0, 1.0 ) );
   v.normal = read_vertex( accessor_pool[ mesh.accessor + 2 ], vertex_index, vec4( 0.0, 0.0, 0.0, 1.0 ) );
   v.tangent = read_vertex( accessor_pool[ mesh.accessor + 3 ], vertex_index, vec4( 0.0, 0.0, 0.0, 1.0 ) );

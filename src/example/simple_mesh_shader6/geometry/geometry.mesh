@@ -13,7 +13,7 @@
 // 1つのローカルワークグループには32スレッドが含まれる
 layout(local_size_x = 32, local_size_y = 1 ) in;
 
-// このシェーダーからは最大で96頂点32プリミティブの三角形を出力する
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
 layout(triangles, max_vertices = 96, max_primitives = 32) out;
 
 // 頂点属性0に頂点の色を出力する
@@ -26,6 +26,7 @@ void main() {
   // 自身がローカルワークグループの中で何スレッド目かを取得する
   const uint i = gl_LocalInvocationID.x;
 
+  // 自身が何個目のローカルワークグループに属しているスレッドなのかを取得する
   const uint j = gl_WorkGroupID.x;
 
   // 隣の三角形との間の空白を乱数で決める

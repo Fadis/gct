@@ -8,7 +8,7 @@
 // 1つのローカルワークグループには1スレッドが含まれる
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
-// このシェーダーからは最大で3頂点1プリミティブの三角形を出力する
+// 1つのローカルワークグループから最大で3頂点1プリミティブの三角形を出力する
 layout(triangles, max_vertices = 3, max_primitives = 1) out;
 
 void main() {

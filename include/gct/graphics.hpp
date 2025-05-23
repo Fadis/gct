@@ -64,6 +64,9 @@ namespace gct {
       get_push_constant().data()->*((*pcmp)[ name ]) = value;
       return *this;
     }
+    const std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > &get_descriptor_set() const {
+      return descriptor_set;
+    }
   private:
     std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
     std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > descriptor_set;

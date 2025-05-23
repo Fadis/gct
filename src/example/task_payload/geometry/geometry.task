@@ -2,8 +2,11 @@
 
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
+
+// メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
 
+// 1つのローカルワークグループには1スレッドが含まれる
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
 // タスクペイロード
@@ -15,6 +18,7 @@ taskPayloadSharedEXT task_data td;
 void main() {
   // タスクペイロードに赤をセットする
   td.color = vec4( 1, 0.1, 0.1, 1 );
+  // メッシュシェーダーのローカルワークグループを4個実行する
   EmitMeshTasksEXT( 4, 1, 1 );
 }
 

@@ -327,7 +327,7 @@ int main( int argc, const char *argv[] ) {
   );
   gct::gltf::gltf2 doc2(
     gct::gltf::gltf2_create_info()
-      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/../../../gltf/bunny.gltf" )
+      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/../../../gltf/bunny2.gltf" )
       .set_graph( sg )
       .set_root( sg->get_root_node() )
       .set_aspect_ratio( float( res.width )/float( res.height ) )

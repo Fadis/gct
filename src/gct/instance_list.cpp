@@ -423,7 +423,9 @@ void instance_list::operator()(
     compiled( rec, 0u, 32u, draw_list.size(), 1u );
   }
   else {
+    // push constantsにresource_pairの何要素目から読むべきかを書く
     setup_resource_pair_buffer( false, compiled );
+    // 描画対象の数だけタスクシェーダーのローカルワークグループを実行
     compiled( rec, 0u, draw_list.size(), 1u, 1u );
   }
 }

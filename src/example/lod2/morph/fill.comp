@@ -19,9 +19,11 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 void main()  {
+  // ボロノイ図からどのピクセルの値をコピーすべきかを得る
   const ivec2 dest_pos = ivec2( gl_GlobalInvocationID.xy );
   const ivec2 src_pos = decode_pos_2d( imageLoad( image_pool_2dua[ nonuniformEXT( push_constants.voronoi ) ], dest_pos ).x );
 
+  // ピクセルをコピーする
   const vec4 position = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], src_pos );
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], dest_pos, vec4( position.xyz, 1.0 ) );
 }

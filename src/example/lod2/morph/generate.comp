@@ -23,24 +23,25 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 void main()  {
+  // メッシュの情報を得る
   const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.y ];
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
   const primitive_resource_index_type prim = primitive_resource_index[ inst.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
   
+  // 頂点数より多いスレッドが起動されていたら過剰な分はreturnさせる
   uint vertex_id = gl_GlobalInvocationID.x;
   if( vertex_id >= mesh.unique_vertex_count ) return;
   
+  // 頂点のテクスチャ座標を得る
   const accessor_type texcoord_accessor = accessor_pool[ mesh.accessor + 4u ];
-  const accessor_type position_accessor = accessor_pool[ mesh.accessor + 1u ];
   const accessor_type morph_accessor = accessor_pool[ mesh.accessor + 8u ];
-  
-  vec4 position = read_vertex( position_accessor, vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
-
   const vec4 texcoord = read_vertex( texcoord_accessor, vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
-
+  
+  // fill済みのイメージから頂点座標をサンプリングする
   const vec4 morph = texture( texture_pool_2d[ push_constants.position ], texcoord.xy );
 
+  // 頂点モーフィング用の頂点配列にテクスチャから得た頂点座標を書く
   write_vertex( morph_accessor, vertex_id, vec4( morph.xyz, 1.0 ) );
 }
 

@@ -18,6 +18,8 @@
 #include <gct/pipeline_cache.hpp>
 #include <gct/pipeline_layout_create_info.hpp>
 #include <gct/pipeline_layout.hpp>
+#include <gct/pipeline.hpp>
+#include <gct/graphics_pipeline.hpp>
 #include <gct/graphics.hpp>
 #include <gct/image_filter.hpp>
 #include <gct/glfw.hpp>
@@ -136,7 +138,9 @@ int main( int argc, const char *argv[] ) {
     gct::blocking_timer frame_rate;
     {
       {
+        // コマンドバッファの記録を開始
         auto rec = command_buffer->begin();
+        // レンダーパスを開始
         auto render_pass_token = rec.begin_render_pass(
           output.get_render_pass_begin_info( 0 ),
           vk::SubpassContents::eInline
@@ -145,7 +149,13 @@ int main( int argc, const char *argv[] ) {
         rec->setScissor( 0, 1, &output.get_scissor() );
         rec->setCullMode( vk::CullModeFlagBits::eBack );
         rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
-        geometry( rec, 0, 1, 1, 1 );
+        // タスクシェーダーとメッシュシェーダーを使うグラフィクスパイプラインをbind
+        rec->bindPipeline(
+          vk::PipelineBindPoint::eGraphics,
+          *geometry.get_pipeline()->get_pipeline()
+        );
+        // ローカルワークグループ1個で実行
+        rec->drawMeshTasksEXT( 1, 1, 1 );
       }
       command_buffer->execute(
         gct::submit_info_t()

@@ -519,7 +519,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   //if( shader_mask ) fs_flag = shader_flag_t( shader_mask );
   p.set_fs_flag( fs_flag );
 
-  std::cout << "material.doubleSided " << material.doubleSided << std::endl;
   p.set_cull( !material.doubleSided );
   p.set_blend( material.alphaMode == fx::gltf::Material::AlphaMode::Blend );
   p.set_vertex_input_binding( vertex_input_binding );
@@ -712,10 +711,10 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     if( rimp.has( "emissive_rgb_to_xyz" ) ) { //////
       ri.data()->*rimp[ "emissive_rgb_to_xyz" ] = std::uint32_t( *rgb_to_xyz->second );
     }
-    if( rimp.has( "cull" ) ) {
-      std::cout << "cull " << p.cull << std::endl;
-      ri.data()->*rimp[ "cull" ] = p.cull ? 1u : 0u;
-    }
+  }
+  // glTFのmeshにdoubleSidedがついている場合0、ついていない場合1を書く
+  if( rimp.has( "cull" ) ) {
+    ri.data()->*rimp[ "cull" ] = p.cull ? 1u : 0u;
   }
   p.aabb.set_min( glm::vec4(
     min[ 0 ],
@@ -858,24 +857,30 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
           }
         }
       }
+      // 最初のアクセサのインデックスを記録
       if( mmp.has( "accessor" ) ) {
         m.data()->*mmp[ "accessor" ] = *accessor_desc;
       }
+      // 頂点数を記録
       if( mmp.has( "vertex_count" ) ) {
         m.data()->*mmp[ "vertex_count" ] = std::uint32_t( vertex_count );
       }
+      // トポロジを記録
       if( mmp.has( "topology" ) ) {
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
       }
+      // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
       if( props.graph->get_resource()->meshlet ) {
         const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );
         if( mmp.has( "meshlet" ) ) {
           m.data()->*mmp[ "meshlet" ] = *meshlet_desc;
         }
       }
+      // ユニークな頂点の数を記録(頂点インデックスが使われる場合頂点数と異なる値になる)
       if( mmp.has( "unique_vertex_count" ) ) {
         m.data()->*mmp[ "unique_vertex_count" ] = std::uint32_t( unique_vertex_count );
       }
+      // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
     }
   }

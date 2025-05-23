@@ -3,9 +3,16 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
 #extension GL_EXT_shader_16bit_storage : enable
 #extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
@@ -14,88 +21,117 @@
 #include <gct/scene_graph/accessor.h>
 #include <gct/global_uniforms.h>
 
+// 1つのローカルワークグループには32スレッドが含まれる
 layout(local_size_x = 32, local_size_y = 1 ) in;
 
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
 layout(triangles, max_vertices = 96, max_primitives = 32) out;
 
-layout (location = 0) out vec4 output_position[];
-layout (location = 1) out vec3 output_normal[];
-layout (location = 2) out vec3 output_tangent[];
-layout (location = 3) out vec2 output_tex_coord[];
+// 頂点属性
+layout (location = 0) out vec4 output_position[]; // 頂点座標
+layout (location = 1) out vec3 output_normal[]; // 法線
+layout (location = 2) out vec3 output_tangent[]; // 接線
+layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
 layout (location = 4) out vec4 output_optflow[];
-layout (location = 5) flat out vec4 output_id[];
+layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
 layout (location = 6) out vec4 output_previous_position[];
 
+// タスクペイロード
 struct task_data {
+  // 見えると判断されたメッシュレットのID
   uint meshlet_index[ 32 ];
+  // ローカル座標系からワールド座標系への変換行列
   mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
   mat4 l2s;
+  // 使用するLoDレベルの情報のID
   uint instance_id;
+  // 使用するメッシュのID
   uint primitive_id;
 };
 taskPayloadSharedEXT task_data td;
 
 void main() {
+  // メッシュの情報を取得する
   const primitive_resource_index_type prim = primitive_resource_index[ td.primitive_id ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
+  // 変換行列をタスクペイロードから取り出す
   const mat4 l2w = td.l2w;
   const mat4 l2s = td.l2s;
   
+  // メッシュレットの最大頂点数(32*3=96)
   const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
 
+  // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
   const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  // メッシュの頂点数からこのメッシュレットの頂点数を求める
+  // 端数の頂点を扱う最後のメッシュレット以外では96頂点になる
   const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
   
-  const uint output_primitive_id = gl_LocalInvocationID.x;
-  const uint output_vertex_id = output_primitive_id * 3u;
-
-  const bool in_range = vertex_count > output_vertex_id;
+  // スレッドが担当するプリミティブが存在するかを調べる
+  // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
+  const uint primitive_id = gl_LocalInvocationID.x;
+  const uint vertex_id = primitive_id * 3u;
+  const bool in_range = vertex_count > vertex_id;
   
-  const uint input_primitive_id = meshlet_id * 32u + output_primitive_id;
+  // このスレッドが処理すべき3つの頂点の最初の要素までのオフセットを求める
+  const uint input_primitive_id = meshlet_id * 32u + primitive_id;
   
+  // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
   const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
   const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
   const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
 
+  // 頂点の座標をローカル座標系からワールド座標系に変換する
   const vec4 wp0 = l2w * v0.position;
   const vec4 wp1 = l2w * v1.position;
   const vec4 wp2 = l2w * v2.position;
  
+  // 頂点座標からワールド座標系での面の法線を求める
   const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
 
+  // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
+  // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
   const bool visible = in_range && ( prim.cull == 0 || ( dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0 ) );
  
+  // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
+  // 自身よりスレッドIDが小さいスレッドの中で担当するプリミティブが見えると判断された数の3倍
+  // この値がこのスレッドが出力の何番目に頂点を書くべきかになる
   const uint filtered_vertex_offset = subgroupExclusiveAdd( visible ? 3 : 0 );
 
+  // 見える頂点の数分の頂点とプリミティブを書けるようにする
   SetMeshOutputsEXT( filtered_vertex_count, filtered_vertex_count / 3 );
 
+  // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
   if( !visible ) return;
 
+  // 頂点のスクリーン座標系での座標を出力先に書く
   gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = l2s * v0.position;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = l2s * v1.position;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = l2s * v2.position;
+  // 頂点のワールド座標系での座標を出力先に書く
   output_position[ filtered_vertex_offset ] = wp0;
   output_position[ filtered_vertex_offset + 1u ] = wp1;
   output_position[ filtered_vertex_offset + 2u ] = wp2;
+  // 頂点のワールド座標系での法線を出力先に書く
   output_normal[ filtered_vertex_offset ] = ( l2w * (( v0.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v0.normal ) ).xyz;
   output_normal[ filtered_vertex_offset + 1u ] = ( l2w * (( v1.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v1.normal ) ).xyz;
   output_normal[ filtered_vertex_offset + 2u ] = ( l2w * (( v2.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v2.normal ) ).xyz;
-  output_normal[ filtered_vertex_offset + 1u ] = ( l2w * v1.normal ).xyz;
-  output_normal[ filtered_vertex_offset + 2u ] = ( l2w * v2.normal ).xyz;
+  // 頂点のワールド座標系での接線を出力先に書く
   output_tangent[ filtered_vertex_offset ] = ( l2w * v0.tangent ).xyz;
   output_tangent[ filtered_vertex_offset + 1u ] = ( l2w * v1.tangent ).xyz;
   output_tangent[ filtered_vertex_offset + 2u ] = ( l2w * v2.tangent ).xyz;
+  // 頂点のテクスチャ座標を出力先に書く
   output_tex_coord[ filtered_vertex_offset ] = v0.tex_coord0.xy;
   output_tex_coord[ filtered_vertex_offset + 1u ] = v1.tex_coord0.xy;
   output_tex_coord[ filtered_vertex_offset + 2u ] = v2.tex_coord0.xy;
-  output_optflow[ filtered_vertex_offset ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ filtered_vertex_offset + 1u ] = vec4( 0, 0, 0, 0 );
-  output_optflow[ filtered_vertex_offset + 2u ] = vec4( 0, 0, 0, 0 );
+  // 頂点のIDにノードのIDとメッシュのIDを書いておく
   output_id[ filtered_vertex_offset ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
   output_id[ filtered_vertex_offset + 1u ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
   output_id[ filtered_vertex_offset + 2u ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
+  // 上の3頂点で1つの三角形プリミティブになる事を書く
   gl_PrimitiveTriangleIndicesEXT[ filtered_vertex_offset / 3 ] = uvec3( filtered_vertex_offset, filtered_vertex_offset + 1, filtered_vertex_offset + 2 );
 }
 
