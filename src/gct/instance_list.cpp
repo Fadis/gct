@@ -167,54 +167,16 @@ void instance_list::operator()(
   }
 }
 void instance_list::update_device_side_list() {
-  const auto mp = resource->resource_pair->get_member_pointer();
-  std::vector< std::uint8_t > temp( mp.get_aligned_size(), 0u );
-  {
-    device_side_list = resource->resource_pair->allocate( draw_list.size() );
-    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
-      const auto inst = resource->inst.get( draw_list[ i ].inst );
-      if( !inst ) throw -1;
-      const auto prim = resource->prim.get( draw_list[ i ].prim );
-      if( !prim ) throw -1;
-      if( mp.has( "instance" ) ) {
-        temp.data()->*mp[ "instance" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
-      }
-      else if( mp.has( "inst" ) ) {
-        temp.data()->*mp[ "inst" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
-      }
-      if( mp.has( "primitive" ) ) {
-        temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
-      }
-      else if( mp.has( "prim" ) ) {
-        temp.data()->*mp[ "prim" ] = *prim->descriptor.resource_index;
-      }
-      if( mp.has( "offset" ) ) {
-        temp.data()->*mp[ "offset" ] = 0u;
-      }
-      resource->resource_pair->set( device_side_list, i, temp.data(), std::next( temp.data(), temp.size() ) );
-    }
-  }
-  if( props.parallel_mode3 ) {
-    std::uint32_t total_task_count = 0u;
-    std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, std::uint32_t > task_count;
-    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
-      const auto inst = resource->inst.get( draw_list[ i ].inst );
-      const auto prim = resource->prim.get( draw_list[ i ].prim );
-      if( !prim ) throw -1;
-      const std::uint32_t tc = prim->count / ( 3u * 32u * 32u ) + (( prim->count % ( 3u * 32u * 32u ) ) ? 1u : 0u );
-      inst->set_mesh_task_offset( total_task_count );
-      inst->set_mesh_task_count( tc );
-      task_count[ draw_list[ i ].prim ] = tc;
-      total_task_count += tc;
-    }
-    meshlet_list = resource->resource_pair->allocate( total_task_count );
-    std::uint32_t current_task_offset = 0u;
-    for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
-      const auto inst = resource->inst.get( draw_list[ i ].inst );
-      if( !inst ) throw -1;
-      const auto prim = resource->prim.get( draw_list[ i ].prim );
-      if( !prim ) throw -1;
-      for( std::uint32_t task_index = 0u; task_index != task_count[ draw_list[ i ].prim ]; ++task_index ) {
+  if( resource->resource_pair ) {
+    const auto mp = resource->resource_pair->get_member_pointer();
+    std::vector< std::uint8_t > temp( mp.get_aligned_size(), 0u );
+    {
+      device_side_list = resource->resource_pair->allocate( draw_list.size() );
+      for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+        const auto inst = resource->inst.get( draw_list[ i ].inst );
+        if( !inst ) throw -1;
+        const auto prim = resource->prim.get( draw_list[ i ].prim );
+        if( !prim ) throw -1;
         if( mp.has( "instance" ) ) {
           temp.data()->*mp[ "instance" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
         }
@@ -228,17 +190,57 @@ void instance_list::update_device_side_list() {
           temp.data()->*mp[ "prim" ] = *prim->descriptor.resource_index;
         }
         if( mp.has( "offset" ) ) {
-          temp.data()->*mp[ "offset" ] = task_index;
+          temp.data()->*mp[ "offset" ] = 0u;
         }
-        resource->resource_pair->set(
-          meshlet_list,
-          current_task_offset + task_index,
-          temp.data(), std::next( temp.data(), temp.size() )
-        );
+        resource->resource_pair->set( device_side_list, i, temp.data(), std::next( temp.data(), temp.size() ) );
       }
-      current_task_offset += task_count[ draw_list[ i ].prim ];
     }
-    meshlet_list_size = total_task_count;
+    if( props.parallel_mode3 ) {
+      std::uint32_t total_task_count = 0u;
+      std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, std::uint32_t > task_count;
+      for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+        const auto inst = resource->inst.get( draw_list[ i ].inst );
+        const auto prim = resource->prim.get( draw_list[ i ].prim );
+        if( !prim ) throw -1;
+        const std::uint32_t tc = prim->count / ( 3u * 32u * 32u ) + (( prim->count % ( 3u * 32u * 32u ) ) ? 1u : 0u );
+        inst->set_mesh_task_offset( total_task_count );
+        inst->set_mesh_task_count( tc );
+        task_count[ draw_list[ i ].prim ] = tc;
+        total_task_count += tc;
+      }
+      meshlet_list = resource->resource_pair->allocate( total_task_count );
+      std::uint32_t current_task_offset = 0u;
+      for( std::uint32_t i = 0u; i != draw_list.size(); ++i ) {
+        const auto inst = resource->inst.get( draw_list[ i ].inst );
+        if( !inst ) throw -1;
+        const auto prim = resource->prim.get( draw_list[ i ].prim );
+        if( !prim ) throw -1;
+        for( std::uint32_t task_index = 0u; task_index != task_count[ draw_list[ i ].prim ]; ++task_index ) {
+          if( mp.has( "instance" ) ) {
+            temp.data()->*mp[ "instance" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
+          }
+          else if( mp.has( "inst" ) ) {
+            temp.data()->*mp[ "inst" ] = std::uint32_t( *inst->descriptor.resource_index + inst->lod_id );
+          }
+          if( mp.has( "primitive" ) ) {
+            temp.data()->*mp[ "primitive" ] = *prim->descriptor.resource_index;
+          }
+          else if( mp.has( "prim" ) ) {
+            temp.data()->*mp[ "prim" ] = *prim->descriptor.resource_index;
+          }
+          if( mp.has( "offset" ) ) {
+            temp.data()->*mp[ "offset" ] = task_index;
+          }
+          resource->resource_pair->set(
+            meshlet_list,
+            current_task_offset + task_index,
+            temp.data(), std::next( temp.data(), temp.size() )
+          );
+        }
+        current_task_offset += task_count[ draw_list[ i ].prim ];
+      }
+      meshlet_list_size = total_task_count;
+    }
   }
 }
 

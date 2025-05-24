@@ -337,28 +337,41 @@ scene_graph::scene_graph(
   }
 
   resource->vertex.reset( new vertex_buffer_pool( vbpci ) );
-  std::vector< write_descriptor_set_t > u{
-    { "primitive_resource_index", resource->primitive_resource_index->get_buffer() },
-    { "instance_resource_index", resource->instance_resource_index->get_buffer() },
-    { "visibility_pool", resource->visibility->get_buffer() },
-    { "last_visibility_pool", resource->last_visibility->get_buffer() },
-    { "matrix_pool", resource->matrix->get_buffer() },
-    { "aabb_pool", resource->aabb->get_buffer() },
-    { "resource_pair", resource->resource_pair->get_buffer() }
-  };
-  if( resource->light ) {
+  std::vector< write_descriptor_set_t > u;
+  if( resource->primitive_resource_index && resource->descriptor_set->has( "primitive_resource_index" ) ) {
+    u.push_back( { "primitive_resource_index", resource->primitive_resource_index->get_buffer() } );
+  }
+  if( resource->instance_resource_index && resource->descriptor_set->has( "instance_resource_index" ) ) {
+    u.push_back( { "instance_resource_index", resource->instance_resource_index->get_buffer() } );
+  }
+  if( resource->visibility && resource->descriptor_set->has( "visibility_pool" ) ) {
+    u.push_back( { "visibility_pool", resource->visibility->get_buffer() } );
+  }
+  if( resource->last_visibility && resource->descriptor_set->has( "last_visibility_pool" ) ) {
+    u.push_back( { "last_visibility_pool", resource->last_visibility->get_buffer() } );
+  }
+  if( resource->matrix && resource->descriptor_set->has( "matrix_pool" ) ) {
+    u.push_back( { "matrix_pool", resource->matrix->get_buffer() } );
+  }
+  if( resource->aabb && resource->descriptor_set->has( "aabb_pool" ) ) {
+    u.push_back( { "aabb_pool", resource->aabb->get_buffer() } );
+  }
+  if( resource->resource_pair && resource->descriptor_set->has( "resource_pair" ) ) {
+    u.push_back( { "resource_pair", resource->resource_pair->get_buffer() } );
+  }
+  if( resource->light && resource->descriptor_set->has( "light_pool" ) ) {
     u.push_back( { "light_pool", resource->light->get_buffer() } );
   }
-  if( resource->accessor ) {
+  if( resource->accessor && resource->descriptor_set->has( "accessor_pool" ) ) {
     u.push_back( { "accessor_pool", resource->accessor->get_buffer() } );
   }
-  if( resource->mesh ) {
+  if( resource->mesh && resource->descriptor_set->has( "mesh_pool" ) ) {
     u.push_back( { "mesh_pool", resource->mesh->get_buffer() } );
   }
-  if( resource->meshlet ) {
+  if( resource->meshlet && resource->descriptor_set->has( "meshlet_pool" ) ) {
     u.push_back( { "meshlet_pool", resource->meshlet->get_buffer() } );
   }
-  if( resource->meshlet_index ) {
+  if( resource->meshlet_index && resource->descriptor_set->has( "meshlet_index_pool" ) ) {
     u.push_back( { "meshlet_index_pool", resource->meshlet_index->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
