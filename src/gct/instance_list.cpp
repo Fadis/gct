@@ -251,10 +251,10 @@ void instance_list::setup_resource_pair_buffer(
   if( pcmp ) {
     std::vector< std::uint8_t > push_constant( resource->push_constant_mp->get_aligned_size(), 0u );
     if( pcmp->has( "offset" ) ) {
-      push_constant.data() ->* (*pcmp)[ "offset" ] = *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "offset" ] = device_side_list ? *device_side_list : 0u;
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data() ->* (*pcmp)[ "instance" ] = *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "instance" ] = device_side_list ? *device_side_list : 0u;
     }
     if( pcmp->has( "count" ) ) {
       push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( draw_list.size() );
@@ -279,10 +279,10 @@ void instance_list::setup_resource_pair_buffer(
   if( pcmp ) {
     std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
     if( pcmp->has( "offset" ) ) {
-      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? ( meshlet_list ? *meshlet_list : 0u ) : ( device_side_list ? *device_side_list : 0u );
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? ( meshlet_list ? *meshlet_list : 0u ) : ( device_side_list ? *device_side_list : 0u );
     }
     if( pcmp->has( "count" ) ) {
       push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
@@ -304,10 +304,10 @@ void instance_list::setup_resource_pair_buffer( ///
     const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
     const std::uint32_t dli = std::distance( draw_list.begin(), i );
     if( pcmp->has( "offset" ) ) {
-      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( device_side_list ? ( *device_side_list + offset ) : offset ) );
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( device_side_list ? ( *device_side_list + offset ) : offset ) );
     }
     if( pcmp->has( "count" ) ) {
       push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
@@ -325,10 +325,10 @@ void instance_list::setup_resource_pair_buffer(
   if( pcmp ) {
     std::vector< std::uint8_t > &push_constant = compiled.get_push_constant();
     if( pcmp->has( "offset" ) ) {
-      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? *meshlet_list : *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "offset" ] = use_meshlet ? ( meshlet_list ? *meshlet_list : 0u ) : ( device_side_list ? *device_side_list : 0u );
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? *meshlet_list : *device_side_list;
+      push_constant.data() ->* (*pcmp)[ "instance" ] = use_meshlet ? ( meshlet_list ? *meshlet_list : 0u ) : ( device_side_list ? *device_side_list : 0u );
     }
     if( pcmp->has( "count" ) ) {
       push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? meshlet_list_size : draw_list.size() );
@@ -350,10 +350,10 @@ void instance_list::setup_resource_pair_buffer( ///
     const std::size_t offset = use_meshlet ? inst->mesh_task_offset : std::distance( draw_list.begin(), i );
     const std::uint32_t dli = std::distance( draw_list.begin(), i );
     if( pcmp->has( "offset" ) ) {
-      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+      push_constant.data() ->* (*pcmp)[ "offset" ] = std::uint32_t( use_meshlet ? ( meshlet_list ? ( *meshlet_list + offset ) : offset ) : ( device_side_list ? ( *device_side_list + offset ) : offset ) );
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( *meshlet_list + offset ): ( *device_side_list + offset ) );
+      push_constant.data() ->* (*pcmp)[ "instance" ] = std::uint32_t( use_meshlet ? ( meshlet_list ? ( *meshlet_list + offset ) : offset ) : ( device_side_list ? ( *device_side_list + offset ) : offset ) );
     }
     if( pcmp->has( "count" ) ) {
       push_constant.data() ->* (*pcmp)[ "count" ] = std::uint32_t( use_meshlet ? inst->mesh_task_count : 1u );
