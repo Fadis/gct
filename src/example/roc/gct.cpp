@@ -1,6 +1,5 @@
 #include <iostream>
 #include <algorithm>
-#include <unordered_set>
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -158,7 +157,7 @@ int main( int argc, const char *argv[] ) {
       .set_height( res.height )
       .set_layer( 0u )
       .set_swapchain_image_count( 1u )
-      .set_color_buffer_count( 1u )
+      .set_color_buffer_count( 0u )
       .set_format( vk::Format::eR32G32B32A32Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_external_depth( depth_gbuffer.get_depth_views() )
@@ -476,6 +475,7 @@ int main( int argc, const char *argv[] ) {
     if( walk.camera_moved() ) {
       {
         auto rec = command_buffer->begin();
+        (*sg)( rec );
         rec.copy( global_data, global_uniform );
         rec.transfer_to_graphics_barrier( { global_uniform->get_buffer() }, {} );
         {

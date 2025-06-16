@@ -75,6 +75,9 @@ add_shader( hroc instance_resource_index_pool/read.comp )
 add_shader( hroc visibility_pool/write.comp )
 add_shader( hroc visibility_pool/read.comp )
 
+add_shader( hroc resource_pair/write.comp )
+add_shader( hroc resource_pair/read.comp )
+
 add_shader( hroc gauss/h5_16.comp )
 add_shader( hroc gauss/v5_16.comp )
 add_shader( hroc gauss/h12_32.comp )
