@@ -1,3 +1,4 @@
+#include <boost/asio/executor_work_guard.hpp>
 #include <gct/io_context.hpp>
 #include <gct/deferred_operation.hpp>
 #include <gct/device.hpp>
@@ -7,7 +8,13 @@ namespace gct {
     static boost::asio::io_context io_context;
     return io_context;
   }
-  thread_pool::thread_pool() : keep( new boost::asio::io_context::work( get_io_context() ) ) {
+  thread_pool::thread_pool() :
+#if BOOST_VERSION < 105800
+    keep( new boost::asio::io_context::work( get_io_context() ) )
+#else
+    keep( boost::asio::make_work_guard( get_io_context() ) )
+#endif
+  {
     for( unsigned int i = 0u; i != std::thread::hardware_concurrency(); ++i ) {
       threads.push_back( std::thread( []() {
         get_io_context().run();
