@@ -520,13 +520,13 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   }
   for( const auto &req: rgb_to_xyz_request_list ) {
     rec.convert_image( req.xyz_image->get_factory(), vk::ImageLayout::eGeneral );
-    rec.barrier( {}, { req.rgb_image->get_factory() } );
+    rec.convert_image( req.rgb_image->get_factory(), vk::ImageLayout::eGeneral );
   }
   for( const auto &req: rgb_to_xyz_request_list ) {
     //rec.blit( req.rgb_image->get_factory(), req.xyz_image->get_factory() );
     rec.convert_image( req.xyz_image->get_factory(), vk::ImageLayout::eTransferDstOptimal );
     rec.fill( req.xyz_image->get_factory(), std::array< float, 4u >{ 1.0, 0.0, 0.0, 1.0 } );
-    rec.barrier( {}, { req.xyz_image->get_factory() } );
+    rec.convert_image( req.xyz_image->get_factory(), vk::ImageLayout::eGeneral );
   }
   for( const auto &req: rgb_to_xyz_request_list ) {
   //if( !rgb_to_xyz_request_list.empty() ) {

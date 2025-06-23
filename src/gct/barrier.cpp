@@ -1,7 +1,10 @@
+#include <cstring>
 #include <gct/buffer.hpp>
 #include <gct/image.hpp>
 #include <gct/allocator.hpp>
 #include <gct/device.hpp>
+#include <gct/instance.hpp>
+#include <gct/instance_create_info.hpp>
 #include <gct/command_pool.hpp>
 #include <gct/command_buffer.hpp>
 #include <gct/command_buffer_recorder.hpp>
@@ -40,10 +43,12 @@ namespace gct {
     std::vector< vk::ImageMemoryBarrier > raw_image;
     const auto api_version = get_device( *this ).get_api_version();
     const auto &exts = get_device( *this ).get_activated_extensions();
+    const auto &ils = get_device( *this ).get_factory()->get_props().get_layer();
+    const auto validation = std::find_if( ils.begin(), ils.end(), []( const char *v ){ return std::strcmp( "VK_LAYER_KHRONOS_validation", v ) == 0; } ) != ils.end();
 #ifdef VK_API_VERSION_1_3
-    const bool synchronization2_is_activated = api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end();
+    const bool synchronization2_is_activated = ( api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end() ) && !validation;
 #else
-    const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
+    const bool synchronization2_is_activated = ( exts.find( "VK_KHR_synchronization2" ) != exts.end() ) && !validation;
 #endif
     for( auto &v: image ) {
       // This causes old (older than 1.3.296?) validation layer fails to track image layout randomly.
@@ -124,10 +129,12 @@ namespace gct {
     std::vector< vk::ImageMemoryBarrier > raw_image;
     const auto api_version = get_device( *this ).get_api_version();
     const auto &exts = get_device( *this ).get_activated_extensions();
+    const auto &ils = get_device( *this ).get_factory()->get_props().get_layer();
+    const auto validation = std::find_if( ils.begin(), ils.end(), []( const char *v ){ return std::strcmp( "VK_LAYER_KHRONOS_validation", v ) == 0; } ) != ils.end();
 #ifdef VK_API_VERSION_1_3
-    const bool synchronization2_is_activated = api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end();
+    const bool synchronization2_is_activated = ( api_version >= VK_API_VERSION_1_3 || exts.find( "VK_KHR_synchronization2" ) != exts.end() ) && !validation;
 #else
-    const bool synchronization2_is_activated = exts.find( "VK_KHR_synchronization2" ) != exts.end();
+    const bool synchronization2_is_activated = ( exts.find( "VK_KHR_synchronization2" ) != exts.end() ) && !validation;
 #endif
     for( auto &v: s.image ) {
       // This causes old (older than 1.3.296?) validation layer fails to track image layout randomly.
