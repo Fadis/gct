@@ -1,7 +1,6 @@
 #ifndef GCT_BUFFER_POOL_CREATE_INFO_HPP
 #define GCT_BUFFER_POOL_CREATE_INFO_HPP
 
-#include <memory>
 #include <string>
 #include <filesystem>
 #include <vector>
@@ -31,6 +30,7 @@ struct buffer_pool_create_info {
   buffer_pool_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   allocator_set_t allocator_set;
   std::filesystem::path write_shader;
   std::filesystem::path read_shader;

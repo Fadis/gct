@@ -47,48 +47,6 @@ add_shader( height_map_terrain aabb/world.vert )
 add_shader( height_map_terrain depth/world.frag )
 add_shader( height_map_terrain depth/world.vert )
 
-add_shader( height_map_terrain matrix_pool/write.comp )
-add_shader( height_map_terrain matrix_pool/read.comp )
-add_shader( height_map_terrain matrix_pool/update.comp )
-add_shader( height_map_terrain matrix_pool/copy.comp )
-
-add_shader( height_map_terrain aabb_pool/write.comp )
-add_shader( height_map_terrain aabb_pool/read.comp )
-add_shader( height_map_terrain aabb_pool/update.comp )
-
-add_shader( height_map_terrain image_pool/rgba8.comp )
-add_shader( height_map_terrain image_pool/rgba16.comp )
-add_shader( height_map_terrain image_pool/rgba16f.comp )
-add_shader( height_map_terrain image_pool/rgba32f.comp )
-
-add_shader( height_map_terrain primitive_resource_index_pool/write.comp )
-add_shader( height_map_terrain primitive_resource_index_pool/read.comp )
-
-add_shader( height_map_terrain instance_resource_index_pool/write.comp )
-add_shader( height_map_terrain instance_resource_index_pool/read.comp )
-
-add_shader( height_map_terrain visibility_pool/write.comp )
-add_shader( height_map_terrain visibility_pool/read.comp )
-
-add_shader( height_map_terrain resource_pair/write.comp )
-add_shader( height_map_terrain resource_pair/read.comp )
-
-add_shader( height_map_terrain light_pool/write.comp )
-add_shader( height_map_terrain light_pool/read.comp )
-add_shader( height_map_terrain light_pool/update.comp )
-
-add_shader( height_map_terrain accessor/write.comp )
-add_shader( height_map_terrain accessor/read.comp )
-
-add_shader( height_map_terrain mesh/write.comp )
-add_shader( height_map_terrain mesh/read.comp )
-
-add_shader( height_map_terrain meshlet/write.comp )
-add_shader( height_map_terrain meshlet/read.comp )
-
-add_shader( height_map_terrain meshlet_index/write.comp )
-add_shader( height_map_terrain meshlet_index/read.comp )
-
 add_shader( height_map_terrain gauss/horizontal.comp )
 add_shader( height_map_terrain gauss/vertical.comp )
 

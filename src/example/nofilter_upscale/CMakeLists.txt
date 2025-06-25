@@ -44,36 +44,6 @@ add_shader( nofilter_upscale aabb/world.vert )
 add_shader( nofilter_upscale depth/world.frag )
 add_shader( nofilter_upscale depth/world.vert )
 
-add_shader( nofilter_upscale matrix_pool/write.comp )
-add_shader( nofilter_upscale matrix_pool/read.comp )
-add_shader( nofilter_upscale matrix_pool/update.comp )
-add_shader( nofilter_upscale matrix_pool/copy.comp )
-
-add_shader( nofilter_upscale aabb_pool/write.comp )
-add_shader( nofilter_upscale aabb_pool/read.comp )
-add_shader( nofilter_upscale aabb_pool/update.comp )
-
-add_shader( nofilter_upscale image_pool/rgba8.comp )
-add_shader( nofilter_upscale image_pool/rgba16.comp )
-add_shader( nofilter_upscale image_pool/rgba16f.comp )
-add_shader( nofilter_upscale image_pool/rgba32f.comp )
-
-add_shader( nofilter_upscale primitive_resource_index_pool/write.comp )
-add_shader( nofilter_upscale primitive_resource_index_pool/read.comp )
-
-add_shader( nofilter_upscale instance_resource_index_pool/write.comp )
-add_shader( nofilter_upscale instance_resource_index_pool/read.comp )
-
-add_shader( nofilter_upscale visibility_pool/write.comp )
-add_shader( nofilter_upscale visibility_pool/read.comp )
-
-add_shader( nofilter_upscale resource_pair/write.comp )
-add_shader( nofilter_upscale resource_pair/read.comp )
-
-add_shader( nofilter_upscale light_pool/write.comp )
-add_shader( nofilter_upscale light_pool/read.comp )
-add_shader( nofilter_upscale light_pool/update.comp )
-
 add_shader( nofilter_upscale gauss/horizontal.comp )
 add_shader( nofilter_upscale gauss/vertical.comp )
 

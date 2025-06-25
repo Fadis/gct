@@ -44,36 +44,6 @@ add_shader( half_resolution aabb/world.vert )
 add_shader( half_resolution depth/world.frag )
 add_shader( half_resolution depth/world.vert )
 
-add_shader( half_resolution matrix_pool/write.comp )
-add_shader( half_resolution matrix_pool/read.comp )
-add_shader( half_resolution matrix_pool/update.comp )
-add_shader( half_resolution matrix_pool/copy.comp )
-
-add_shader( half_resolution aabb_pool/write.comp )
-add_shader( half_resolution aabb_pool/read.comp )
-add_shader( half_resolution aabb_pool/update.comp )
-
-add_shader( half_resolution image_pool/rgba8.comp )
-add_shader( half_resolution image_pool/rgba16.comp )
-add_shader( half_resolution image_pool/rgba16f.comp )
-add_shader( half_resolution image_pool/rgba32f.comp )
-
-add_shader( half_resolution primitive_resource_index_pool/write.comp )
-add_shader( half_resolution primitive_resource_index_pool/read.comp )
-
-add_shader( half_resolution instance_resource_index_pool/write.comp )
-add_shader( half_resolution instance_resource_index_pool/read.comp )
-
-add_shader( half_resolution visibility_pool/write.comp )
-add_shader( half_resolution visibility_pool/read.comp )
-
-add_shader( half_resolution resource_pair/write.comp )
-add_shader( half_resolution resource_pair/read.comp )
-
-add_shader( half_resolution light_pool/write.comp )
-add_shader( half_resolution light_pool/read.comp )
-add_shader( half_resolution light_pool/update.comp )
-
 add_shader( half_resolution gauss/horizontal.comp )
 add_shader( half_resolution gauss/vertical.comp )
 

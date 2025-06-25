@@ -44,36 +44,6 @@ add_shader( lrlf_dof aabb/world.vert )
 add_shader( lrlf_dof depth/world.frag )
 add_shader( lrlf_dof depth/world.vert )
 
-add_shader( lrlf_dof matrix_pool/write.comp )
-add_shader( lrlf_dof matrix_pool/read.comp )
-add_shader( lrlf_dof matrix_pool/update.comp )
-add_shader( lrlf_dof matrix_pool/copy.comp )
-
-add_shader( lrlf_dof aabb_pool/write.comp )
-add_shader( lrlf_dof aabb_pool/read.comp )
-add_shader( lrlf_dof aabb_pool/update.comp )
-
-add_shader( lrlf_dof image_pool/rgba8.comp )
-add_shader( lrlf_dof image_pool/rgba16.comp )
-add_shader( lrlf_dof image_pool/rgba16f.comp )
-add_shader( lrlf_dof image_pool/rgba32f.comp )
-
-add_shader( lrlf_dof primitive_resource_index_pool/write.comp )
-add_shader( lrlf_dof primitive_resource_index_pool/read.comp )
-
-add_shader( lrlf_dof instance_resource_index_pool/write.comp )
-add_shader( lrlf_dof instance_resource_index_pool/read.comp )
-
-add_shader( lrlf_dof visibility_pool/write.comp )
-add_shader( lrlf_dof visibility_pool/read.comp )
-
-add_shader( lrlf_dof resource_pair/write.comp )
-add_shader( lrlf_dof resource_pair/read.comp )
-
-add_shader( lrlf_dof light_pool/write.comp )
-add_shader( lrlf_dof light_pool/read.comp )
-add_shader( lrlf_dof light_pool/update.comp )
-
 add_shader( lrlf_dof gauss/horizontal.comp )
 add_shader( lrlf_dof gauss/vertical.comp )
 

@@ -1,5 +1,5 @@
 function(add_shader TARGET SHADER)
-  cmake_parse_arguments(ADD_SHADER_ARGS "NOOPT" "" "" ${ARGN})
+  cmake_parse_arguments(ADD_SHADER_ARGS "NOOPT;INSTALL" "" "" ${ARGN})
   set( USE_SPIRV_OPT FALSE )
   if(SPIRVOPT)
     if(ADD_SHADER_ARGS_NOOPT)
@@ -8,7 +8,7 @@ function(add_shader TARGET SHADER)
       set( USE_SPIRV_OPT TRUE )
     endif()
   else()
-      set( USE_SPIRV_OPT TRUE )
+    set( USE_SPIRV_OPT TRUE )
   endif()
 
   set( SHADER_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/gct/shader" )
@@ -169,8 +169,15 @@ function(add_shader TARGET SHADER)
       VERBATIM)
     set_source_files_properties(${current-before_opt-path} PROPERTIES GENERATED TRUE)
   endif()
-
   set_source_files_properties(${current-output-path} PROPERTIES GENERATED TRUE)
   target_sources(${TARGET} PRIVATE ${current-output-path})
+  if(ADD_SHADER_ARGS_INSTALL)
+    cmake_path(REMOVE_FILENAME SHADER OUTPUT_VARIABLE SHADER_DIR)
+    install(
+      FILES ${current-output-path}
+      DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/${SHADER_DIR}
+      PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+    )
+  endif()
 endfunction(add_shader)
 

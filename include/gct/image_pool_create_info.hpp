@@ -38,6 +38,7 @@ struct image_pool_create_info {
   image_pool_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   image_pool_create_info &set_external_descriptor_set(
     const std::shared_ptr< descriptor_set_t > &v
   ) {

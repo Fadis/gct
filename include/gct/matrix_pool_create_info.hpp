@@ -34,6 +34,7 @@ struct matrix_pool_create_info {
   matrix_pool_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   allocator_set_t allocator_set;
   std::filesystem::path write_shader;
   std::filesystem::path read_shader;

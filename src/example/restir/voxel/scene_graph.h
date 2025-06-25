@@ -60,10 +60,7 @@ layout(binding = 3,std430) buffer MatrixPool {
   aabb_type aabb_pool[];
 };*/
 
-struct resource_pair_type {
-  uint inst;
-  uint prim;
-};
+#include <gct/scene_graph/resource_pair_type.h>
 
 layout(binding = 5,std430) buffer ResourcePairPool {
   resource_pair_type resource_pair[];

@@ -356,6 +356,7 @@ add_library( gct SHARED
   gct/generate_random_matrix.cpp
   gct/gltf2.cpp
   gct/af_state.cpp
+  gct/get_library_path.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -530,6 +531,48 @@ target_link_libraries( dump_gpuinfo
   Boost::context
   Boost::system
 )
+
+add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
+add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/matrix_pool/copy.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/aabb_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/aabb_pool/read.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/aabb_pool/update.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/image_pool/rgba8.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/image_pool/rgba16.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/image_pool/rgba16f.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/image_pool/rgba32f.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/visibility_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/visibility_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/resource_pair/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/resource_pair/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/light_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/light_pool/read.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/light_pool/update.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/accessor/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/accessor/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/mesh/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/mesh/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/meshlet/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/meshlet/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/meshlet_index/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/meshlet_index/read.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

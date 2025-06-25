@@ -44,36 +44,6 @@ add_shader( bilateral_visualize aabb/world.vert )
 add_shader( bilateral_visualize depth/world.frag )
 add_shader( bilateral_visualize depth/world.vert )
 
-add_shader( bilateral_visualize matrix_pool/write.comp )
-add_shader( bilateral_visualize matrix_pool/read.comp )
-add_shader( bilateral_visualize matrix_pool/update.comp )
-add_shader( bilateral_visualize matrix_pool/copy.comp )
-
-add_shader( bilateral_visualize aabb_pool/write.comp )
-add_shader( bilateral_visualize aabb_pool/read.comp )
-add_shader( bilateral_visualize aabb_pool/update.comp )
-
-add_shader( bilateral_visualize image_pool/rgba8.comp )
-add_shader( bilateral_visualize image_pool/rgba16.comp )
-add_shader( bilateral_visualize image_pool/rgba16f.comp )
-add_shader( bilateral_visualize image_pool/rgba32f.comp )
-
-add_shader( bilateral_visualize primitive_resource_index_pool/write.comp )
-add_shader( bilateral_visualize primitive_resource_index_pool/read.comp )
-
-add_shader( bilateral_visualize instance_resource_index_pool/write.comp )
-add_shader( bilateral_visualize instance_resource_index_pool/read.comp )
-
-add_shader( bilateral_visualize visibility_pool/write.comp )
-add_shader( bilateral_visualize visibility_pool/read.comp )
-
-add_shader( bilateral_visualize resource_pair/write.comp )
-add_shader( bilateral_visualize resource_pair/read.comp )
-
-add_shader( bilateral_visualize light_pool/write.comp )
-add_shader( bilateral_visualize light_pool/read.comp )
-add_shader( bilateral_visualize light_pool/update.comp )
-
 add_shader( bilateral_visualize gauss/horizontal.comp )
 add_shader( bilateral_visualize gauss/vertical.comp )
 

@@ -18,6 +18,14 @@ image_pool_create_info &image_pool_create_info::set_shader(
   return *this;
 }
 
+bool image_pool_create_info::shader_exists() const {
+  return
+    std::filesystem::exists( rgba8_shader ) &&
+    std::filesystem::exists( rgba16_shader ) &&
+    std::filesystem::exists( rgba16f_shader ) &&
+    std::filesystem::exists( rgba32f_shader );
+}
+
 void to_json( nlohmann::json &dest, const image_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

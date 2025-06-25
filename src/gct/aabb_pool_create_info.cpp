@@ -17,6 +17,14 @@ aabb_pool_create_info &aabb_pool_create_info::set_shader(
   return *this;
 }
 
+bool aabb_pool_create_info::shader_exists() const {
+  return
+    std::filesystem::exists( read_shader ) &&
+    std::filesystem::exists( write_shader ) &&
+    std::filesystem::exists( update_shader );
+}
+
+
 void to_json( nlohmann::json &dest, const aabb_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

@@ -43,42 +43,6 @@ add_shader( mesh_shader aabb/world.vert )
 add_shader( mesh_shader depth/world.frag )
 add_shader( mesh_shader depth/world.vert )
 
-add_shader( mesh_shader matrix_pool/write.comp )
-add_shader( mesh_shader matrix_pool/read.comp )
-add_shader( mesh_shader matrix_pool/update.comp )
-add_shader( mesh_shader matrix_pool/copy.comp )
-
-add_shader( mesh_shader aabb_pool/write.comp )
-add_shader( mesh_shader aabb_pool/read.comp )
-add_shader( mesh_shader aabb_pool/update.comp )
-
-add_shader( mesh_shader image_pool/rgba8.comp )
-add_shader( mesh_shader image_pool/rgba16.comp )
-add_shader( mesh_shader image_pool/rgba16f.comp )
-add_shader( mesh_shader image_pool/rgba32f.comp )
-
-add_shader( mesh_shader primitive_resource_index_pool/write.comp )
-add_shader( mesh_shader primitive_resource_index_pool/read.comp )
-
-add_shader( mesh_shader instance_resource_index_pool/write.comp )
-add_shader( mesh_shader instance_resource_index_pool/read.comp )
-
-add_shader( mesh_shader visibility_pool/write.comp )
-add_shader( mesh_shader visibility_pool/read.comp )
-
-add_shader( mesh_shader resource_pair/write.comp )
-add_shader( mesh_shader resource_pair/read.comp )
-
-add_shader( mesh_shader light_pool/write.comp )
-add_shader( mesh_shader light_pool/read.comp )
-add_shader( mesh_shader light_pool/update.comp )
-
-add_shader( mesh_shader accessor/write.comp )
-add_shader( mesh_shader accessor/read.comp )
-
-add_shader( mesh_shader mesh/write.comp )
-add_shader( mesh_shader mesh/read.comp )
-
 add_shader( mesh_shader gauss/horizontal.comp )
 add_shader( mesh_shader gauss/vertical.comp )
 

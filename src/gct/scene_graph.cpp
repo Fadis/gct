@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <vulkan2json/IndexType.hpp>
 #include <vulkan2json/VertexInputBindingDescription.hpp>
@@ -19,6 +20,7 @@
 #include <gct/exception.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/color_space.hpp>
+#include <gct/get_library_path.hpp>
 
 namespace gct::scene_graph {
 
@@ -204,6 +206,66 @@ scene_graph::scene_graph(
     resource->attr2index.emplace( std::string( "WEIGHTS_0" ), vertex_attributes[ vertex_attribute_usage_t::WEIGHT ].location );
   }
 
+  const auto library_path = get_library_path();
+
+  std::filesystem::path shader_path;
+
+  if( library_path ) {
+    shader_path = library_path->parent_path() / "gct" / "shader" / "scene_graph";
+  }
+  else {
+    throw -1;
+  }
+
+  if( !props->matrix.shader_exists() ) {
+    std::cout << "Using system matrix_pool" << std::endl;
+    props->matrix.set_shader( shader_path / "matrix_pool" );
+  }
+  if( !props->aabb.shader_exists() ) {
+    std::cout << "Using system aabb_pool" << std::endl;
+    props->aabb.set_shader( shader_path / "aabb_pool" );
+  }
+  if( !props->image.shader_exists() ) {
+    std::cout << "Using system image_pool" << std::endl;
+    props->image.set_shader( shader_path / "image_pool" );
+  }
+  if( !props->primitive_resource_index.shader_exists() ) {
+    std::cout << "Using system primitive_resource_index_pool" << std::endl;
+    props->primitive_resource_index.set_shader( shader_path / "primitive_resource_index_pool" );
+  }
+  if( !props->instance_resource_index.shader_exists() ) {
+    std::cout << "Using system instance_resource_index_pool" << std::endl;
+    props->instance_resource_index.set_shader( shader_path / "instance_resource_index_pool" );
+  }
+  if( !props->resource_pair.shader_exists() ) {
+    std::cout << "Using system resource_pair" << std::endl;
+    props->resource_pair.set_shader( shader_path / "resource_pair" );
+  }
+  if( !props->visibility.shader_exists() ) {
+    std::cout << "Using system visibility_pool" << std::endl;
+    props->visibility.set_shader( shader_path / "visibility_pool" );
+  }
+  if( !props->light.shader_exists() ) {
+    std::cout << "Using system light_pool" << std::endl;
+    props->light.set_shader( shader_path / "light_pool" );
+  }
+  if( !props->accessor.shader_exists() ) {
+    std::cout << "Using system accessor" << std::endl;
+    props->accessor.set_shader( shader_path / "accessor" );
+  }
+  if( !props->mesh.shader_exists() ) {
+    std::cout << "Using system mesh" << std::endl;
+    props->mesh.set_shader( shader_path / "mesh" );
+  }
+  if( !props->meshlet.shader_exists() ) {
+    std::cout << "Using system meshlet" << std::endl;
+    props->meshlet.set_shader( shader_path / "meshlet" );
+  }
+  if( !props->meshlet_index.shader_exists() ) {
+    std::cout << "Using system meshlet_index" << std::endl;
+    props->meshlet_index.set_shader( shader_path / "meshlet_index" );
+  }
+
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
       .set_allocator_set( props->allocator_set )
@@ -258,62 +320,31 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->visibility )
       .set_allocator_set( props->allocator_set )
   ) );
-  if(
-    std::filesystem::exists( props->light.read_shader ) &&
-    std::filesystem::exists( props->light.write_shader ) &&
-    std::filesystem::exists( props->light.update_shader )
-  ) {
-    resource->light.reset( new light_pool(
-      light_pool_create_info( props->light )
-        .set_allocator_set( props->allocator_set )
-        .set_matrix_pool( resource->matrix->get_buffer() )
-    ) );
-  }
-  if(
-    std::filesystem::exists( props->accessor.read_shader ) &&
-    std::filesystem::exists( props->accessor.write_shader )
-  ) {
-    resource->accessor.reset( new buffer_pool(
-      buffer_pool_create_info( props->accessor )
-        .set_allocator_set( props->allocator_set )
-    ) );
-  }
-  if(
-    std::filesystem::exists( props->mesh.read_shader ) &&
-    std::filesystem::exists( props->mesh.write_shader )
-  ) {
-    resource->mesh.reset( new buffer_pool(
-      buffer_pool_create_info( props->mesh )
-        .set_allocator_set( props->allocator_set )
-    ) );
-  }
-  if(
-    std::filesystem::exists( props->meshlet.read_shader ) &&
-    std::filesystem::exists( props->meshlet.write_shader )
-  ) {
-    resource->meshlet.reset( new buffer_pool(
-      buffer_pool_create_info( props->meshlet )
-        .set_allocator_set( props->allocator_set )
-    ) );
-  }
-  if(
-    std::filesystem::exists( props->meshlet_index.read_shader ) &&
-    std::filesystem::exists( props->meshlet_index.write_shader )
-  ) {
-    resource->meshlet_index.reset( new buffer_pool(
-      buffer_pool_create_info( props->meshlet_index )
-        .set_allocator_set( props->allocator_set )
-    ) );
-  }
-  if(
-    std::filesystem::exists( props->resource_pair.read_shader ) &&
-    std::filesystem::exists( props->resource_pair.write_shader )
-  ) {
-    resource->resource_pair.reset( new buffer_pool(
-      buffer_pool_create_info( props->resource_pair )
-        .set_allocator_set( props->allocator_set )
-    ) );
-  }
+  resource->light.reset( new light_pool(
+    light_pool_create_info( props->light )
+      .set_allocator_set( props->allocator_set )
+      .set_matrix_pool( resource->matrix->get_buffer() )
+  ) );
+  resource->accessor.reset( new buffer_pool(
+    buffer_pool_create_info( props->accessor )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->mesh.reset( new buffer_pool(
+    buffer_pool_create_info( props->mesh )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->meshlet.reset( new buffer_pool(
+    buffer_pool_create_info( props->meshlet )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->meshlet_index.reset( new buffer_pool(
+    buffer_pool_create_info( props->meshlet_index )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->resource_pair.reset( new buffer_pool(
+    buffer_pool_create_info( props->resource_pair )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -321,10 +352,6 @@ scene_graph::scene_graph(
       vk::BufferUsageFlagBits::eConditionalRenderingEXT :
       vk::BufferUsageFlagBits::eStorageBuffer
   );
-  /*resource->resource_pair = props->allocator_set.allocator->create_mappable_buffer(
-    resource->visibility->get_props().max_buffer_count * sizeof( raw_resource_pair_type ),
-    vk::BufferUsageFlagBits::eStorageBuffer
-  );*/
   auto vbpci =
     vertex_buffer_pool_create_info( props->vertex )
       .set_allocator_set( props->allocator_set )

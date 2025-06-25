@@ -34,6 +34,7 @@ struct aabb_pool_create_info {
   aabb_pool_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   allocator_set_t allocator_set;
   std::shared_ptr< buffer_t > matrix_pool;
   std::filesystem::path write_shader;

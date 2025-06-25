@@ -12,6 +12,12 @@ buffer_pool_create_info &buffer_pool_create_info::set_shader(
   return *this;
 }
 
+bool buffer_pool_create_info::shader_exists() const {
+  return
+    std::filesystem::exists( read_shader ) &&
+    std::filesystem::exists( write_shader );
+}
+
 void to_json( nlohmann::json &dest, const buffer_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

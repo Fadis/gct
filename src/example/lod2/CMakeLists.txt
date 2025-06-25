@@ -51,48 +51,6 @@ add_shader( lod2 aabb/world.vert )
 add_shader( lod2 depth/world.frag )
 add_shader( lod2 depth/world.vert )
 
-add_shader( lod2 matrix_pool/write.comp )
-add_shader( lod2 matrix_pool/read.comp )
-add_shader( lod2 matrix_pool/update.comp )
-add_shader( lod2 matrix_pool/copy.comp )
-
-add_shader( lod2 aabb_pool/write.comp )
-add_shader( lod2 aabb_pool/read.comp )
-add_shader( lod2 aabb_pool/update.comp )
-
-add_shader( lod2 image_pool/rgba8.comp )
-add_shader( lod2 image_pool/rgba16.comp )
-add_shader( lod2 image_pool/rgba16f.comp )
-add_shader( lod2 image_pool/rgba32f.comp )
-
-add_shader( lod2 primitive_resource_index_pool/write.comp )
-add_shader( lod2 primitive_resource_index_pool/read.comp )
-
-add_shader( lod2 instance_resource_index_pool/write.comp )
-add_shader( lod2 instance_resource_index_pool/read.comp )
-
-add_shader( lod2 visibility_pool/write.comp )
-add_shader( lod2 visibility_pool/read.comp )
-
-add_shader( lod2 resource_pair/write.comp )
-add_shader( lod2 resource_pair/read.comp )
-
-add_shader( lod2 light_pool/write.comp )
-add_shader( lod2 light_pool/read.comp )
-add_shader( lod2 light_pool/update.comp )
-
-add_shader( lod2 accessor/write.comp )
-add_shader( lod2 accessor/read.comp )
-
-add_shader( lod2 mesh/write.comp )
-add_shader( lod2 mesh/read.comp )
-
-add_shader( lod2 meshlet/write.comp )
-add_shader( lod2 meshlet/read.comp )
-
-add_shader( lod2 meshlet_index/write.comp )
-add_shader( lod2 meshlet_index/read.comp )
-
 add_shader( lod2 gauss/horizontal.comp )
 add_shader( lod2 gauss/vertical.comp )
 
