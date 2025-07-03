@@ -532,10 +532,21 @@ target_link_libraries( dump_gpuinfo
   Boost::system
 )
 
+add_executable( list_vertex list_vertex.cpp )
+target_link_libraries( list_vertex
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/copy.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/matrix_pool/inverse.comp INSTALL )
 
 add_shader( gct gct/shader/scene_graph/aabb_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/aabb_pool/read.comp INSTALL )
@@ -573,6 +584,72 @@ add_shader( gct gct/shader/scene_graph/meshlet/read.comp INSTALL )
 
 add_shader( gct gct/shader/scene_graph/meshlet_index/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/meshlet_index/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/particle_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/particle_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/rigid_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/rigid_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/distance_constraint_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/distance_constraint_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/constraint_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/constraint_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/spatial_hash_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/spatial_hash_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/ao/hbao/hbao_0.comp INSTALL )
+add_shader( gct gct/shader/ao/hbao/hbao_45.comp INSTALL )
+add_shader( gct gct/shader/ao/hbao/hbao_90.comp INSTALL )
+add_shader( gct gct/shader/ao/hbao/hbao_135.comp INSTALL )
+add_shader( gct gct/shader/ao/hbao/hbao.comp INSTALL )
+
+add_shader( gct gct/shader/dof/lrlf/h0.comp INSTALL )
+add_shader( gct gct/shader/dof/lrlf/h1.comp INSTALL )
+add_shader( gct gct/shader/dof/lrlf/h2.comp INSTALL )
+add_shader( gct gct/shader/dof/lrlf/h3.comp INSTALL )
+add_shader( gct gct/shader/dof/lrlf/h4.comp INSTALL )
+add_shader( gct gct/shader/dof/lrlf/v.comp INSTALL )
+
+add_shader( gct gct/shader/skyview/generate.comp INSTALL )
+add_shader( gct gct/shader/skyview/render.comp INSTALL )
+add_shader( gct gct/shader/skyview/generate_multiscat.comp INSTALL )
+add_shader( gct gct/shader/skyview/generate_skyview.comp INSTALL )
+add_shader( gct gct/shader/skyview/generate_transmittance.comp INSTALL )
+
+add_shader( gct gct/shader/mesh_to_constraint/mesh_to_constraint.comp INSTALL )
+add_shader( gct gct/shader/mesh_to_particle/mesh_to_particle.comp INSTALL )
+add_shader( gct gct/shader/update_particle_position/update_particle_position.comp INSTALL )
+add_shader( gct gct/shader/update_particle_velocity/update_particle_velocity.comp INSTALL )
+add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
+add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
+add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
+add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
+
+add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
+add_shader( gct gct/shader/write_particle_to_spatial_hash/write_particle_to_spatial_hash.comp INSTALL )
+add_shader( gct gct/shader/read_particle_from_spatial_hash/read_particle_from_spatial_hash.comp INSTALL )
+
+add_shader( gct gct/shader/visualize_particle_normal/geometry.task INSTALL )
+add_shader( gct gct/shader/visualize_particle_normal/geometry.mesh INSTALL )
+add_shader( gct gct/shader/visualize_particle_normal/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/visualize_particle_constraint/geometry.task INSTALL )
+add_shader( gct gct/shader/visualize_particle_constraint/geometry.mesh INSTALL )
+add_shader( gct gct/shader/visualize_particle_constraint/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/generate_k+buffer/standard/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
 
 if( ENABLE_EXAMPLES )
 

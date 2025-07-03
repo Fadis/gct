@@ -17,6 +17,13 @@ skyview_create_info &skyview_create_info::set_shader(
   return *this;
 }
 
+bool skyview_create_info::shader_exists() const {
+  if( !std::filesystem::exists( transmittance_shader ) ) return false;
+  if( !std::filesystem::exists( multiscat_shader ) ) return false;
+  if( !std::filesystem::exists( skyview_shader ) ) return false;
+  return true;
+}
+
 void to_json( nlohmann::json &dest, const skyview_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

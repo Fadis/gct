@@ -20,6 +20,20 @@ hbao2_create_info &hbao2_create_info::set_shader(
   return *this;
 }
 
+bool hbao2_create_info::shader_exists() const {
+  if( shader_set.find( "0" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "45" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "90" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "135" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "mix" ) == shader_set.end() ) return false;
+  if( !std::filesystem::exists( shader_set.at( "0" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "45" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "90" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "135" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "mix" ) ) ) return false;
+  return true;
+}
+
 void to_json( nlohmann::json &dest, const hbao2_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

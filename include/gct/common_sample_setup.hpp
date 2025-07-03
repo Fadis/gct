@@ -31,6 +31,7 @@ struct common_sample_setup {
   );
   std::string walk_state_filename;
   std::string model_filename;
+  std::vector< std::string > model_filename_list;
   float ambient_level;
   std::shared_ptr< glfw_window > window;
   std::shared_ptr< instance_t > instance;

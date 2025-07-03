@@ -78,8 +78,19 @@ std::uint32_t sized_linear_allocator::allocate( std::uint32_t size ) {
   }
 }
 
-void sized_linear_allocator::release( std::uint32_t i ) {
+std::uint32_t sized_linear_allocator::get_size( std::uint32_t i ) const {
   std::uint32_t current_size = 1u;
+  {
+    const auto c = contiguous.find( i );
+    if( c != contiguous.end() ) {
+      current_size = c->second;
+    }
+  }
+  return current_size;
+}
+
+void sized_linear_allocator::release( std::uint32_t i ) {
+  std::uint32_t current_size = get_size( i );
   {
     const auto c = contiguous.find( i );
     if( c != contiguous.end() ) {

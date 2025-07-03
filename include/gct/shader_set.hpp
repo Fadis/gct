@@ -18,6 +18,7 @@ void to_json( nlohmann::json &dest, const gct::shader_set_t& );
     const std::string &n, \
     const std::filesystem::path &p \
   ) { \
+    name .erase( n ); \
     name .insert( std::make_pair( n, p ) ); \
     return *this; \
   } \
@@ -31,6 +32,7 @@ void to_json( nlohmann::json &dest, const gct::shader_set_t& );
     const std::string &n, \
     const std::string &p \
   ) { \
+    name .erase( n ); \
     name .insert( std::make_pair( n, p ) ); \
     return *this; \
   } \
@@ -56,6 +58,11 @@ void to_json( nlohmann::json &dest, const gct::shader_set_t& );
     if( temp != props. name .end() ) { \
       value_name = temp->second; \
     } \
+  }
+
+#define LIBGCT_SHADER_SET_USE_SYSTEM_SHADER_IF_NOT_EXIST( p ) \
+  if( !props.shader_exists() ) { \
+    props.set_shader( ::gct::get_system_shader_path() / p ); \
   }
 
 #endif

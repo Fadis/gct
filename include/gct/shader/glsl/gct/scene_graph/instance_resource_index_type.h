@@ -3,6 +3,7 @@
 
 struct instance_resource_index_type {
   uint world_matrix; // このノードの変換行列
+  uint inversed_world_matrix;
   uint visibility; // オクルージョンカリングの結果
   uint aabb;
   uint previous_world_matrix;
@@ -10,6 +11,7 @@ struct instance_resource_index_type {
   float coverage;
   uint prim;
   uint lowest_lod;
+  uint reserved[ 3 ];
 };
 
 #endif

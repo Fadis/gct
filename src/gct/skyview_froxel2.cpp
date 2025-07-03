@@ -7,12 +7,14 @@
 #include <gct/exception.hpp>
 #include <gct/scene_graph_resource.hpp>
 #include <gct/sampler_pool.hpp>
+#include <gct/get_library_path.hpp>
 
 namespace gct {
 skyview_froxel2::skyview_froxel2(
   const skyview_froxel2_create_info &ci
 ) :
   property_type( ci ) {
+  LIBGCT_SHADER_SET_USE_SYSTEM_SHADER_IF_NOT_EXIST( "skyview" );
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "skyview_froxel2::skyview_froxel2", generate_path, "generate" )
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "skyview_froxel2::skyview_froxel2", render_path, "render" )
   if( !get_props().sigma ) {

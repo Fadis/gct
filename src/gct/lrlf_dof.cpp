@@ -5,12 +5,14 @@
 #include <gct/compute.hpp>
 #include <gct/lrlf_dof.hpp>
 #include <gct/exception.hpp>
+#include <gct/get_library_path.hpp>
 
 namespace gct {
 lrlf_dof::lrlf_dof(
   const lrlf_dof_create_info &ci
 ) :
   property_type( ci ) {
+  LIBGCT_SHADER_SET_USE_SYSTEM_SHADER_IF_NOT_EXIST( "dof" / "lrlf" );
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "lrlf_dof::lrlf_dof", h0_path, "h0" )
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "lrlf_dof::lrlf_dof", h1_path, "h1" )
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "lrlf_dof::lrlf_dof", h2_path, "h2" )

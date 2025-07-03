@@ -1,0 +1,70 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+#include <gct/constraint.h>
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// 1つのローカルワークグループから最大で64頂点32プリミティブの線分を出力する
+layout(lines, max_vertices = 64, max_primitives = 32) out;
+
+// タスクペイロード
+struct task_data {
+  // どのノードの下のどのメッシュを描くかを指定するID
+  uint resource_pair_id;
+  mat4 w2s;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.instance + td.resource_pair_id ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  // 変換行列をタスクペイロードから取り出す
+  const mat4 w2s = td.w2s;
+
+  const uint particle_id = gl_WorkGroupID.x;
+  const uint constraint_index = gl_LocalInvocationID.x;
+
+  const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
+
+  const uint iter = constraint_begin( particle_id, mesh.constraint_offset );
+  const bool is_end = constraint_is_end( iter + constraint_index );
+
+  const vec3 p1 = is_end ? p0 : particle_pool[ constraint_get( iter + constraint_index ).to_id ].position;
+
+  const uint primitive_count = subgroupAdd( is_end ? 0u : 1u );
+  const uint output_primitive_id = subgroupExclusiveAdd( is_end ? 0 : 1u );
+  const uint output_vertex_id = output_primitive_id * 2u;
+
+  SetMeshOutputsEXT( primitive_count * 2u, primitive_count );
+
+  if( !is_end ) {
+    gl_MeshVerticesEXT[ output_vertex_id ].gl_Position = w2s * vec4( p0, 1.0 );
+    gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = w2s * vec4( p1, 1.0 );
+    gl_PrimitiveLineIndicesEXT[ output_primitive_id ] = uvec2( output_vertex_id, output_vertex_id + 1 );
+  }
+}
+

@@ -7,7 +7,12 @@ struct mesh_type {
   uint topology; // トポロジ
   uint meshlet; // メッシュレット単位の情報
   uint unique_vertex_count;
-  uint reserved[ 3 ];
+  uint particle_offset;
+  uint distance_constraint_offset;
+  uint constraint_offset;
+  uint vertex_to_primitive_offset;
+  float stiffness;
+  uint reserved[ 2 ];
 };
 
 #endif

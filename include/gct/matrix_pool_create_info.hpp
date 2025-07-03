@@ -22,6 +22,7 @@ struct matrix_pool_create_info {
   LIBGCT_SETTER( read_shader )
   LIBGCT_SETTER( update_shader )
   LIBGCT_SETTER( copy_shader )
+  LIBGCT_SETTER( inverse_shader )
   LIBGCT_SETTER( max_matrix_count )
   LIBGCT_SETTER( staging_matrix_buffer_name )
   LIBGCT_SETTER( matrix_buffer_name )
@@ -29,6 +30,7 @@ struct matrix_pool_create_info {
   LIBGCT_SETTER( read_request_buffer_name )
   LIBGCT_SETTER( update_request_buffer_name )
   LIBGCT_SETTER( copy_request_buffer_name )
+  LIBGCT_SETTER( inverse_request_buffer_name )
   LIBGCT_SETTER( resources )
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   matrix_pool_create_info &set_shader(
@@ -40,6 +42,7 @@ struct matrix_pool_create_info {
   std::filesystem::path read_shader;
   std::filesystem::path update_shader;
   std::filesystem::path copy_shader;
+  std::filesystem::path inverse_shader;
   std::uint32_t max_matrix_count = 65536u;
   std::string staging_matrix_buffer_name = "staging";
   std::string matrix_buffer_name = "matrix";
@@ -47,6 +50,7 @@ struct matrix_pool_create_info {
   std::string read_request_buffer_name = "request";
   std::string update_request_buffer_name = "request";
   std::string copy_request_buffer_name = "request";
+  std::string inverse_request_buffer_name = "request";
   std::vector< named_resource > resources;
 };
 

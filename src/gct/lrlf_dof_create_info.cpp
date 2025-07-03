@@ -21,6 +21,22 @@ lrlf_dof_create_info &lrlf_dof_create_info::set_shader(
   return *this;
 }
 
+bool lrlf_dof_create_info::shader_exists() const {
+  if( shader_set.find( "h0" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "h1" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "h2" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "h3" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "h4" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "v" ) == shader_set.end() ) return false;
+  if( !std::filesystem::exists( shader_set.at( "h0" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "h1" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "h2" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "h3" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "h4" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "v" ) ) ) return false;
+  return true;
+}
+
 void to_json( nlohmann::json &dest, const lrlf_dof_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

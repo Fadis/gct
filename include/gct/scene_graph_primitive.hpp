@@ -40,6 +40,11 @@ struct primitive_descriptor {
   LIBGCT_SETTER( aabb )
   LIBGCT_SETTER( accessor )
   LIBGCT_SETTER( mesh )
+  LIBGCT_SETTER( meshlet )
+  LIBGCT_SETTER( particle )
+  LIBGCT_SETTER( distance_constraint )
+  LIBGCT_SETTER( constraint )
+  LIBGCT_SETTER( vertex_to_primitive )
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
   texture_pool::texture_descriptor normal_texture;
@@ -49,6 +54,11 @@ struct primitive_descriptor {
   aabb_pool::aabb_descriptor aabb;
   std::vector< buffer_pool::buffer_descriptor > accessor;
   buffer_pool::buffer_descriptor mesh;
+  buffer_pool::buffer_descriptor meshlet;
+  buffer_pool::buffer_descriptor particle;
+  buffer_pool::buffer_descriptor distance_constraint;
+  buffer_pool::buffer_descriptor constraint;
+  buffer_pool::buffer_descriptor vertex_to_primitive;
 };
 
 void to_json( nlohmann::json &dest, const primitive_descriptor &src );

@@ -1,3 +1,4 @@
+#include "gct/exception.hpp"
 #include <fstream>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -47,8 +48,13 @@ namespace gct {
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
   shader_module_create_info_t &shader_module_create_info_t::load( const std::string &filename ) {
+    if( !std::filesystem::exists( std::filesystem::path( filename ) ) ) {
+      throw exception::invalid_argument( std::string( "shader_module_create_info_t::load : File not found : " ) + filename, __FILE__, __LINE__ ); 
+    }
     std::fstream file( filename, std::ios::in|std::ios::binary );
-    if( !file.good() ) throw -1;
+    if( !file.good() ) {
+      throw exception::invalid_argument( std::string( "shader_module_create_info_t::load : Unable to open file : " ) + filename, __FILE__, __LINE__ );
+    }
     std::vector< std::uint8_t > temp( ( std::istreambuf_iterator< char >( file ) ), std::istreambuf_iterator<char>() );
     auto raw = new shader_module_reflection_t( temp );
     chained = false;

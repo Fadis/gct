@@ -21,6 +21,7 @@ struct buffer_pool_create_info {
   LIBGCT_SETTER( write_shader )
   LIBGCT_SETTER( read_shader )
   LIBGCT_SETTER( max_buffer_count )
+  LIBGCT_SETTER( max_request_count )
   LIBGCT_SETTER( staging_buffer_name )
   LIBGCT_SETTER( buffer_name )
   LIBGCT_SETTER( write_request_buffer_name )
@@ -35,6 +36,7 @@ struct buffer_pool_create_info {
   std::filesystem::path write_shader;
   std::filesystem::path read_shader;
   std::uint32_t max_buffer_count = 65536u;
+  std::uint32_t max_request_count = 65536u;
   std::string staging_buffer_name = "staging";
   std::string buffer_name;
   std::string write_request_buffer_name = "request";

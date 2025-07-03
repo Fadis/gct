@@ -7,6 +7,7 @@
 namespace gct {
 
 std::optional< std::filesystem::path > get_library_path();
+std::filesystem::path get_system_shader_path();
 
 }
 

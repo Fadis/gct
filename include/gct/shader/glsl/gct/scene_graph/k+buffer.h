@@ -474,5 +474,35 @@ vec4 read_kplus_buffer_shadow_level16(
   return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 6 ) );
 }
 
+void mark_kplus_buffer(
+  uint gbuffer_id,
+  ivec2 image_pos
+) {
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  //if( sample_index.x == 0 ) return;
+  const uint top_sample_index = sample_index.x;
+  const vec4 existing = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( top_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( top_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+}
+
+
+void mark_kplus_buffer16(
+  uint gbuffer_id,
+  ivec2 image_pos
+) {
+  ivec4 sample_index = ivec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, kplus_buffer_array_layer_count * 4u ) ) );
+  //if( sample_index.x == 0 ) return;
+  const uint top_sample_index = sample_index.x - 1u;
+  const vec4 existing = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( top_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ) );
+  //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( top_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( top_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( 0 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( 2 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+  imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( 3 ) * kplus_buffer_array_layer_count + 5 ), vec4( existing.xyz, existing.w + 1.0 ) );
+}
+
+
+
 #endif
 

@@ -61,6 +61,10 @@ public:
     }
     return std::make_pair( count->second.first, count->second.second );
   }
+  [[nodiscard]] const std::vector< pool< std::shared_ptr< scene_graph::instance > >::descriptor >&
+  get_descriptor() const {
+    return inst;
+  }
 private:
   void load_buffer(
     const fx::gltf::Document &doc
@@ -131,6 +135,7 @@ private:
   std::unordered_map< std::uint64_t, std::pair< std::uint32_t, std::uint32_t > > morph_vertex_count;
   std::unordered_map< pool< std::shared_ptr< scene_graph::primitive > >::descriptor, std::uint64_t > doc_primitive_id;
   std::uint32_t total_morph_vertex_count = 0u;
+  std::vector< pool< std::shared_ptr< scene_graph::instance > >::descriptor > inst;
 };
 
 void to_json( nlohmann::json&, const gltf2& );

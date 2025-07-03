@@ -27,9 +27,14 @@ bool operator!=( const resource_pair &l, const resource_pair &r ) {
 instance_list::instance_list(
   const instance_list_create_info &ci,
   const scene_graph &graph
+) : instance_list( ci, graph, graph.get_resource()->inst.get_descriptor() ) {}
+instance_list::instance_list(
+  const instance_list_create_info &ci,
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< instance > >::descriptor > &l
 ) : property_type( ci ), resource( graph.get_resource() ) {
   std::unordered_set< pool< std::shared_ptr< primitive > >::descriptor > known_prim;
-  for( const auto &i: resource->inst.get_descriptor() ) {
+  for( const auto &i: l ) {
     const auto inst = resource->inst.get( i );
     if( inst->is_highest_lod || props.all_lods ) {
       if( props.unique_prim_list ) {

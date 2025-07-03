@@ -106,6 +106,7 @@ subdirs(
   task_payload
   flat_terrain
   height_map_terrain
+  cloth
 )
 if( DXC_FOUND )
 subdirs(

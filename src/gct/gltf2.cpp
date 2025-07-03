@@ -872,6 +872,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
       if( props.graph->get_resource()->meshlet ) {
         const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );
+        p.descriptor.set_meshlet( meshlet_desc );
         if( mmp.has( "meshlet" ) ) {
           m.data()->*mmp[ "meshlet" ] = *meshlet_desc;
         }
@@ -879,6 +880,54 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       // ユニークな頂点の数を記録(頂点インデックスが使われる場合頂点数と異なる値になる)
       if( mmp.has( "unique_vertex_count" ) ) {
         m.data()->*mmp[ "unique_vertex_count" ] = std::uint32_t( unique_vertex_count );
+      }
+      // パーティクルの情報のオフセット
+      if( props.enable_particle ) {
+        const auto desc = props.graph->get_resource()->particle->allocate( vertex_count );
+        p.descriptor.set_particle( desc );
+        if( mmp.has( "particle_offset" ) ) {
+          m.data()->*mmp[ "particle_offset" ] = std::uint32_t( *desc );
+        }
+        if( mmp.has( "stiffness" ) ) {
+          m.data()->*mmp[ "stiffness" ] = 1.0f;
+        }
+      }
+      else if( mmp.has( "particle_offset" ) ) {
+        m.data()->*mmp[ "particle_offset" ] = 0xFFFFFFFFu;
+      }
+      // 距離制約の情報のオフセット
+      if( props.enable_distance_constraint ) {
+        const auto desc = props.graph->get_resource()->distance_constraint->allocate( vertex_count * 32u );
+        p.descriptor.set_distance_constraint( desc );
+        if( mmp.has( "distance_constraint_offset" ) ) {
+          m.data()->*mmp[ "distance_constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "distance_constraint_offset" ) ) {
+        m.data()->*mmp[ "distance_constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 衝突制約の情報のオフセット
+      if( props.enable_constraint ) {
+        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 32u );
+        p.descriptor.set_constraint( desc );
+        if( mmp.has( "constraint_offset" ) ) {
+          std::cout << "constraint offset : " << std::uint32_t( *desc ) << std::endl;
+          m.data()->*mmp[ "constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "constraint_offset" ) ) {
+        m.data()->*mmp[ "constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 頂点からプリミティブを辿る為のテーブルのオフセット
+      if( props.enable_vertex_to_primitive ) {
+        const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( vertex_count * 32u );
+        p.descriptor.set_vertex_to_primitive( desc );
+        if( mmp.has( "vertex_to_primitive_offset" ) ) {
+          m.data()->*mmp[ "vertex_to_primitive_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "vertex_to_primitive_offset" ) ) {
+        m.data()->*mmp[ "vertex_to_primitive_offset" ] = 0xFFFFFFFFu;
       }
       // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
@@ -1095,6 +1144,9 @@ void gltf2::load_node(
 
           i->is_highest_lod = lod_id == 0u;
           ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
+          if( props.enable_particle && rimp.has( "inversed_world_matrix" ) ) {
+            ri.data()->*rimp[ "inversed_world_matrix" ] = *props.graph->get_resource()->matrix->get_inversed( i->descriptor.matrix );
+          }
           if( rimp.has( "previous_world_matrix" ) ) {
             if( props.graph->get_resource()->matrix->copy_enabled() ) {
               ri.data()->*rimp[ "previous_world_matrix" ] = *props.graph->get_resource()->matrix->get_history( i->descriptor.matrix );
@@ -1125,7 +1177,9 @@ void gltf2::load_node(
           }
           props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
           i->descriptor.set_prim( mesh_[ doc_node.mesh ]->prim[ current_lod[ lod_id ].first ] );
-          cur->inst.push_back( props.graph->get_resource()->inst.allocate( i ) );
+          const auto desc = props.graph->get_resource()->inst.allocate( i );
+          cur->inst.push_back( desc );
+          inst.push_back( desc );
           used.insert( current_lod[ lod_id ].first );
         }
       }

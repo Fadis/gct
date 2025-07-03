@@ -39,6 +39,12 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( light )
+  LIBGCT_SETTER( particle )
+  LIBGCT_SETTER( rigid )
+  LIBGCT_SETTER( distance_constraint )
+  LIBGCT_SETTER( constraint )
+  LIBGCT_SETTER( spatial_hash )
+  LIBGCT_SETTER( vertex_to_primitive )
   LIBGCT_SETTER( prim_pool_size )
   LIBGCT_SETTER( inst_pool_size )
   LIBGCT_SETTER( descriptor_set_id )
@@ -69,6 +75,12 @@ struct scene_graph_create_info {
   buffer_pool_create_info resource_pair;
   vertex_buffer_pool_create_info vertex;
   light_pool_create_info light;
+  buffer_pool_create_info particle;
+  buffer_pool_create_info rigid;
+  buffer_pool_create_info distance_constraint;
+  buffer_pool_create_info constraint;
+  buffer_pool_create_info spatial_hash;
+  buffer_pool_create_info vertex_to_primitive;
   std::uint32_t prim_pool_size = 65536u;
   std::uint32_t inst_pool_size = 65536u;
   std::uint32_t descriptor_set_id = 0u;

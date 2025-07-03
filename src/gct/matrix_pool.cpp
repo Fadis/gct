@@ -48,7 +48,7 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
   const matrix_index_t index = allocate_index();
   
   const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
-
+  
   const matrix_index_t staging_index = staging_index_allocator.allocate();
 
   const request_index_t write_request_index = write_request_index_allocator.allocate();
@@ -215,7 +215,6 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
   );
   used_on_gpu.push_back( desc );
   update_requested.insert( *desc );
-  matrix_state[ index ].set_self( desc.get_weak() );
 
   if( enable_copy ) {
     matrix_descriptor history_desc(
@@ -231,6 +230,9 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     matrix_state[ history_index ].set_self( history_desc.get_weak() );
     matrix_state[ index ].set_history( history_desc );
   }
+
+  matrix_state[ index ].set_self( desc.get_weak() );
+
   edge.insert( std::make_pair( *parent, index ) );
 
   return desc;
@@ -286,6 +288,16 @@ void matrix_pool::state_type::touch( const matrix_descriptor &desc ) {
     );
     update_requested.insert( *desc );
     used_on_gpu.push_back( desc );
+    if( enable_inverse && s.inversed && ( inverse_requested.find( *desc ) == inverse_requested.end() ) ) {
+      auto inverse_requests = inverse_request_buffer->map< inverse_request >();
+      const request_index_t inverse_request_index = inverse_request_index_allocator.allocate();
+      inverse_requests[ inverse_request_index ] =
+        inverse_request()
+          .set_source( *desc )
+          .set_destination( *s.inversed );
+      used_on_gpu.push_back( s.inversed );
+      inverse_requested.insert( *desc );
+    }
   }
   matrix_state[ *desc ].update_requested = true;
   const auto [begin,end] = edge.equal_range( *desc );
@@ -345,6 +357,17 @@ void matrix_pool::state_type::set( const matrix_descriptor &desc, const glm::mat
         l.set_staging_index( staging_index );
         used_on_gpu.push_back( s.local );
       }
+      if( l.inversed && ( inverse_requested.find( *s.local ) == inverse_requested.end() ) ) {
+        auto inverse_requests = inverse_request_buffer->map< inverse_request >();
+        const request_index_t inverse_request_index = inverse_request_index_allocator.allocate();
+        inverse_requests[ inverse_request_index ] =
+          inverse_request()
+            .set_source( *s.local )
+            .set_destination( *l.inversed );
+        used_on_gpu.push_back( s.local );
+        used_on_gpu.push_back( l.inversed );
+        inverse_requested.insert( *s.local );
+      }
     }
     else {
       if( s.staging_index && s.write_request_index ) {
@@ -370,6 +393,17 @@ void matrix_pool::state_type::set( const matrix_descriptor &desc, const glm::mat
         s.set_write_request_index( write_request_index );
         s.set_staging_index( staging_index );
         used_on_gpu.push_back( desc );
+      }
+      if( s.inversed && ( inverse_requested.find( *desc ) == inverse_requested.end() ) ) {
+        auto inverse_requests = inverse_request_buffer->map< inverse_request >();
+        const request_index_t inverse_request_index = inverse_request_index_allocator.allocate();
+        inverse_requests[ inverse_request_index ] =
+          inverse_request()
+            .set_source( *desc )
+            .set_destination( *s.inversed );
+        used_on_gpu.push_back( desc );
+        used_on_gpu.push_back( s.inversed );
+        inverse_requested.insert( *desc );
       }
     }
   }
@@ -450,6 +484,17 @@ void matrix_pool::state_type::copy( const matrix_pool::matrix_descriptor &from, 
         .set_destination( *to );
     used_on_gpu.push_back( from );
     used_on_gpu.push_back( to );
+    const auto &s = matrix_state[ *to ];
+    if( s.inversed && ( inverse_requested.find( *to ) == inverse_requested.end() ) ) {
+      auto inverse_requests = inverse_request_buffer->map< inverse_request >();
+      const request_index_t inverse_request_index = inverse_request_index_allocator.allocate();
+      inverse_requests[ inverse_request_index ] =
+        inverse_request()
+          .set_source( *to )
+          .set_destination( *s.inversed );
+      used_on_gpu.push_back( s.inversed );
+      inverse_requested.insert( *to );
+    }
   }
 }
 
@@ -470,7 +515,8 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   staging_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
   write_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
   read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
-  copy_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) )
+  copy_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) ),
+  inverse_request_index_allocator( linear_allocator_create_info().set_max( ci.max_matrix_count ) )
 {
   matrix = props.allocator_set.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_GPU_ONLY );
   staging_matrix = props.allocator_set.allocator->create_buffer( sizeof( glm::mat4 ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
@@ -494,6 +540,12 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
   enable_copy = std::filesystem::exists( props.copy_shader );
   if( enable_copy ) {
     copy_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( copy_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  }
+  enable_inverse = std::filesystem::exists( props.inverse_shader );
+  std::cout << "inverse_shader : " << props.inverse_shader << std::endl;
+  if( enable_inverse ) {
+    std::cout << "inverse enabled" << std::endl;
+    inverse_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( inverse_request ) * props.max_matrix_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
   }
   write.reset( new gct::compute(
     gct::compute_create_info()
@@ -526,6 +578,17 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
         .add_resource( { props.copy_request_buffer_name, copy_request_buffer } )
     ) );
   }
+  if( enable_inverse ) {
+    inverse.reset( new gct::compute(
+      gct::compute_create_info()
+        .set_allocator_set( props.allocator_set )
+        .set_shader( props.inverse_shader )
+        .set_swapchain_image_count( 1u )
+        .set_resources( props.resources )
+        .add_resource( { props.matrix_buffer_name, matrix } )
+        .add_resource( { props.inverse_request_buffer_name, inverse_request_buffer } )
+    ) );
+  }
   update.reset( new gct::compute(
     gct::compute_create_info()
       .set_allocator_set( props.allocator_set )
@@ -539,7 +602,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
 
 matrix_pool::matrix_descriptor matrix_pool::state_type::get_local( const matrix_descriptor &desc ) {
   if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
-    throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix not found", __FILE__, __LINE__ );
+    throw exception::runtime_error( "matrix_pool::state_type::get_local : Matrix not found", __FILE__, __LINE__ );
   }
   const auto &s = matrix_state[ *desc ];
   if( s.local ) {
@@ -559,6 +622,43 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::get_history( const matri
   throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix has no history", __FILE__, __LINE__ );
 }
 
+matrix_pool::matrix_descriptor matrix_pool::state_type::get_inversed( const matrix_descriptor &desc ) {
+  if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::get_inversed : Matrix not found", __FILE__, __LINE__ );
+  }
+  const auto &s = matrix_state[ *desc ];
+  if( s.inversed ) return s.inversed;
+  
+  const matrix_index_t inversed_index = allocate_index();
+
+  matrix_state[ inversed_index ] =
+    matrix_state_type()
+      .set_valid( true );
+  matrix_descriptor inversed_desc(
+    new matrix_index_t( inversed_index ),
+    [self=shared_from_this()]( const matrix_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  matrix_state[ *desc ].set_inversed( inversed_desc );
+  
+  {
+    auto inverse_requests = inverse_request_buffer->map< inverse_request >();
+    const request_index_t inverse_request_index = inverse_request_index_allocator.allocate();
+    inverse_requests[ inverse_request_index ] =
+      inverse_request()
+        .set_source( *desc )
+        .set_destination( inversed_index );
+    used_on_gpu.push_back( desc );
+    used_on_gpu.push_back( inversed_desc );
+    inverse_requested.insert( *desc );
+  }
+
+  return s.inversed;
+}
 
 std::vector< matrix_pool::request_range > matrix_pool::state_type::build_update_request_range() {
   std::vector< request_range > range;
@@ -638,6 +738,20 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       rec.barrier( { matrix }, {} );
     }
   }
+  if( enable_inverse && inverse_request_index_allocator.get_tail() != 0u ) {
+    request_range range =
+      request_range()
+        .set_count( inverse_request_index_allocator.get_tail() );
+    rec->pushConstants(
+        **inverse->get_pipeline()->get_props().get_layout(),
+        vk::ShaderStageFlagBits::eCompute,
+        0u,
+        sizeof( request_range ),
+        reinterpret_cast< void* >( &range )
+    );
+    (*inverse)( rec, 0u, inverse_request_index_allocator.get_tail(), 1u, 1u );
+    rec.barrier( { matrix }, {} );
+  }
   if( read_request_index_allocator.get_tail() != 0u ) {
     request_range range =
       request_range()
@@ -711,6 +825,8 @@ void matrix_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         self->update_request_list.clear();
         self->copy_requested.clear();
         self->copy_request_index_allocator.reset();
+        self->inverse_requested.clear();
+        self->inverse_request_index_allocator.reset();
         self->cbs.clear();
         used_on_gpu = std::move( self->used_on_gpu );
         self->used_on_gpu.clear();
@@ -763,12 +879,19 @@ matrix_pool::matrix_descriptor matrix_pool::get_history( const matrix_descriptor
   std::lock_guard< std::mutex > lock( state->guard );
   return state->get_history( desc );
 }
+matrix_pool::matrix_descriptor matrix_pool::get_inversed( const matrix_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get_inversed( desc );
+}
 void matrix_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->flush( rec );
 }
 bool matrix_pool::copy_enabled() const {
   return state->enable_copy;
+}
+bool matrix_pool::inverse_enabled() const {
+  return state->enable_inverse;
 }
 void matrix_pool::to_json( nlohmann::json &dest ) const {
   std::lock_guard< std::mutex > lock( state->guard );
@@ -876,6 +999,14 @@ void matrix_pool::to_json( nlohmann::json &dest ) const {
   dest[ "update_requested" ] = nlohmann::json::array();
   for( auto e: state->update_requested ) {
     dest[ "update_requested" ].push_back( e );
+  }
+  dest[ "copy_requested" ] = nlohmann::json::array();
+  for( auto e: state->copy_requested ) {
+    dest[ "copy_requested" ].push_back( e );
+  }
+  dest[ "inverse_requested" ] = nlohmann::json::array();
+  for( auto e: state->inverse_requested ) {
+    dest[ "inverse_requested" ].push_back( e );
   }
   dest[ "staging_index_allocator" ] = state->staging_index_allocator;
   dest[ "write_request_index_allocator" ] = state->write_request_index_allocator;

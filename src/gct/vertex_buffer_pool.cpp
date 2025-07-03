@@ -61,6 +61,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     write_request()
       .set_index( index )
       .set_buffer( b )
+      .set_update_descriptor_set( true )
   );
   vertex_buffer_state[ index ] =
     vertex_buffer_state_type()
@@ -155,6 +156,7 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     write_request()
       .set_index( index )
       .set_buffer( b )
+      .set_update_descriptor_set( true )
   );
   vertex_buffer_state[ index ] =
     vertex_buffer_state_type()
@@ -181,26 +183,20 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
   if( execution_pending ) {
     throw exception::runtime_error( "vertex_buffer_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
   }
-  auto b = props.allocator_set.allocator->create_mappable_buffer(
+  auto b = props.allocator_set.allocator->create_buffer(
     count * sizeof( glm::vec4 ),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
-    vk::BufferUsageFlagBits::eStorageBuffer
+    vk::BufferUsageFlagBits::eStorageBuffer,
+    VMA_MEMORY_USAGE_GPU_ONLY
   );
-  {
-    auto mapped = b->map< std::uint8_t >();
-    std::fill(
-      mapped.begin(),
-      mapped.end(),
-      0u
-    );
-  }
   const vertex_buffer_index_t index = allocate_index();
 
   write_request_list.push_back(
     write_request()
       .set_index( index )
       .set_buffer( b )
+      .set_update_descriptor_set( true )
   );
   vertex_buffer_state[ index ] =
     vertex_buffer_state_type()
@@ -256,16 +252,41 @@ std::shared_ptr< buffer_t > vertex_buffer_pool::state_type::get( const vertex_bu
   if( vertex_buffer_state.size() <= *desc || !vertex_buffer_state[ *desc ].valid ) {
     throw exception::invalid_argument( "vertex_buffer_pool::get : No such sampler" );
   }
-  return vertex_buffer_state[ *desc ].buffer->get_buffer();
+  if( vertex_buffer_state[ *desc ].buffer.index() == 0 ) {
+    return std::get< std::shared_ptr< mappable_buffer_t > >( vertex_buffer_state[ *desc ].buffer )->get_buffer();
+  }
+  else {
+    return std::get< std::shared_ptr< buffer_t > >( vertex_buffer_state[ *desc ].buffer );
+  }
 }
 
 std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::state_type::get() {
   std::vector< std::shared_ptr< buffer_t > > temp;
   temp.reserve( vertex_buffer_state.size() );
   for( auto &e: vertex_buffer_state ) {
-    temp.push_back( e.buffer->get_buffer() );
+    if( e.buffer.index() == 0 ) {
+      temp.push_back( std::get< std::shared_ptr< mappable_buffer_t > >( e.buffer )->get_buffer() );
+    }
+    else {
+      temp.push_back( std::get< std::shared_ptr< buffer_t > >( e.buffer ) );
+    }
   }
   return temp;
+}
+
+void vertex_buffer_pool::state_type::clear( const vertex_buffer_descriptor &desc ) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "vertex_buffer_pool::state_type::clear : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+
+  write_request_list.push_back(
+    write_request()
+      .set_index( *desc )
+      .set_buffer( vertex_buffer_state[ *desc ].buffer )
+      .set_update_descriptor_set( false )
+  );
+
+  used_on_gpu.push_back( desc );
 }
 
 vertex_buffer_pool::state_type::state_type( const vertex_buffer_pool_create_info &ci ) :
@@ -280,18 +301,29 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( props.external_descriptor_set.find( props.vertex_buffer_descriptor_set_id ) != props.external_descriptor_set.end() ) {
     std::vector< write_descriptor_set_t > updates;
     for( const auto &req: write_request_list ) {
-      rec.sync_to_device( req.buffer );
-      const auto target = (*props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ])[ props.descriptor_name ];
-      updates.push_back(
-        write_descriptor_set_t()
-          .set_basic(
-            vk::WriteDescriptorSet( target )
-              .setDstArrayElement( req.index )
-              .setDescriptorCount( 1u )
-          )
-          .add_buffer( req.buffer->get_buffer() )
-          .set_index( req.index )
-      );
+      std::shared_ptr< buffer_t > gpu_side_buffer;
+      if( req.buffer.index() == 0 ) {
+        gpu_side_buffer = std::get< std::shared_ptr< mappable_buffer_t > >( req.buffer )->get_buffer();
+        rec.sync_to_device( std::get< std::shared_ptr< mappable_buffer_t > >( req.buffer ) );
+      }
+      else {
+        gpu_side_buffer = std::get< std::shared_ptr< buffer_t > >( req.buffer );
+        rec->fillBuffer( **gpu_side_buffer, 0u, gpu_side_buffer->get_props().get_basic().size, 0u );
+      }
+      rec.transfer_to_compute_barrier( { gpu_side_buffer }, {} );
+      if( req.update_descriptor_set ) {
+        const auto target = (*props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ])[ props.descriptor_name ];
+        updates.push_back(
+          write_descriptor_set_t()
+            .set_basic(
+              vk::WriteDescriptorSet( target )
+                .setDstArrayElement( req.index )
+                .setDescriptorCount( 1u )
+            )
+            .add_buffer( gpu_side_buffer )
+            .set_index( req.index )
+        );
+      }
     }
     props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ]->update(
       std::move( updates )
@@ -299,7 +331,15 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   }
   else {
     for( const auto &req: write_request_list ) {
-      rec.sync_to_device( req.buffer );
+      std::shared_ptr< buffer_t > gpu_side_buffer;
+      if( req.buffer.index() == 0 ) {
+        gpu_side_buffer = std::get< std::shared_ptr< mappable_buffer_t > >( req.buffer )->get_buffer();
+        rec.sync_to_device( std::get< std::shared_ptr< mappable_buffer_t > >( req.buffer ) );
+      }
+      else {
+        gpu_side_buffer = std::get< std::shared_ptr< buffer_t > >( req.buffer );
+        rec->fillBuffer( **gpu_side_buffer, 0u, gpu_side_buffer->get_props().get_basic().size, 0u );
+      }
     }
   }
   rec.on_executed(
@@ -365,6 +405,11 @@ std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::get() {
   return state->get();
 }
 
+void vertex_buffer_pool::clear( const vertex_buffer_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  state->clear( desc );
+}
+
 void vertex_buffer_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );
   state->flush( rec );
@@ -381,8 +426,15 @@ void vertex_buffer_pool::to_json( nlohmann::json &dest ) const {
       if( state->vertex_buffer_state[ i ].write_request_index ) {
         temp[ "write_request_index" ] = *state->vertex_buffer_state[ i ].write_request_index;
       }
-      if( state->vertex_buffer_state[ i ].buffer ) {
-        temp[ "buffer" ] = *state->vertex_buffer_state[ i ].buffer;
+      if( state->vertex_buffer_state[ i ].buffer.index() == 0 ) {
+        if( std::get< std::shared_ptr< mappable_buffer_t > >( state->vertex_buffer_state[ i ].buffer ) ) {
+          temp[ "buffer" ] = *std::get< std::shared_ptr< mappable_buffer_t > >( state->vertex_buffer_state[ i ].buffer );
+        }
+      }
+      else {
+        if( std::get< std::shared_ptr< buffer_t > >( state->vertex_buffer_state[ i ].buffer ) ) {
+          temp[ "buffer" ] = *std::get< std::shared_ptr< buffer_t > >( state->vertex_buffer_state[ i ].buffer );
+        }
       }
       dest[ "vertex_buffer_state" ][ std::to_string( i ) ] = temp;
     }
@@ -391,7 +443,16 @@ void vertex_buffer_pool::to_json( nlohmann::json &dest ) const {
   for( const auto &w: state->write_request_list ) {
     auto temp = nlohmann::json::object();
     temp[ "index" ] = w.index;
-    temp[ "buffer" ] = *w.buffer;
+    if( w.buffer.index() == 0 ) {
+      if( std::get< std::shared_ptr< mappable_buffer_t > >( w.buffer ) ) {
+        temp[ "buffer" ] = *std::get< std::shared_ptr< mappable_buffer_t > >( w.buffer );
+      }
+    }
+    else {
+      if( std::get< std::shared_ptr< buffer_t > >( w.buffer ) ) {
+        temp[ "buffer" ] = *std::get< std::shared_ptr< buffer_t > >( w.buffer );
+      }
+    }
     dest[ "write_request_buffer" ].push_back( temp );
   }
   dest[ "execution_pending" ] = state->execution_pending;

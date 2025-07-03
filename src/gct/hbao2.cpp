@@ -5,12 +5,14 @@
 #include <gct/compute.hpp>
 #include <gct/hbao2.hpp>
 #include <gct/exception.hpp>
+#include <gct/get_library_path.hpp>
 
 namespace gct {
 hbao2::hbao2(
   const hbao2_create_info &ci
 ) :
   property_type( ci ) {
+  LIBGCT_SHADER_SET_USE_SYSTEM_SHADER_IF_NOT_EXIST( "ao" / "hbao" );
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "hbao2::hbao2", p0_path, "0" )
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "hbao2::hbao2", p45_path, "45" )
   LIBGCT_SHADER_SET_VALIDATE( shader_set, "hbao2::hbao2", p90_path, "90" )

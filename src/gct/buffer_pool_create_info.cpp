@@ -24,6 +24,7 @@ void to_json( nlohmann::json &dest, const buffer_pool_create_info &src ) {
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "max_buffer_count" ] = src.max_buffer_count;
+  dest[ "max_request_count" ] = src.max_request_count;
   dest[ "staging_buffer_name" ]  = src.staging_buffer_name;
   dest[ "buffer_name" ] = src.buffer_name;
   dest[ "write_request_buffer_name" ] = src.write_request_buffer_name;

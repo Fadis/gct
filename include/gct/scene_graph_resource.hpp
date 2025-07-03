@@ -51,6 +51,12 @@ struct scene_graph_resource {
   LIBGCT_SETTER( mesh )
   LIBGCT_SETTER( meshlet )
   LIBGCT_SETTER( meshlet_index )
+  LIBGCT_SETTER( particle )
+  LIBGCT_SETTER( rigid )
+  LIBGCT_SETTER( distance_constraint )
+  LIBGCT_SETTER( constraint )
+  LIBGCT_SETTER( spatial_hash )
+  LIBGCT_SETTER( vertex_to_primitive )
   LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
@@ -81,6 +87,12 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > mesh;
   std::shared_ptr< buffer_pool > meshlet;
   std::shared_ptr< buffer_pool > meshlet_index;
+  std::shared_ptr< buffer_pool > particle;
+  std::shared_ptr< buffer_pool > rigid;
+  std::shared_ptr< buffer_pool > distance_constraint;
+  std::shared_ptr< buffer_pool > constraint;
+  std::shared_ptr< buffer_pool > spatial_hash;
+  std::shared_ptr< buffer_pool > vertex_to_primitive;
   std::shared_ptr< buffer_pool > resource_pair;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< vertex_buffer_pool > vertex;
@@ -196,6 +208,42 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->resource_pair->get_props().allocator_set ); \
       } \
       add_resource( { "resource_pair", ( r ) ->resource_pair->get_buffer() } ); \
+    } \
+    if( ( r ) ->particle ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->particle->get_props().allocator_set ); \
+      } \
+      add_resource( { "particle_pool", ( r ) ->particle->get_buffer() } ); \
+    } \
+    if( ( r ) ->rigid ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->rigid->get_props().allocator_set ); \
+      } \
+      add_resource( { "rigid_pool", ( r ) ->rigid->get_buffer() } ); \
+    } \
+    if( ( r ) ->distance_constraint ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->distance_constraint->get_props().allocator_set ); \
+      } \
+      add_resource( { "distance_constraint_pool", ( r ) ->distance_constraint->get_buffer() } ); \
+    } \
+    if( ( r ) ->constraint ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->constraint->get_props().allocator_set ); \
+      } \
+      add_resource( { "constraint_pool", ( r ) ->constraint->get_buffer() } ); \
+    } \
+    if( ( r ) ->spatial_hash ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->spatial_hash->get_props().allocator_set ); \
+      } \
+      add_resource( { "spatial_hash_pool", ( r ) ->spatial_hash->get_buffer() } ); \
+    } \
+    if( ( r ) ->vertex_to_primitive ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->vertex_to_primitive->get_props().allocator_set ); \
+      } \
+      add_resource( { "vertex_to_primitive_pool", ( r ) ->vertex_to_primitive->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

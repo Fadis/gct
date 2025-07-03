@@ -46,6 +46,18 @@ namespace gct {
     [[nodiscard]] const_reference operator[]( int n ) const {
       return head.get()[ n ];
     }
+    [[nodiscard]] T& operator*() {
+      return *head.get();
+    }
+    [[nodiscard]] const T& operator*() const {
+      return *head.get();
+    }
+    [[nodiscard]] T& operator->() {
+      return *head.get();
+    }
+    [[nodiscard]] const T& operator->() const {
+      return *head.get();
+    }
   private:
     std::shared_ptr< value_type > head;
     size_type length;
