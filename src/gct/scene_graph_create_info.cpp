@@ -28,6 +28,11 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "resource_pair" ] = src.resource_pair;
   dest[ "vertex" ] = src.vertex;
   dest[ "light" ] = src.light;
+  dest[ "particle" ] = src.particle;
+  dest[ "rigid" ] = src.rigid;
+  dest[ "distance_constraint" ] = src.distance_constraint;
+  dest[ "constraint" ] = src.constraint;
+  dest[ "vertex_to_primitive" ] = src.vertex_to_primitive;
   dest[ "prim_pool_size" ] = src.prim_pool_size;
   dest[ "inst_pool_size" ] = src.inst_pool_size;
   dest[ "descriptor_set_id" ] = src.descriptor_set_id;

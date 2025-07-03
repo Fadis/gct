@@ -17,6 +17,14 @@ skyview_froxel2_create_info &skyview_froxel2_create_info::set_shader(
   return *this;
 }
 
+bool skyview_froxel2_create_info::shader_exists() const {
+  if( shader_set.find( "generate" ) == shader_set.end() ) return false; 
+  if( shader_set.find( "render" ) == shader_set.end() ) return false; 
+  if( !std::filesystem::exists( shader_set.at( "generate" ) ) ) return false;
+  if( !std::filesystem::exists( shader_set.at( "render" ) ) ) return false;
+  return true;
+}
+
 void to_json( nlohmann::json &dest, const skyview_froxel2_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;

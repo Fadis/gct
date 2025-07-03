@@ -27,6 +27,7 @@ struct skyview_create_info {
   skyview_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   allocator_set_t allocator_set;
   unsigned int transmittance_width = 256u;
   unsigned int transmittance_height = 64u;

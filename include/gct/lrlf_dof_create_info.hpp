@@ -29,6 +29,7 @@ struct lrlf_dof_create_info {
   lrlf_dof_create_info &set_shader(
     const std::filesystem::path &
   );
+  bool shader_exists() const;
   allocator_set_t allocator_set;
   shader_set_t shader_set;
   rename_map_t rename;

@@ -93,6 +93,11 @@ scene_graph_create_info::scene_graph_create_info() {
   meshlet_index.set_buffer_name( "meshlet_index_pool" );  
   meshlet_index.set_max_buffer_count( 1024u * 1024u * 64u );
   resource_pair.set_buffer_name( "resource_pair" );
+  particle.set_buffer_name( "particle_pool" );
+  rigid.set_buffer_name( "rigid_pool" );
+  distance_constraint.set_buffer_name( "distance_constraint_pool" );
+  constraint.set_buffer_name( "constraint_pool" );
+  vertex_to_primitive.set_buffer_name( "vertex_to_primitive_pool" );
 }
 
 scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
@@ -108,6 +113,11 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   meshlet_index.set_shader( dir / "meshlet_index" );
   resource_pair.set_shader( dir / "resource_pair" );
   light.set_shader( dir / "light_pool" );
+  particle.set_shader( dir / "particle_pool" );
+  rigid.set_shader( dir / "rigid_pool" );
+  distance_constraint.set_shader( dir / "distance_constraint_pool" );
+  constraint.set_shader( dir / "constraint_pool" );
+  vertex_to_primitive.set_shader( dir / "vertex_to_primitive_pool" );
   return *this;
 }
 
@@ -265,6 +275,26 @@ scene_graph::scene_graph(
     std::cout << "Using system meshlet_index" << std::endl;
     props->meshlet_index.set_shader( shader_path / "meshlet_index" );
   }
+  if( !props->particle.shader_exists() ) {
+    std::cout << "Using system particle_pool" << std::endl;
+    props->particle.set_shader( shader_path / "particle_pool" );
+  }
+  if( !props->rigid.shader_exists() ) {
+    std::cout << "Using system rigid_pool" << std::endl;
+    props->rigid.set_shader( shader_path / "rigid_pool" );
+  }
+  if( !props->distance_constraint.shader_exists() ) {
+    std::cout << "Using system distance_constraint_pool" << std::endl;
+    props->distance_constraint.set_shader( shader_path / "distance_constraint_pool" );
+  }
+  if( !props->constraint.shader_exists() ) {
+    std::cout << "Using system constraint_pool" << std::endl;
+    props->constraint.set_shader( shader_path / "constraint_pool" );
+  }
+  if( !props->vertex_to_primitive.shader_exists() ) {
+    std::cout << "Using system vertex_to_primitive_pool" << std::endl;
+    props->vertex_to_primitive.set_shader( shader_path / "vertex_to_primitive_pool" );
+  }
 
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
@@ -345,6 +375,26 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->resource_pair )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->particle.reset( new buffer_pool(
+    buffer_pool_create_info( props->particle )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->rigid.reset( new buffer_pool(
+    buffer_pool_create_info( props->rigid )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->distance_constraint.reset( new buffer_pool(
+    buffer_pool_create_info( props->distance_constraint )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->constraint.reset( new buffer_pool(
+    buffer_pool_create_info( props->constraint )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->vertex_to_primitive.reset( new buffer_pool(
+    buffer_pool_create_info( props->vertex_to_primitive )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -400,6 +450,21 @@ scene_graph::scene_graph(
   }
   if( resource->meshlet_index && resource->descriptor_set->has( "meshlet_index_pool" ) ) {
     u.push_back( { "meshlet_index_pool", resource->meshlet_index->get_buffer() } );
+  }
+  if( resource->particle && resource->descriptor_set->has( "particle_pool" ) ) {
+    u.push_back( { "particle_pool", resource->particle->get_buffer() } );
+  }
+  if( resource->rigid && resource->descriptor_set->has( "rigid_pool" ) ) {
+    u.push_back( { "rigid_pool", resource->rigid->get_buffer() } );
+  }
+  if( resource->distance_constraint && resource->descriptor_set->has( "distance_constraint_pool" ) ) {
+    u.push_back( { "distance_constraint_pool", resource->distance_constraint->get_buffer() } );
+  }
+  if( resource->constraint && resource->descriptor_set->has( "constraint_pool" ) ) {
+    u.push_back( { "constraint_pool", resource->constraint->get_buffer() } );
+  }
+  if( resource->vertex_to_primitive && resource->descriptor_set->has( "vertex_to_primitive_pool" ) ) {
+    u.push_back( { "vertex_to_primitive_pool", resource->vertex_to_primitive->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -481,6 +546,26 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->resource_pair ) {
     (*resource->resource_pair)( rec );
     s.add( resource->resource_pair->get_buffer() );
+  }
+  if( resource->particle ) {
+    (*resource->particle)( rec );
+    s.add( resource->particle->get_buffer() );
+  }
+  if( resource->rigid ) {
+    (*resource->rigid)( rec );
+    s.add( resource->rigid->get_buffer() );
+  }
+  if( resource->distance_constraint ) {
+    (*resource->distance_constraint)( rec );
+    s.add( resource->distance_constraint->get_buffer() );
+  }
+  if( resource->constraint ) {
+    (*resource->constraint)( rec );
+    s.add( resource->constraint->get_buffer() );
+  }
+  if( resource->vertex_to_primitive ) {
+    (*resource->vertex_to_primitive)( rec );
+    s.add( resource->vertex_to_primitive->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

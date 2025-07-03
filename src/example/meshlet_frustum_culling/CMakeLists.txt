@@ -23,12 +23,6 @@ add_shader( meshlet_frustum_culling shadow/world.frag )
 add_shader( meshlet_frustum_culling shadow/world.geom )
 add_shader( meshlet_frustum_culling shadow/world.vert )
 
-add_shader( meshlet_frustum_culling skyview/generate_transmittance.comp )
-add_shader( meshlet_frustum_culling skyview/generate_skyview.comp )
-add_shader( meshlet_frustum_culling skyview/generate_multiscat.comp )
-add_shader( meshlet_frustum_culling skyview/generate.comp )
-add_shader( meshlet_frustum_culling skyview/render.comp )
-
 add_shader( meshlet_frustum_culling geometry/geometry.task )
 add_shader( meshlet_frustum_culling geometry/geometry.mesh )
 add_shader( meshlet_frustum_culling geometry/geometry.frag )
@@ -49,25 +43,12 @@ add_shader( meshlet_frustum_culling gamma/gamma.comp )
 
 add_shader( meshlet_frustum_culling nearest_position/nearest_position.comp )
 
-add_shader( meshlet_frustum_culling ao/hbao_0.comp )
-add_shader( meshlet_frustum_culling ao/hbao_45.comp )
-add_shader( meshlet_frustum_culling ao/hbao_90.comp )
-add_shader( meshlet_frustum_culling ao/hbao_135.comp )
-add_shader( meshlet_frustum_culling ao/hbao.comp )
-
 add_shader( meshlet_frustum_culling mix_ao/mix_ao.comp )
 
 add_shader( meshlet_frustum_culling tone/tone.comp )
 
 
 add_shader( meshlet_frustum_culling distance/distance.comp )
-
-add_shader( meshlet_frustum_culling dof/h0.comp )
-add_shader( meshlet_frustum_culling dof/h1.comp )
-add_shader( meshlet_frustum_culling dof/h2.comp )
-add_shader( meshlet_frustum_culling dof/h3.comp )
-add_shader( meshlet_frustum_culling dof/h4.comp )
-add_shader( meshlet_frustum_culling dof/v.comp )
 
 add_shader( meshlet_frustum_culling merge/merge.comp )
 

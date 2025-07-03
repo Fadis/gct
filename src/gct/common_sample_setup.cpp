@@ -44,7 +44,7 @@ common_sample_setup::common_sample_setup(
       ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
       ( "fullscreen,f", po::bool_switch(), "fullscreen" )
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
-      ( "model,m", po::value< std::string >(), "glTF filename" )
+      ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
       ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
       ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" );
@@ -52,7 +52,7 @@ common_sample_setup::common_sample_setup(
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
   po::notify( vm );
-  if( vm.count( "help" ) || ( enable_glfw && enable_gltf && !vm.count( "model" ) ) ) {
+  if( vm.count( "help" ) || ( enable_glfw && enable_gltf && ( !vm.count( "model" ) || vm[ "model" ].as< std::vector< std::string > >().empty() ) ) ) {
     std::cout << desc << std::endl;
     exit( 0 );
   }
@@ -61,7 +61,8 @@ common_sample_setup::common_sample_setup(
   if( enable_glfw ) {
     walk_state_filename = vm[ "walk" ].as< std::string >();
     if( enable_gltf ) {
-      model_filename = vm[ "model" ].as< std::string >();
+      model_filename = vm[ "model" ].as< std::vector< std::string > >()[ 0 ];
+      model_filename_list = vm[ "model" ].as< std::vector< std::string > >();
     }
     ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
     glfw::get();

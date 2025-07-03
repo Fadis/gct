@@ -96,6 +96,21 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.light ) {
     dest[ "light" ] = *src.light;
   }
+  if( src.particle ) {
+    dest[ "particle" ] = *src.particle;
+  }
+  if( src.rigid ) {
+    dest[ "rigid" ] = *src.rigid;
+  }
+  if( src.distance_constraint ) {
+    dest[ "distance_constraint" ] = *src.distance_constraint;
+  }
+  if( src.constraint ) {
+    dest[ "constraint" ] = *src.constraint;
+  }
+  if( src.vertex_to_primitive ) {
+    dest[ "vertex_to_primitive" ] = *src.vertex_to_primitive;
+  }
   dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
     if( v.second ) {

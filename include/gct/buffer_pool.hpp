@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
+#include <map>
 #include <filesystem>
 #include <vector>
 #include <optional>
@@ -18,6 +19,7 @@
 #include <gct/linear_allocator.hpp>
 #include <gct/index_range.hpp>
 #include <gct/spv_member_pointer.hpp>
+#include <gct/interval.hpp>
 
 namespace gct {
 
@@ -90,6 +92,7 @@ private:
     void flush( command_buffer_recorder_t& );
     [[nodiscard]] std::uint32_t size() const;
     [[nodiscard]] std::vector< request_range > build_update_request_range();
+    void fill( const buffer_descriptor&, std::uint32_t count );
     buffer_pool_create_info props;
     std::vector< buffer_state_type > buffer_state;
     sized_linear_allocator index_allocator;
@@ -97,6 +100,7 @@ private:
     std::shared_ptr< buffer_t > buffer;
     std::shared_ptr< buffer_t > write_request_buffer; // write_request[] destination
     std::shared_ptr< buffer_t > read_request_buffer; // read_request[] source
+    interval< std::uint32_t > fill_requests;
     reduced_linear_allocator staging_index_allocator;
     reduced_linear_allocator write_request_index_allocator;
     reduced_linear_allocator read_request_index_allocator;

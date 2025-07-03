@@ -37,6 +37,7 @@ private:
     LIBGCT_SETTER( local )
     LIBGCT_SETTER( history )
     LIBGCT_SETTER( parent )
+    LIBGCT_SETTER( inversed )
     LIBGCT_SETTER( self )
     LIBGCT_SETTER( update_requested )
     bool valid = false;
@@ -47,6 +48,7 @@ private:
     matrix_descriptor local;
     matrix_descriptor history;
     matrix_descriptor parent;
+    matrix_descriptor inversed;
     weak_matrix_descriptor self;
     bool update_requested = false;
   };
@@ -85,6 +87,7 @@ public:
   [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
   [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );
   [[nodiscard]] matrix_descriptor get_history( const matrix_descriptor& );
+  [[nodiscard]] matrix_descriptor get_inversed( const matrix_descriptor& );
   void touch( const matrix_descriptor& );
   void set( const matrix_descriptor&, const glm::mat4& );
   void get( const matrix_descriptor&, const std::function< void( vk::Result, const glm::mat4& ) >& );
@@ -115,6 +118,7 @@ private:
     void flush( command_buffer_recorder_t& );
     [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );
     [[nodiscard]] matrix_descriptor get_history( const matrix_descriptor& );
+    [[nodiscard]] matrix_descriptor get_inversed( const matrix_descriptor& );
     [[nodiscard]] std::vector< request_range > build_update_request_range();
     matrix_pool_create_info props;
     std::vector< matrix_state_type > matrix_state;

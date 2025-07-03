@@ -11,12 +11,16 @@
 #include <gct/pipeline_layout.hpp>
 #include <gct/skyview.hpp>
 #include <gct/color_space.hpp>
+#include <gct/shader_set.hpp>
+#include <gct/get_library_path.hpp>
+#include <gct/exception.hpp>
 
 namespace gct {
 
 skyview::skyview(
   const skyview_create_info &ci
 ) : props( ci ) {
+  LIBGCT_SHADER_SET_USE_SYSTEM_SHADER_IF_NOT_EXIST( "skyview" );
   auto linear_sampler = get_device( *props.allocator_set.allocator ).get_sampler(
     gct::get_basic_linear_sampler_create_info()
   );

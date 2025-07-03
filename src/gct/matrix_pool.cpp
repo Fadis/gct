@@ -48,6 +48,8 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
   const matrix_index_t index = allocate_index();
   
   const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
+  
+  const matrix_index_t inversed_index = allocate_index();
 
   const matrix_index_t staging_index = staging_index_allocator.allocate();
 
@@ -108,6 +110,21 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
     matrix_state[ index ].set_history( history_desc );
   }
 
+  matrix_state[ inversed_index ] =
+    matrix_state_type()
+      .set_valid( true )
+      .set_parent( desc );
+  matrix_descriptor inversed_desc(
+    new matrix_index_t( inversed_index ),
+    [self=shared_from_this()]( const matrix_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  matrix_state[ index ].set_inversed( inversed_desc );
+
   matrix_state[ index ].set_self( desc.get_weak() );
   return desc;
 }
@@ -129,6 +146,7 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
 
   const matrix_index_t index = allocate_index();
   const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
+  const matrix_index_t inversed_index = allocate_index();
   const matrix_index_t local_index = allocate_index();
   const matrix_index_t local_history_index = enable_copy ? allocate_index() : matrix_index_t( 0u ) ;
   const matrix_index_t staging_index = staging_index_allocator.allocate();
@@ -215,7 +233,6 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
   );
   used_on_gpu.push_back( desc );
   update_requested.insert( *desc );
-  matrix_state[ index ].set_self( desc.get_weak() );
 
   if( enable_copy ) {
     matrix_descriptor history_desc(
@@ -231,6 +248,24 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     matrix_state[ history_index ].set_self( history_desc.get_weak() );
     matrix_state[ index ].set_history( history_desc );
   }
+
+  matrix_state[ inversed_index ] =
+    matrix_state_type()
+      .set_valid( true )
+      .set_parent( desc );
+  matrix_descriptor inversed_desc(
+    new matrix_index_t( inversed_index ),
+    [self=shared_from_this()]( const matrix_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  matrix_state[ index ].set_inversed( inversed_desc );
+  
+  matrix_state[ index ].set_self( desc.get_weak() );
+
   edge.insert( std::make_pair( *parent, index ) );
 
   return desc;
@@ -539,7 +574,7 @@ matrix_pool::state_type::state_type( const matrix_pool_create_info &ci ) :
 
 matrix_pool::matrix_descriptor matrix_pool::state_type::get_local( const matrix_descriptor &desc ) {
   if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
-    throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix not found", __FILE__, __LINE__ );
+    throw exception::runtime_error( "matrix_pool::state_type::get_local : Matrix not found", __FILE__, __LINE__ );
   }
   const auto &s = matrix_state[ *desc ];
   if( s.local ) {
@@ -559,6 +594,13 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::get_history( const matri
   throw exception::runtime_error( "matrix_pool::state_type::get_history : Matrix has no history", __FILE__, __LINE__ );
 }
 
+matrix_pool::matrix_descriptor matrix_pool::state_type::get_inversed( const matrix_descriptor &desc ) {
+  if( matrix_state.size() <= *desc || !matrix_state[ *desc ].valid ) {
+    throw exception::runtime_error( "matrix_pool::state_type::get_inversed : Matrix not found", __FILE__, __LINE__ );
+  }
+  const auto &s = matrix_state[ *desc ];
+  return s.inversed;
+}
 
 std::vector< matrix_pool::request_range > matrix_pool::state_type::build_update_request_range() {
   std::vector< request_range > range;
@@ -762,6 +804,10 @@ matrix_pool::matrix_descriptor matrix_pool::get_local( const matrix_descriptor &
 matrix_pool::matrix_descriptor matrix_pool::get_history( const matrix_descriptor &desc ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->get_history( desc );
+}
+matrix_pool::matrix_descriptor matrix_pool::get_inversed( const matrix_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get_inversed( desc );
 }
 void matrix_pool::operator()( command_buffer_recorder_t &rec ) {
   std::lock_guard< std::mutex > lock( state->guard );

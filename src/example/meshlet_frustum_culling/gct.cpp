@@ -326,14 +326,6 @@ int main( int argc, const char *argv[] ) {
       .set_aspect_ratio( float( res.width )/float( res.height ) )
   );
 
-  /*const auto geometry_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
-    gct::scene_graph::compiled_scene_graph_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
-      .set_render_pass( gbuffer.get_render_pass() )
-      .set_dynamic_cull_mode( true ),
-    *sg
-  );*/
-  
   const auto depth_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
     gct::scene_graph::compiled_scene_graph_create_info()
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
@@ -361,14 +353,8 @@ int main( int argc, const char *argv[] ) {
   const auto il = std::make_shared< gct::scene_graph::instance_list >(
     gct::scene_graph::instance_list_create_info()
       .set_parallel_mode3( true ),
-    *sg
-  );
-
-  gct::kdtree< gct::scene_graph::resource_pair > full_kd;
-  gct::scene_graph::append(
-    *il->get_resource(),
-    il->get_draw_list(),
-    full_kd
+    *sg,
+    doc.get_descriptor()
   );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -549,13 +535,9 @@ int main( int argc, const char *argv[] ) {
 
   gct::hbao2 hbao(
     gct::hbao2_create_info()
-      .set_allocator( res.allocator )
-      .set_pipeline_cache( res.pipeline_cache )
-      .set_descriptor_pool( res.descriptor_pool )
+      .set_allocator_set( res.allocator_set )
       .set_unproject( unproject_desc )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/ao/" )
       .set_scene_graph( sg->get_resource() )
-      .add_resource( { "global_uniforms", global_uniform } ) 
   );
 
   gct::skyview skyview(
@@ -577,7 +559,6 @@ int main( int argc, const char *argv[] ) {
   gct::skyview_froxel2 skyview_froxel2(
     gct::skyview_froxel2_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
       .set_sigma( sigma_desc )
       .set_world_to_screen( world_to_screen_desc )
       .set_unproject_to_world( unproject_to_world_desc )
@@ -598,7 +579,6 @@ int main( int argc, const char *argv[] ) {
   gct::lrlf_dof dof(
     gct::lrlf_dof_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/dof/" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .set_node_name( "dof" )

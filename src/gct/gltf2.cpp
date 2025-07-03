@@ -880,6 +880,36 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( mmp.has( "unique_vertex_count" ) ) {
         m.data()->*mmp[ "unique_vertex_count" ] = std::uint32_t( unique_vertex_count );
       }
+      // パーティクルの情報のオフセット
+      if( props.enable_particle ) {
+        const auto desc = props.graph->get_resource()->particle->allocate( vertex_count );
+        if( mmp.has( "particle_offset" ) ) {
+          m.data()->*mmp[ "particle_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "particle_offset" ) ) {
+        m.data()->*mmp[ "particle_offset" ] = 0xFFFFFFFFu;
+      }
+      // 距離制約の情報のオフセット
+      if( props.enable_distance_constraint ) {
+        const auto desc = props.graph->get_resource()->distance_constraint->allocate( vertex_count * 32u );
+        if( mmp.has( "distance_constraint_offset" ) ) {
+          m.data()->*mmp[ "distance_constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "distance_constraint_offset" ) ) {
+        m.data()->*mmp[ "distance_constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 頂点からプリミティブを辿る為のテーブルのオフセット
+      if( props.enable_vertex_to_primitive ) {
+        const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( vertex_count * 32u );
+        if( mmp.has( "vertex_to_primitive_offset" ) ) {
+          m.data()->*mmp[ "vertex_to_primitive_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "vertex_to_primitive_offset" ) ) {
+        m.data()->*mmp[ "vertex_to_primitive_offset" ] = 0xFFFFFFFFu;
+      }
       // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
     }
@@ -1095,6 +1125,9 @@ void gltf2::load_node(
 
           i->is_highest_lod = lod_id == 0u;
           ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
+          if( rimp.has( "inversed_world_matrix" ) ) {
+            ri.data()->*rimp[ "inversed_world_matrix" ] = *props.graph->get_resource()->matrix->get_inversed( i->descriptor.matrix );
+          }
           if( rimp.has( "previous_world_matrix" ) ) {
             if( props.graph->get_resource()->matrix->copy_enabled() ) {
               ri.data()->*rimp[ "previous_world_matrix" ] = *props.graph->get_resource()->matrix->get_history( i->descriptor.matrix );
@@ -1125,7 +1158,9 @@ void gltf2::load_node(
           }
           props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
           i->descriptor.set_prim( mesh_[ doc_node.mesh ]->prim[ current_lod[ lod_id ].first ] );
-          cur->inst.push_back( props.graph->get_resource()->inst.allocate( i ) );
+          const auto desc = props.graph->get_resource()->inst.allocate( i );
+          cur->inst.push_back( desc );
+          inst.push_back( desc );
           used.insert( current_lod[ lod_id ].first );
         }
       }

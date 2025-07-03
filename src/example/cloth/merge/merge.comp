@@ -1,0 +1,109 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+#include <gct/global_uniforms.h>
+#include <gct/constants.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/sky.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint bloom;
+  uint dest;
+  uint skyview;
+  uint star;
+  uint flare;
+} push_constants;
+
+
+layout (std430, binding = 7) buffer Tone {
+  uint value;
+  float scale;
+} tone;
+
+layout (std430, binding = 13) buffer AFState {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+  float visible_range;
+} af_state;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.dest ) ] ).xy;
+
+  vec4 near = max(
+    imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 0 ) ),
+    vec4( 0.0, 0.0, 0.0, 0.0 )
+  );
+
+  vec4 far = ( near.a < 1.0 ) ? max(
+    imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( screen_pos, 1 ) ),
+    vec4( 0.0, 0.0, 0.0, 0.0 )
+  ) : vec4( 0.0, 0.0, 0.0, 0.0 );
+
+  vec3 total = vec3( 0.0, 0.0, 0.0 );
+  if( near.a  < 1.0 && far.a < 1.0 ) {
+    vec4 pos_in_screen = vec4( vec2( screen_pos )/vec2( image_size ) * 2.0 - 1.0, 0.0, 1.0 );
+    vec4 pos = matrix_pool[ global_uniforms.screen_to_world_matrix ] * pos_in_screen;
+    pos /= pos.w;
+    //matrix_pool[ global_uniforms.projection_matrix ] * matrix_pool[ global_uniforms.camera_matrix ] * pos;
+    pos_in_screen /= pos_in_screen.w;
+    const vec3 pos_in_froxel = pos_in_screen.xyz * 0.5 + 0.5;
+    
+    const vec3 eye_dir = normalize( pos.xyz - global_uniforms.eye_pos.xyz );
+    const vec2 latitude_longitude = world_to_llar( eye_dir );
+    const vec2 skyview_texcoord = vec2(
+      ( latitude_longitude.y + pi ) / ( 2.0 * pi ),
+      1.0 - skyview_latitude_to_texcoord( latitude_longitude.x )
+    );
+    total = texture( texture_pool[ nonuniformEXT( push_constants.skyview ) ], skyview_texcoord ).rgb;
+  }
+  total = mix( total, far.rgb, min( far.a * 3.0, 1.0 ) );
+  total = mix( total, near.rgb, min( near.a * 1.0, 1.0 ) );
+
+  float vignetting_factor = 1.0;
+  {
+    const float aspect_ratio = float( image_size.x )/float( image_size.y );
+    // イメージセンサーの縦方向の長さと焦点距離の比の2乗を求める
+    const float factor = ( af_state.sensor_size/aspect_ratio )/af_state.focal_distance;
+    const float f2 = factor * factor;
+    const vec2 uv = vec2( screen_pos )/vec2( image_size );
+    // イメージセンサーの中心からピクセルまでの距離の2乗を求める
+    const vec2 d = abs( uv - vec2( 0.5f, 0.5f ) ) * vec2( 2.0f * aspect_ratio, 2.0f );
+    const float r2 = dot( d, d );
+    // f2 * r2でtan^2θが求まる
+    // θはレンズの軸とこのピクセルに映る物体の向きを表すベクトルのなす角
+    // cosθ = 1/sqrt( tan^2θ + 1 )
+    const float cos_theta = 1.0f / sqrt( f2 * r2 + 1.0f);
+    // コサイン4乗則
+    // 1.4はビネッティングの効果の強さを指定する係数
+    vignetting_factor = 1.0 - max( 1.0 - cos_theta * cos_theta * cos_theta * cos_theta, 0.0 ) * 1.4;
+  }
+  total *= vignetting_factor;
+  total += texture( texture_pool[ nonuniformEXT( push_constants.star ) ], vec2( screen_pos )/vec2( image_size ) ).rgb;
+  total += texture( texture_pool[ nonuniformEXT( push_constants.flare ) ], vec2( screen_pos )/vec2( image_size ) ).rgb;
+
+  total /= tone.scale;
+  const vec3 bloom = max( total - vec3( 1.0, 1.0, 1.0 ), vec3( 0.0, 0.0, 0.0 ) );
+  
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( total, 1.0 ) );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.bloom ) ], screen_pos, vec4( bloom, 1.0 ) );
+}
+

@@ -86,21 +86,13 @@ buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( std::uint32_t 
 
   const buffer_index_t index = allocate_index( count );
 
-  const buffer_index_t staging_index = staging_index_allocator.allocate( count );
-
-  const request_index_t write_request_index = write_request_index_allocator.allocate( count );
   for( std::uint32_t i = 0u; i != count; ++i ) {
-    write_requests[ write_request_index + i ] =
-      write_request()
-        .set_staging( staging_index + i )
-        .set_destination( index + i );
-    std::fill( std::next( staging.begin(), index * aligned_size ), std::next( staging.begin(), ( index + i + 1u ) * aligned_size ), 0u );
     buffer_state[ index + i ] =
       buffer_state_type()
-        .set_valid( true )
-        .set_staging_index( staging_index + i )
-        .set_write_request_index( write_request_index + i );
+        .set_valid( true );
   }
+
+  fill_requests.add( index * aligned_size, count * aligned_size );
 
   buffer_descriptor desc(
     new buffer_index_t( index ),
@@ -305,11 +297,18 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
       .add_resource( { props.staging_buffer_name, staging_buffer } )
       .add_resource( { props.read_request_buffer_name, read_request_buffer } )
   ) );
+  //const buffer_index_t dummy = allocate_index( 1 );
 }
 
 void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
+  }
+  if( !fill_requests.get().empty() ) {
+    for( const auto &i: fill_requests.get() ) {
+      rec->fillBuffer( **buffer, i.first, i.second, 0u );
+    }
+    rec.transfer_to_compute_barrier( { buffer }, {} );
   }
   if( write_request_index_allocator.get_tail() ) {
     request_range range =
@@ -373,6 +372,7 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
             s.staging_index = std::nullopt;
           }
         }
+        self->fill_requests.clear();
         self->write_request_index_allocator.reset();
         self->read_request_index_allocator.reset();
         self->staging_index_allocator.reset();
