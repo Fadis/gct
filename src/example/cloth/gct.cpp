@@ -651,6 +651,24 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
   
+  auto update_particle_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_particle_position" / "update_particle_position.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto update_particle_velocity = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_particle_velocity" / "update_particle_velocity.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+
   auto particle_to_mesh = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -664,6 +682,11 @@ int main( int argc, const char *argv[] ) {
   if( il1_dl.size() != 1u ) throw -1;
   const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
   std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
+  gct::syncable il1_buffers;
+  for( const auto &v: il1_prim->vertex_buffer ) {
+    const auto b = sg->get_resource()->vertex->get( v.second.buffer );
+    if( b ) il1_buffers.add( b );
+  }
 
   {
     {
@@ -979,14 +1002,14 @@ int main( int argc, const char *argv[] ) {
     gct::blocking_timer frame_rate;
     ++walk;
     // depth
-    {
+    /*{
       {
         auto recorder = command_buffer->begin();
         il[ 1 ]->setup_resource_pair_buffer( recorder );
         particle_to_mesh( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
       }
       command_buffer->execute_and_wait();
-    }
+    }*/
     {
       {
         auto rec = command_buffer->begin();
@@ -1030,6 +1053,15 @@ int main( int argc, const char *argv[] ) {
           (*sg)( rec );
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
+        }
+        if( frame_counter > 60 ) {
+          il[ 1 ]->setup_resource_pair_buffer( rec );
+          update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->particle->get_buffer() );
+          update_particle_velocity( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->particle->get_buffer() );
+          particle_to_mesh( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( il1_buffers );
         }
         if( res.force_geometry || walk.camera_moved() ) {
           auto render_pass_token = rec.begin_render_pass(

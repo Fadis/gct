@@ -611,6 +611,8 @@ add_shader( gct gct/shader/skyview/generate_transmittance.comp INSTALL )
 
 add_shader( gct gct/shader/mesh_to_constraint/mesh_to_constraint.comp INSTALL )
 add_shader( gct gct/shader/mesh_to_particle/mesh_to_particle.comp INSTALL )
+add_shader( gct gct/shader/update_particle_position/update_particle_position.comp INSTALL )
+add_shader( gct gct/shader/update_particle_velocity/update_particle_velocity.comp INSTALL )
 add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
 add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
 

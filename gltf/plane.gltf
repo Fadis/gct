@@ -15,7 +15,12 @@
     "nodes" : [
         {
             "mesh" : 0,
-            "name" : "\u5e73\u9762"
+            "name" : "\u5e73\u9762",
+            "translation" : [
+                0,
+                2,
+                0
+            ]
         }
     ],
     "materials" : [

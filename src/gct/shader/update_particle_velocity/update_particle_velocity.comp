@@ -17,8 +17,6 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
-#include <gct/scene_graph/accessor.h>
-#include <gct/distance_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -30,11 +28,6 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  // ワールド座標系からローカル座標系への変換行列 
-  const mat4 w2l = matrix_pool[ inst.inversed_world_matrix ];
-
-  // スレッドが担当するプリミティブが存在するかを調べる
-  // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
   const uint vertex_id = gl_GlobalInvocationID.x;
   const bool in_range = mesh.unique_vertex_count > vertex_id;
 
@@ -42,9 +35,12 @@ void main() {
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
 
-  const uint accessor_id = mesh.accessor;
+  const float delta_t = 1.0/60.0;
+  const float g = 9.80665;
 
-  const vec4 p = w2l * vec4( particle_pool[ mesh.particle_offset + vertex_id + 0u ].position, 1.0 );
-  write_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, p );
+  vec3 p = particle_pool[ mesh.particle_offset + vertex_id + 0u ].position;
+  vec3 prev_p = particle_pool[ mesh.particle_offset + vertex_id + 0u ].previous_position;
+  vec3 v = ( p - prev_p ) / delta_t;
+  particle_pool[ mesh.particle_offset + vertex_id + 0u ].velocity = v;
 }
 
