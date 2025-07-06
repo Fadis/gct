@@ -321,7 +321,6 @@ int main( int argc, const char *argv[] ) {
 
   std::vector< std::shared_ptr< gct::gltf::gltf2 > > doc;
 
-  //for( const auto &f: res.model_filename_list ) {
     doc.push_back( std::make_shared< gct::gltf::gltf2 >(
       gct::gltf::gltf2_create_info()
         .set_filename( res.model_filename_list[ 0 ] )
@@ -339,15 +338,6 @@ int main( int argc, const char *argv[] ) {
         .set_enable_particle( true )
         .set_enable_distance_constraint( true )
     ) );
-  //}
-
-  /*const auto geometry_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
-    gct::scene_graph::compiled_scene_graph_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/geometry" )
-      .set_render_pass( gbuffer.get_render_pass() )
-      .set_dynamic_cull_mode( true ),
-    *sg
-  );*/
   
   const auto depth_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
     gct::scene_graph::compiled_scene_graph_create_info()
@@ -382,6 +372,26 @@ int main( int argc, const char *argv[] ) {
       d->get_descriptor()
     ) );
   }
+
+  const auto a = sg->get_resource()->matrix->allocate( glm::mat4(
+    0.68449434, 0.79645574, 0.8697895 , 0.59690977,
+    0.13214334, 0.45136574, 0.50019053, 0.30875362,
+    0.68895627, 0.88672466, 0.28136352, 0.3993178 ,
+    0.66846333, 0.97102488, 0.7962768 , 0.23766127
+  ) );
+  const auto ai = sg->get_resource()->matrix->get_inversed( a );
+
+  sg->get_resource()->matrix->get(
+    ai,
+    [](vk::Result, const glm::mat4 &m) {
+      for( std::uint32_t i = 0u; i != 4; ++i ) {
+        for( std::uint32_t j = 0u; j != 4; ++j ) {
+          std::cout << m[ i ][ j ] << " ";
+        }
+        std::cout << std::endl;
+      }
+    }
+  );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
@@ -640,6 +650,15 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
+  
+  auto particle_to_mesh = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "particle_to_mesh" / "particle_to_mesh.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
 
   const auto &il1_dl = il[ 1 ]->get_draw_list();
   if( il1_dl.size() != 1u ) throw -1;
@@ -654,7 +673,6 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-
 
   gct::shader_graph::builder builder( sg->get_resource() );
   
@@ -961,6 +979,14 @@ int main( int argc, const char *argv[] ) {
     gct::blocking_timer frame_rate;
     ++walk;
     // depth
+    {
+      {
+        auto recorder = command_buffer->begin();
+        il[ 1 ]->setup_resource_pair_buffer( recorder );
+        particle_to_mesh( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
+      }
+      command_buffer->execute_and_wait();
+    }
     {
       {
         auto rec = command_buffer->begin();

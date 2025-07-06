@@ -14,6 +14,7 @@ matrix_pool_create_info &matrix_pool_create_info::set_shader(
   set_read_shader( dir / "read.comp.spv" );
   set_update_shader( dir / "update.comp.spv" );
   set_copy_shader( dir / "copy.comp.spv" );
+  set_inverse_shader( dir / "inverse.comp.spv" );
   return *this;
 }
 
@@ -22,7 +23,8 @@ bool matrix_pool_create_info::shader_exists() const {
     std::filesystem::exists( read_shader ) &&
     std::filesystem::exists( write_shader ) &&
     std::filesystem::exists( update_shader ) &&
-    std::filesystem::exists( copy_shader );
+    std::filesystem::exists( copy_shader ) &&
+    std::filesystem::exists( inverse_shader );
 }
 
 void to_json( nlohmann::json &dest, const matrix_pool_create_info &src ) {
@@ -32,12 +34,15 @@ void to_json( nlohmann::json &dest, const matrix_pool_create_info &src ) {
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "update_shader" ] = src.update_shader.string();
   dest[ "copy_shader" ] = src.copy_shader.string();
+  dest[ "inverse_shader" ] = src.inverse_shader.string();
   dest[ "max_matrix_count" ] = src.max_matrix_count;
   dest[ "staging_matrix_buffer_name" ]  = src.staging_matrix_buffer_name;
   dest[ "matrix_buffer_name" ] = src.matrix_buffer_name;
   dest[ "write_request_buffer_name" ] = src.write_request_buffer_name;
   dest[ "read_request_buffer_name" ] = src.read_request_buffer_name;
   dest[ "update_request_buffer_name" ] = src.update_request_buffer_name;
+  dest[ "copy_shader_request_buffer_name" ] = src.copy_request_buffer_name;
+  dest[ "inverse_request_buffer_name" ] = src.inverse_request_buffer_name;
   dest[ "resources" ] = src.resources;
 }
 

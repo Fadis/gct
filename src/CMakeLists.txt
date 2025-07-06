@@ -536,6 +536,7 @@ add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/copy.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/matrix_pool/inverse.comp INSTALL )
 
 add_shader( gct gct/shader/scene_graph/aabb_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/aabb_pool/read.comp INSTALL )
@@ -610,6 +611,7 @@ add_shader( gct gct/shader/skyview/generate_transmittance.comp INSTALL )
 
 add_shader( gct gct/shader/mesh_to_constraint/mesh_to_constraint.comp INSTALL )
 add_shader( gct gct/shader/mesh_to_particle/mesh_to_particle.comp INSTALL )
+add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
 add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
 
 if( ENABLE_EXAMPLES )

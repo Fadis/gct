@@ -11,16 +11,12 @@ layout(push_constant) uniform PushConstants {
   uint count;
 } push_constants;
 
-layout(binding = 0,std430) buffer StagingMatrixPool {
-  mat4 staging[];
-};
-
 layout(binding = 1,std430) buffer MatrixPool {
   mat4 matrix[];
 };
 
 struct request_type {
-  uint staging;
+  uint source;
   uint destination;
 };
 
@@ -32,6 +28,7 @@ void main() {
   const uint index = gl_GlobalInvocationID.x;
   if( index < push_constants.count ) {
     matrix[ request[ index + push_constants.offset ].destination ] =
-      staging[ request[ index + push_constants.offset ].staging ];
+      inverse( matrix[ request[ index + push_constants.offset ].source ] );
   }
 }
+

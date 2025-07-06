@@ -58,6 +58,12 @@ private:
     matrix_index_t source = 0u;
     matrix_index_t destination = 0u;
   };
+  struct inverse_request {
+    LIBGCT_SETTER( source )
+    LIBGCT_SETTER( destination )
+    matrix_index_t source = 0u;
+    matrix_index_t destination = 0u;
+  };
   struct write_request {
     LIBGCT_SETTER( staging )
     LIBGCT_SETTER( destination )
@@ -100,6 +106,7 @@ public:
     return state->matrix;
   }
   [[nodiscard]] bool copy_enabled() const;
+  [[nodiscard]] bool inverse_enabled() const;
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const matrix_pool_create_info & );
@@ -130,24 +137,29 @@ private:
     std::shared_ptr< buffer_t > write_request_buffer; // write_request[] destination
     std::shared_ptr< buffer_t > read_request_buffer; // read_request[] source
     std::shared_ptr< buffer_t > copy_request_buffer; // copy_request[] source
+    std::shared_ptr< buffer_t > inverse_request_buffer; // inverse_request[] source
     std::shared_ptr< buffer_t > update_request_buffer; // update_request_buffer[] target
     std::vector< std::vector< update_request > > update_request_list;
     std::unordered_set< matrix_index_t > update_requested;
     std::unordered_set< matrix_index_t > copy_requested;
+    std::unordered_set< matrix_index_t > inverse_requested;
     reduced_linear_allocator staging_index_allocator;
     reduced_linear_allocator write_request_index_allocator;
     reduced_linear_allocator read_request_index_allocator;
     reduced_linear_allocator copy_request_index_allocator;
+    reduced_linear_allocator inverse_request_index_allocator;
     std::vector< matrix_descriptor > used_on_gpu;
     std::unordered_set< matrix_index_t > modified;
     std::unordered_multimap< matrix_index_t, std::function< void( vk::Result, const glm::mat4& ) > > cbs;
     std::shared_ptr< compute > write;
     std::shared_ptr< compute > read;
     std::shared_ptr< compute > copy_;
+    std::shared_ptr< compute > inverse;
     std::shared_ptr< compute > update;
     bool execution_pending = false;
     std::mutex guard;
     bool enable_copy = false;
+    bool enable_inverse = false;
   };
   std::shared_ptr< state_type > state;
 };

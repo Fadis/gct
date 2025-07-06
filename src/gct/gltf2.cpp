@@ -1125,7 +1125,7 @@ void gltf2::load_node(
 
           i->is_highest_lod = lod_id == 0u;
           ri.data()->*rimp[ "world_matrix" ] = *i->descriptor.matrix;
-          if( rimp.has( "inversed_world_matrix" ) ) {
+          if( props.enable_particle && rimp.has( "inversed_world_matrix" ) ) {
             ri.data()->*rimp[ "inversed_world_matrix" ] = *props.graph->get_resource()->matrix->get_inversed( i->descriptor.matrix );
           }
           if( rimp.has( "previous_world_matrix" ) ) {

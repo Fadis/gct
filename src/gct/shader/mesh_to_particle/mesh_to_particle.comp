@@ -35,7 +35,7 @@ void main() {
 
   // スレッドが担当するプリミティブが存在するかを調べる
   // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
-  const uint vertex_id = gl_LocalInvocationID.x;
+  const uint vertex_id = gl_GlobalInvocationID.x;
   const bool in_range = mesh.unique_vertex_count > vertex_id;
 
   if( !in_range ) return;
