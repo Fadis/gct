@@ -17,6 +17,8 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/mikktspace.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -33,18 +35,13 @@ void main() {
 
   if( !in_range ) return;
 
-  if( mesh.particle_offset == 0xFFFFFFFF ) return;
+  if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
 
-  if( particle_pool[ mesh.particle_offset + vertex_id ].attached != 0 ) return;
-
-  const float delta_t = 1.0/60.0;
-  const float g = 9.80665;
-
-  vec3 v = particle_pool[ mesh.particle_offset + vertex_id ].velocity;
-  v.y += g * delta_t;
-  vec3 p = particle_pool[ mesh.particle_offset + vertex_id ].position;
-  p += v * delta_t;
-  if( p.y > -0.05 ) p.y = -0.05;
-  particle_pool[ mesh.particle_offset + vertex_id ].position = p;
+  const vec3 t = mikktspace(
+    mesh.accessor,
+    vertex_id,
+    mesh.vertex_to_primitive_offset
+  );
+  write_vertex( accessor_pool[ mesh.accessor + 3 ], vertex_id, vec4( t, 1.0 ) );
 }
 

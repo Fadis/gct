@@ -64,3 +64,6 @@ add_shader( cloth flare/world.frag )
 
 add_shader( cloth meshlet_normal/meshlet_normal.comp )
 
+add_shader( cloth attach_particle/attach_particle.comp )
+
+

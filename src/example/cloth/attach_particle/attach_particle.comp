@@ -17,34 +17,23 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/distance_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
-  // 描画対象のID
   const resource_pair_type id = resource_pair[ push_constants.instance ];
-  // メッシュが属すノードの情報を得る
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
-  // メッシュの情報を取得する
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const uint vertex_id = gl_GlobalInvocationID.x;
-  const bool in_range = mesh.unique_vertex_count > vertex_id;
+  const uint particle_id = gl_GlobalInvocationID.x;
+  const bool in_range = mesh.unique_vertex_count > particle_id;
 
   if( !in_range ) return;
 
-  if( mesh.particle_offset == 0xFFFFFFFF ) return;
+  if( particle_id != 0 && particle_id != 2 ) return;
 
-  if( particle_pool[ mesh.particle_offset + vertex_id ].attached != 0 ) return;
-
-  const float delta_t = 1.0/60.0;
-  const float g = 9.80665;
-
-  vec3 v = particle_pool[ mesh.particle_offset + vertex_id ].velocity;
-  v.y += g * delta_t;
-  vec3 p = particle_pool[ mesh.particle_offset + vertex_id ].position;
-  p += v * delta_t;
-  if( p.y > -0.05 ) p.y = -0.05;
-  particle_pool[ mesh.particle_offset + vertex_id ].position = p;
+  particle_pool[ mesh.particle_offset + particle_id ].attached = 1u; 
 }
 

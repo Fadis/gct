@@ -886,6 +886,9 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         if( mmp.has( "particle_offset" ) ) {
           m.data()->*mmp[ "particle_offset" ] = std::uint32_t( *desc );
         }
+        if( mmp.has( "stiffness" ) ) {
+          m.data()->*mmp[ "stiffness" ] = 1.0f;
+        }
       }
       else if( mmp.has( "particle_offset" ) ) {
         m.data()->*mmp[ "particle_offset" ] = 0xFFFFFFFFu;

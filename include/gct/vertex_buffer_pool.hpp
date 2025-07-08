@@ -33,13 +33,21 @@ private:
     LIBGCT_SETTER( buffer )
     bool valid = false;
     std::optional< request_index_t > write_request_index;
-    std::shared_ptr< mappable_buffer_t > buffer;
+    std::variant<
+      std::shared_ptr< mappable_buffer_t >,
+      std::shared_ptr< buffer_t >
+    > buffer;
   };
   struct write_request {
     LIBGCT_SETTER( index )
     LIBGCT_SETTER( buffer )
+    LIBGCT_SETTER( update_descriptor_set )
     vertex_buffer_index_t index;
-    std::shared_ptr< mappable_buffer_t > buffer;
+    std::variant<
+      std::shared_ptr< mappable_buffer_t >,
+      std::shared_ptr< buffer_t >
+    > buffer;
+    bool update_descriptor_set = false;
   };
   using request_range = index_range;
 public:
@@ -50,6 +58,7 @@ public:
   [[nodiscard]] vertex_buffer_descriptor allocate( std::size_t );
   [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
   [[nodiscard]] std::vector< std::shared_ptr< buffer_t > > get();
+  void clear( const vertex_buffer_descriptor& );
   [[nodiscard]] const vertex_buffer_pool_create_info &get_props() const { return state->props; }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
@@ -64,6 +73,7 @@ private:
     [[nodiscard]] vertex_buffer_descriptor allocate( std::size_t );
     [[nodiscard]] std::shared_ptr< buffer_t > get( const vertex_buffer_descriptor& );
     std::vector< std::shared_ptr< buffer_t > > get();
+    void clear( const vertex_buffer_descriptor& );
     void release( vertex_buffer_index_t );
     void flush( command_buffer_recorder_t& );
     vertex_buffer_pool_create_info props;

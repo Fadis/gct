@@ -9,6 +9,7 @@ struct particle_type {
   float w;
   uint rigid_id;
   uint phase;
+  uint attached;
 };
 
 #endif

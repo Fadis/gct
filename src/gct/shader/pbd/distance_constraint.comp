@@ -17,6 +17,8 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/pbd/distance_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -28,23 +30,25 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const uint vertex_id = gl_GlobalInvocationID.x;
-  const bool in_range = mesh.unique_vertex_count > vertex_id;
+  const uint particle_id = gl_GlobalInvocationID.x / gl_SubgroupSize;
+  const uint constraint_index = gl_SubgroupInvocationID;
+  const bool in_range = mesh.unique_vertex_count > particle_id;
 
   if( !in_range ) return;
 
-  if( mesh.particle_offset == 0xFFFFFFFF ) return;
+  if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
-  if( particle_pool[ mesh.particle_offset + vertex_id ].attached != 0 ) return;
-
-  const float delta_t = 1.0/60.0;
-  const float g = 9.80665;
-
-  vec3 v = particle_pool[ mesh.particle_offset + vertex_id ].velocity;
-  v.y += g * delta_t;
-  vec3 p = particle_pool[ mesh.particle_offset + vertex_id ].position;
-  p += v * delta_t;
-  if( p.y > -0.05 ) p.y = -0.05;
-  particle_pool[ mesh.particle_offset + vertex_id ].position = p;
+  vec4 dx = pbd_distance_constraint_dx(
+    particle_id,
+    mesh.particle_offset,
+    mesh.distance_constraint_offset,
+    constraint_index
+  );
+  dx /= dx.w;
+  if( constraint_index == 0u ) {
+    particle_pool[ mesh.particle_offset + particle_id ].position += dx.xyz;
+  }
 }
 

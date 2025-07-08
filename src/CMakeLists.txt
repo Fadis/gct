@@ -532,6 +532,16 @@ target_link_libraries( dump_gpuinfo
   Boost::system
 )
 
+add_executable( list_vertex list_vertex.cpp )
+target_link_libraries( list_vertex
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )
@@ -615,6 +625,10 @@ add_shader( gct gct/shader/update_particle_position/update_particle_position.com
 add_shader( gct gct/shader/update_particle_velocity/update_particle_velocity.comp INSTALL )
 add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
 add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
+add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
+add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
+
+add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

@@ -677,11 +677,66 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
+  
+  auto mesh_to_constraint = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "mesh_to_constraint" / "mesh_to_constraint.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto vertex_to_primitive = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "vertex_to_primitive" / "vertex_to_primitive.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+
+  auto recalculate_normal = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "recalculate_normal" / "recalculate_normal.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto recalculate_tangent = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "recalculate_tangent" / "recalculate_tangent.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto distance_constraint_dx = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "pbd" / "distance_constraint.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto attach_particle = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( CMAKE_CURRENT_BINARY_DIR "/attach_particle/attach_particle.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
 
   const auto &il1_dl = il[ 1 ]->get_draw_list();
   if( il1_dl.size() != 1u ) throw -1;
   const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
   std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
+  std::cout << "vertex count : " << il1_prim->count << std::endl;
   gct::syncable il1_buffers;
   for( const auto &v: il1_prim->vertex_buffer ) {
     const auto b = sg->get_resource()->vertex->get( v.second.buffer );
@@ -693,6 +748,10 @@ int main( int argc, const char *argv[] ) {
       auto recorder = command_buffer->begin();
       il[ 1 ]->setup_resource_pair_buffer( recorder );
       mesh_to_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
+      mesh_to_constraint( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      recorder.barrier( sg->get_resource()->particle->get_buffer() );
+      attach_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
     }
     command_buffer->execute_and_wait();
   }
@@ -1002,14 +1061,6 @@ int main( int argc, const char *argv[] ) {
     gct::blocking_timer frame_rate;
     ++walk;
     // depth
-    /*{
-      {
-        auto recorder = command_buffer->begin();
-        il[ 1 ]->setup_resource_pair_buffer( recorder );
-        particle_to_mesh( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
-      }
-      command_buffer->execute_and_wait();
-    }*/
     {
       {
         auto rec = command_buffer->begin();
@@ -1058,10 +1109,17 @@ int main( int argc, const char *argv[] ) {
           il[ 1 ]->setup_resource_pair_buffer( rec );
           update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
+          for( std::uint32_t i = 0u; i != 10u; ++i ) {
+            distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
+            rec.barrier( sg->get_resource()->particle->get_buffer() );
+          }
           update_particle_velocity( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           particle_to_mesh( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( il1_buffers );
+          recalculate_normal( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
+          recalculate_tangent( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->particle->get_buffer() );
         }
         if( res.force_geometry || walk.camera_moved() ) {
           auto render_pass_token = rec.begin_render_pass(
