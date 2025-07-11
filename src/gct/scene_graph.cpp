@@ -82,44 +82,6 @@ void node::to_json( nlohmann::json &dest ) const {
 void to_json( nlohmann::json &dest, const node &src ) {
   src.to_json( dest );
 }
-scene_graph_create_info::scene_graph_create_info() {
-  primitive_resource_index.set_buffer_name( "primitive_resource_index" );
-  instance_resource_index.set_buffer_name( "instance_resource_index" );
-  visibility.set_buffer_name( "visibility" );  
-  accessor.set_buffer_name( "accessor_pool" );  
-  mesh.set_buffer_name( "mesh_pool" );  
-  meshlet.set_buffer_name( "meshlet_pool" );  
-  meshlet.set_max_buffer_count( 1024u * 1024u * 64u );
-  meshlet_index.set_buffer_name( "meshlet_index_pool" );  
-  meshlet_index.set_max_buffer_count( 1024u * 1024u * 64u );
-  resource_pair.set_buffer_name( "resource_pair" );
-  particle.set_buffer_name( "particle_pool" );
-  rigid.set_buffer_name( "rigid_pool" );
-  distance_constraint.set_buffer_name( "distance_constraint_pool" );
-  constraint.set_buffer_name( "constraint_pool" );
-  vertex_to_primitive.set_buffer_name( "vertex_to_primitive_pool" );
-}
-
-scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
-  matrix.set_shader( dir / "matrix_pool" );
-  aabb.set_shader( dir / "aabb_pool" );
-  image.set_shader( dir / "image_pool" );
-  primitive_resource_index.set_shader( dir / "primitive_resource_index_pool" );
-  instance_resource_index.set_shader( dir / "instance_resource_index_pool" );
-  visibility.set_shader( dir / "visibility_pool" );
-  accessor.set_shader( dir / "accessor" );
-  mesh.set_shader( dir / "mesh" );
-  meshlet.set_shader( dir / "meshlet" );
-  meshlet_index.set_shader( dir / "meshlet_index" );
-  resource_pair.set_shader( dir / "resource_pair" );
-  light.set_shader( dir / "light_pool" );
-  particle.set_shader( dir / "particle_pool" );
-  rigid.set_shader( dir / "rigid_pool" );
-  distance_constraint.set_shader( dir / "distance_constraint_pool" );
-  constraint.set_shader( dir / "constraint_pool" );
-  vertex_to_primitive.set_shader( dir / "vertex_to_primitive_pool" );
-  return *this;
-}
 
 scene_graph::scene_graph(
   const scene_graph_create_info &ci
@@ -291,6 +253,10 @@ scene_graph::scene_graph(
     std::cout << "Using system constraint_pool" << std::endl;
     props->constraint.set_shader( shader_path / "constraint_pool" );
   }
+  if( !props->spatial_hash.shader_exists() ) {
+    std::cout << "Using system spatial_hash_pool" << std::endl;
+    props->spatial_hash.set_shader( shader_path / "spatial_hash_pool" );
+  }
   if( !props->vertex_to_primitive.shader_exists() ) {
     std::cout << "Using system vertex_to_primitive_pool" << std::endl;
     props->vertex_to_primitive.set_shader( shader_path / "vertex_to_primitive_pool" );
@@ -391,6 +357,10 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->constraint )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->spatial_hash.reset( new buffer_pool(
+    buffer_pool_create_info( props->spatial_hash )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->vertex_to_primitive.reset( new buffer_pool(
     buffer_pool_create_info( props->vertex_to_primitive )
       .set_allocator_set( props->allocator_set )
@@ -462,6 +432,9 @@ scene_graph::scene_graph(
   }
   if( resource->constraint && resource->descriptor_set->has( "constraint_pool" ) ) {
     u.push_back( { "constraint_pool", resource->constraint->get_buffer() } );
+  }
+  if( resource->spatial_hash && resource->descriptor_set->has( "spatial_hash_pool" ) ) {
+    u.push_back( { "spatial_hash_pool", resource->spatial_hash->get_buffer() } );
   }
   if( resource->vertex_to_primitive && resource->descriptor_set->has( "vertex_to_primitive_pool" ) ) {
     u.push_back( { "vertex_to_primitive_pool", resource->vertex_to_primitive->get_buffer() } );
@@ -562,6 +535,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->constraint ) {
     (*resource->constraint)( rec );
     s.add( resource->constraint->get_buffer() );
+  }
+  if( resource->spatial_hash ) {
+    (*resource->spatial_hash)( rec );
+    s.add( resource->spatial_hash->get_buffer() );
   }
   if( resource->vertex_to_primitive ) {
     (*resource->vertex_to_primitive)( rec );

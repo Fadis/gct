@@ -597,6 +597,9 @@ add_shader( gct gct/shader/scene_graph/distance_constraint_pool/read.comp INSTAL
 add_shader( gct gct/shader/scene_graph/constraint_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/constraint_pool/read.comp INSTALL )
 
+add_shader( gct gct/shader/scene_graph/spatial_hash_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/spatial_hash_pool/read.comp INSTALL )
+
 add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/read.comp INSTALL )
 
@@ -629,6 +632,8 @@ add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
 add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
 
 add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
+add_shader( gct gct/shader/write_particle_to_spatial_hash/write_particle_to_spatial_hash.comp INSTALL )
+add_shader( gct gct/shader/read_particle_from_spatial_hash/read_particle_from_spatial_hash.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

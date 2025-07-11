@@ -310,6 +310,7 @@ void vertex_buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         gpu_side_buffer = std::get< std::shared_ptr< buffer_t > >( req.buffer );
         rec->fillBuffer( **gpu_side_buffer, 0u, gpu_side_buffer->get_props().get_basic().size, 0u );
       }
+      rec.transfer_to_compute_barrier( { gpu_side_buffer }, {} );
       if( req.update_descriptor_set ) {
         const auto target = (*props.external_descriptor_set[ props.vertex_buffer_descriptor_set_id ])[ props.descriptor_name ];
         updates.push_back(

@@ -6,6 +6,7 @@ struct particle_type {
   vec3 previous_position;
   vec3 velocity;
   vec3 local_r;
+  vec3 normal;
   float w;
   uint rigid_id;
   uint phase;

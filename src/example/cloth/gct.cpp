@@ -66,6 +66,7 @@
 #include <gct/af_state.hpp>
 #include <gct/image_io.hpp>
 #include <gct/get_library_path.hpp>
+#include <gct/spatial_hash.hpp>
 
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
@@ -337,6 +338,7 @@ int main( int argc, const char *argv[] ) {
         .set_enable_vertex_to_primitive( true )
         .set_enable_particle( true )
         .set_enable_distance_constraint( true )
+        .set_enable_constraint( true )
     ) );
   
   const auto depth_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
@@ -393,11 +395,28 @@ int main( int argc, const char *argv[] ) {
     }
   );
 
+  const std::uint32_t spatial_hash_size = 2097152u * 4u;
+
+  const auto spatial_hash_desc = sg->get_resource()->spatial_hash->allocate( spatial_hash_size );
+  std::shared_ptr< gct::mappable_buffer_t > spatial_hash_config =
+    res.allocator->create_mappable_buffer(
+      sizeof( gct::spatial_hash_config ),
+      vk::BufferUsageFlagBits::eUniformBuffer
+    );
+  {
+    auto m = spatial_hash_config->map< gct::spatial_hash_config >();
+    *m = gct::spatial_hash_config()
+      .set_offset( *spatial_hash_desc )
+      .set_size( spatial_hash_size )
+      .set_scale( 0.02f );
+  }
+
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
     {
       auto recorder = command_buffer->begin();
       (*sg)( recorder );
+      recorder.sync_to_device( spatial_hash_config );
     }
     command_buffer->execute_and_wait();
   }
@@ -730,6 +749,26 @@ int main( int argc, const char *argv[] ) {
       .set_swapchain_image_count( 1u )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto write_to_spatial_hash = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "write_particle_to_spatial_hash" / "write_particle_to_spatial_hash.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .add_resource( { "spatial_hash_config", spatial_hash_config } )
+  );
+  
+  auto read_from_spatial_hash = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "read_particle_from_spatial_hash" / "read_particle_from_spatial_hash.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .add_resource( { "spatial_hash_config", spatial_hash_config } )
   );
 
   const auto &il1_dl = il[ 1 ]->get_draw_list();
@@ -1101,14 +1140,23 @@ int main( int argc, const char *argv[] ) {
               .set_energy( glm::vec4( walk.get_light_energy(),walk.get_light_energy(),walk.get_light_energy(), 1.0 ) )
               .set_shadow_map( *shadow_map_texture_desc )
           );
-          (*sg)( rec );
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
+        }
+        {
+          sg->get_resource()->constraint->clear();
+          sg->get_resource()->spatial_hash->clear();
+          (*sg)( rec );
         }
         if( frame_counter > 60 ) {
           il[ 1 ]->setup_resource_pair_buffer( rec );
           update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
+          //write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
+          //read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          rec.barrier( sg->get_resource()->constraint->get_buffer() );
+
           for( std::uint32_t i = 0u; i != 10u; ++i ) {
             distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );

@@ -45,13 +45,15 @@ void main() {
   const uint accessor_id = mesh.accessor;
 
   const vec4 p0 = l2w * read_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  const vec4 n0 = l2w * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
 
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].position = p0.xyz / p0.w; 
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].previous_position = p0.xyz / p0.w;
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].velocity = vec3( 0, 0, 0 );
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].local_r = vec3( 0, 0, 0 );
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].w = 1.0/0.01;
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].rigid_id = 0xFFFFFFFF;
-  particle_pool[ mesh.particle_offset + vertex_id + 0u ].phase = prim.mesh;
+  particle_pool[ mesh.particle_offset + vertex_id ].position = p0.xyz / p0.w; 
+  particle_pool[ mesh.particle_offset + vertex_id ].previous_position = p0.xyz / p0.w;
+  particle_pool[ mesh.particle_offset + vertex_id ].velocity = vec3( 0, 0, 0 );
+  particle_pool[ mesh.particle_offset + vertex_id ].local_r = vec3( 0, 0, 0 );
+  particle_pool[ mesh.particle_offset + vertex_id ].normal = n0.xyz / n0.w;
+  particle_pool[ mesh.particle_offset + vertex_id ].w = 1.0/0.01;
+  particle_pool[ mesh.particle_offset + vertex_id ].rigid_id = 0xFFFFFFFF;
+  particle_pool[ mesh.particle_offset + vertex_id ].phase = prim.mesh;
 }
 

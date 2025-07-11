@@ -9,9 +9,10 @@ struct mesh_type {
   uint unique_vertex_count;
   uint particle_offset;
   uint distance_constraint_offset;
+  uint constraint_offset;
   uint vertex_to_primitive_offset;
   float stiffness;
-  uint reserved[ 3 ];
+  uint reserved[ 2 ];
 };
 
 #endif

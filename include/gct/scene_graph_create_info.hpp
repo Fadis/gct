@@ -43,6 +43,7 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( rigid )
   LIBGCT_SETTER( distance_constraint )
   LIBGCT_SETTER( constraint )
+  LIBGCT_SETTER( spatial_hash )
   LIBGCT_SETTER( vertex_to_primitive )
   LIBGCT_SETTER( prim_pool_size )
   LIBGCT_SETTER( inst_pool_size )
@@ -78,6 +79,7 @@ struct scene_graph_create_info {
   buffer_pool_create_info rigid;
   buffer_pool_create_info distance_constraint;
   buffer_pool_create_info constraint;
+  buffer_pool_create_info spatial_hash;
   buffer_pool_create_info vertex_to_primitive;
   std::uint32_t prim_pool_size = 65536u;
   std::uint32_t inst_pool_size = 65536u;

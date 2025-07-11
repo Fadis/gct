@@ -21,6 +21,7 @@ public:
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] std::uint32_t get_tail() const { return tail; }
   [[nodiscard]] std::uint32_t size() const { return tail - deallocated.size(); }
+  [[nodiscard]] std::uint32_t get_size( std::uint32_t ) const;
   void check();
 private:
   boost::container::flat_set< std::uint32_t > deallocated;

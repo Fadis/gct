@@ -903,6 +903,16 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       else if( mmp.has( "distance_constraint_offset" ) ) {
         m.data()->*mmp[ "distance_constraint_offset" ] = 0xFFFFFFFFu;
       }
+      // 衝突制約の情報のオフセット
+      if( props.enable_constraint ) {
+        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 32u );
+        if( mmp.has( "constraint_offset" ) ) {
+          m.data()->*mmp[ "constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "constraint_offset" ) ) {
+        m.data()->*mmp[ "constraint_offset" ] = 0xFFFFFFFFu;
+      }
       // 頂点からプリミティブを辿る為のテーブルのオフセット
       if( props.enable_vertex_to_primitive ) {
         const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( vertex_count * 32u );

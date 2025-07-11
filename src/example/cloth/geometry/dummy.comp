@@ -6,6 +6,7 @@
 
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
+#include <gct/scene_graph/spatial_hash.h>
 
 layout (std430, binding = 7) buffer Tone {
   uint value;
@@ -24,6 +25,10 @@ layout (std430, binding = 13) buffer AFState {
   float apeture_rotation;
   float visible_range;
 } af_state;
+
+layout(set=1, binding = 18) uniform SpatialHashConfig {
+  hash_table_type config;
+} spatial_hash_config;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 

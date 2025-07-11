@@ -19,6 +19,7 @@
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/accessor.h>
 #include <gct/pbd/distance_constraint.h>
+#include <gct/pbd/collision_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -44,6 +45,12 @@ void main() {
     particle_id,
     mesh.particle_offset,
     mesh.distance_constraint_offset,
+    constraint_index
+  ) +
+  pbd_collision_constraint_dx(
+    particle_id,
+    mesh.particle_offset,
+    mesh.constraint_offset,
     constraint_index
   );
   dx /= dx.w;

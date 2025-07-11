@@ -2,9 +2,9 @@
 #define GCT_SCENE_GRAPH_SPATIAL_HASH_H
 
 #include <gct/scene_graph/vertex_buffer_pool.h>
+#include <gct/scene_graph/spatial_hash_pool.h>
 
 struct hash_table_type {
-  uint descriptor_id;
   uint offset;
   uint size;
   float scale;
@@ -17,7 +17,7 @@ ivec3 spatial_hash_position_to_voxel(
   return ivec3( int( position.x * table.scale ), int( position.y * table.scale ), int( position.z * table.scale ) );
 }
 
-#define spatial_hash_iterator uint;
+#define spatial_hash_iterator uint
 
 spatial_hash_iterator spatial_hash_function(
   hash_table_type table,
@@ -34,18 +34,20 @@ spatial_hash_iterator spatial_hash_next(
   return table.offset + ( ( current - table.offset + 1u ) % table.size );
 }
 
-#define spatial_hash_entry ivec4;
-
-spatial_hash_entry spatial_hash_read_table(
+spatial_hash_type spatial_hash_read_table(
    hash_table_type table,
    spatial_hash_iterator current
 ) {
-  return spatial_hash_entry(
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 0 ],
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 1 ],
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 2 ],
-    int( vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 3 ] - 1 )
-  );
+  spatial_hash_type temp = spatial_hash_pool[ current ];
+  temp.index--;
+  return temp;
+}
+
+uint spatial_hash_get(
+   hash_table_type table,
+   spatial_hash_iterator current
+) {
+  return spatial_hash_pool[ current ].index - 1;
 }
 
 bool spatial_hash_write_table(
@@ -54,15 +56,13 @@ bool spatial_hash_write_table(
    ivec3 key,
    uint value
 ) {
-  const uint orig = atomicCompareSwap(
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 3 ],
+  const uint orig = atomicCompSwap(
+    spatial_hash_pool[ current ].index,
     0u,
     value
   );
   if( orig == 0 ) {
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 0 ] = key.x;
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 1 ] = key.y;
-    vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 2 ] = key.z;
+    spatial_hash_pool[ current ].voxel = key;
   }
   return orig == 0;
 }
@@ -72,8 +72,8 @@ bool spatial_hash_not_match(
    spatial_hash_iterator current,
    ivec3 voxel
 ) {
-  const spatial_hash_entry key_value = spatial_hash_read_table( table, current );
-  return key_value.w != 0 && voxel != key_value.xyz;
+  const spatial_hash_type key_value = spatial_hash_read_table( table, current );
+  return key_value.index != 0 && voxel != key_value.voxel;
 }
 
 uint spatial_hash_next(
@@ -92,7 +92,7 @@ bool spatial_hash_is_end(
    hash_table_type table,
    spatial_hash_iterator current
 ) {
-  return vertex_buffer_i32[ nonuniformEXT( table.descriptor_id ) ].data[ current * 4 + 3 ] == 0;
+  return spatial_hash_pool[ current ].index == 0;
 }
 
 spatial_hash_iterator spatial_hash_find(
