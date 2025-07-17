@@ -13,21 +13,21 @@ mat3 quaternion_to_matrix( vec4 q ) {
   const float qwz = q.w * q.z;
 
   mat3 result;
-  result[ 0 ][ 0 ] = 1.0 - 2.0 * ( qyy + qzz );
-	result[ 0 ][ 1 ] = 2.0 * ( qxy + qwz );
-	result[ 0 ][ 2 ] = 2.0 * ( qxz - qwy );
+  result[ 0 ][ 0 ] = 1.0f - 2.0f * ( qyy + qzz );
+	result[ 0 ][ 1 ] = 2.0f * ( qxy + qwz );
+	result[ 0 ][ 2 ] = 2.0f * ( qxz - qwy );
 
-	result[ 1 ][ 0 ] = 2.0 * ( qxy - qwz );
-	result[ 1 ][ 1 ] = 1.0 - 2.0 * ( qxx + qzz );
-	result[ 1 ][ 2 ] = 2.0 * ( qyz + qwx );
+	result[ 1 ][ 0 ] = 2.0f * ( qxy - qwz );
+	result[ 1 ][ 1 ] = 1.0f - 2.0f * ( qxx + qzz );
+	result[ 1 ][ 2 ] = 2.0f * ( qyz + qwx );
 
-	result[ 2 ][ 0 ] = 2.0 * ( qxz + qwy );
-	result[ 2 ][ 1 ] = 2.0 * ( qyz - qwx );
-	result[ 2 ][ 2 ] = 1.0 - 2.0 * ( qxx + qyy );
+	result[ 2 ][ 0 ] = 2.0f * ( qxz + qwy );
+	result[ 2 ][ 1 ] = 2.0f * ( qyz - qwx );
+	result[ 2 ][ 2 ] = 1.0f - 2.0f * ( qxx + qyy );
   return result;
 }
 
-vec4 matrix_to_quaterion( mat3 m ) {
+vec4 matrix_to_quaternion( mat3 m ) {
 	const float fourXSquaredMinus1 = m[ 0 ][ 0 ] - m[ 1 ][ 1 ] - m[ 2 ][ 2 ];
 	const float fourYSquaredMinus1 = m[ 1 ][ 1 ] - m[ 0 ][ 0 ] - m[ 2 ][ 2 ];
 	const float fourZSquaredMinus1 = m[ 2 ][ 2 ] - m[ 0 ][ 0 ] - m[ 1 ][ 1 ];
@@ -72,13 +72,55 @@ vec4 matrix_to_quaterion( mat3 m ) {
   );
 }
 
-vec4 quaternion_cross( vec4 q1, vec4 q2 ) {
+vec4 quaternion_quaternion_mult( vec4 q1, vec4 q2 ) {
   return vec4(
     q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
 		q1.w * q2.y + q1.y * q2.w + q1.z * q2.x - q1.x * q2.z,
 		q1.w * q2.z + q1.z * q2.w + q1.x * q2.y - q1.y * q2.x,
     q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z
   );
+}
+
+vec3 quaternion_vector_mult( vec4 q, vec3 v ) {
+  vec3 quat_vector = vec3( q );
+  vec3 uv = cross( quat_vector, v );
+  vec3 uuv = cross( quat_vector, uv );
+  return v + ( ( uv * q.w ) + uuv ) * 2.0f;
+}
+
+vec4 quaternion_conjugate( vec4 q ) {
+  return vec4( -q.x, -q.y, -q.z, q.w );
+}
+
+vec4 quaternion_inverse( vec4 q ) {
+  return quaternion_conjugate( q ) / dot( q, q );
+}
+
+vec4 quaternion_mix( vec4 x, vec4 y, float a ) {
+  const float cos_theta = dot( x, y );
+  const float epsilon = 0.0001;
+  if( cos_theta > 1.0 - epsilon ) {
+    return mix( x, y, a );
+  }
+  float angle = acos( cos_theta );
+  return ( float( sin( ( 1.0f - a ) ) * angle ) * x + float( sin( a * angle ) ) * y ) / float( sin( angle ) );
+}
+
+vec4 quaternion_normalize( vec4 q ) {
+  const float len = length( q );
+  const float one_over_len = 1.0f / len;
+  return q * one_over_len;
+}
+
+vec4 quaternion_slerp( vec4 x, vec4 y, float a ) {
+  vec4 z = y;
+  float cos_theta = dot( x, y );
+  if( cos_theta < 0.0 ) {
+    z = -y;
+    cos_theta = -cos_theta;
+  }
+  float angle = acos( cos_theta );
+  return ( float( sin( ( 1.0 - a ) * angle ) ) * x + float( sin( a * angle ) ) * z ) / float( sin( angle ) );
 }
 
 #endif

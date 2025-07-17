@@ -261,6 +261,10 @@ scene_graph::scene_graph(
     std::cout << "Using system vertex_to_primitive_pool" << std::endl;
     props->vertex_to_primitive.set_shader( shader_path / "vertex_to_primitive_pool" );
   }
+  if( !props->lambda.shader_exists() ) {
+    std::cout << "Using system lambda_pool" << std::endl;
+    props->lambda.set_shader( shader_path / "lambda_pool" );
+  }
 
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
@@ -365,6 +369,10 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->vertex_to_primitive )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->lambda.reset( new buffer_pool(
+    buffer_pool_create_info( props->lambda )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -439,6 +447,9 @@ scene_graph::scene_graph(
   }
   if( resource->vertex_to_primitive && resource->descriptor_set->has( "vertex_to_primitive_pool" ) ) {
     u.push_back( { "vertex_to_primitive_pool", resource->vertex_to_primitive->get_buffer() } );
+  }
+  if( resource->lambda && resource->descriptor_set->has( "lambda_pool" ) ) {
+    u.push_back( { "lambda_pool", resource->lambda->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -544,6 +555,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->vertex_to_primitive ) {
     (*resource->vertex_to_primitive)( rec );
     s.add( resource->vertex_to_primitive->get_buffer() );
+  }
+  if( resource->lambda ) {
+    (*resource->lambda)( rec );
+    s.add( resource->lambda->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

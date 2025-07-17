@@ -48,6 +48,39 @@ void to_json( nlohmann::json &dest, const primitive_descriptor &src ) {
   if( src.aabb ) {
     dest[ "aabb" ] = *src.aabb;
   }
+  dest[ "accessor" ] = nlohmann::json::array();
+  for( const auto &a: src.accessor ) {
+    if( a ) {
+      dest[ "accessor" ].push_back( *a );
+    }
+  }
+  if( src.mesh ) {
+    dest[ "mesh" ] = *src.mesh;
+  }
+  if( src.meshlet ) {
+    dest[ "meshlet" ] = *src.meshlet;
+  }
+  if( src.particle ) {
+    dest[ "particle" ] = *src.particle;
+  }
+  if( src.distance_constraint ) {
+    dest[ "distance_constraint" ] = *src.distance_constraint;
+  }
+  if( src.constraint ) {
+    dest[ "constraint" ] = *src.constraint;
+  }
+  if( src.fluid_constraint ) {
+    dest[ "fluid_constraint" ] = *src.fluid_constraint;
+  }
+  if( src.rigid_constraint ) {
+    dest[ "rigid_constraint" ] = *src.rigid_constraint;
+  }
+  if( src.vertex_to_primitive ) {
+    dest[ "vertex_to_primitive" ] = *src.vertex_to_primitive;
+  }
+  if( src.lambda ) {
+    dest[ "lambda" ] = *src.lambda;
+  }
 }
 
 void to_json( nlohmann::json &dest, const primitive &src ) {

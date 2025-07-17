@@ -43,6 +43,7 @@ void main() {
   vec3 p = particle_pool[ mesh.particle_offset + vertex_id ].position;
   vec3 prev_p = particle_pool[ mesh.particle_offset + vertex_id ].previous_position;
   vec3 v = ( p - prev_p ) / delta_t;
+  //v *= 0.90;
   particle_pool[ mesh.particle_offset + vertex_id ].velocity = v;
   particle_pool[ mesh.particle_offset + vertex_id ].previous_position = p;
 }

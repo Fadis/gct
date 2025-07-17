@@ -1,0 +1,68 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 128, local_size_y = 1 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+#include <gct/gauss.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint dest;
+} push_constants;
+
+const int kernel_size = 32;
+shared float[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uint lcpos = gl_LocalInvocationID.x;
+  const uint hcpos = lcpos + gl_WorkGroupSize.x;
+  const ivec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.src ) ] );
+  ivec2 lsample_pos = screen_pos;
+  lsample_pos.x = lsample_pos.x - kernel_size;
+  ivec2 hsample_pos = lsample_pos;
+  hsample_pos.x += int( gl_WorkGroupSize.x );
+  lsample_pos.x = max( min( lsample_pos.x, image_size.x ), 0 );
+  lsample_pos.y = max( min( lsample_pos.y, image_size.y ), 0 );
+  hsample_pos.x = max( min( hsample_pos.x, image_size.x ), 0 );
+  hsample_pos.y = max( min( hsample_pos.y, image_size.y ), 0 );
+  cache[ lcpos ] = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], lsample_pos ).r;
+  if( hcpos < gl_WorkGroupSize.x+kernel_size*2+1 ) {
+    cache[ hcpos ] = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], hsample_pos ).r;
+  }
+  barrier();
+  const float center = cache[ lcpos + kernel_size ];
+  const float falloff = 3.0;
+  const float blur_scale = 0.078;
+  float sum = 0.0;
+  float weight_sum = 0.0;
+  for( int i = 0; i != kernel_size*2+1; i++ ) {
+    const float r = ( i - kernel_size ) * blur_scale;
+    const float w = exp( - r * r );
+    
+    const float target = cache[ lcpos + i ];
+    
+    const float r2 = ( target - center ) * falloff;
+    const float g = exp( - r2 * r2 );
+
+    sum += target * w * g;
+    weight_sum += w * g;
+  }
+  if( weight_sum > 0.0 ) {
+    sum /= weight_sum;
+  }
+  //sum = center;
+
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( sum, 0.0, 0.0, 1.0 ) );
+}
+

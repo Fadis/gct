@@ -107,7 +107,7 @@ void main() {
         const vec3 p1 = particle_pool[ /*mesh.particle_offset + */to_id ].position;
         const uint t1 = particle_pool[ /*mesh.particle_offset + */to_id ].phase;
         if( t0 == t1 ) {
-          if( distance( p0, p1 ) < spatial_hash_config.config.scale / 3 ) {
+          if( distance( p0, p1 ) < spatial_hash_config.config.scale / 2 ) {
             constraint_insert_unidirectional(
               particle_id,
               to_id,

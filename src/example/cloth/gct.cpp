@@ -163,7 +163,6 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/dummy" )
       .add_master_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
@@ -436,7 +435,7 @@ int main( int argc, const char *argv[] ) {
     *m = gct::spatial_hash_config()
       .set_offset( *spatial_hash_desc )
       .set_size( spatial_hash_size )
-      .set_scale( 0.3f );
+      .set_scale( 0.2f );
   }
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -450,7 +449,6 @@ int main( int argc, const char *argv[] ) {
   }
   const auto global_descriptor_set_layout = res.device->get_descriptor_set_layout(
     {
-      CMAKE_CURRENT_BINARY_DIR "/dummy",
       gct::get_system_shader_path() / "generate_k+buffer" / "standard",
       CMAKE_CURRENT_BINARY_DIR "/shadow",
       CMAKE_CURRENT_BINARY_DIR "/aabb",
@@ -1243,19 +1241,23 @@ int main( int argc, const char *argv[] ) {
           update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-          rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
-          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
-          rec.barrier( sg->get_resource()->constraint->get_buffer() );
+          //rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
           
           il[ 2 ]->setup_resource_pair_buffer( rec );
           update_particle_position( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           write_to_spatial_hash( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
+          
+          il[ 1 ]->setup_resource_pair_buffer( rec );
+          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          //rec.barrier( sg->get_resource()->constraint->get_buffer() );
+          
+          il[ 2 ]->setup_resource_pair_buffer( rec );
           read_from_spatial_hash( rec, 0, il2_prim->unique_vertex_count * 27u, 1u, 1u );
           rec.barrier( sg->get_resource()->constraint->get_buffer() );
 
-          for( std::uint32_t i = 0u; i != 10u; ++i ) {
+          for( std::uint32_t i = 0u; i != 50u; ++i ) {
             il[ 1 ]->setup_resource_pair_buffer( rec );
             distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
             il[ 2 ]->setup_resource_pair_buffer( rec );

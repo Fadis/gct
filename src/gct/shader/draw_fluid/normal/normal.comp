@@ -1,0 +1,193 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/global_uniforms.h>
+#include <gct/constants.h>
+#include <gct/lighting.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/scene_graph/light_pool.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+#include <gct/scene_graph/omnishadow.h>
+#include <gct/depth.h>
+#include <gct/volumetric.h>
+
+layout(push_constant) uniform PushConstants {
+  uint front;
+  uint back;
+  uint dest;
+  uint depth_image;
+  uint background;
+  uint unproject;
+} push_constants;
+
+//layout (set = 1, binding = 20) uniform image2D hoge;
+
+layout (std430, binding = 13) buffer AFState {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+  float visible_range;
+} af_state;
+
+
+struct geometry_info {
+  ivec2 offset;
+  vec3 front_position;
+  vec3 back_position;
+  vec3 bg_position;
+  float front_depth;
+  float back_depth;
+  float bg_depth;
+  bool has_fluid;
+};
+
+geometry_info get_geometry_info( ivec2 screen_pos, ivec2 offset ) {
+  const float bg_depth = decode_depth(
+    imageLoad( image_pool_2d[ nonuniformEXT( push_constants.depth_image ) ], screen_pos ).r,
+    af_state.znear, af_state.zfar
+  );
+  float front_depth =
+    imageLoad( image_pool_2d[ nonuniformEXT( push_constants.front ) ], screen_pos + offset ).x;
+  front_depth = min( front_depth, bg_depth );
+  float back_depth =
+    imageLoad( image_pool_2d[ nonuniformEXT( push_constants.back ) ], screen_pos + offset ).x;
+  back_depth = min( back_depth, bg_depth );
+
+  const bool has_fluid = front_depth < back_depth;
+  
+  const uvec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.dest ) ] ).xy;
+
+  const vec3 front_pos = 
+    depth_to_world_position(
+      screen_pos + offset, image_size,
+      encode_depth( front_depth, af_state.znear, af_state.zfar ),
+      matrix_pool[ push_constants.unproject ]
+    ).xyz;
+  
+  const vec3 back_pos = 
+    depth_to_world_position(
+      screen_pos + offset, image_size,
+      encode_depth( back_depth, af_state.znear, af_state.zfar ),
+      matrix_pool[ push_constants.unproject ]
+    ).xyz;
+  
+  const vec3 bg_pos = 
+    depth_to_world_position(
+      screen_pos + offset, image_size,
+      encode_depth( bg_depth, af_state.znear, af_state.zfar ),
+      matrix_pool[ push_constants.unproject ]
+    ).xyz;
+
+  return geometry_info(
+    offset,
+    front_pos,
+    back_pos,
+    bg_pos,
+    front_depth,
+    back_depth,
+    bg_depth,
+    has_fluid
+  );
+}
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const uvec2 image_size = imageSize( image_pool_2d[ nonuniformEXT( push_constants.dest ) ] ).xy;
+
+  const geometry_info center = get_geometry_info( screen_pos, ivec2( 0, 0 ) );
+  const geometry_info positive_x = get_geometry_info( screen_pos, ivec2( 1, 0 ) );
+  const geometry_info negative_x = get_geometry_info( screen_pos, ivec2( -1, 0 ) );
+  const geometry_info positive_y = get_geometry_info( screen_pos, ivec2( 0, 1 ) );
+  const geometry_info negative_y = get_geometry_info( screen_pos, ivec2( 0, -1 ) );
+
+  const vec3 front_dx =
+    ( positive_x.has_fluid ) ?
+    normalize( positive_x.front_position - center.front_position ) :
+    normalize( center.front_position - negative_x.front_position );
+  const vec3 front_dy =
+    ( positive_y.has_fluid ) ?
+    normalize( positive_y.front_position - center.front_position ) :
+    normalize( center.front_position - negative_y.front_position );
+  const vec3 front_normal = normalize( cross( front_dy, front_dx ) );
+
+  const vec3 back_dx =
+    ( positive_x.has_fluid ) ?
+    normalize( positive_x.back_position - center.back_position ) :
+    normalize( center.back_position - negative_x.back_position );
+  const vec3 back_dy =
+    ( positive_y.has_fluid ) ?
+    normalize( positive_y.back_position - center.back_position ) :
+    normalize( center.back_position - negative_y.back_position );
+  const vec3 back_normal = normalize( cross( back_dx, back_dy ) );
+
+  const vec3 V = normalize( global_uniforms.eye_pos.xyz - center.front_position );
+  const vec3 L = normalize( light_pool[global_uniforms.light ].world_position.xyz - center.front_position );
+
+  const vec3 albedo = vec3( 1.0, 1.0, 1.0 );
+  const vec3 absorb = vec3( 3.0, 3.0, 1.0 )*0.2;
+  const float roughness = 0.2;
+  const float metallic = 0.0;
+  const vec3 emissive = vec3( 0.0, 0.0 ,0.0 );
+  const float shadow_level = 1.0;
+  const float refract_index = 1.333333;
+
+  vec3 eye_dir = normalize( center.front_position - global_uniforms.eye_pos.xyz );
+  eye_dir = mix( front_normal, eye_dir, 0.35 );
+  eye_dir = refract( eye_dir, front_normal, refract_index );
+  /*eye_dir =
+    center.bg_depth <= center.back_depth ?
+    eye_dir :
+    mix( back_normal, eye_dir, 0.35 );
+  eye_dir =
+    center.bg_depth <= center.back_depth ?
+    eye_dir :
+    refract( eye_dir, back_normal, refract_index );*/
+  vec3 fetch_pos =
+    //center.bg_depth <= center.back_depth ?
+    center.front_position + eye_dir * distance( center.bg_position, center.front_position );//:
+    //center.back_position + eye_dir * distance( center.bg_position, center.back_position );
+
+  vec4 fetch_pos_in_screen =
+    (
+      matrix_pool[ global_uniforms.projection_matrix ] *
+      matrix_pool[ global_uniforms.camera_matrix ] *
+      vec4( fetch_pos, 1.0 )
+    );
+  fetch_pos_in_screen /= fetch_pos_in_screen.w;
+  //fetch_pos_in_screen.xy /= max( abs( fetch_pos_in_screen.y ), 1.0 );
+  vec2 shifted_fetch_pos_in_screen = fetch_pos_in_screen.xy * 0.5 + 0.5;
+  //shifted_fetch_pos_in_screen = shifted_fetch_pos_in_screen - floor( shifted_fetch_pos_in_screen );
+
+  vec3 specular = specular_with_mask(
+    L, V, -front_normal, albedo, roughness, metallic,
+    light_pool[global_uniforms.light].energy.xyz,
+    shadow_level
+  );
+
+  const vec3 extinction_rate = beer_lambert( absorb, distance( center.front_position, center.back_position ) );
+    
+  vec3 total = texture( texture_pool[ nonuniformEXT( push_constants.background ) ], shifted_fetch_pos_in_screen ).rgb;
+  //vec3 total = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.background ) ], screen_pos ).rgb;
+  total *= extinction_rate;
+  total += specular * 0.3;
+
+  //imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( n * 0.5 + 0.5, 1.0 ) );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( total, center.has_fluid ? 1.0 : 0.0 ) );
+}
+

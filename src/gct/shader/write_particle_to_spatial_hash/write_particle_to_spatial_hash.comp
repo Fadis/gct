@@ -41,8 +41,6 @@ void main() {
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
   
-  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
-
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
   spatial_hash_insert(

@@ -89,13 +89,13 @@ void main() {
   output_position[ output_vertex_id + 1u ] = l2w * v1.position;
   output_position[ output_vertex_id + 2u ] = l2w * v2.position;
   // 頂点のワールド座標系での法線を出力先に書く
-  output_normal[ output_vertex_id ] = ( l2w * v0.normal ).xyz;
-  output_normal[ output_vertex_id + 1u ] = ( l2w * v1.normal ).xyz;
-  output_normal[ output_vertex_id + 2u ] = ( l2w * v2.normal ).xyz;
+  output_normal[ output_vertex_id ] = ( mat3(l2w) * v0.normal.xyz );
+  output_normal[ output_vertex_id + 1u ] = ( mat3(l2w) * v1.normal.xyz );
+  output_normal[ output_vertex_id + 2u ] = ( mat3(l2w) * v2.normal.xyz );
   // 頂点のワールド座標系での接線を出力先に書く
-  output_tangent[ output_vertex_id ] = ( l2w * v0.tangent ).xyz;
-  output_tangent[ output_vertex_id + 1u ] = ( l2w * v1.tangent ).xyz;
-  output_tangent[ output_vertex_id + 2u ] = ( l2w * v2.tangent ).xyz;
+  output_tangent[ output_vertex_id ] = ( mat3(l2w) * v0.tangent.xyz );
+  output_tangent[ output_vertex_id + 1u ] = ( mat3(l2w) * v1.tangent.xyz );
+  output_tangent[ output_vertex_id + 2u ] = ( mat3(l2w) * v2.tangent.xyz );
   // 頂点のテクスチャ座標を出力先に書く
   output_tex_coord[ output_vertex_id ] = v0.tex_coord0.xy;
   output_tex_coord[ output_vertex_id + 1u ] = v1.tex_coord0.xy;

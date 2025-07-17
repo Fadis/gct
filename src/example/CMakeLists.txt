@@ -106,7 +106,14 @@ subdirs(
   task_payload
   flat_terrain
   height_map_terrain
+  single_cloth
+  dual_cloth
+  single_xpbd
+  single_fluid
+  substep_xpbd
   cloth
+  xpbd
+  fluid
 )
 if( DXC_FOUND )
 subdirs(

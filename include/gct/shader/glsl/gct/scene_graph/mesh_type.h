@@ -10,9 +10,11 @@ struct mesh_type {
   uint particle_offset;
   uint distance_constraint_offset;
   uint constraint_offset;
+  uint fluid_constraint_offset;
+  uint lambda_offset;
   uint vertex_to_primitive_offset;
   float stiffness;
-  uint reserved[ 2 ];
+  uint rigid;
 };
 
 #endif

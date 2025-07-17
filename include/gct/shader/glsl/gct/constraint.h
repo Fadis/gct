@@ -11,7 +11,7 @@ uint constraint_begin(
   uint particle_id,
   uint id_offset
 ) {
-  return id_offset + particle_id * 32;
+  return id_offset + particle_id * 128;
 }
 
 uint constraint_next(
@@ -23,22 +23,15 @@ uint constraint_next(
 bool constraint_is_end(
   uint gcid
 ) {
-  return constraint_pool[ gcid ].to_id == 0;
+  return constraint_pool[ gcid ] == 0;
 }
 
-constraint_type constraint_get(
+uint constraint_get(
   uint gcid
 ) {
-  constraint_type v = constraint_pool[ gcid ];
-  v.to_id--;
+  uint v = constraint_pool[ gcid ];
+  v--;
   return v;
-}
-
-void constraint_set_lambda(
-  uint gcid,
-  float lambda
-) {
-  constraint_pool[ gcid ].lambda = lambda;
 }
 
 void constraint_insert_unidirectional(
@@ -48,17 +41,15 @@ void constraint_insert_unidirectional(
 ) {
   uint hoge = 0;
   uint gcid = constraint_begin( from_id, id_offset );
-  for( uint cid = 0; cid < 31; cid++ ) {
+  for( uint cid = 0; cid < 128; cid++ ) {
     const uint orig = atomicCompSwap(
-      constraint_pool[ gcid ].to_id,
+      constraint_pool[ gcid ],
       0,
       to_id + 1
     );
     if( orig == to_id + 1 ) break;
     if( orig == 0 ) break;
-    gcid++;
-    //constraint_pool[ 0 ].to_id = 0;
-    //gcid = constraint_next( gcid );
+    gcid = constraint_next( gcid );
   }
 }
 void constraint_insert(

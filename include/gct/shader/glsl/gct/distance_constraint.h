@@ -34,13 +34,6 @@ distance_constraint_type distance_constraint_get(
   return v;
 }
 
-void distance_constraint_set_lambda(
-  uint gcid,
-  float lambda
-) {
-  distance_constraint_pool[ gcid ].lambda = lambda;
-}
-
 void distance_constraint_insert_unidirectional(
   uint from_id,
   uint to_id,

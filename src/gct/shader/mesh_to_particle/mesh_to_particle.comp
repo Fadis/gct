@@ -18,6 +18,7 @@
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/accessor.h>
+#include <gct/topology_id.h>
 #include <gct/distance_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
@@ -42,18 +43,28 @@ void main() {
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
 
+  const vec3 center_of_mass =
+    ( mesh.rigid == 0xFFFFFFFF ) ?
+    vec3( 0, 0, 0 ) :
+    ( l2w * vec4( rigid_pool[ mesh.rigid ].center_of_mass.xyz, 1.0 ) ).xyz;
+
   const uint accessor_id = mesh.accessor;
 
-  const vec4 p0 = l2w * read_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
-  const vec4 n0 = l2w * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  const vec4 lp0 = read_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  const vec4 wp0 = l2w * lp0;
+  const vec3 wn0 =
+    ( mesh.topology == GCT_SHADER_TOPOLOGY_ID_POINT ) ?
+    vec3( 0.0, 0.0, 0.0 ) :
+    mat3(l2w) * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz;
 
-  particle_pool[ mesh.particle_offset + vertex_id ].position = p0.xyz / p0.w; 
-  particle_pool[ mesh.particle_offset + vertex_id ].previous_position = p0.xyz / p0.w;
+  particle_pool[ mesh.particle_offset + vertex_id ].position = wp0.xyz / wp0.w; 
+  particle_pool[ mesh.particle_offset + vertex_id ].previous_position = wp0.xyz / wp0.w;
   particle_pool[ mesh.particle_offset + vertex_id ].velocity = vec3( 0, 0, 0 );
-  particle_pool[ mesh.particle_offset + vertex_id ].local_r = vec3( 0, 0, 0 );
-  particle_pool[ mesh.particle_offset + vertex_id ].normal = normalize( n0.xyz / n0.w );
+  particle_pool[ mesh.particle_offset + vertex_id ].local_r =
+    lp0.xyz - center_of_mass;
+  particle_pool[ mesh.particle_offset + vertex_id ].normal = wn0;
   particle_pool[ mesh.particle_offset + vertex_id ].w = 1.0/0.01;
-  particle_pool[ mesh.particle_offset + vertex_id ].rigid_id = 0xFFFFFFFF;
+  particle_pool[ mesh.particle_offset + vertex_id ].rigid = mesh.rigid;
   particle_pool[ mesh.particle_offset + vertex_id ].phase = prim.mesh;
 }
 

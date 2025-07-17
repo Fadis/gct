@@ -65,6 +65,10 @@ public:
   get_descriptor() const {
     return inst;
   }
+  [[nodiscard]] const std::vector< pool< std::shared_ptr< scene_graph::primitive > >::descriptor >&
+  get_primitive_descriptor() const {
+    return prim_;
+  }
 private:
   void load_buffer(
     const fx::gltf::Document &doc
@@ -136,6 +140,7 @@ private:
   std::unordered_map< pool< std::shared_ptr< scene_graph::primitive > >::descriptor, std::uint64_t > doc_primitive_id;
   std::uint32_t total_morph_vertex_count = 0u;
   std::vector< pool< std::shared_ptr< scene_graph::instance > >::descriptor > inst;
+  std::vector< pool< std::shared_ptr< scene_graph::primitive > >::descriptor > prim_;
 };
 
 void to_json( nlohmann::json&, const gltf2& );

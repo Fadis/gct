@@ -123,13 +123,13 @@ void main() {
   output_position[ filtered_vertex_offset + 1u ] = wp1;
   output_position[ filtered_vertex_offset + 2u ] = wp2;
   // 頂点のワールド座標系での法線を出力先に書く
-  output_normal[ filtered_vertex_offset ] = ( l2w * (( v0.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v0.normal ) ).xyz;
-  output_normal[ filtered_vertex_offset + 1u ] = ( l2w * (( v1.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v1.normal ) ).xyz;
-  output_normal[ filtered_vertex_offset + 2u ] = ( l2w * (( v2.normal == vec4( 0, 0, 0, 1 ) ) ? vec4( fn, 1.0 ) : v2.normal ) ).xyz;
+  output_normal[ filtered_vertex_offset ] = ( mat3(l2w) * (( v0.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v0.normal.xyz ) );
+  output_normal[ filtered_vertex_offset + 1u ] = ( mat3(l2w) * (( v1.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v1.normal.xyz ) );
+  output_normal[ filtered_vertex_offset + 2u ] = ( mat3(l2w) * (( v2.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v2.normal.xyz ) );
   // 頂点のワールド座標系での接線を出力先に書く
-  output_tangent[ filtered_vertex_offset ] = ( l2w * v0.tangent ).xyz;
-  output_tangent[ filtered_vertex_offset + 1u ] = ( l2w * v1.tangent ).xyz;
-  output_tangent[ filtered_vertex_offset + 2u ] = ( l2w * v2.tangent ).xyz;
+  output_tangent[ filtered_vertex_offset ] = ( mat3(l2w) * v0.tangent.xyz );
+  output_tangent[ filtered_vertex_offset + 1u ] = ( mat3(l2w) * v1.tangent.xyz );
+  output_tangent[ filtered_vertex_offset + 2u ] = ( mat3(l2w) * v2.tangent.xyz );
   // 頂点のテクスチャ座標を出力先に書く
   output_tex_coord[ filtered_vertex_offset ] = v0.tex_coord0.xy;
   output_tex_coord[ filtered_vertex_offset + 1u ] = v1.tex_coord0.xy;

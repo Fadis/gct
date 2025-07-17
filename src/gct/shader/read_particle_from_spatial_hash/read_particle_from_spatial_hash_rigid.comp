@@ -1,0 +1,109 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#include <gct/constants.h>
+#include <gct/scene_graph.h>
+#include <gct/scene_graph/spatial_hash.h>
+#include <gct/rigid_constraint.h>
+layout(local_size_x = 128, local_size_y = 1 ) in;
+
+layout(set=1, binding = 18) uniform SpatialHashConfig {
+  hash_table_type config;
+} spatial_hash_config;
+
+ivec3 voxel_offset[27] = ivec3[](
+  ivec3( -1, -1, -1 ),
+  ivec3(  0, -1, -1 ),
+  ivec3(  1, -1, -1 ),
+  ivec3( -1,  0, -1 ),
+  ivec3(  0,  0, -1 ),
+  ivec3(  1,  0, -1 ),
+  ivec3( -1,  1, -1 ),
+  ivec3(  0,  1, -1 ),
+  ivec3(  1,  1, -1 ),
+  ivec3( -1, -1,  0 ),
+  ivec3(  0, -1,  0 ),
+  ivec3(  1, -1,  0 ),
+  ivec3( -1,  0,  0 ),
+  ivec3(  0,  0,  0 ),
+  ivec3(  1,  0,  0 ),
+  ivec3( -1,  1,  0 ),
+  ivec3(  0,  1,  0 ),
+  ivec3(  1,  1,  0 ),
+  ivec3( -1, -1,  1 ),
+  ivec3(  0, -1,  1 ),
+  ivec3(  1, -1,  1 ),
+  ivec3( -1,  0,  1 ),
+  ivec3(  0,  0,  1 ),
+  ivec3(  1,  0,  1 ),
+  ivec3( -1,  1,  1 ),
+  ivec3(  0,  1,  1 ),
+  ivec3(  1,  1,  1 )
+);
+
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.instance ];
+  // メッシュが属すノードの情報を得る
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  const uint particle_id = gl_GlobalInvocationID.x / 27u;
+  const uint offset_id = gl_GlobalInvocationID.x % 27u;
+  const bool in_range = mesh.unique_vertex_count > particle_id;
+
+  if( !in_range ) return;
+
+  if( mesh.particle_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.rigid == 0xFFFFFFFF ) return;
+
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
+
+  const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
+  const uint t0 = particle_pool[ mesh.particle_offset + particle_id ].phase;
+
+  const ivec3 center = spatial_hash_position_to_voxel(
+    spatial_hash_config.config, p0
+  );
+
+  const ivec3 voxel = center + voxel_offset[ offset_id ];
+  spatial_hash_iterator iter = spatial_hash_find( spatial_hash_config.config, voxel );
+  for( uint i = 0u; i < 32u; ++i ) {
+    if( spatial_hash_is_end( spatial_hash_config.config, iter ) ) break;
+    if( spatial_hash_not_match( spatial_hash_config.config, iter, voxel ) ) break;
+    const uint to_id = spatial_hash_get( spatial_hash_config.config, iter );
+    if( mesh.particle_offset + particle_id != to_id ) {
+      const vec3 p1 = particle_pool[ to_id ].position;
+      const uint t1 = particle_pool[ to_id ].phase;
+      if( distance( p0, p1 ) < spatial_hash_config.config.scale ) {
+        rigid_constraint_insert_unidirectional(
+          particle_id,
+          to_id,
+          mesh.constraint_offset
+        );
+      }
+    }
+    iter = spatial_hash_next(spatial_hash_config.config, iter, voxel );
+  }
+}
+

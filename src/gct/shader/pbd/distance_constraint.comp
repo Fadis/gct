@@ -20,7 +20,7 @@
 #include <gct/scene_graph/accessor.h>
 #include <gct/pbd/distance_constraint.h>
 #include <gct/pbd/collision_constraint.h>
-layout(local_size_x = 128, local_size_y = 1 ) in;
+layout(local_size_x = 32, local_size_y = 1 ) in;
 
 void main() {
   // 描画対象のID
@@ -39,24 +39,34 @@ void main() {
 
   if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
   
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
-  vec4 dx = pbd_distance_constraint_dx(
+  vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
+
+  dx = pbd_distance_constraint_dx(
     particle_id,
     mesh.particle_offset,
     mesh.distance_constraint_offset,
     constraint_index
   );
-  dx += pbd_collision_constraint_dx(
+  for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
+    dx += pbd_collision_constraint_dx(
+      particle_id,
+      mesh.particle_offset,
+      mesh.constraint_offset,
+      constraint_block_id * gl_SubgroupSize + constraint_index
+    );
+  }
+  dx += pbd_border_dx(
     particle_id,
     mesh.particle_offset,
-    mesh.constraint_offset,
-    constraint_index
+    aabb_type(
+      vec4( -2.6, -100.0, -2.1, 1.0 ),
+      vec4( 2.6, -0.05, 1.5, 1.0 )
+    )
   );
-  const vec3 x = particle_pool[ mesh.particle_offset + particle_id ].position;
-  if( x.y > -0.05 ) {
-    dx += vec4( 0, -( x.y + 0.05 ), 0, 1 );
-  }
   if( dx.w != 0.0 ) {
     dx /= dx.w;
   }

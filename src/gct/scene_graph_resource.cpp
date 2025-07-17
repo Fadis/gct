@@ -111,6 +111,9 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.vertex_to_primitive ) {
     dest[ "vertex_to_primitive" ] = *src.vertex_to_primitive;
   }
+  if( src.lambda ) {
+    dest[ "lambda" ] = *src.lambda;
+  }
   dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
     if( v.second ) {

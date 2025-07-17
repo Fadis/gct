@@ -25,19 +25,11 @@ vec4 pbd_distance_constraint_dx(
   const float w1 = particle_pool[ particle_offset + ( is_end ? particle_id : dc.to_id ) ].w;
   const float d = distance( p0, p1 );
 
-  const float stretch = d - dc.natural_distance;
-  const vec3 grad_c = dc.stiffness * ( p0 - p1 ) / max( d, 0.01 );
-  const float t = 1.0 / ( w0 + w1 );
-  const vec3 dx = -( w0 * t ) * stretch * grad_c;
+  const float c = d - dc.natural_distance;
+  const vec3 grad_c = ( p0 - p1 ) / max( d, 0.01 );
+  const float dl = 1.0 / ( w0 + w1 );
+  const vec3 dx = -( dc.stiffness ) * dl * w0 * c * grad_c;
 
-
-  //const float s = ( d - dc.natural_distance )/( w0 + w1 );
-
-  //const vec3 dx = is_end ? vec3( 0, 0, 0 ) :
-  //  -s * w0 * normalize( p0 - p1 );
-
-  //const float dx_length = -dc.stiffness * ( d - dc.natural_distance );
-  //const vec3 dx = is_end ? vec3( 0, 0, 0 ) : normalize( p0 - p1 ) * dx_length;
   return subgroupAdd( vec4( dx, is_end ? 0.0 : 1.0 ) );
 }
 

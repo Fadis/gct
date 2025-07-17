@@ -1,0 +1,82 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#include <gct/constants.h>
+#include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/xpbd/distance_constraint.h>
+#include <gct/pbd/collision_constraint.h>
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.instance ];
+  // メッシュが属すノードの情報を得る
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  const uint particle_id = gl_GlobalInvocationID.x / gl_SubgroupSize;
+  const uint constraint_index = gl_SubgroupInvocationID;
+  const bool in_range = mesh.unique_vertex_count > particle_id;
+  
+  const float dt = 1.0/60.0;
+
+  if( !in_range ) return;
+
+  if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.lambda_offset == 0xFFFFFFFF ) return;
+  
+  if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
+
+  vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
+  dx += xpbd_distance_constraint_dx(
+    particle_id,
+    mesh.particle_offset,
+    mesh.distance_constraint_offset,
+    mesh.lambda_offset,
+    constraint_index,
+    dt
+  );
+  for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
+    dx += pbd_collision_constraint_dx(
+      particle_id,
+      mesh.particle_offset,
+      mesh.constraint_offset,
+      constraint_block_id * gl_SubgroupSize + constraint_index
+    );
+  }
+  dx += pbd_border_dx(
+    particle_id,
+    mesh.particle_offset,
+    aabb_type(
+      vec4( -2.6, -100.0, -2.1, 1.0 ),
+      vec4( 2.6, -0.05, 1.5, 1.0 )
+    )
+  );
+  if( dx.w != 0.0 ) {
+    dx /= dx.w;
+  }
+  if( constraint_index == 0u ) {
+    particle_pool[ mesh.particle_offset + particle_id ].position += dx.xyz;
+  }
+}
+

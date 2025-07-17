@@ -47,7 +47,8 @@ common_sample_setup::common_sample_setup(
       ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
       ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
-      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" );
+      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" )
+      ( "record,r", po::bool_switch(), "record frames" );
   }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
@@ -100,6 +101,9 @@ common_sample_setup::common_sample_setup(
   instance.reset( new instance_t( ici ) );
   if( vm[ "validation" ].as< bool >() ) {
     instance->abort_on_validation_failure( vm[ "debug" ].as< bool >() );
+  }
+  if( vm[ "record" ].as< bool >() ) {
+    record = true;
   }
 
   auto groups = instance->get_physical_devices( {} );

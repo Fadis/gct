@@ -867,6 +867,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // トポロジを記録
       if( mmp.has( "topology" ) ) {
+        std::cout << "topology id : " << std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) ) << std::endl;
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
       }
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
@@ -889,7 +890,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
           m.data()->*mmp[ "particle_offset" ] = std::uint32_t( *desc );
         }
         if( mmp.has( "stiffness" ) ) {
-          m.data()->*mmp[ "stiffness" ] = 1.0f;
+          m.data()->*mmp[ "stiffness" ] = 0.03f;
         }
       }
       else if( mmp.has( "particle_offset" ) ) {
@@ -908,7 +909,11 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 衝突制約の情報のオフセット
       if( props.enable_constraint ) {
-        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 32u );
+        const auto desc = props.graph->get_resource()->constraint->allocate(
+          props.enable_rigid_constraint ?
+          256u * 2u :
+          vertex_count * 128u
+        );
         p.descriptor.set_constraint( desc );
         if( mmp.has( "constraint_offset" ) ) {
           std::cout << "constraint offset : " << std::uint32_t( *desc ) << std::endl;
@@ -917,6 +922,37 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       else if( mmp.has( "constraint_offset" ) ) {
         m.data()->*mmp[ "constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 圧力制約の情報のオフセット
+      if( props.enable_fluid_constraint ) {
+        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 128u );
+        p.descriptor.set_fluid_constraint( desc );
+        if( mmp.has( "fluid_constraint_offset" ) ) {
+          std::cout << "fluid_constraint offset : " << std::uint32_t( *desc ) << std::endl;
+          m.data()->*mmp[ "fluid_constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "fluid_constraint_offset" ) ) {
+        m.data()->*mmp[ "fluid_constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 剛体衝突制約の情報のオフセット
+      if( props.enable_rigid_constraint ) {
+        const auto desc = props.graph->get_resource()->rigid->allocate( 1u );
+        p.descriptor.set_rigid( desc );
+        auto rmp = props.graph->get_resource()->instance_resource_index->get_member_pointer();
+        std::vector< std::uint8_t > r( rmp.get_aligned_size() );
+        r.data()->*rmp[ "center_of_mass" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "momentum_inertia_tensor" ] = 0u;
+        r.data()->*rmp[ "previous_center_of_mass" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "linear_velocity" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        r.data()->*rmp[ "previous_angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        r.data()->*rmp[ "angular_velocity" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        props.graph->get_resource()->rigid->set( p.descriptor.rigid, 0u, r.data(), std::next( r.data(), r.size() ) );
+        m.data()->*mmp[ "rigid" ] = *p.descriptor.rigid;
+      }
+      else if( mmp.has( "rigid" ) ) {
+        m.data()->*mmp[ "rigid" ] = 0xFFFFFFFFu;
       }
       // 頂点からプリミティブを辿る為のテーブルのオフセット
       if( props.enable_vertex_to_primitive ) {
@@ -928,6 +964,22 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       else if( mmp.has( "vertex_to_primitive_offset" ) ) {
         m.data()->*mmp[ "vertex_to_primitive_offset" ] = 0xFFFFFFFFu;
+      }
+      // xpbdのラムダのテーブルのオフセット
+      if( props.enable_lambda ) {
+        const auto desc = props.graph->get_resource()->lambda->allocate(
+          props.enable_rigid_constraint ?
+          256u * 2u :
+          vertex_count * 128u
+        );
+        p.descriptor.set_lambda( desc );
+        if( mmp.has( "lambda_offset" ) ) {
+          std::cout << "lambda offset : " << *desc << std::endl;
+          m.data()->*mmp[ "lambda_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "lambda_offset" ) ) {
+        m.data()->*mmp[ "lambda_offset" ] = 0xFFFFFFFFu;
       }
       // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
@@ -954,12 +1006,12 @@ std::shared_ptr< mesh > gltf2::create_mesh(
         mesh_id,
         i
       );
-    m->prim.push_back(
+    const auto desc =
       props.graph->get_resource()->prim.allocate(
         std::make_shared< scene_graph::primitive >( std::move( p ) )
-      )
-    );
-    auto desc = m->prim.back();
+      );
+    m->prim.push_back( desc );
+    prim_.push_back( desc );
     doc_primitive_id[ desc ] = ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( i );
     primitive_ext[ desc ] = e;
     ++i;

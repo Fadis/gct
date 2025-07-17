@@ -53,7 +53,7 @@ void main() {
   const uint iter = constraint_begin( particle_id, mesh.constraint_offset );
   const bool is_end = constraint_is_end( iter + constraint_index );
 
-  const vec3 p1 = is_end ? p0 : particle_pool[ constraint_get( iter + constraint_index ).to_id ].position;
+  const vec3 p1 = is_end ? p0 : particle_pool[ constraint_get( iter + constraint_index ) ].position;
 
   const uint primitive_count = subgroupAdd( is_end ? 0u : 1u );
   const uint output_primitive_id = subgroupExclusiveAdd( is_end ? 0 : 1u );

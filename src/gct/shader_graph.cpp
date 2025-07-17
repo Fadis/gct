@@ -841,7 +841,377 @@ std::string to_string( const compiled &src ) {
     const auto [v_begin,v_end] = vertices( *graph );
     std::queue< graph_type::vertex_descriptor > v_cur;
     std::unordered_set< graph_type::vertex_descriptor > visited;
-    for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
+    std::vector< graph_type::vertex_descriptor > new_independent_vertex;
+    while( 1 ) {
+      new_independent_vertex.clear();
+      for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
+        if( visited.find( v ) == visited.end() ) {
+          if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::call ) {
+            const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+            if( create_info->independent() ) {
+              new_independent_vertex.push_back( v );
+              visited.insert( v );
+            }
+          }
+          else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::fill ) {
+            const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+            if( create_info->independent ) {
+              new_independent_vertex.push_back( v );
+              visited.insert( v );
+            }
+          }
+          else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::blit ) {
+            const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+            if( create_info->independent ) {
+              new_independent_vertex.push_back( v );
+              visited.insert( v );
+            }
+          }
+        }
+      }
+      if( new_independent_vertex.empty() ) {
+        if( visited.size() != std::distance( v_begin, v_end ) ) {
+          throw exception::runtime_error( "All assignable images are assigned, but there are still " + std::to_string( std::distance( v_begin, v_end ) - visited.size() ) + " nodes with unassigned images.\n" );
+        }
+        log += "assign_image : done\n";
+        break;
+      }
+      log += "assign_image : " + std::to_string( new_independent_vertex.size() ) + " nodes are ready to solve output image\n";
+      if( independent_vertex.empty() ) {
+        independent_vertex.insert( independent_vertex.end(), new_independent_vertex.begin(), new_independent_vertex.end() );
+      }
+      for( const auto &v : new_independent_vertex ) {
+        if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::call ) {
+          const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+          for( const auto &inout: create_info->get_inout() ) {
+            const std::string &name = inout.first;
+            const auto &desc = inout.second;
+            const auto view = resource->image->get( desc );
+            bind( v, name, desc,
+              image_allocate_info()
+                .set_create_info( view->get_factory()->get_props() )
+                .set_range(
+                  subview_range()
+                    .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                    .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                    .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                    .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+                ),
+              false,
+              texture
+            );
+          }
+          for( const auto &out: create_info->get_plan().output ) {
+            const std::string &name = out.first;
+            if( out.second.index() == 1u ) {
+              const auto &ai = std::get< image_allocate_info >( out.second );
+              bool solved = false;
+              for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+                cur = std::find_if(
+                  cur,
+                  binding.end(),
+                  [&]( const auto &b ) -> bool {
+                    return *b.allocate_info == ai;
+                  }
+                );
+                if( cur == binding.end() ) {
+                  log += (*graph)[ v ].get_node_name() + "." + name + " is incompatble to existing images, thus unable to share.\n";
+                  break;
+                }
+                else {
+                  if( shareable( *cur->used_by, v ) ) {
+                    reuse( cur, v, name, texture );
+                    cur->shareable = create_info->is_shareable( name );
+                    solved = true;
+                    break;
+                  }
+                }
+              }
+              if( !solved ) {
+                const auto view = resource->image->allocate( ai ).linear;
+                const bool shareable = create_info->is_shareable( name );
+                bind( v, name, view, ai, shareable, texture );
+              }
+            }
+            if( out.second.index() == 2u ) {
+              auto ai = std::get< dynamic_size_image_allocate_info >( out.second );
+              glm::vec4 size( 0.0f, 0.0f, 0.0f, 1.0f );
+              std::optional< vk::ImageType > image_type;
+              std::optional< vk::Format > format;
+              std::uint32_t layer_count = 1u;
+              if( ai.dim.relative_to ) {
+                if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::call ) {
+                  const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
+                  const auto image_or_tex = create_info->get( *ai.dim.relative_to );
+                  std::shared_ptr< image_view_t > view;
+                  if( image_or_tex.index() == 0 ) {
+                    if( std::get< image_pool::image_descriptor >( image_or_tex ) ) {
+                      view = resource->image->get( std::get< image_pool::image_descriptor >( image_or_tex ) );
+                    }
+                  }
+                  else {
+                    if( std::get< texture_pool::texture_descriptor >( image_or_tex ) ) {
+                      view = resource->texture->get( std::get< texture_pool::texture_descriptor >( image_or_tex ) ).first;
+                    }
+                  }
+                  const auto s = view->get_factory()->get_props().get_basic().extent;
+                  size.x = s.width;
+                  size.y = s.height;
+                  size.z = s.depth;
+                  if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e1D ) {
+                    size.y = view->get_props().get_basic().subresourceRange.layerCount;
+                    size.z = 0.0f;
+                    image_type = vk::ImageType::e1D;
+                    layer_count = view->get_props().get_basic().subresourceRange.layerCount;
+                  }
+                  if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e2D ) {
+                    size.z = view->get_props().get_basic().subresourceRange.layerCount;
+                    image_type = vk::ImageType::e2D;
+                    layer_count = view->get_props().get_basic().subresourceRange.layerCount;
+                  }
+                  else {
+                    image_type = vk::ImageType::e3D;
+                  }
+                  format = view->get_factory()->get_props().get_basic().format;
+                }
+                else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::fill ) {
+                  throw exception::runtime_error( "shader_graph::builder::assign_image : image size depends on unknown image "+*ai.dim.relative_to, __FILE__, __LINE__ );
+                }
+                else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::blit ) {
+                  const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+                  if( *ai.dim.relative_to == create_info->input_name ) {
+                    const auto view = resource->image->get( create_info->input );
+                    const auto s = view->get_factory()->get_props().get_basic().extent;
+                    size.x = s.width;
+                    size.y = s.height;
+                    size.z = s.depth;
+                    if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e1D ) {
+                      size.y = view->get_props().get_basic().subresourceRange.layerCount;
+                      size.z = 0.0f;
+                      image_type = vk::ImageType::e1D;
+                      layer_count = view->get_props().get_basic().subresourceRange.layerCount;
+                    }
+                    if( view->get_factory()->get_props().get_basic().imageType == vk::ImageType::e2D ) {
+                      size.z = view->get_props().get_basic().subresourceRange.layerCount;
+                      image_type = vk::ImageType::e2D;
+                      layer_count = view->get_props().get_basic().subresourceRange.layerCount;
+                    }
+                    else {
+                      image_type = vk::ImageType::e3D;
+                    }
+                  }
+                  else {
+                    throw exception::runtime_error( "shader_graph::builder::assign_image : image size depends on unknown image "+*ai.dim.relative_to, __FILE__, __LINE__ );
+                  }
+                }
+              }
+              auto sized_basic = ai.allocate_info.create_info.get_basic();
+              if( image_type ) {
+                sized_basic.setImageType( *image_type );
+              }
+              
+              auto modified = ai.allocate_info;
+              size = ai.dim.size_transform * size;
+              size /= size.w;
+              auto layer_count_vec = ( glm::vec2( layer_count, 1.0f ) * ai.dim.layer_transform );
+              layer_count = std::max( layer_count_vec.x / layer_count_vec.y, 1.0f );
+              if( ai.dim.preserve_layer_count && sized_basic.imageType == vk::ImageType::e2D ) {
+                size.z = layer_count;
+              }
+              else if( ai.dim.preserve_layer_count && sized_basic.imageType == vk::ImageType::e1D ) {
+                size.y = layer_count;
+              }
+              
+              if( sized_basic.format == vk::Format::eUndefined && format ) {
+                sized_basic.format = *format;
+              }
+              if( sized_basic.imageType == vk::ImageType::e1D ) {
+                sized_basic.extent.width = std::max( size.x, 1.0f );
+                sized_basic.extent.height = 1;
+                sized_basic.extent.depth = 1;
+                sized_basic.arrayLayers = std::max( size.y, 1.0f );
+                sized_basic.mipLevels = 1;
+              }
+              else if( sized_basic.imageType == vk::ImageType::e2D ) {
+                sized_basic.extent.width = std::max( size.x, 1.0f );
+                sized_basic.extent.height = std::max( size.y, 1.0f );
+                sized_basic.extent.depth = 1;
+                sized_basic.arrayLayers = std::max( size.z, 1.0f );
+                sized_basic.mipLevels = 1;
+              }
+              else if( sized_basic.imageType == vk::ImageType::e2D ) {
+                sized_basic.extent.width = std::max( size.x, 1.0f );
+                sized_basic.extent.height = std::max( size.y, 1.0f );
+                sized_basic.extent.depth = std::max( size.z, 1.0f );
+                sized_basic.arrayLayers = 1;
+                sized_basic.mipLevels = 1;
+              }
+              modified.create_info.set_basic( sized_basic );
+              bool solved = false;
+              for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+                cur = std::find_if(
+                  cur,
+                  binding.end(),
+                  [&]( const auto &b ) -> bool {
+                    return *b.allocate_info == modified;
+                  }
+                );
+                if( cur == binding.end() ) {
+                  log += (*graph)[ v ].get_node_name() + "." + name + " is incompatble to existing images, thus unable to share.\n";
+                  break;
+                }
+                else {
+                  if( shareable( *cur->used_by, v ) ) {
+                    reuse( cur, v, name, texture );
+                    cur->shareable = create_info->is_shareable( name );
+                    solved = true;
+                    break;
+                  }
+                }
+              }
+              if( !solved ) {
+                const auto view = resource->image->allocate( modified ).linear;
+                const bool shareable = create_info->is_shareable( name );
+                bind( v, name, view, modified, shareable, texture );
+              }
+            }
+            else if( out.second.index() == 0u ) {
+              const auto &desc = std::get< image_pool::image_descriptor >( out.second );
+              const auto view = resource->image->get( desc );
+              bind( v, name, desc,
+                image_allocate_info()
+                  .set_create_info( view->get_factory()->get_props() )
+                  .set_range(
+                    subview_range()
+                      .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                      .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                      .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                      .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+                  ),
+                false,
+                texture
+              );
+            }
+          }
+        }
+        else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::fill ) {
+          const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( (*graph)[ v ].command );
+          const std::string &name = create_info->name;
+          auto &out = create_info->output;
+          if( out.index() == 1u ) {
+            const auto &ai = std::get< image_allocate_info >( out );
+            bool solved = false;
+            for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+              cur = std::find_if(
+                cur,
+                binding.end(),
+                [&]( const auto &b ) -> bool {
+                  return *b.allocate_info == ai;
+                }
+              );
+              if( cur == binding.end() ) {
+                log += (*graph)[ v ].get_node_name() + "." + name + " is incompatble to existing images, thus unable to share.\n";
+                break;
+              }
+              else {
+                if( shareable( *cur->used_by, v ) ) {
+                  reuse( cur, v, name, texture );
+                  cur->shareable = create_info->shareable;
+                  solved = true;
+                  break;
+                }
+              }
+            }
+            if( !solved ) {
+              const auto view = resource->image->allocate( ai ).linear;
+              const bool shareable = create_info->shareable;
+              bind( v, name, view, ai, shareable, texture );
+            }
+          }
+          else if( out.index() == 0u ) {
+            const auto &desc = std::get< image_pool::image_descriptor >( out );
+            const auto view = resource->image->get( desc );
+            const bool shareable = create_info->shareable;
+            bind( v, name, desc,
+              image_allocate_info()
+                .set_create_info( view->get_factory()->get_props() )
+                .set_range(
+                  subview_range()
+                    .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                    .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                    .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                    .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+                ),
+              shareable,
+              texture
+            );
+          }
+        }
+        else if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::blit ) {
+          const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( (*graph)[ v ].command );
+          const std::string &name = create_info->output_name;
+          auto &out = create_info->output;
+          if( out.index() == 1u ) {
+            const auto &ai = std::get< image_allocate_info >( out );
+            bool solved = false;
+            for( auto cur = binding.begin(); cur != binding.end(); ++cur ) {
+              cur = std::find_if(
+                cur,
+                binding.end(),
+                [&]( const auto &b ) -> bool {
+                  return *b.allocate_info == ai;
+                }
+              );
+              if( cur == binding.end() ) {
+                log += (*graph)[ v ].get_node_name() + "." + name + " is incompatble to existing images, thus unable to share.\n";
+                break;
+              }
+              else {
+                if( shareable( *cur->used_by, v ) ) {
+                  reuse( cur, v, name, texture );
+                  cur->shareable = create_info->shareable;
+                  solved = true;
+                  break;
+                }
+              }
+            }
+            if( !solved ) {
+              const auto view = resource->image->allocate( ai ).linear;
+              const bool shareable = create_info->shareable;
+              bind( v, name, view, ai, shareable, texture );
+            }
+          }
+          else if( out.index() == 0u ) {
+            const auto &desc = std::get< image_pool::image_descriptor >( out );
+            const auto view = resource->image->get( desc );
+            const bool shareable = create_info->shareable;
+            bind( v, name, desc,
+              image_allocate_info()
+                .set_create_info( view->get_factory()->get_props() )
+                .set_range(
+                  subview_range()
+                    .set_mip_offset( view->get_props().get_basic().subresourceRange.baseMipLevel )
+                    .set_mip_count( view->get_props().get_basic().subresourceRange.levelCount )
+                    .set_layer_offset( view->get_props().get_basic().subresourceRange.baseArrayLayer )
+                    .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
+                ),
+              shareable,
+              texture
+            );
+          }
+        }
+        /*const auto [out_begin,out_end] = out_edges( v, *graph );
+        for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
+          const auto next = target( edge, *graph );
+          if( visited.find( next ) == visited.end() ) {
+            v_cur.push( next );
+            visited.insert( next );
+          }
+        }*/
+      }
+    }
+
+    /*for( const auto &v: boost::make_iterator_range( v_begin, v_end ) ) {
       if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
         if( create_info->independent() ) {
@@ -939,10 +1309,14 @@ std::string to_string( const compiled &src ) {
                 const auto image_or_tex = create_info->get( *ai.dim.relative_to );
                 std::shared_ptr< image_view_t > view;
                 if( image_or_tex.index() == 0 ) {
-                  view = resource->image->get( std::get< image_pool::image_descriptor >( image_or_tex ) );
+                  if( std::get< image_pool::image_descriptor >( image_or_tex ) ) {
+                    view = resource->image->get( std::get< image_pool::image_descriptor >( image_or_tex ) );
+                  }
                 }
                 else {
-                  view = resource->texture->get( std::get< texture_pool::texture_descriptor >( image_or_tex ) ).first;
+                  if( std::get< texture_pool::texture_descriptor >( image_or_tex ) ) {
+                    view = resource->texture->get( std::get< texture_pool::texture_descriptor >( image_or_tex ) ).first;
+                  }
                 }
                 const auto s = view->get_factory()->get_props().get_basic().extent;
                 size.x = s.width;
@@ -1199,7 +1573,7 @@ std::string to_string( const compiled &src ) {
         }
       }
       v_cur.pop();
-    }
+    }*/
   }
   std::pair< bool, unsigned int > builder::is_ready_to_execute(
     const std::unordered_map< image_pool::image_descriptor, image_state > &state,
