@@ -28,6 +28,7 @@ layout(push_constant) uniform PushConstants {
 #include <gct/scene_graph/distance_constraint_pool.h>
 #include <gct/scene_graph/constraint_pool.h>
 #include <gct/scene_graph/vertex_to_primitive_pool.h>
+#include <gct/scene_graph/lambda_pool.h>
 #include <gct/scene_graph/load_filter_cache.h>
 #include <gct/scene_graph/read_primitive.h>
 #include <gct/scene_graph/k+buffer.h>

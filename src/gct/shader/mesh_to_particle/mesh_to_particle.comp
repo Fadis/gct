@@ -52,7 +52,7 @@ void main() {
   particle_pool[ mesh.particle_offset + vertex_id ].velocity = vec3( 0, 0, 0 );
   particle_pool[ mesh.particle_offset + vertex_id ].local_r = vec3( 0, 0, 0 );
   particle_pool[ mesh.particle_offset + vertex_id ].normal = normalize( n0.xyz / n0.w );
-  particle_pool[ mesh.particle_offset + vertex_id ].w = 1.0/0.01;
+  particle_pool[ mesh.particle_offset + vertex_id ].w = 1.0/0.0001;
   particle_pool[ mesh.particle_offset + vertex_id ].rigid_id = 0xFFFFFFFF;
   particle_pool[ mesh.particle_offset + vertex_id ].phase = prim.mesh;
 }

@@ -11,11 +11,11 @@ layout(push_constant) uniform PushConstants {
   uint count;
 } push_constants;
 
-layout(binding = 0,std430) buffer StagingRigidPool {
+layout(binding = 0,std430) buffer StagingVertexToPrimitivePool {
   uint staging[];
 };
 
-layout(binding = 1,std430) buffer RigidPool {
+layout(binding = 1,std430) buffer VertexToPrimitivePool {
   uint vertex_to_primitive_pool[];
 };
 

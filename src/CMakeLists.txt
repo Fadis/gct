@@ -542,6 +542,16 @@ target_link_libraries( list_vertex
   Boost::system
 )
 
+add_executable( test_quaternion test_quaternion.cpp )
+#target_link_libraries( list_vertex
+#  gct
+#  gct_glfw
+#  Threads::Threads
+#  Boost::program_options
+#  Boost::context
+#  Boost::system
+#)
+
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )
@@ -603,6 +613,9 @@ add_shader( gct gct/shader/scene_graph/spatial_hash_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/read.comp INSTALL )
 
+add_shader( gct gct/shader/scene_graph/lambda_pool/write.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/lambda_pool/read.comp INSTALL )
+
 add_shader( gct gct/shader/ao/hbao/hbao_0.comp INSTALL )
 add_shader( gct gct/shader/ao/hbao/hbao_45.comp INSTALL )
 add_shader( gct gct/shader/ao/hbao/hbao_90.comp INSTALL )
@@ -632,6 +645,8 @@ add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
 add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
 
 add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
+add_shader( gct gct/shader/xpbd/distance_constraint.comp INSTALL )
+
 add_shader( gct gct/shader/write_particle_to_spatial_hash/write_particle_to_spatial_hash.comp INSTALL )
 add_shader( gct gct/shader/read_particle_from_spatial_hash/read_particle_from_spatial_hash.comp INSTALL )
 
@@ -650,6 +665,16 @@ add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/dummy.comp INSTALL )
+
+add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
+add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
+add_shader( gct gct/shader/draw_fluid/depth/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/draw_fluid/normal/normal.comp INSTALL )
+
+add_shader( gct gct/shader/bilateral_filter/12_32_1/horizontal.comp INSTALL )
+add_shader( gct gct/shader/bilateral_filter/12_32_1/vertical.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

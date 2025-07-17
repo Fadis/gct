@@ -929,6 +929,18 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       else if( mmp.has( "vertex_to_primitive_offset" ) ) {
         m.data()->*mmp[ "vertex_to_primitive_offset" ] = 0xFFFFFFFFu;
       }
+      // xpbdのラムダのテーブルのオフセット
+      if( props.enable_lambda ) {
+        const auto desc = props.graph->get_resource()->lambda->allocate( vertex_count * 32u );
+        p.descriptor.set_lambda( desc );
+        if( mmp.has( "lambda_offset" ) ) {
+          std::cout << "lambda offset : " << *desc << std::endl;
+          m.data()->*mmp[ "lambda_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "lambda_offset" ) ) {
+        m.data()->*mmp[ "lambda_offset" ] = 0xFFFFFFFFu;
+      }
       // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );
     }

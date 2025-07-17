@@ -15,21 +15,21 @@ vec4 pbd_collision_constraint_dx(
 ) {
   const uint iter = constraint_begin( particle_id, constraint_offset );
   const bool is_end = constraint_is_end( iter + constraint_index );
-  const constraint_type dc =
+  const uint dc =
     is_end ?
-    constraint_type( 0, 0.0 ) :
+    0u :
     constraint_get( iter + constraint_index );
   const vec3 p0 = particle_pool[ particle_offset + particle_id ].position;
   const vec3 pp0 = particle_pool[ particle_offset + particle_id ].previous_position;
-  const vec3 p1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc.to_id ) ].position;
+  const vec3 p1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc ) ].position;
 
 
-  vec3 n1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc.to_id ) ].normal;
+  vec3 n1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc ) ].normal;
   const bool front = dot( ( pp0 - p1 ), n1 ) >= 0.0;
   n1 = front ? n1 : -n1;
   const float thickness = 0.1;
   const float w0 = particle_pool[ particle_offset + particle_id ].w;
-  const float w1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc.to_id ) ].w;
+  const float w1 = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc ) ].w;
   const float d = distance( p0, p1 );
 
   //const float stretch = min( d - thickness * 2.0, 0.0 );

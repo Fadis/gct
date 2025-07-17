@@ -17,6 +17,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 #include <gct/scene_graph/light_pool.h>
 #include <gct/scene_graph/omnishadow.h>
 #include <gct/scene_graph/k+buffer.h>
+#include <gct/depth.h>
 
 layout(push_constant) uniform PushConstants {
   uint gbuffer;
@@ -36,12 +37,12 @@ void main() {
     return;
   }
   
-  const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
-  const mat4 screen_to_world = matrix_pool[ push_constants.unproject ];
-  const float depth = read_kplus_buffer_depth( push_constants.depth, screen_pos, layer );
-  vec4 pos4 = screen_to_world * vec4( vec2( screen_pos )/vec2( image_size ), depth, 1.0 );
-  pos4 /= pos4.w;
-  const vec3 pos = pos4.xyz;
+  const vec3 pos = depth_to_world_position(
+    screen_pos,
+    imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy,
+    read_kplus_buffer_depth( push_constants.depth, screen_pos, layer ),
+    matrix_pool[ push_constants.unproject ]
+  ).xyz;
   
   vec3 sum = vec3( 0.0, 0.0, 0.0 );
   float dist = distance( pos.xyz, global_uniforms.eye_pos.xyz ) / 64.0;

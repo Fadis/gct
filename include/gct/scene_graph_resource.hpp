@@ -57,6 +57,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( constraint )
   LIBGCT_SETTER( spatial_hash )
   LIBGCT_SETTER( vertex_to_primitive )
+  LIBGCT_SETTER( lambda )
   LIBGCT_SETTER( last_visibility )
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
@@ -93,6 +94,7 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > constraint;
   std::shared_ptr< buffer_pool > spatial_hash;
   std::shared_ptr< buffer_pool > vertex_to_primitive;
+  std::shared_ptr< buffer_pool > lambda;
   std::shared_ptr< buffer_pool > resource_pair;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< vertex_buffer_pool > vertex;
@@ -244,6 +246,12 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->vertex_to_primitive->get_props().allocator_set ); \
       } \
       add_resource( { "vertex_to_primitive_pool", ( r ) ->vertex_to_primitive->get_buffer() } ); \
+    } \
+    if( ( r ) ->lambda ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->lambda->get_props().allocator_set ); \
+      } \
+      add_resource( { "lambda_pool", ( r ) ->lambda->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

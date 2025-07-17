@@ -45,6 +45,7 @@ struct primitive_descriptor {
   LIBGCT_SETTER( distance_constraint )
   LIBGCT_SETTER( constraint )
   LIBGCT_SETTER( vertex_to_primitive )
+  LIBGCT_SETTER( lambda )
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
   texture_pool::texture_descriptor normal_texture;
@@ -59,6 +60,7 @@ struct primitive_descriptor {
   buffer_pool::buffer_descriptor distance_constraint;
   buffer_pool::buffer_descriptor constraint;
   buffer_pool::buffer_descriptor vertex_to_primitive;
+  buffer_pool::buffer_descriptor lambda;
 };
 
 void to_json( nlohmann::json &dest, const primitive_descriptor &src );

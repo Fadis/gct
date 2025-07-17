@@ -23,8 +23,6 @@ add_shader( cloth shadow/world.frag )
 add_shader( cloth shadow/world.geom )
 add_shader( cloth shadow/world.vert )
 
-add_shader( cloth dummy/dummy.comp )
-
 add_shader( cloth aabb/world.frag )
 add_shader( cloth aabb/world.geom )
 add_shader( cloth aabb/world.vert )

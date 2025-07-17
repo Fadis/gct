@@ -107,6 +107,8 @@ subdirs(
   flat_terrain
   height_map_terrain
   cloth
+  xpbd
+  fluid
 )
 if( DXC_FOUND )
 subdirs(
