@@ -628,6 +628,7 @@ add_shader( gct gct/shader/dof/lrlf/h2.comp INSTALL )
 add_shader( gct gct/shader/dof/lrlf/h3.comp INSTALL )
 add_shader( gct gct/shader/dof/lrlf/h4.comp INSTALL )
 add_shader( gct gct/shader/dof/lrlf/v.comp INSTALL )
+add_shader( gct gct/shader/dof/merge/merge.comp INSTALL )
 
 add_shader( gct gct/shader/skyview/generate.comp INSTALL )
 add_shader( gct gct/shader/skyview/render.comp INSTALL )
@@ -675,6 +676,10 @@ add_shader( gct gct/shader/draw_fluid/normal/normal.comp INSTALL )
 
 add_shader( gct gct/shader/bilateral_filter/12_32_1/horizontal.comp INSTALL )
 add_shader( gct gct/shader/bilateral_filter/12_32_1/vertical.comp INSTALL )
+
+add_shader( gct gct/shader/bloom/bloom.comp INSTALL )
+
+add_shader( gct gct/shader/merge/merge.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

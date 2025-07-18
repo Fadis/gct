@@ -45,8 +45,6 @@ add_shader( fluid tone/tone.comp )
 
 add_shader( fluid distance/distance.comp )
 
-add_shader( fluid merge/merge.comp )
-
 add_shader( fluid coc_gauss/horizontal.comp )
 add_shader( fluid coc_gauss/vertical.comp )
 

@@ -734,7 +734,32 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
 
-  const auto fluid_depth_desc = sg->get_resource()->image->allocate(
+  const auto fluid_depth_front_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( res.width, res.height )
+              .setFormat( vk::Format::eR32Sfloat )
+              .setUsage(
+                vk::ImageUsageFlagBits::eColorAttachment|
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+      )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 1u )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  
+  const auto fluid_depth_back_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
         gct::image_create_info_t()
@@ -759,27 +784,37 @@ int main( int argc, const char *argv[] ) {
       )
   );
 
-  gct::gbuffer fluid_depth_gbuffer(
+
+  gct::gbuffer fluid_depth_front_gbuffer(
     gct::gbuffer_create_info()
       .set_allocator( res.allocator )
-      .set_external_color( { sg->get_resource()->image->get( fluid_depth_desc.linear ) } )
+      .set_external_color( { sg->get_resource()->image->get( fluid_depth_front_desc.linear ) } )
       .set_swapchain_image_count( 1u )
       .set_color_buffer_count( 1 )
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
       .set_clear_color( std::array< float, 4u >{ 10.0f, 10.0f, 10.0f, 1.0f } )
-      .set_initial_depth( vk::ClearDepthStencilValue( 0.f, 0 ) ) ///////  back side
+      .set_initial_depth( vk::ClearDepthStencilValue( 1.f, 0 ) )
   );
-
-  std::cout << "fluid_depth_desc " << *fluid_depth_desc.linear << std::endl;
+  
+  gct::gbuffer fluid_depth_back_gbuffer(
+    gct::gbuffer_create_info()
+      .set_allocator( res.allocator )
+      .set_external_color( { sg->get_resource()->image->get( fluid_depth_back_desc.linear ) } )
+      .set_swapchain_image_count( 1u )
+      .set_color_buffer_count( 1 )
+      .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
+      .set_clear_color( std::array< float, 4u >{ -10.0f, -10.0f, -10.0f, 1.0f } )
+      .set_initial_depth( vk::ClearDepthStencilValue( 0.f, 0 ) )
+  );
 
   gct::graphics generate_fluid_depth(
     gct::graphics_create_info()
       .set_pipeline_create_info(
         gct::graphics_pipeline_create_info_t()
-          .set_gbuffer( fluid_depth_gbuffer )
+          .set_gbuffer( fluid_depth_front_gbuffer )
           .set_dynamic(
             gct::pipeline_dynamic_state_create_info_t()
-              .add_dynamic_state( vk::DynamicState::eDepthCompareOp )  // back side
+              .add_dynamic_state( vk::DynamicState::eDepthCompareOp )
           )
       )
       .set_swapchain_image_count( 1u )
@@ -1047,31 +1082,24 @@ int main( int argc, const char *argv[] ) {
     std::make_shared< gct::compute >(
       gct::compute_create_info()
         .set_allocator_set( res.allocator_set )
-        .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
+        .set_shader( gct::get_system_shader_path() / "dof" / "merge" / "merge.comp.spv" )
         .set_scene_graph( sg->get_resource() )
         .add_resource( { "global_uniforms", global_uniform } )
-        .add_resource( { "af_state", af_state_buffer } )
-        .add_resource( { "tone", tone_buffer->get_buffer() } )
-        .add_resource( { "sb", sb.get_image_view(), vk::ImageLayout::eGeneral } )
     ),
     gct::image_io_plan()
       .add_input( "src" )
-      .add_sampled( "star", linear_sampler_desc )
-      .add_sampled( "flare", linear_sampler_desc )
       .add_sampled( "skyview", linear_sampler_desc )
       .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
-      .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
       .set_dim( "src", glm::vec2( 1.f, -1.f ) )
       .set_node_name( "merge" )
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", dof_desc )
       .add( "skyview", skyview_desc )
-      .add( "star", sb_rendered_desc )
-      .add( "flare", flare_rendered_desc )
   );
 
-  const auto filtered_fluid_depth_desc = fluid_depth_gauss( builder, fluid_depth_desc.linear );
+  const auto filtered_fluid_depth_front_desc = fluid_depth_gauss( builder, fluid_depth_front_desc.linear );
+  const auto filtered_fluid_depth_back_desc = fluid_depth_gauss( builder, fluid_depth_back_desc.linear );
 
   const auto fluid_normal_desc = builder.call(
     builder.get_image_io_create_info(
@@ -1085,28 +1113,76 @@ int main( int argc, const char *argv[] ) {
           //.add_resource( { "hoge", fluid_depth_gbuffer.get_image_view( 0 ), vk::ImageLayout::eGeneral } )
       ),
       gct::image_io_plan()
-        .add_input( "src" )
-        .add_output( "dest", "src", { 1.f, -1.f }, vk::Format::eR16G16B16A16Sfloat )
-        .set_dim( "src", { 1.f, -1.f } )
+        .add_input( "front" )
+        .add_input( "back" )
+        .add_input( "depth_image" )
+        .add_sampled( "background", linear_sampler_desc )
+        .add_output( "dest", "front", { 1.f, -1.f }, vk::Format::eR16G16B16A16Sfloat )
+        .set_dim( "front", { 1.f, -1.f } )
         .set_node_name( "fluid_normal" )
     )
     .set_push_constant( "unproject", *unproject_to_world_desc )
   )(
     gct::shader_graph::vertex::combined_result_type()
-      .add( "src", filtered_fluid_depth_desc/*sb_image_desc.linear*/ )
+      .add( "front", filtered_fluid_depth_front_desc )
+      .add( "back", filtered_fluid_depth_back_desc )
+      .add( "depth_image", np_desc )
+      .add( "background", merge_desc )
   );
 
+  const auto merge_fluid_desc = builder.call(
+    std::make_shared< gct::compute >(
+      gct::compute_create_info()
+        .set_allocator_set( res.allocator_set )
+        .set_shader( gct::get_system_shader_path() / "merge" / "merge.comp.spv" )
+        .set_scene_graph( sg->get_resource() )
+    ),
+    gct::image_io_plan()
+      .add_input( "src" )
+      .add_inout( "dest" )
+      .set_dim( "src", glm::vec2( 1.f, -1.f ) )
+      .set_node_name( "merge_fluid" )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "src", fluid_normal_desc )
+      .add( "dest", merge_desc )
+  );
 
+  const auto split_bloom_desc = builder.call(
+    std::make_shared< gct::compute >(
+      gct::compute_create_info()
+        .set_allocator_set( res.allocator_set )
+        .set_shader( gct::get_system_shader_path() / "bloom" / "bloom.comp.spv" )
+        .set_scene_graph( sg->get_resource() )
+        .add_resource( { "global_uniforms", global_uniform } )
+        .add_resource( { "af_state", af_state_buffer } )
+        .add_resource( { "tone", tone_buffer->get_buffer() } )
+        //.add_resource( { "sb", sb.get_image_view(), vk::ImageLayout::eGeneral } )
+    ),
+    gct::image_io_plan()
+      .add_input( "src" )
+      .add_sampled( "star", linear_sampler_desc )
+      .add_sampled( "flare", linear_sampler_desc )
+      .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
+      .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
+      .set_dim( "src", glm::vec2( 1.f, -1.f ) )
+      .set_node_name( "merge" )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "src", merge_fluid_desc )
+      .add( "star", sb_rendered_desc )
+      .add( "flare", flare_rendered_desc )
+  );
 
-  const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
+  const auto filtered_bloom = bloom_gauss( builder, split_bloom_desc[ "bloom" ] );
 
-  builder.output( merge_desc[ "dest" ] );
+  builder.output( split_bloom_desc[ "dest" ] );
   builder.output( filtered_bloom );
   builder.output( fluid_normal_desc[ "dest" ] );
   const auto compiled = builder();
   std::cout << builder.get_log() << std::endl;
   std::cout << to_string( compiled ) << std::endl;
-  const auto merged_view = compiled.get_view( merge_desc[ "dest" ] );
+  const auto merged_view = compiled.get_view( split_bloom_desc[ "dest" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
   const auto fluid_normal_view = compiled.get_view( fluid_normal_desc[ "dest" ] );
   std::cout << nlohmann::json ( merged_view->get_factory()->get_props() ).dump( 2 ) << std::endl;
@@ -1390,16 +1466,34 @@ int main( int argc, const char *argv[] ) {
           rec.barrier( il2_buffers );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
         }
-        if( frame_counter == 80 ) {
+        /*if( frame_counter >= 80 )*/ {
           {
             auto render_pass_token = rec.begin_render_pass(
-              fluid_depth_gbuffer.get_render_pass_begin_info( 0 ),
+              fluid_depth_front_gbuffer.get_render_pass_begin_info( 0 ),
               vk::SubpassContents::eInline
             );
-            rec->setViewport( 0, 1, &fluid_depth_gbuffer.get_viewport() );
-            rec->setScissor( 0, 1, &fluid_depth_gbuffer.get_scissor() );
+            rec->setViewport( 0, 1, &fluid_depth_front_gbuffer.get_viewport() );
+            rec->setScissor( 0, 1, &fluid_depth_front_gbuffer.get_scissor() );
             rec->setCullMode( vk::CullModeFlagBits::eBack );
-            rec->setDepthCompareOp( /*vk::CompareOp::eLessOrEqual*/ vk::CompareOp::eGreaterOrEqual ); ///// back side
+            rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual ); ///// front side
+            rec.bind_descriptor_set(
+              vk::PipelineBindPoint::eGraphics,
+              1u,
+              sg->get_resource()->pipeline_layout,
+              global_descriptor_set
+            );
+            il[ 2 ]->setup_resource_pair_buffer( rec );
+            (*il[ 2 ])( rec, generate_fluid_depth );
+          }
+          {
+            auto render_pass_token = rec.begin_render_pass(
+              fluid_depth_back_gbuffer.get_render_pass_begin_info( 0 ),
+              vk::SubpassContents::eInline
+            );
+            rec->setViewport( 0, 1, &fluid_depth_back_gbuffer.get_viewport() );
+            rec->setScissor( 0, 1, &fluid_depth_back_gbuffer.get_scissor() );
+            rec->setCullMode( vk::CullModeFlagBits::eBack );
+            rec->setDepthCompareOp( vk::CompareOp::eGreaterOrEqual ); ///// back side
             rec.bind_descriptor_set(
               vk::PipelineBindPoint::eGraphics,
               1u,
@@ -1410,11 +1504,17 @@ int main( int argc, const char *argv[] ) {
             (*il[ 2 ])( rec, generate_fluid_depth );
           }
           rec.convert_image(
-            fluid_depth_gbuffer.get_image( 0 ),
+            fluid_depth_front_gbuffer.get_image( 0 ),
+            vk::ImageLayout::eGeneral
+          );
+          rec.convert_image(
+            fluid_depth_back_gbuffer.get_image( 0 ),
             vk::ImageLayout::eGeneral
           );
           rec.barrier(
-            fluid_depth_gbuffer.get_image( 0 )
+            gct::syncable()
+              .add( fluid_depth_front_gbuffer.get_image( 0 ) )
+              .add( fluid_depth_back_gbuffer.get_image( 0 ) )
           );
         }
         if( res.force_geometry || walk.camera_moved() ) {
@@ -1492,9 +1592,11 @@ int main( int argc, const char *argv[] ) {
               sg->get_resource()->pipeline_layout,
               shadow_descriptor_set
             );
-            for( const auto &i: il )  {
-              i->setup_resource_pair_buffer( rec );
-              (*i)( rec, *shadow_csg );
+            {
+              il[ 0 ]->setup_resource_pair_buffer( rec );
+              (*il[ 0 ])( rec, *shadow_csg );
+              il[ 1 ]->setup_resource_pair_buffer( rec );
+              (*il[ 1 ])( rec, *shadow_csg );
             }
           }
           rec.convert_image(
@@ -1544,10 +1646,10 @@ int main( int argc, const char *argv[] ) {
               il[ 1 ]->setup_resource_pair_buffer( rec );
               (*il[ 1 ])( rec, geometry_without_culling );
             }
-            {
+            /*{
               il[ 2 ]->setup_resource_pair_buffer( rec );
               (*il[ 2 ])( rec, geometry_without_culling );
-            }
+            }*/
           }
           if( walk.get_current_camera() == 0 ) {
             sg->rotate_visibility( rec );
@@ -1589,11 +1691,11 @@ int main( int argc, const char *argv[] ) {
           sg->get_resource()->image->get( sb_image_desc.linear )->get_factory(),
           sg->get_resource()->image->get( fluid_depth_desc )->get_factory()
         );*/
-        rec.convert_image( sg->get_resource()->image->get( fluid_depth_desc.linear )->get_factory(), vk::ImageLayout::eGeneral );
-        rec.barrier(
+        //rec.convert_image( sg->get_resource()->image->get( fluid_depth_desc.linear )->get_factory(), vk::ImageLayout::eGeneral );
+        /*rec.barrier(
           gct::syncable()
             .add( sg->get_resource()->image->get( fluid_depth_desc.linear ) )
-        );
+        );*/
 
         compiled( rec );
         
@@ -1604,13 +1706,21 @@ int main( int argc, const char *argv[] ) {
         );
         
         tone.get( rec, 0 );
-        if( frame_counter == 80 ) {
-          rec.barrier( fluid_depth_gbuffer.get_image_view( 0u ) );
+        /*if( frame_counter == 120 ) {
           rec.barrier( fluid_normal_view->get_factory() );
           rec.dump_field(
             res.allocator,
-            sg->get_resource()->image->get( fluid_depth_desc.linear )->get_factory(),
-            "fluid_depth.png",
+            sg->get_resource()->image->get( fluid_depth_front_desc.linear )->get_factory(),
+            "fluid_depth_front.png",
+            0,
+            0,
+            0,
+            0
+          );
+          rec.dump_field(
+            res.allocator,
+            sg->get_resource()->image->get( fluid_depth_back_desc.linear )->get_factory(),
+            "fluid_depth_back.png",
             0,
             0,
             0,
@@ -1623,7 +1733,7 @@ int main( int argc, const char *argv[] ) {
             "fluid_normal.png",
             0
           );
-        }
+        }*/
       }
       command_buffer->execute(
         gct::submit_info_t()
