@@ -11,7 +11,7 @@ uint constraint_begin(
   uint particle_id,
   uint id_offset
 ) {
-  return id_offset + particle_id * 32;
+  return id_offset + particle_id * 128;
 }
 
 uint constraint_next(
@@ -41,7 +41,7 @@ void constraint_insert_unidirectional(
 ) {
   uint hoge = 0;
   uint gcid = constraint_begin( from_id, id_offset );
-  for( uint cid = 0; cid < 31; cid++ ) {
+  for( uint cid = 0; cid < 128; cid++ ) {
     const uint orig = atomicCompSwap(
       constraint_pool[ gcid ],
       0,

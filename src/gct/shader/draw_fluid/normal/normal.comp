@@ -53,6 +53,7 @@ struct geometry_info {
   vec3 bg_position;
   float front_depth;
   float back_depth;
+  float bg_depth;
   bool has_fluid;
 };
 
@@ -100,6 +101,7 @@ geometry_info get_geometry_info( ivec2 screen_pos, ivec2 offset ) {
     bg_pos,
     front_depth,
     back_depth,
+    bg_depth,
     has_fluid
   );
 }
@@ -138,7 +140,7 @@ void main() {
   const vec3 L = normalize( light_pool[global_uniforms.light ].world_position.xyz - center.front_position );
 
   const vec3 albedo = vec3( 1.0, 1.0, 1.0 );
-  const vec3 absorb = vec3( 3.0, 3.0, 1.0 );
+  const vec3 absorb = vec3( 3.0, 3.0, 1.0 )*0.2;
   const float roughness = 0.2;
   const float metallic = 0.0;
   const vec3 emissive = vec3( 0.0, 0.0 ,0.0 );
@@ -147,8 +149,14 @@ void main() {
 
   vec3 eye_dir = normalize( center.front_position - global_uniforms.eye_pos.xyz );
   eye_dir = refract( eye_dir, front_normal, refract_index );
-  eye_dir = refract( eye_dir, back_normal, refract_index );
-  vec3 fetch_pos = center.back_position + eye_dir * distance( center.bg_position, center.back_position );
+  eye_dir =
+    center.bg_depth <= center.back_depth ?
+    eye_dir :
+    refract( eye_dir, back_normal, refract_index );
+  vec3 fetch_pos =
+    center.bg_depth <= center.back_depth ?
+    center.front_position + eye_dir * distance( center.bg_position, center.front_position ):
+    center.back_position + eye_dir * distance( center.bg_position, center.back_position );
 
   vec4 fetch_pos_in_screen =
     (

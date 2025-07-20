@@ -437,7 +437,7 @@ int main( int argc, const char *argv[] ) {
     *m = gct::spatial_hash_config()
       .set_offset( *spatial_hash_desc )
       .set_size( spatial_hash_size )
-      .set_scale( 0.3f );
+      .set_scale( 0.2f );
   }
 
   auto command_buffer = res.queue->get_command_pool()->allocate();

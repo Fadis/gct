@@ -189,10 +189,29 @@ compiled_aabb_scene_graph::compiled_aabb_scene_graph(
 #endif
   create_vertex_buffer();
   create_pipeline( graph );
-  load_graph( graph );
+  load_graph( graph, resource->prim.get_descriptor() );
 }
+
+compiled_aabb_scene_graph::compiled_aabb_scene_graph(
+  const compiled_aabb_scene_graph_create_info &ci,
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
+) : props( ci ), resource( graph.get_resource() ) {
+  const auto &device = get_device( *graph.get_props().allocator_set.allocator );
+#ifdef VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME
+  enable_representive = device.get_activated_extensions().find( VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME ) != device.get_activated_extensions().end();
+#else
+  enable_conditional = false;
+#endif
+  create_vertex_buffer();
+  create_pipeline( graph );
+  load_graph( graph, l );
+}
+
+
 void compiled_aabb_scene_graph::load_graph(
-  const scene_graph &graph
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
 ) {
   for( const auto &desc: resource->prim.get_descriptor() ) {
     const auto p = resource->prim.get( desc );

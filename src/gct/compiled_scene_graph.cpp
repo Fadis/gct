@@ -38,13 +38,23 @@ compiled_scene_graph::compiled_scene_graph(
   const compiled_scene_graph_create_info &ci,
   const scene_graph &graph
 ) : props( ci ), resource( graph.get_resource() ) {
-  load_graph( graph );
+  load_graph( graph, resource->prim.get_descriptor() );
 }
+
+compiled_scene_graph::compiled_scene_graph(
+  const compiled_scene_graph_create_info &ci,
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
+) : props( ci ), resource( graph.get_resource() ) {
+  load_graph( graph, l );
+}
+
 void compiled_scene_graph::load_graph(
-  const scene_graph &graph
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
 ) {
   auto s = load_shader( graph );
-  for( const auto &desc: resource->prim.get_descriptor() ) {
+  for( const auto &desc: l ) {
     const auto p = resource->prim.get( desc );
     auto p_ = load_primitive( graph, p, s );
     prim.insert( std::make_pair( desc, p_ ) );

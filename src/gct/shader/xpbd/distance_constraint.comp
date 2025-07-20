@@ -41,24 +41,29 @@ void main() {
 
   if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
   
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
   if( mesh.lambda_offset == 0xFFFFFFFF ) return;
   
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
-  vec4 dx = xpbd_distance_constraint_dx(
+  vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
+  dx += xpbd_distance_constraint_dx(
     particle_id,
     mesh.particle_offset,
     mesh.distance_constraint_offset,
     mesh.lambda_offset,
     constraint_index,
     dt
-  ) +
-  pbd_collision_constraint_dx(
-    particle_id,
-    mesh.particle_offset,
-    mesh.constraint_offset,
-    constraint_index
   );
+  for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
+    dx += pbd_collision_constraint_dx(
+      particle_id,
+      mesh.particle_offset,
+      mesh.constraint_offset,
+      constraint_block_id * gl_SubgroupSize + constraint_index
+    );
+  }
   
   const vec3 x = particle_pool[ mesh.particle_offset + particle_id ].position;
   if( x.y > -0.05 ) {

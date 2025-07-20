@@ -18,6 +18,7 @@
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/accessor.h>
+#include <gct/topology_id.h>
 #include <gct/recalculate_normal.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
@@ -43,11 +44,14 @@ void main() {
   if( particle_pool[ mesh.particle_offset + vertex_id ].attached != 0 ) return;
 
   const float delta_t = 1.0/60.0;
-  const float g = 9.80665;
+  const float g = /*0.0*/ 9.80665;
   
   const uint accessor_id = mesh.accessor;
 
-  const vec3 n0 = mat3(l2w) * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz;
+  const vec3 n0 =
+    ( mesh.topology == GCT_SHADER_TOPOLOGY_ID_POINT ) ?
+    vec3( 0.0, 0.0, 0.0 ) :
+    normalize( mat3(l2w) * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz );
 
   vec3 v = particle_pool[ mesh.particle_offset + vertex_id ].velocity;
   v.y += g * delta_t;
@@ -55,12 +59,6 @@ void main() {
   p += v * delta_t;
   //if( p.y > -0.05 ) p.y = -0.05;
   particle_pool[ mesh.particle_offset + vertex_id ].position = p;
-  /*vec4 n = l2w * vec4( calculate_smooth_local_normal( ////////////
-    mesh.accessor,
-    vertex_id,
-    mesh.vertex_to_primitive_offset
-  ), 1.0 );
-  n /= n.w;*/
-  particle_pool[ mesh.particle_offset + vertex_id ].normal = normalize( n0.xyz );
+  particle_pool[ mesh.particle_offset + vertex_id ].normal = n0;
 }
 

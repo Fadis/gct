@@ -647,9 +647,11 @@ add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL 
 
 add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
 add_shader( gct gct/shader/xpbd/distance_constraint.comp INSTALL )
+add_shader( gct gct/shader/fluid/fluid_constraint.comp INSTALL )
 
 add_shader( gct gct/shader/write_particle_to_spatial_hash/write_particle_to_spatial_hash.comp INSTALL )
 add_shader( gct gct/shader/read_particle_from_spatial_hash/read_particle_from_spatial_hash.comp INSTALL )
+add_shader( gct gct/shader/read_particle_from_spatial_hash/read_particle_from_spatial_hash_fluid.comp INSTALL )
 
 add_shader( gct gct/shader/visualize_particle_normal/geometry.task INSTALL )
 add_shader( gct gct/shader/visualize_particle_normal/geometry.mesh INSTALL )

@@ -18,8 +18,8 @@
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/accessor.h>
-#include <gct/pbd/distance_constraint.h>
 #include <gct/pbd/collision_constraint.h>
+#include <gct/pbd/fluid_constraint.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -34,22 +34,25 @@ void main() {
   const uint particle_id = gl_GlobalInvocationID.x / gl_SubgroupSize;
   const uint constraint_index = gl_SubgroupInvocationID;
   const bool in_range = mesh.unique_vertex_count > particle_id;
+  
+  const float dt = 1.0/60.0;
 
   if( !in_range ) return;
 
-  if( mesh.distance_constraint_offset == 0xFFFFFFFF ) return;
-  
   if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  if( mesh.fluid_constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.lambda_offset == 0xFFFFFFFF ) return;
   
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
   vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
-
-  dx = pbd_distance_constraint_dx(
+  dx += pbd_fluid_constraint(
+    237.971/*10*//*200*//*228.946*/,
     particle_id,
     mesh.particle_offset,
-    mesh.distance_constraint_offset,
-    constraint_index
+    mesh.fluid_constraint_offset,
+    0.25
   );
   for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
     dx += pbd_collision_constraint_dx(
@@ -59,9 +62,22 @@ void main() {
       constraint_block_id * gl_SubgroupSize + constraint_index
     );
   }
+  
   const vec3 x = particle_pool[ mesh.particle_offset + particle_id ].position;
   if( x.y > -0.05 ) {
     dx += vec4( 0, -( x.y + 0.05 ), 0, 1 );
+  }
+  if( x.x > 2.0 ) {
+    dx += vec4( -( x.x - 2.0 ), 0, 0, 1 );
+  }
+  if( x.x < -2.0 ) {
+    dx += vec4( -( x.x + 2.0 ), 0, 0, 1 );
+  }
+  if( x.z > 1.5 ) {
+    dx += vec4( 0, 0, -( x.z - 1.5 ), 1 );
+  }
+  if( x.z < -2.1 ) {
+    dx += vec4( 0, 0, -( x.z + 2.1 ), 1 );
   }
   if( dx.w != 0.0 ) {
     dx /= dx.w;

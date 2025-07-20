@@ -51,6 +51,11 @@ public:
     const compiled_aabb_scene_graph_create_info &ci,
     const scene_graph &graph
   );
+  compiled_aabb_scene_graph(
+    const compiled_aabb_scene_graph_create_info &ci,
+    const scene_graph &graph,
+    const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
+  );
   [[nodiscard]] const std::unordered_map< pool< std::shared_ptr< primitive > >::descriptor, compiled_aabb_primitive >&
   get_primitive() const {
     return prim;
@@ -58,7 +63,8 @@ public:
   void operator()( command_buffer_recorder_t&, std::uint32_t instance_count ) const;
 private:
   void load_graph(
-    const scene_graph &graph
+    const scene_graph &graph,
+    const std::vector< pool< std::shared_ptr< primitive > >::descriptor > &l
   );
   [[nodiscard]] compiled_aabb_primitive load_primitive(
     const std::shared_ptr< primitive > &p

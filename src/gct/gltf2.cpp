@@ -867,6 +867,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // トポロジを記録
       if( mmp.has( "topology" ) ) {
+        std::cout << "topology id : " << std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) ) << std::endl;
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
       }
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
@@ -908,7 +909,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 衝突制約の情報のオフセット
       if( props.enable_constraint ) {
-        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 32u );
+        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 128u );
         p.descriptor.set_constraint( desc );
         if( mmp.has( "constraint_offset" ) ) {
           std::cout << "constraint offset : " << std::uint32_t( *desc ) << std::endl;
@@ -917,6 +918,18 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       else if( mmp.has( "constraint_offset" ) ) {
         m.data()->*mmp[ "constraint_offset" ] = 0xFFFFFFFFu;
+      }
+      // 圧力制約の情報のオフセット
+      if( props.enable_fluid_constraint ) {
+        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 128u );
+        p.descriptor.set_fluid_constraint( desc );
+        if( mmp.has( "fluid_constraint_offset" ) ) {
+          std::cout << "fluid_constraint offset : " << std::uint32_t( *desc ) << std::endl;
+          m.data()->*mmp[ "fluid_constraint_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "fluid_constraint_offset" ) ) {
+        m.data()->*mmp[ "fluid_constraint_offset" ] = 0xFFFFFFFFu;
       }
       // 頂点からプリミティブを辿る為のテーブルのオフセット
       if( props.enable_vertex_to_primitive ) {
@@ -966,12 +979,12 @@ std::shared_ptr< mesh > gltf2::create_mesh(
         mesh_id,
         i
       );
-    m->prim.push_back(
+    const auto desc =
       props.graph->get_resource()->prim.allocate(
         std::make_shared< scene_graph::primitive >( std::move( p ) )
-      )
-    );
-    auto desc = m->prim.back();
+      );
+    m->prim.push_back( desc );
+    prim_.push_back( desc );
     doc_primitive_id[ desc ] = ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( i );
     primitive_ext[ desc ] = e;
     ++i;

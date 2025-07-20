@@ -354,14 +354,28 @@ int main( int argc, const char *argv[] ) {
         .set_enable_distance_constraint( true )
         .set_enable_constraint( true )
         .set_enable_lambda( true )
+        .set_enable_fluid_constraint( true )
     ) );
-  
+
+  std::vector< gct::pool< std::shared_ptr< gct::scene_graph::primitive > >::descriptor > triangle_prim;
+  triangle_prim.insert(
+    triangle_prim.end(),
+    doc[ 0 ]->get_primitive_descriptor().begin(),
+    doc[ 0 ]->get_primitive_descriptor().end()
+  );
+  triangle_prim.insert(
+    triangle_prim.end(),
+    doc[ 1 ]->get_primitive_descriptor().begin(),
+    doc[ 1 ]->get_primitive_descriptor().end()
+  );
+
   const auto depth_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
     gct::scene_graph::compiled_scene_graph_create_info()
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
       .set_render_pass( depth_gbuffer.get_render_pass() )
       .set_dynamic_cull_mode( true ),
-    *sg
+    *sg,
+    triangle_prim
   );
   
   const auto shadow_csg = std::make_shared< gct::scene_graph::compiled_scene_graph >(
@@ -369,7 +383,8 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
       .set_render_pass( shadow_gbuffer.get_render_pass() )
       .set_dynamic_cull_mode( true ),
-    *sg
+    *sg,
+    triangle_prim
   );
 
   const auto aabb_csg = std::make_shared< gct::scene_graph::compiled_aabb_scene_graph >(
@@ -377,7 +392,8 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
       .set_render_pass( aabb_gbuffer.get_render_pass() )
       .set_dynamic_cull_mode( true ),
-    *sg
+    *sg,
+    triangle_prim
   );
 
   std::vector< std::shared_ptr< gct::scene_graph::instance_list > > il;
@@ -439,7 +455,7 @@ int main( int argc, const char *argv[] ) {
     *m = gct::spatial_hash_config()
       .set_offset( *spatial_hash_desc )
       .set_size( spatial_hash_size )
-      .set_scale( 0.3f );
+      .set_scale( 0.2f );
   }
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -915,6 +931,15 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
   
+  auto fluid_constraint = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "fluid" / "fluid_constraint.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
   auto attach_particle = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -938,6 +963,16 @@ int main( int argc, const char *argv[] ) {
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
       .set_shader( gct::get_system_shader_path() / "read_particle_from_spatial_hash" / "read_particle_from_spatial_hash.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+      .add_resource( { "spatial_hash_config", spatial_hash_config } )
+  );
+  
+  auto read_from_spatial_hash_fluid = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "read_particle_from_spatial_hash" / "read_particle_from_spatial_hash_fluid.comp.spv" )
       .set_swapchain_image_count( 1u )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
@@ -981,7 +1016,7 @@ int main( int argc, const char *argv[] ) {
       mesh_to_constraint( recorder, 0, il2_prim->count / 3, 1u, 1u );
       vertex_to_primitive( recorder, 0, il2_prim->count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->particle->get_buffer() );
-      attach_particle( recorder, 0, il2_prim->unique_vertex_count, 1u, 1u );
+      //attach_particle( recorder, 0, il2_prim->unique_vertex_count, 1u, 1u );
 
     }
     command_buffer->execute_and_wait();
@@ -1432,14 +1467,14 @@ int main( int argc, const char *argv[] ) {
           read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
           
           il[ 2 ]->setup_resource_pair_buffer( rec );
-          read_from_spatial_hash( rec, 0, il2_prim->unique_vertex_count * 27u, 1u, 1u );
+          read_from_spatial_hash_fluid( rec, 0, il2_prim->unique_vertex_count * 27u, 1u, 1u );
           rec.barrier( sg->get_resource()->constraint->get_buffer() );
 
           for( std::uint32_t i = 0u; i != 30u; ++i ) {
             il[ 1 ]->setup_resource_pair_buffer( rec );
             distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
             il[ 2 ]->setup_resource_pair_buffer( rec );
-            distance_constraint_dx( rec, 0, il2_prim->unique_vertex_count * 32u, 1u, 1u );
+            fluid_constraint( rec, 0, il2_prim->unique_vertex_count * 32u, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );
             rec.barrier( sg->get_resource()->lambda->get_buffer() );
           }
@@ -1460,10 +1495,10 @@ int main( int argc, const char *argv[] ) {
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           particle_to_mesh( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( il2_buffers );
-          recalculate_normal( rec, 0, il2_prim->unique_vertex_count * 32u, 1u, 1u );
+          /*recalculate_normal( rec, 0, il2_prim->unique_vertex_count * 32u, 1u, 1u );
           rec.barrier( il2_buffers );
           recalculate_tangent( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
-          rec.barrier( il2_buffers );
+          rec.barrier( il2_buffers );*/
           rec.barrier( sg->get_resource()->particle->get_buffer() );
         }
         /*if( frame_counter >= 80 )*/ {

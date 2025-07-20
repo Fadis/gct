@@ -30,7 +30,7 @@ scene_graph_create_info::scene_graph_create_info() {
   particle.set_max_request_count( 64u );
   distance_constraint.set_max_buffer_count( max_particle_count * 32u );
   distance_constraint.set_max_request_count( 64u );
-  constraint.set_max_buffer_count( max_particle_count * 32u );
+  constraint.set_max_buffer_count( max_particle_count * 128u * 2u );
   constraint.set_max_request_count( 64u );
   spatial_hash.set_max_buffer_count( max_particle_count * 4u );
   spatial_hash.set_max_request_count( 64u );

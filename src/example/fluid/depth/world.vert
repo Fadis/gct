@@ -8,8 +8,6 @@
 #include <gct/global_uniforms.h>
 
 layout (location = 0) in vec3 input_position;
-layout (location = 1) in vec3 input_normal;
-layout (location = 3) in vec2 input_texcoord0;
 
 out gl_PerVertex
 {
