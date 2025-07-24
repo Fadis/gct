@@ -940,6 +940,15 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
   
+  auto fluid_viscosity = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "fluid" / "viscosity.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
   auto attach_particle = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -1492,6 +1501,8 @@ int main( int argc, const char *argv[] ) {
           
           il[ 2 ]->setup_resource_pair_buffer( rec );
           update_particle_velocity( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->particle->get_buffer() );
+          fluid_viscosity( rec, 0, il2_prim->unique_vertex_count * 32u, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           particle_to_mesh( rec, 0, il2_prim->unique_vertex_count, 1u, 1u );
           rec.barrier( il2_buffers );

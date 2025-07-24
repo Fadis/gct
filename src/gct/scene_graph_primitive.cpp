@@ -72,6 +72,9 @@ void to_json( nlohmann::json &dest, const primitive_descriptor &src ) {
   if( src.fluid_constraint ) {
     dest[ "fluid_constraint" ] = *src.fluid_constraint;
   }
+  if( src.rigid_constraint ) {
+    dest[ "rigid_constraint" ] = *src.rigid_constraint;
+  }
   if( src.vertex_to_primitive ) {
     dest[ "vertex_to_primitive" ] = *src.vertex_to_primitive;
   }

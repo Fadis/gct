@@ -98,5 +98,34 @@ vec4 pbd_fluid_constraint(
   return vec4( sum, float( count ) );
 }
 
+vec3 pbd_fluid_xsph_viscosity(
+  uint particle_id,
+  uint particle_offset,
+  uint constraint_offset,
+  float radius
+) {
+  const uint iter = constraint_begin( particle_id, constraint_offset );
+  const vec3 center = particle_pool[ particle_offset + particle_id ].position;
+  const vec3 center_v = particle_pool[ particle_offset + particle_id ].velocity;
+  vec3 sum = vec3( 0.0f, 0.0f, 0.0f );
+  uint count = 0;
+  for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
+    uint gcid = iter + gl_SubgroupSize * constraint_block_id + gl_SubgroupInvocationID;
+    const bool is_end = constraint_is_end( gcid );
+    const uint dc =
+      is_end ?
+      0u :
+      constraint_get( gcid );
+    const vec3 neighbor = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc ) ].position;
+    const vec3 neighbor_v = particle_pool[ ( is_end ? ( particle_offset + particle_id ) : dc ) ].velocity;
+    const float w = poly6_kernel( center - neighbor, radius );
+    const vec3 vij = neighbor_v - center_v;
+    sum += subgroupAdd( is_end ? vec3( 0.0, 0.0, 0.0 ) : vij * w );
+    count += subgroupAdd( is_end ? 0 : 1 );
+  }
+  sum *= 0.001;
+  return sum;
+}
+
 #endif
 

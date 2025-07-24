@@ -8,7 +8,7 @@ struct particle_type {
   vec3 local_r;
   vec3 normal;
   float w;
-  uint rigid_id;
+  uint rigid;
   uint phase;
   uint attached;
 };

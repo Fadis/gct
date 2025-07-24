@@ -124,7 +124,7 @@ void main() {
     ( positive_y.has_fluid ) ?
     normalize( positive_y.front_position - center.front_position ) :
     normalize( center.front_position - negative_y.front_position );
-  const vec3 front_normal = cross( front_dy, front_dx );
+  const vec3 front_normal = normalize( cross( front_dy, front_dx ) );
 
   const vec3 back_dx =
     ( positive_x.has_fluid ) ?
@@ -134,7 +134,7 @@ void main() {
     ( positive_y.has_fluid ) ?
     normalize( positive_y.back_position - center.back_position ) :
     normalize( center.back_position - negative_y.back_position );
-  const vec3 back_normal = cross( back_dx, back_dy );
+  const vec3 back_normal = normalize( cross( back_dx, back_dy ) );
 
   const vec3 V = normalize( global_uniforms.eye_pos.xyz - center.front_position );
   const vec3 L = normalize( light_pool[global_uniforms.light ].world_position.xyz - center.front_position );
@@ -148,15 +148,20 @@ void main() {
   const float refract_index = 1.333333;
 
   vec3 eye_dir = normalize( center.front_position - global_uniforms.eye_pos.xyz );
+  eye_dir = mix( front_normal, eye_dir, 0.35 );
   eye_dir = refract( eye_dir, front_normal, refract_index );
+  /*eye_dir =
+    center.bg_depth <= center.back_depth ?
+    eye_dir :
+    mix( back_normal, eye_dir, 0.35 );
   eye_dir =
     center.bg_depth <= center.back_depth ?
     eye_dir :
-    refract( eye_dir, back_normal, refract_index );
+    refract( eye_dir, back_normal, refract_index );*/
   vec3 fetch_pos =
-    center.bg_depth <= center.back_depth ?
-    center.front_position + eye_dir * distance( center.bg_position, center.front_position ):
-    center.back_position + eye_dir * distance( center.bg_position, center.back_position );
+    //center.bg_depth <= center.back_depth ?
+    center.front_position + eye_dir * distance( center.bg_position, center.front_position );//:
+    //center.back_position + eye_dir * distance( center.bg_position, center.back_position );
 
   vec4 fetch_pos_in_screen =
     (
@@ -167,13 +172,7 @@ void main() {
   fetch_pos_in_screen /= fetch_pos_in_screen.w;
   //fetch_pos_in_screen.xy /= max( abs( fetch_pos_in_screen.y ), 1.0 );
   vec2 shifted_fetch_pos_in_screen = fetch_pos_in_screen.xy * 0.5 + 0.5;
-
-  vec3 diffuse = vec3( 0, 0, 0 ); /*diffuse_with_mask(
-    L, V, -front_normal, albedo, roughness, metallic, emissive,
-    light_pool[global_uniforms.light].energy.xyz,
-    shadow_level
-  );*/
-  
+  //shifted_fetch_pos_in_screen = shifted_fetch_pos_in_screen - floor( shifted_fetch_pos_in_screen );
 
   vec3 specular = specular_with_mask(
     L, V, -front_normal, albedo, roughness, metallic,

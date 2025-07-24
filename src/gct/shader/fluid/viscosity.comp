@@ -17,7 +17,10 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
-layout(local_size_x = 128, local_size_y = 1 ) in;
+#include <gct/scene_graph/accessor.h>
+#include <gct/pbd/collision_constraint.h>
+#include <gct/pbd/fluid_constraint.h>
+layout(local_size_x = 32, local_size_y = 1 ) in;
 
 void main() {
   // 描画対象のID
@@ -28,23 +31,28 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const uint vertex_id = gl_GlobalInvocationID.x;
-  const bool in_range = mesh.unique_vertex_count > vertex_id;
+  const uint particle_id = gl_GlobalInvocationID.x / gl_SubgroupSize;
+  const uint constraint_index = gl_SubgroupInvocationID;
+  const bool in_range = mesh.unique_vertex_count > particle_id;
+  
+  const float dt = 1.0/60.0;
 
   if( !in_range ) return;
 
-  if( mesh.particle_offset == 0xFFFFFFFF ) return;
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  if( mesh.fluid_constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.lambda_offset == 0xFFFFFFFF ) return;
+  
+  if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
-  if( particle_pool[ mesh.particle_offset + vertex_id ].attached != 0 ) return;
-
-  const float delta_t = 1.0/60.0;
-  const float g = 9.80665;
-
-  vec3 p = particle_pool[ mesh.particle_offset + vertex_id ].position;
-  vec3 prev_p = particle_pool[ mesh.particle_offset + vertex_id ].previous_position;
-  vec3 v = ( p - prev_p ) / delta_t;
-  //v *= 0.90;
-  particle_pool[ mesh.particle_offset + vertex_id ].velocity = v;
-  particle_pool[ mesh.particle_offset + vertex_id ].previous_position = p;
+  vec3 dv = pbd_fluid_xsph_viscosity(
+    particle_id,
+    mesh.particle_offset,
+    mesh.fluid_constraint_offset,
+    0.25
+  );
+  particle_pool[ mesh.particle_offset + particle_id ].velocity += dv;
 }
+
 

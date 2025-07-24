@@ -49,7 +49,7 @@ void constraint_insert_unidirectional(
     );
     if( orig == to_id + 1 ) break;
     if( orig == 0 ) break;
-    gcid++;
+    gcid = constraint_next( gcid );
   }
 }
 void constraint_insert(

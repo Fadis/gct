@@ -26,8 +26,11 @@ scene_graph_create_info::scene_graph_create_info() {
   vertex_to_primitive.set_buffer_name( "vertex_to_primitive_pool" );
   lambda.set_buffer_name( "lambda_pool" );
   const std::uint32_t max_particle_count = 2097152u;
+  const std::uint32_t max_rigid_count = 65536u;
   particle.set_max_buffer_count( max_particle_count );
   particle.set_max_request_count( 64u );
+  rigid.set_max_buffer_count( max_rigid_count );
+  rigid.set_max_request_count( 64u );
   distance_constraint.set_max_buffer_count( max_particle_count * 32u );
   distance_constraint.set_max_request_count( 64u );
   constraint.set_max_buffer_count( max_particle_count * 128u * 2u );

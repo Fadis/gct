@@ -931,6 +931,28 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       else if( mmp.has( "fluid_constraint_offset" ) ) {
         m.data()->*mmp[ "fluid_constraint_offset" ] = 0xFFFFFFFFu;
       }
+      // 剛体衝突制約の情報のオフセット
+      if( props.enable_rigid_constraint ) {
+        const auto constraint_desc = props.graph->get_resource()->constraint->allocate( 256u * 2u );
+        p.descriptor.set_rigid_constraint( constraint_desc );
+        const auto desc = props.graph->get_resource()->rigid->allocate( 1u );
+        p.descriptor.set_rigid( desc );
+        auto rmp = props.graph->get_resource()->instance_resource_index->get_member_pointer();
+        std::vector< std::uint8_t > r( rmp.get_aligned_size() );
+        r.data()->*rmp[ "center_of_mass" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "momentum_inertia_tensor" ] = 0u;
+        r.data()->*rmp[ "previous_center_of_mass" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "linear_velocity" ] = glm::vec3( 0, 0, 0 ); //////
+        r.data()->*rmp[ "angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        r.data()->*rmp[ "previous_angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        r.data()->*rmp[ "angular_velocity" ] = glm::vec4( 0, 0, 0, 0 ); //////
+        r.data()->*rmp[ "constraint_offset" ] = *p.descriptor.rigid_constraint; //////
+        props.graph->get_resource()->rigid->set( p.descriptor.rigid, 0u, r.data(), std::next( r.data(), r.size() ) );
+        m.data()->*mmp[ "rigid" ] = *p.descriptor.rigid;
+      }
+      else if( mmp.has( "rigid" ) ) {
+        m.data()->*mmp[ "rigid" ] = 0xFFFFFFFFu;
+      }
       // 頂点からプリミティブを辿る為のテーブルのオフセット
       if( props.enable_vertex_to_primitive ) {
         const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( vertex_count * 32u );
