@@ -40,12 +40,21 @@ aabb_type transform_aabb( mat4 m, aabb_type b ) {
   return result;
 }
 
+#ifdef __cplusplus
+aabb_type clip_aabb( aabb_type b ) {
+  aabb_type temp;
+  temp.min = max( b.min, vec4( -1, -1, -1, 1 ) );
+  temp.max = min( b.max, vec4(  1,  1,  1, 1 ) );
+  return temp;
+}
+#else
 aabb_type clip_aabb( aabb_type b ) {
   return aabb_type(
     max( b.min, vec4( -1, -1, -1, 1 ) ),
     min( b.max, vec4(  1,  1,  1, 1 ) )
   );
 }
+#endif
 
 #endif
 

@@ -27,7 +27,7 @@ mat3 quaternion_to_matrix( vec4 q ) {
   return result;
 }
 
-vec4 matrix_to_quaterion( mat3 m ) {
+vec4 matrix_to_quaternion( mat3 m ) {
 	const float fourXSquaredMinus1 = m[ 0 ][ 0 ] - m[ 1 ][ 1 ] - m[ 2 ][ 2 ];
 	const float fourYSquaredMinus1 = m[ 1 ][ 1 ] - m[ 0 ][ 0 ] - m[ 2 ][ 2 ];
 	const float fourZSquaredMinus1 = m[ 2 ][ 2 ] - m[ 0 ][ 0 ] - m[ 1 ][ 1 ];
@@ -98,14 +98,29 @@ vec4 quaternion_inverse( vec4 q ) {
 
 vec4 quaternion_mix( vec4 x, vec4 y, float a ) {
   const float cos_theta = dot( x, y );
+  const float epsilon = 0.0001;
+  if( cos_theta > 1.0 - epsilon ) {
+    return mix( x, y, a );
+  }
   float angle = acos( cos_theta );
-  return ( sin( ( 1.0f - a ) * angle ) * x + sin( a * angle ) * y ) / sin( angle );
+  return ( float( sin( ( 1.0f - a ) ) * angle ) * x + float( sin( a * angle ) ) * y ) / float( sin( angle ) );
 }
 
 vec4 quaternion_normalize( vec4 q ) {
   const float len = length( q );
   const float one_over_len = 1.0f / len;
   return q * one_over_len;
+}
+
+vec4 quaternion_slerp( vec4 x, vec4 y, float a ) {
+  vec4 z = y;
+  float cos_theta = dot( x, y );
+  if( cos_theta < 0.0 ) {
+    z = -y;
+    cos_theta = -cos_theta;
+  }
+  float angle = acos( cos_theta );
+  return ( float( sin( ( 1.0 - a ) * angle ) ) * x + float( sin( a * angle ) ) * z ) / float( sin( angle ) );
 }
 
 #endif

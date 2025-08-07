@@ -909,7 +909,11 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 衝突制約の情報のオフセット
       if( props.enable_constraint ) {
-        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 128u );
+        const auto desc = props.graph->get_resource()->constraint->allocate(
+          props.enable_rigid_constraint ?
+          256u * 2u :
+          vertex_count * 128u
+        );
         p.descriptor.set_constraint( desc );
         if( mmp.has( "constraint_offset" ) ) {
           std::cout << "constraint offset : " << std::uint32_t( *desc ) << std::endl;
@@ -933,8 +937,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 剛体衝突制約の情報のオフセット
       if( props.enable_rigid_constraint ) {
-        const auto constraint_desc = props.graph->get_resource()->constraint->allocate( 256u * 2u );
-        p.descriptor.set_rigid_constraint( constraint_desc );
         const auto desc = props.graph->get_resource()->rigid->allocate( 1u );
         p.descriptor.set_rigid( desc );
         auto rmp = props.graph->get_resource()->instance_resource_index->get_member_pointer();
@@ -946,7 +948,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         r.data()->*rmp[ "angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
         r.data()->*rmp[ "previous_angular_orientation" ] = glm::vec4( 0, 0, 0, 0 ); //////
         r.data()->*rmp[ "angular_velocity" ] = glm::vec4( 0, 0, 0, 0 ); //////
-        r.data()->*rmp[ "constraint_offset" ] = *p.descriptor.rigid_constraint; //////
         props.graph->get_resource()->rigid->set( p.descriptor.rigid, 0u, r.data(), std::next( r.data(), r.size() ) );
         m.data()->*mmp[ "rigid" ] = *p.descriptor.rigid;
       }
@@ -966,7 +967,11 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // xpbdのラムダのテーブルのオフセット
       if( props.enable_lambda ) {
-        const auto desc = props.graph->get_resource()->lambda->allocate( vertex_count * 32u );
+        const auto desc = props.graph->get_resource()->lambda->allocate(
+          props.enable_rigid_constraint ?
+          256u * 2u :
+          vertex_count * 128u
+        );
         p.descriptor.set_lambda( desc );
         if( mmp.has( "lambda_offset" ) ) {
           std::cout << "lambda offset : " << *desc << std::endl;

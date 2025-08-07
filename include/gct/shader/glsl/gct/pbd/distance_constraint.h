@@ -28,7 +28,7 @@ vec4 pbd_distance_constraint_dx(
   const float c = d - dc.natural_distance;
   const vec3 grad_c = ( p0 - p1 ) / max( d, 0.01 );
   const float dl = 1.0 / ( w0 + w1 );
-  const vec3 dx = -dc.stiffness * dl * w0 * c * grad_c;
+  const vec3 dx = -( dc.stiffness ) * dl * w0 * c * grad_c;
 
   return subgroupAdd( vec4( dx, is_end ? 0.0 : 1.0 ) );
 }

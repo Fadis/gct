@@ -49,6 +49,7 @@ struct common_sample_setup {
   std::shared_ptr< allocator_t > allocator;
   allocator_set_t allocator_set;
   bool force_geometry = false;
+  bool record = false;
 };
 
 }

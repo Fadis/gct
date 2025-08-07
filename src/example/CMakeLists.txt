@@ -106,6 +106,10 @@ subdirs(
   task_payload
   flat_terrain
   height_map_terrain
+  single_cloth
+  dual_cloth
+  single_xpbd
+  single_fluid
   cloth
   xpbd
   fluid

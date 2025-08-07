@@ -48,5 +48,47 @@ vec4 pbd_collision_constraint_dx(
   return subgroupAdd( vec4( dx, ( dx == vec3( 0, 0, 0 ) ) ? 0.0 : 1.0 ) );
 }
 
+// per particle
+vec4 pbd_border_dx(
+  uint particle_id,
+  uint particle_offset,
+  aabb_type aabb
+) {
+  vec3 dx = vec3( 0.0, 0.0, 0.0 );
+  uint dx_count = 0u;
+  const float inv_m0 = particle_pool[ particle_offset + particle_id ].w;
+  const vec3 p0 = particle_pool[ particle_offset + particle_id ].position;
+  if( p0.x > aabb.max.x ) {
+    const vec3 dx_ = vec3( -( p0.x - aabb.max.x ), 0, 0 ); 
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  else if( p0.x < aabb.min.x ) {
+    const vec3 dx_ = vec3( -( p0.x - aabb.min.x ), 0, 0 ); 
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  if( p0.y > aabb.max.y ) {
+    const vec3 dx_ = vec3( 0, -( p0.y - aabb.max.y ), 0 ); 
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  else if( p0.y < aabb.min.y ) {
+    const vec3 dx_ = vec3( 0, -( p0.y - aabb.min.y ), 0 ); 
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  if( p0.z > aabb.max.z ) {
+    const vec3 dx_ = vec3( 0, 0, -( p0.z - aabb.max.z ) ); 
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  else if( p0.z < aabb.min.z ) {
+    const vec3 dx_ = vec3( 0, 0, -( p0.z - aabb.min.z ) );
+    dx += dx_;
+    dx_count += ( dx_ == vec3( 0, 0, 0 ) ) ? 0u : 1u;
+  }
+  return vec4( dx, float( dx_count ) );
+}
 #endif
 

@@ -1257,7 +1257,7 @@ int main( int argc, const char *argv[] ) {
           read_from_spatial_hash( rec, 0, il2_prim->unique_vertex_count * 27u, 1u, 1u );
           rec.barrier( sg->get_resource()->constraint->get_buffer() );
 
-          for( std::uint32_t i = 0u; i != 30u; ++i ) {
+          for( std::uint32_t i = 0u; i != 50u; ++i ) {
             il[ 1 ]->setup_resource_pair_buffer( rec );
             distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
             il[ 2 ]->setup_resource_pair_buffer( rec );

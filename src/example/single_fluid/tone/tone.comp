@@ -1,0 +1,37 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+//#extension GL_KHR_shader_subgroup : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#include <gct/constants.h>
+
+layout (binding = 0, rgba16f) readonly uniform image2D src_image;
+layout (std430, binding = 1) buffer Output {
+  uint value;
+  float scale;
+} tone;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+shared float[ 16 ] smax;
+
+void main()  {
+  ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const ivec2 image_size = imageSize( src_image ).xy;
+  if( screen_pos.x >= image_size.x ) screen_pos.x = image_size.x - 1;
+  if( screen_pos.y >= image_size.y ) screen_pos.y = image_size.y - 1;
+  const vec3 color = imageLoad( src_image, screen_pos ).rgb;
+  const float y = dot( rgb2y, color );
+  const float smax_ = subgroupAdd( y );
+  if( gl_SubgroupInvocationID == 0 ) {
+    smax[ gl_SubgroupID ] = smax_;
+  }
+  barrier();
+  const float lmax_ = min( max( subgroupAdd( ( gl_SubgroupInvocationID < gl_NumSubgroups ) ? smax[ gl_SubgroupInvocationID ] : 0.0 ), 0.0 ), 32767.0 )/( gl_WorkGroupSize.x * gl_WorkGroupSize.y );
+  if( gl_LocalInvocationID == uvec3( 0, 0, 0 ) ) {
+    atomicMax( tone.value, uint( lmax_ * 65536 ) );
+  }
+}
+

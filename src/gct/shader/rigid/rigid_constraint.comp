@@ -1,0 +1,90 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#include <gct/constants.h>
+#include <gct/scene_graph.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/xpbd/rigid_constraint.h>
+#include <gct/aabb_type.h>
+// per constraint, per rigid
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.y ];
+  // メッシュが属すノードの情報を得る
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  const uint constraint_index = gl_SubgroupInvocationID;
+  
+  const float dt = 1.0/60.0;
+  
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
+  if( mesh.lambda_offset == 0xFFFFFFFF ) return;
+
+  if( mesh.rigid == 0xFFFFFFFF ) return;
+
+  const rigid_type rigid = rigid_pool[ mesh.rigid ];
+  
+  vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
+  rigid_collision_dx_dq sum = rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0u, 0u );
+  for( uint constraint_block_id = 0u; constraint_block_id != 8u; constraint_block_id++ ) {
+    rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
+      mesh.rigid,
+      mesh.particle_offset,
+      mesh.constraint_offset,
+      mesh.lambda_offset,
+      constraint_block_id * gl_SubgroupSize + constraint_index,
+      dt
+    );
+    sum.dx += dx_dq.dx;
+    sum.dq += dx_dq.dq;
+    sum.dx_count += dx_dq.dx_count;
+    sum.dq_count += dx_dq.dq_count;
+  }
+  {
+    rigid_collision_dx_dq dx_dq = rigid_border_dx(
+      mesh.rigid,
+      mesh.particle_offset,
+      mesh.unique_vertex_count,
+      aabb_type(
+        vec4( -2.6, -100.0, -2.1, 1.0 ),
+        vec4( 2.6, -0.05, 1.5, 1.0 )
+      )
+    );
+    sum.dx += dx_dq.dx;
+    sum.dq += dx_dq.dq;
+    sum.dx_count += dx_dq.dx_count;
+    sum.dq_count += dx_dq.dq_count;
+  }
+
+  if( sum.dx_count != 0u ) {
+    sum.dx /= sum.dx_count;
+  }
+  if( sum.dq_count != 0u ) {
+    sum.dq /= sum.dq_count;
+  }
+  if( constraint_index == 0u ) {
+    rigid_pool[ mesh.rigid ].center_of_mass += sum.dx;
+    rigid_pool[ mesh.rigid ].angular_orientation += sum.dq;
+  }
+}
+

@@ -63,22 +63,14 @@ void main() {
     );
   }
   
-  const vec3 x = particle_pool[ mesh.particle_offset + particle_id ].position;
-  if( x.y > -0.05 ) {
-    dx += vec4( 0, -( x.y + 0.05 ), 0, 1 );
-  }
-  if( x.x > 2.0 ) {
-    dx += vec4( -( x.x - 2.0 ), 0, 0, 1 );
-  }
-  if( x.x < -2.0 ) {
-    dx += vec4( -( x.x + 2.0 ), 0, 0, 1 );
-  }
-  if( x.z > 1.5 ) {
-    dx += vec4( 0, 0, -( x.z - 1.5 ), 1 );
-  }
-  if( x.z < -2.1 ) {
-    dx += vec4( 0, 0, -( x.z + 2.1 ), 1 );
-  }
+  dx += pbd_border_dx(
+    particle_id,
+    mesh.particle_offset,
+    aabb_type(
+      vec4( -2.6, -100.0, -2.1, 1.0 ),
+      vec4( 2.6, -0.05, 1.5, 1.0 )
+    )
+  );
   if( dx.w != 0.0 ) {
     dx /= dx.w;
   }

@@ -39,8 +39,8 @@ float pbd_fluid_get_lambda(
 ) {
   const uint iter = constraint_begin( particle_id, constraint_offset );
   const vec3 center = particle_pool[ particle_offset + particle_id ].position;
-  float dpici;
-  float dpjci;
+  float dpici = 0.0;
+  float dpjci = 0.0;
   {
     vec3 sum = vec3( 0.0, 0.0, 0.0 );
     for( uint constraint_block_id = 0u; constraint_block_id != 4u; constraint_block_id++ ) {
@@ -57,7 +57,7 @@ float pbd_fluid_get_lambda(
     }
     dpici = dot( sum, sum );
   }
-  const float eps = 1000.0;//0.0001;
+  const float eps = 1000.0;
   return
     -( pbd_fluid_get_rho( particle_id, particle_offset, constraint_offset, radius )/rho0 - 1.0f ) /
     ( dpici + dpjci + eps );
@@ -93,8 +93,6 @@ vec4 pbd_fluid_constraint(
     count += subgroupAdd( is_end ? 0 : 1 );
   }
   sum /= rho0;
-  //sum /= 11875.7;
-  //sum /= 100;
   return vec4( sum, float( count ) );
 }
 

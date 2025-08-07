@@ -75,10 +75,8 @@ void main() {
   
   if( mesh.rigid == 0xFFFFFFFF ) return;
 
-  const uint constraint_offset = rigid_pool[ mesh.rigid ].constraint_offset;
-
-  if( constraint_offset == 0xFFFFFFFF ) return;
-
+  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
   const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
@@ -87,10 +85,6 @@ void main() {
   const ivec3 center = spatial_hash_position_to_voxel(
     spatial_hash_config.config, p0
   );
-  uint dc[32];
-  for( uint i = 0u; i < 32u; i++ ) {
-    dc[ i ] = mesh.particle_offset + distance_constraint_pool[ mesh.distance_constraint_offset + particle_id * 32u + i ].to_id;
-  }
 
   const ivec3 voxel = center + voxel_offset[ offset_id ];
   spatial_hash_iterator iter = spatial_hash_find( spatial_hash_config.config, voxel );
@@ -99,26 +93,15 @@ void main() {
     if( spatial_hash_not_match( spatial_hash_config.config, iter, voxel ) ) break;
     const uint to_id = spatial_hash_get( spatial_hash_config.config, iter );
     if( mesh.particle_offset + particle_id != to_id ) {
-      bool is_dc = false;
-      for( uint j = 0u; j != 32u; j++ ) {
-        if( dc[ j ] == 0u ) break;
-        if( dc[ j ] == to_id ) {
-          is_dc = true;
-          break;
-        }
+      const vec3 p1 = particle_pool[ to_id ].position;
+      const uint t1 = particle_pool[ to_id ].phase;
+      if( distance( p0, p1 ) < spatial_hash_config.config.scale ) {
+        rigid_constraint_insert_unidirectional(
+          particle_id,
+          to_id,
+          mesh.constraint_offset
+        );
       }
-      if( !is_dc ) {
-        const vec3 p1 = particle_pool[ to_id ].position;
-        const uint t1 = particle_pool[ to_id ].phase;
-        if( distance( p0, p1 ) < spatial_hash_config.config.scale ) {
-          rigid_constraint_insert_unidirectional(
-            particle_id,
-            to_id,
-            constraint_offset
-          );
-        }
-      }
-      //constraint_pool[ 0 ].to_id = 0;
     }
     iter = spatial_hash_next(spatial_hash_config.config, iter, voxel );
   }

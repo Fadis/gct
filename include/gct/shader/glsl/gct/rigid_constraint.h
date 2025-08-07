@@ -35,6 +35,20 @@ uvec2 rigid_constraint_get(
   return uvec2( from, to );
 }
 
+float rigid_constraint_get_lambda(
+  uint gcid
+) {
+  return lambda_pool[ gcid ];
+}
+
+void rigid_constraint_set_lambda(
+  uint gcid,
+  float v
+) {
+  lambda_pool[ gcid ] = v;
+}
+
+
 void rigid_constraint_insert_unidirectional(
   uint from_particle_id,
   uint to_particle_id,
@@ -61,6 +75,8 @@ void rigid_constraint_insert_unidirectional(
     gcid = rigid_constraint_next( gcid );
   }
 }
+
+
 
 #endif
 
