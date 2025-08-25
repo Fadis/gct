@@ -1,5 +1,6 @@
 #include <boost/range/iterator_range.hpp>
 #include <nlohmann/json.hpp>
+#include <vulkan2json/BufferCopy.hpp>
 #include <gct/allocator.hpp>
 #include <gct/buffer.hpp>
 #include <gct/compute_create_info.hpp>
@@ -12,6 +13,8 @@
 #include <gct/shader_module_reflection.hpp>
 #include <gct/shader_module.hpp>
 #include <gct/buffer_pool.hpp>
+#include <gct/simplify_buffer_copy.hpp>
+#include <gct/shader_module_reflection.hpp>
 namespace gct {
 
 buffer_pool::buffer_index_t buffer_pool::state_type::allocate_index( std::uint32_t count ) {
@@ -34,7 +37,6 @@ buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( std::uint32_t 
     throw exception::invalid_argument( "buffer_pool::state_type::allocate : count == 0 is not allowed", __FILE__, __LINE__ );
   }
 
-  auto write_requests = write_request_buffer->map< write_request >();
   auto staging = staging_buffer->map< std::uint8_t >();
 
   const buffer_index_t index = allocate_index( count );
@@ -44,12 +46,14 @@ buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( std::uint32_t 
   const request_index_t request_index = write_request_index_allocator.allocate( count );
 
   for( std::uint32_t i = 0u; i != count; ++i ) {
-    write_requests[ request_index + i ] =
-      write_request()
-        .set_staging( staging_index_ + i )
-        .set_destination( index + i );
     std::copy( begin, end, std::next( staging.begin(), index * aligned_size ) );
   }
+  write_region.push_back(
+    vk::BufferCopy()
+      .setSrcOffset( index * aligned_size )
+      .setDstOffset( staging_index_ * aligned_size )
+      .setSize( count * aligned_size )
+  );
   buffer_state[ index ] =
     buffer_state_type();
   
@@ -80,7 +84,6 @@ buffer_pool::buffer_descriptor buffer_pool::state_type::allocate( std::uint32_t 
     throw exception::invalid_argument( "buffer_pool::state_type::allocate : count == 0 is not allowed", __FILE__, __LINE__ );
   }
 
-  auto write_requests = write_request_buffer->map< write_request >();
   auto staging = staging_buffer->map< std::uint8_t >();
 
   const buffer_index_t index = allocate_index( count );
@@ -122,7 +125,6 @@ void buffer_pool::state_type::set( const buffer_descriptor &desc, std::uint32_t 
     return;
   }
   {
-    auto write_requests = write_request_buffer->map< write_request >();
     auto staging = staging_buffer->map< std::uint8_t >();
     auto &s = buffer_state[ *desc ];
     const auto si = staging_index.find( *desc + index );
@@ -134,21 +136,25 @@ void buffer_pool::state_type::set( const buffer_descriptor &desc, std::uint32_t 
     else if( si != staging_index.end() ) {
       std::copy( begin, end, std::next( staging.begin(), si->second * aligned_size ) );
       const request_index_t request_index = write_request_index_allocator.allocate();
-      write_requests[ request_index ] =
-        write_request()
-          .set_staging( si->second )
-          .set_destination( *desc + index );
       write_request_index.insert( std::make_pair( *desc + index, request_index ) );
+      write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( si->second * aligned_size )
+          .setDstOffset( ( *desc + index ) * aligned_size )
+          .setSize( aligned_size )
+      );
     }
     else {
       const buffer_index_t staging_index_ = staging_index_allocator.allocate();
       std::copy( begin, end, std::next( staging.begin(), staging_index_ * aligned_size ) );
       const request_index_t request_index = write_request_index_allocator.allocate();
-      write_requests[ request_index ] =
-        write_request()
-          .set_staging( staging_index_ )
-          .set_destination( *desc + index );
       write_request_index.insert( std::make_pair( *desc + index, request_index ) );
+      write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index_ * aligned_size )
+          .setDstOffset( ( *desc + index ) * aligned_size )
+          .setSize( aligned_size )
+      );
       staging_index.insert( std::make_pair( *desc + index, staging_index_ ) );
       used_on_gpu.push_back( desc );
     }
@@ -166,7 +172,6 @@ void buffer_pool::state_type::clear( const buffer_descriptor &desc, std::uint32_
     count = index_allocator.get_size( *desc );
   }
   {
-    auto write_requests = write_request_buffer->map< write_request >();
     auto &s = buffer_state[ *desc ];
     const auto si = staging_index.find( *desc + index );
     const auto wri = write_request_index.find( *desc + index );
@@ -178,11 +183,13 @@ void buffer_pool::state_type::clear( const buffer_descriptor &desc, std::uint32_
       auto staging = staging_buffer->map< std::uint8_t >();
       std::fill( std::next( staging.begin(), si->second * aligned_size ), std::next( staging.begin(), ( si->second + 1u ) * aligned_size ), 0u );
       const request_index_t request_index = write_request_index_allocator.allocate();
-      write_requests[ request_index ] =
-        write_request()
-          .set_staging( si->second )
-          .set_destination( *desc + index );
       write_request_index.insert( std::make_pair( index, request_index ) );
+      write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( si->second * aligned_size )
+          .setDstOffset( ( *desc + index ) * aligned_size )
+          .setSize( aligned_size )
+      );
     }
     else {
       fill_requests.add( ( *desc + index ) * aligned_size, count * aligned_size );
@@ -214,7 +221,6 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
     return;
   }
   {
-    auto read_requests = read_request_buffer->map< read_request >();
     auto &s = buffer_state[ *desc ];
     const auto si = staging_index.find( *desc + index );
     const auto rri = read_request_index.find( *desc + index );
@@ -224,20 +230,24 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
     else if( si != staging_index.end() ) {
       cbs.insert( std::make_pair( *desc + index, cb ) );
       const request_index_t request_index = read_request_index_allocator.allocate();
-      read_requests[ request_index ] =
-        read_request()
-          .set_source( *desc + index )
-          .set_staging( si->second );
+      read_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( ( *desc + index ) * aligned_size )
+          .setDstOffset( si->second * aligned_size )
+          .setSize( aligned_size )
+      );
       read_request_index.insert( std::make_pair( index, request_index ) );
     }
     else {
       cbs.insert( std::make_pair( *desc + index, cb ) );
       const buffer_index_t staging_index_ = staging_index_allocator.allocate();
       const request_index_t request_index = read_request_index_allocator.allocate();
-      read_requests[ request_index ] =
-        read_request()
-          .set_source( *desc + index )
-          .set_staging( staging_index_ );
+      read_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( ( *desc + index ) * aligned_size )
+          .setDstOffset( staging_index_ * aligned_size )
+          .setSize( aligned_size )
+      );
       read_request_index.insert( std::make_pair( index, request_index ) );
       staging_index.insert( std::make_pair( index, staging_index_ ) );
       used_on_gpu.push_back( desc );
@@ -262,8 +272,25 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
   write_request_index_allocator( linear_allocator_create_info().set_max( ci.max_request_count ) ),
   read_request_index_allocator( linear_allocator_create_info().set_max( ci.max_request_count ) )
 {
-  const auto reflection = shader_module_reflection_t( std::filesystem::path( props.write_shader ) );
-  aligned_size = reflection.get_member_pointer( props.buffer_name, props.layout ).get_stride();
+  if( std::filesystem::exists( props.dummy_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.dummy_shader )
+    );
+  }
+  else if( std::filesystem::exists( props.write_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.write_shader )
+    );
+  }
+  else if( std::filesystem::exists( props.read_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.read_shader )
+    );
+  }
+  else {
+    throw exception::runtime_error( "buffer_pool::state_type::state_type : at least one shader is required", __FILE__, __LINE__ );
+  }
+  aligned_size = reflection->get_member_pointer( props.buffer_name, props.layout ).get_stride();
   buffer = props.allocator_set.allocator->create_buffer(
     aligned_size * props.max_buffer_count,
     vk::BufferUsageFlagBits::eStorageBuffer|
@@ -272,28 +299,7 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   staging_buffer = props.allocator_set.allocator->create_buffer( aligned_size * props.max_request_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  write_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( write_request ) * props.max_request_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  read_request_buffer = props.allocator_set.allocator->create_buffer( sizeof( read_request ) * props.max_request_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
-  write.reset( new gct::compute(
-    gct::compute_create_info()
-      .set_allocator_set( props.allocator_set )
-      .set_shader( props.write_shader )
-      .set_swapchain_image_count( 1u )
-      .set_resources( props.resources )
-      .add_resource( { props.buffer_name, buffer } )
-      .add_resource( { props.staging_buffer_name, staging_buffer } )
-      .add_resource( { props.write_request_buffer_name, write_request_buffer } )
-  ) );
-  read.reset( new gct::compute(
-    gct::compute_create_info()
-      .set_allocator_set( props.allocator_set )
-      .set_shader( props.read_shader )
-      .set_swapchain_image_count( 1u )
-      .set_resources( props.resources )
-      .add_resource( { props.buffer_name, buffer } )
-      .add_resource( { props.staging_buffer_name, staging_buffer } )
-      .add_resource( { props.read_request_buffer_name, read_request_buffer } )
-  ) );
+
   //const buffer_index_t dummy = allocate_index( 1 );
 }
 
@@ -301,38 +307,29 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
   }
+  simplify_buffer_copy( write_region );
+  simplify_buffer_copy( read_region );
+  rec.barrier( { buffer }, {} );
   if( !fill_requests.get().empty() ) {
     for( const auto &i: fill_requests.get() ) {
       rec->fillBuffer( **buffer, i.first, i.second, 0u );
     }
-    rec.transfer_to_compute_barrier( { buffer }, {} );
+    rec.transfer_barrier( { buffer }, {} );
   }
-  if( write_request_index_allocator.get_tail() ) {
-    request_range range =
-      request_range()
-        .set_count( write_request_index_allocator.get_tail() );
-    rec->pushConstants(
-        **write->get_pipeline()->get_props().get_layout(),
-        vk::ShaderStageFlagBits::eCompute,
-        0u,
-        sizeof( request_range ),
-        reinterpret_cast< void* >( &range )
+  if( !write_region.empty() ) {
+    rec->copyBuffer(
+      **staging_buffer,
+      **buffer,
+      write_region
     );
-    (*write)( rec, 0u, write_request_index_allocator.get_tail(), 1u, 1u );
+    rec.transfer_barrier( { buffer }, {} );
   }
-  rec.barrier( { buffer }, {} );
-  if( read_request_index_allocator.get_tail() ) {
-    request_range range =
-      request_range()
-        .set_count( read_request_index_allocator.get_tail() );
-    rec->pushConstants(
-        **read->get_pipeline()->get_props().get_layout(),
-        vk::ShaderStageFlagBits::eCompute,
-        0u,
-        sizeof( request_range ),
-        reinterpret_cast< void* >( &range )
+  if( !read_region.empty() ) {
+    rec->copyBuffer(
+      **buffer,
+      **staging_buffer,
+      read_region
     );
-    (*read)( rec, 0u, read_request_index_allocator.get_tail(), 1u, 1u );
   }
   rec.barrier( { buffer }, {} );
   rec.on_executed(
@@ -380,6 +377,8 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         self->write_request_index_allocator.reset();
         self->read_request_index_allocator.reset();
         self->staging_index_allocator.reset();
+        self->write_region.clear();
+        self->read_region.clear();
         self->cbs.clear();
         used_on_gpu = std::move( self->used_on_gpu );
         self->used_on_gpu.clear();
@@ -481,27 +480,13 @@ void buffer_pool::to_json( nlohmann::json &dest ) const {
     dest[ "write_request_index" ][ std::to_string( index ) ] = rrr;
   }
   dest[ "index_allocator" ] = state->index_allocator;
-  dest[ "write_request_buffer" ] = nlohmann::json::array();
-  {
-    auto m = state->write_request_buffer->map< write_request >();
-    for( std::uint32_t i = 0u; i != state->write_request_index_allocator.get_tail(); ++i ) {
-      auto e = m[ i ];
-      auto temp = nlohmann::json::object();
-      temp[ "staging" ] = e.staging;
-      temp[ "destination" ] = e.destination;
-      dest[ "write_request_buffer" ].push_back( temp );
-    }
+  dest[ "write_region" ] = nlohmann::json::array();
+  for( const auto &v: state->write_region ) {
+    dest[ "write_region" ].push_back( nlohmann::json( v ) );
   }
-  dest[ "read_request_buffer" ] = nlohmann::json::array();
-  {
-    auto m = state->read_request_buffer->map< read_request >();
-    for( std::uint32_t i = 0u; i != state->read_request_index_allocator.get_tail(); ++i ) {
-      auto e = m[ i ];
-      auto temp = nlohmann::json::object();
-      temp[ "source" ] = e.source;
-      temp[ "staging" ] = e.staging;
-      dest[ "read_request_buffer" ].push_back( temp );
-    }
+  dest[ "read_region" ] = nlohmann::json::array();
+  for( const auto &v: state->read_region ) {
+    dest[ "read_region" ].push_back( nlohmann::json( v ) );
   }
   dest[ "staging_index_allocator" ] = state->staging_index_allocator;
   dest[ "write_request_index_allocator" ] = state->write_request_index_allocator;
@@ -510,14 +495,12 @@ void buffer_pool::to_json( nlohmann::json &dest ) const {
   for( const auto &e: state->used_on_gpu ) {
     dest[ "used_on_gpu" ].push_back( *e );
   }
-  dest[ "write" ] = *state->write;
-  dest[ "read" ] = *state->read;
   dest[ "aligned_size" ] = state->aligned_size;
   dest[ "member_pointer" ] = get_member_pointer();
   dest[ "execution_pending" ] = state->execution_pending;
 }
 spv_member_pointer buffer_pool::get_member_pointer() const {
-  return state->write->get_pipeline()->get_props().get_stage().get_shader_module()->get_props().get_reflection().get_member_pointer( state->props.buffer_name, state->props.layout )[ 0 ];
+  return state->reflection->get_member_pointer( state->props.buffer_name, state->props.layout )[ 0 ];
 }
 void to_json( nlohmann::json &dest, const buffer_pool &src ) {
   src.to_json( dest );

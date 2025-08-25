@@ -7,6 +7,7 @@ namespace gct {
 buffer_pool_create_info &buffer_pool_create_info::set_shader(
   const std::filesystem::path &dir
 ) {
+  set_dummy_shader( dir / "dummy.comp.spv" );
   set_write_shader( dir / "write.comp.spv" );
   set_read_shader( dir / "read.comp.spv" );
   return *this;
@@ -21,6 +22,7 @@ bool buffer_pool_create_info::shader_exists() const {
 void to_json( nlohmann::json &dest, const buffer_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;
+  dest[ "dummy_shader" ] = src.dummy_shader.string();
   dest[ "write_shader" ] = src.write_shader.string();
   dest[ "read_shader" ] = src.read_shader.string();
   dest[ "max_buffer_count" ] = src.max_buffer_count;

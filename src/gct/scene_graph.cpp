@@ -203,19 +203,20 @@ scene_graph::scene_graph(
   }
   if( !props->primitive_resource_index.shader_exists() ) {
     std::cout << "Using system primitive_resource_index_pool" << std::endl;
-    props->primitive_resource_index.set_shader( shader_path / "primitive_resource_index_pool" );
+    props->primitive_resource_index.set_shader( shader_path / "dummy" );
   }
   if( !props->instance_resource_index.shader_exists() ) {
     std::cout << "Using system instance_resource_index_pool" << std::endl;
-    props->instance_resource_index.set_shader( shader_path / "instance_resource_index_pool" );
+    props->instance_resource_index.set_shader( shader_path / "dummy" );
   }
   if( !props->resource_pair.shader_exists() ) {
     std::cout << "Using system resource_pair" << std::endl;
-    props->resource_pair.set_shader( shader_path / "resource_pair" );
+    props->resource_pair.set_shader( shader_path / "dummy" );
   }
   if( !props->visibility.shader_exists() ) {
     std::cout << "Using system visibility_pool" << std::endl;
-    props->visibility.set_shader( shader_path / "visibility_pool" );
+    props->visibility.set_shader( shader_path / "dummy" );
+    props->visibility.set_buffer_name( "visibility_pool" );
   }
   if( !props->light.shader_exists() ) {
     std::cout << "Using system light_pool" << std::endl;
@@ -223,47 +224,47 @@ scene_graph::scene_graph(
   }
   if( !props->accessor.shader_exists() ) {
     std::cout << "Using system accessor" << std::endl;
-    props->accessor.set_shader( shader_path / "accessor" );
+    props->accessor.set_shader( shader_path / "dummy" );
   }
   if( !props->mesh.shader_exists() ) {
     std::cout << "Using system mesh" << std::endl;
-    props->mesh.set_shader( shader_path / "mesh" );
+    props->mesh.set_shader( shader_path / "dummy" );
   }
   if( !props->meshlet.shader_exists() ) {
     std::cout << "Using system meshlet" << std::endl;
-    props->meshlet.set_shader( shader_path / "meshlet" );
+    props->meshlet.set_shader( shader_path / "dummy" );
   }
   if( !props->meshlet_index.shader_exists() ) {
     std::cout << "Using system meshlet_index" << std::endl;
-    props->meshlet_index.set_shader( shader_path / "meshlet_index" );
+    props->meshlet_index.set_shader( shader_path / "dummy" );
   }
   if( !props->particle.shader_exists() ) {
     std::cout << "Using system particle_pool" << std::endl;
-    props->particle.set_shader( shader_path / "particle_pool" );
+    props->particle.set_shader( shader_path / "dummy" );
   }
   if( !props->rigid.shader_exists() ) {
     std::cout << "Using system rigid_pool" << std::endl;
-    props->rigid.set_shader( shader_path / "rigid_pool" );
+    props->rigid.set_shader( shader_path / "dummy" );
   }
   if( !props->distance_constraint.shader_exists() ) {
     std::cout << "Using system distance_constraint_pool" << std::endl;
-    props->distance_constraint.set_shader( shader_path / "distance_constraint_pool" );
+    props->distance_constraint.set_shader( shader_path / "dummy" );
   }
   if( !props->constraint.shader_exists() ) {
     std::cout << "Using system constraint_pool" << std::endl;
-    props->constraint.set_shader( shader_path / "constraint_pool" );
+    props->constraint.set_shader( shader_path / "dummy" );
   }
   if( !props->spatial_hash.shader_exists() ) {
     std::cout << "Using system spatial_hash_pool" << std::endl;
-    props->spatial_hash.set_shader( shader_path / "spatial_hash_pool" );
+    props->spatial_hash.set_shader( shader_path / "dummy" );
   }
   if( !props->vertex_to_primitive.shader_exists() ) {
     std::cout << "Using system vertex_to_primitive_pool" << std::endl;
-    props->vertex_to_primitive.set_shader( shader_path / "vertex_to_primitive_pool" );
+    props->vertex_to_primitive.set_shader( shader_path / "dummy" );
   }
   if( !props->lambda.shader_exists() ) {
     std::cout << "Using system lambda_pool" << std::endl;
-    props->lambda.set_shader( shader_path / "lambda_pool" );
+    props->lambda.set_shader( shader_path / "dummy" );
   }
 
   resource->matrix.reset( new matrix_pool(

@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <gct/exception.hpp>
 #include <gct/linear_allocator.hpp>
+#include <gct/alignment.hpp>
 
 namespace gct {
 
@@ -48,7 +49,6 @@ std::uint32_t sized_linear_allocator::allocate( std::uint32_t size ) {
       deallocated.erase( best_iter );
       if( size != 1u ) {
         contiguous[ allocated_head ] = size;
-        contiguous.insert( std::make_pair( allocated_head, size ) );
       }
       if( size_diff != 0u ) {
         deallocated.insert( allocated_head + size );
@@ -76,6 +76,84 @@ std::uint32_t sized_linear_allocator::allocate( std::uint32_t size ) {
       return allocated_head;
     }
   }
+}
+
+std::uint32_t sized_linear_allocator::allocate( std::uint32_t size, std::uint32_t alignment ) {
+  if( !deallocated.empty() ) {
+    std::uint32_t best_id = std::numeric_limits< std::uint32_t >().max();
+    std::uint32_t size_diff = std::numeric_limits< std::uint32_t >().max();
+    auto best_iter = deallocated.begin();
+    boost::container::flat_set< std::uint32_t >::iterator iter;
+    for( iter = deallocated.begin(); iter != deallocated.end(); ++iter ) {
+      std::uint32_t s = 1u;
+      const auto c = contiguous.find( *iter );
+      if( c != contiguous.end() ) {
+        s = c->second;
+      }
+      const auto aligned = alignment::align_to( *iter, alignment );
+      const auto padding = aligned - *iter;
+      if( ( size + padding ) <= s && ( s - size ) < size_diff ) {
+        best_id = *iter;
+        size_diff = s - size;
+        best_iter = iter;
+        if( size_diff == 0u ) {
+          break;
+        }
+      }
+    }
+    if( best_id != std::numeric_limits< std::uint32_t >().max() ) {
+      const auto aligned = alignment::align_to( *best_iter, alignment );
+      const auto padding = aligned - *best_iter;
+      std::uint32_t allocated_head = *best_iter;
+      if( padding == 0u ) {
+        deallocated.erase( best_iter );
+        contiguous.erase( allocated_head );
+      }
+      else {
+        deallocated.insert( allocated_head );
+        if( padding == 1u ) {
+          contiguous.erase( allocated_head );
+        }
+        else {
+          contiguous[ allocated_head ] = padding;
+        }
+        allocated_head += padding;
+      }
+      if( size != 1u ) {
+        contiguous[ allocated_head ] = size;
+      }
+      if( size_diff != 0u ) {
+        deallocated.insert( allocated_head + size );
+        if( size_diff != 1u ) {
+          contiguous[ allocated_head + size ] = size_diff;
+        }
+        if( size != 1u ) {
+          contiguous[ allocated_head ] = size;
+        }
+        else {
+          contiguous.erase( allocated_head );
+        }
+      }
+      return allocated_head;
+    }
+  }
+  const auto aligned = alignment::align_to( tail, alignment );
+  if( ( aligned + size ) > props.max ) {
+    throw exception::out_of_range( "sized_linear_allocator::allocate : no space left", __FILE__, __LINE__ );
+  }
+  if( aligned != tail ) {
+    deallocated.insert( tail );
+    if( ( aligned - tail ) != 1u ) {
+      contiguous.insert( std::make_pair( tail, aligned - tail ) );
+    }
+    tail = aligned;
+  }
+  const std::uint32_t allocated_head = tail;
+  tail += size;
+  if( size != 1u ) {
+    contiguous.insert( std::make_pair( allocated_head, size ) );
+  }
+  return allocated_head;
 }
 
 std::uint32_t sized_linear_allocator::get_size( std::uint32_t i ) const {

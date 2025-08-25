@@ -16,6 +16,7 @@ public:
     const linear_allocator_create_info &ci
   );
   [[nodiscard]] std::uint32_t allocate( std::uint32_t size );
+  [[nodiscard]] std::uint32_t allocate( std::uint32_t size, std::uint32_t alignment );
   void release( std::uint32_t i );
   void reset();
   void to_json( nlohmann::json& ) const;

@@ -320,6 +320,7 @@ add_library( gct SHARED
   gct/texture_pool.cpp
   gct/buffer_pool_create_info.cpp
   gct/buffer_pool.cpp
+  gct/simplify_buffer_copy.cpp
   gct/sampler_pool_create_info.cpp
   gct/sampler_pool.cpp
   gct/image_allocate_info.cpp
@@ -567,54 +568,56 @@ add_shader( gct gct/shader/scene_graph/image_pool/rgba16.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/image_pool/rgba16f.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/image_pool/rgba32f.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/primitive_resource_index_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/instance_resource_index_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/visibility_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/visibility_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/visibility_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/visibility_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/resource_pair/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/resource_pair/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/resource_pair/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/resource_pair/read.comp INSTALL )
 
 add_shader( gct gct/shader/scene_graph/light_pool/write.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/light_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/light_pool/update.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/accessor/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/accessor/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/accessor/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/accessor/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/mesh/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/mesh/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/mesh/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/mesh/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/meshlet/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/meshlet/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/meshlet/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/meshlet/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/meshlet_index/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/meshlet_index/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/meshlet_index/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/meshlet_index/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/particle_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/particle_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/particle_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/particle_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/rigid_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/rigid_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/rigid_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/rigid_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/distance_constraint_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/distance_constraint_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/distance_constraint_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/distance_constraint_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/constraint_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/constraint_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/constraint_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/constraint_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/spatial_hash_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/spatial_hash_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/spatial_hash_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/spatial_hash_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/vertex_to_primitive_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/lambda_pool/write.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/lambda_pool/read.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/lambda_pool/write.comp INSTALL )
+#add_shader( gct gct/shader/scene_graph/lambda_pool/read.comp INSTALL )
+
+add_shader( gct gct/shader/scene_graph/dummy/dummy.comp INSTALL )
 
 add_shader( gct gct/shader/ao/hbao/hbao_0.comp INSTALL )
 add_shader( gct gct/shader/ao/hbao/hbao_45.comp INSTALL )

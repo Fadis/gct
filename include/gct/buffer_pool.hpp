@@ -22,6 +22,8 @@
 
 namespace gct {
 
+class shader_module_reflection_t;
+
 class buffer_pool {
 public:
   using buffer_level_t = std::uint32_t;
@@ -90,17 +92,16 @@ private:
     sized_linear_allocator index_allocator;
     std::shared_ptr< buffer_t > staging_buffer;
     std::shared_ptr< buffer_t > buffer;
-    std::shared_ptr< buffer_t > write_request_buffer; // write_request[] destination
-    std::shared_ptr< buffer_t > read_request_buffer; // read_request[] source
     interval< std::uint32_t > fill_requests;
+    std::vector< vk::BufferCopy > write_region;
+    std::vector< vk::BufferCopy > read_region;
     reduced_linear_allocator staging_index_allocator;
     reduced_linear_allocator write_request_index_allocator;
     reduced_linear_allocator read_request_index_allocator;
     std::vector< buffer_descriptor > used_on_gpu;
     std::unordered_set< buffer_index_t > modified;
     std::unordered_multimap< buffer_index_t, std::function< void( vk::Result, std::vector< std::uint8_t >&& ) > > cbs;
-    std::shared_ptr< compute > write;
-    std::shared_ptr< compute > read;
+    std::shared_ptr< shader_module_reflection_t > reflection;
     std::size_t aligned_size;
     bool execution_pending = false;
     boost::container::flat_map< std::uint32_t, buffer_index_t > staging_index;

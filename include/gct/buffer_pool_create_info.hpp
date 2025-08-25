@@ -18,6 +18,7 @@ class descriptor_set_t;
 struct buffer_pool_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
+  LIBGCT_SETTER( dummy_shader )
   LIBGCT_SETTER( write_shader )
   LIBGCT_SETTER( read_shader )
   LIBGCT_SETTER( max_buffer_count )
@@ -33,6 +34,7 @@ struct buffer_pool_create_info {
   );
   bool shader_exists() const;
   allocator_set_t allocator_set;
+  std::filesystem::path dummy_shader;
   std::filesystem::path write_shader;
   std::filesystem::path read_shader;
   std::uint32_t max_buffer_count = 65536u;
