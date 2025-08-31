@@ -38,6 +38,9 @@
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceBlendOperationAdvancedFeaturesEXT.hpp>
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceClusterAccelerationStructureFeaturesNV.hpp>
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceBorderColorSwizzleFeaturesEXT.hpp>
 #endif
@@ -64,11 +67,17 @@
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceConditionalRenderingFeaturesEXT.hpp>
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceCooperativeMatrix2FeaturesNV.hpp>
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceCooperativeMatrixFeaturesKHR.hpp>
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceCooperativeMatrixFeaturesNV.hpp>
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceCooperativeVectorFeaturesNV.hpp>
 #endif
 #ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceCopyMemoryIndirectFeaturesNV.hpp>
@@ -109,6 +118,9 @@
 #ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceDescriptorBufferFeaturesEXT.hpp>
 #endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceDescriptorBufferTensorFeaturesARM.hpp>
+#endif
 #ifdef VK_VERSION_1_2
 #include <vulkan2json/PhysicalDeviceDescriptorIndexingFeatures.hpp>
 #elif defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
@@ -119,6 +131,9 @@
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV.hpp>
+#endif
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceDeviceGeneratedCommandsFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceDeviceGeneratedCommandsFeaturesNV.hpp>
@@ -137,7 +152,9 @@
 #elif defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceDynamicRenderingFeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceDynamicRenderingLocalReadFeatures.hpp>
+#elif defined(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceDynamicRenderingLocalReadFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
@@ -176,7 +193,12 @@
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceFragmentDensityMapFeaturesEXT.hpp>
 #endif
-#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE.hpp>
+#endif
+#ifdef VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFragmentDensityMapOffsetFeaturesEXT.hpp>
+#elif defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM.hpp>
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
@@ -192,26 +214,32 @@
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceFragmentShadingRateFeaturesKHR.hpp>
 #endif
-#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
-#include <vulkan2json/PhysicalDeviceFrameBoundaryFeaturesEXT.hpp>
-#endif
-#ifdef VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME
-#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeaturesKHR.hpp>
-#elif defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
-#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeaturesEXT.hpp>
-#endif
 #ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceHostImageCopyFeatures.hpp>
+#elif defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceHostImageCopyFeaturesEXT.hpp>
+#endif
+#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFrameBoundaryFeaturesEXT.hpp>
+#endif
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeatures.hpp>
+#elif defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeaturesKHR.hpp>
+#elif defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceGlobalPriorityQueryFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_2
 #include <vulkan2json/PhysicalDeviceHostQueryResetFeatures.hpp>
 #elif defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceHostQueryResetFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceImageRobustnessFeatures.hpp>
+#elif defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceImageRobustnessFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
@@ -231,7 +259,18 @@
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceInheritedViewportScissorFeaturesNV.hpp>
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceImageAlignmentControlFeaturesMESA.hpp>
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceImageProcessing2FeaturesQCOM.hpp>
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceImageProcessingFeaturesQCOM.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceInlineUniformBlockFeatures.hpp>
+#elif defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceInlineUniformBlockFeaturesEXT.hpp>
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
@@ -240,20 +279,45 @@
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceLegacyDitheringFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceLegacyVertexAttributesFeaturesEXT.hpp>
+#endif
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceLineRasterizationFeatures.hpp>
+#elif defined(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceLineRasterizationFeaturesKHR.hpp>
+#elif defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceLineRasterizationFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceLinearColorAttachmentFeaturesNV.hpp>
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceMaintenance4Features.hpp>
+#elif defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceMaintenance4FeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceMaintenance5Features.hpp>
+#elif defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceMaintenance5FeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceMaintenance6Features.hpp>
+#elif defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceMaintenance6FeaturesKHR.hpp>
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMaintenance7FeaturesKHR.hpp>
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMaintenance8FeaturesKHR.hpp>
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMaintenance9FeaturesKHR.hpp>
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceMapMemoryPlacedFeaturesEXT.hpp>
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceMemoryDecompressionFeaturesNV.hpp>
@@ -311,7 +375,20 @@
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
 #include <vulkan2json/PhysicalDevicePerformanceQueryFeaturesKHR.hpp>
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+#include <vulkan2json/PhysicalDevicePipelineBinaryFeaturesKHR.hpp>
+#endif
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDevicePipelineRobustnessFeatures.hpp>
+#elif defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDevicePipelineRobustnessFeaturesEXT.hpp>
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+#include <vulkan2json/PhysicalDevicePartitionedAccelerationStructureFeaturesNV.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDevicePipelineCreationCacheControlFeatures.hpp>
+#elif defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDevicePipelineCreationCacheControlFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
@@ -323,11 +400,10 @@
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
 #include <vulkan2json/PhysicalDevicePipelinePropertiesFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDevicePipelineProtectedAccessFeatures.hpp>
+#elif defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDevicePipelineProtectedAccessFeaturesEXT.hpp>
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-#include <vulkan2json/PhysicalDevicePipelineRobustnessFeaturesEXT.hpp>
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 #include <vulkan2json/PhysicalDevicePortabilitySubsetFeaturesKHR.hpp>
@@ -347,7 +423,9 @@
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
 #include <vulkan2json/PhysicalDevicePrimitivesGeneratedQueryFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDevicePrivateDataFeatures.hpp>
+#elif defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDevicePrivateDataFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_1
@@ -428,7 +506,9 @@
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceShaderCoreBuiltinsFeaturesARM.hpp>
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceShaderDemoteToHelperInvocationFeatures.hpp>
+#elif defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_1
@@ -440,7 +520,9 @@
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceShaderEnqueueFeaturesAMDX.hpp>
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceShaderExpectAssumeFeatures.hpp>
+#elif defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderExpectAssumeFeaturesKHR.hpp>
 #endif
 #ifdef VK_VERSION_1_2
@@ -448,7 +530,9 @@
 #elif defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderFloat16Int8FeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceShaderFloatControls2Features.hpp>
+#elif defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderFloatControls2FeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
@@ -457,7 +541,9 @@
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceShaderImageFootprintFeaturesNV.hpp>
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceShaderIntegerDotProductFeatures.hpp>
+#elif defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderIntegerDotProductFeaturesKHR.hpp>
 #endif
 
@@ -484,13 +570,17 @@
 #elif defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceShaderSubgroupRotateFeatures.hpp>
+#elif defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderSubgroupRotateFeaturesKHR.hpp>
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR.hpp>
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceShaderTerminateInvocationFeatures.hpp>
+#elif defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceShaderTerminateInvocationFeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
@@ -499,7 +589,9 @@
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceShadingRateImageFeaturesNV.hpp>
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceSubgroupSizeControlFeatures.hpp>
+#elif defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceSubgroupSizeControlFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
@@ -511,13 +603,23 @@
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceSwapchainMaintenance1FeaturesEXT.hpp>
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceSynchronization2Features.hpp>
+#elif defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceSynchronization2FeaturesKHR.hpp>
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceTexelBufferAlignmentFeaturesEXT.hpp>
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceTileMemoryHeapFeaturesQCOM.hpp>
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceTileShadingFeaturesQCOM.hpp>
+#endif
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceTextureCompressionASTCHDRFeatures.hpp>
+#elif defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT.hpp>
 #endif
 #ifdef VK_VERSION_1_2
@@ -538,8 +640,11 @@
 #elif defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceVariablePointersFeaturesKHR.hpp>
 #endif
-
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+#include <vulkan2json/PhysicalDeviceVertexAttributeDivisorFeatures.hpp>
+#elif defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
+#include <vulkan2json/PhysicalDeviceVertexAttributeDivisorFeaturesKHR.hpp>
+#elif defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceVertexAttributeDivisorFeaturesEXT.hpp>
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -565,7 +670,9 @@
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceYcbcrImageArraysFeaturesEXT.hpp>
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+#include <vulkan2json/PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures.hpp>
+#elif defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
 #include <vulkan2json/PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR.hpp>
 #endif
 
@@ -615,6 +722,9 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( blend_operation_advanced )
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cluster_acceleration_structure )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( border_color_swizzle )
 #endif
@@ -639,8 +749,14 @@ namespace gct {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( conditional_rendering )
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cooperative_matrix2 )
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( cooperative_matrix )
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( cooperative_vector )
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( cooperative_matrix_nv )
@@ -684,6 +800,9 @@ namespace gct {
 #ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( descriptor_buffer )
 #endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+   LIBGCT_EXTENSION_TO_JSON( descriptor_buffer_tensor )
+#endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( descriptor_indexing )
 #endif
@@ -693,8 +812,11 @@ namespace gct {
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( device_generated_commands_compute )
 #endif
-#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( device_generated_commands )
+#endif
+#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( device_generated_commands_nv )
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( device_memory_report )
@@ -708,7 +830,7 @@ namespace gct {
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( dynamic_rendering )
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( dynamic_rendering_local_read )
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
@@ -747,6 +869,12 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_density_map )
 #endif
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_density_map_layered )
+#endif
+#if defined(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME) || defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( fragment_density_map_offset )
+#endif
 #ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_density_map_offset )
 #endif
@@ -762,22 +890,24 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_shading_rate )
 #endif
-#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( frame_boundary )
-#endif
-#if defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
-    LIBGCT_EXTENSION_TO_JSON( global_priority_query )
-#endif
 #ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( graphics_pipeline_library )
 #endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
     LIBGCT_EXTENSION_TO_JSON( host_image_copy )
+#elif defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( host_image_copy )
+#endif
+#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( frame_boundary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( global_priority_query )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( host_query_reset )
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( image_robustness )
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
@@ -795,7 +925,16 @@ namespace gct {
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( inherited_viewport_scissor )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( image_alignment_control )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( image_processing2 )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( image_processing )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( inline_uniform_block )
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
@@ -804,20 +943,35 @@ namespace gct {
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( legacy_dithering )
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( legacy_vertex_attribute )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME) || defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( line_rasterization )
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( linear_color_attachment )
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( maintenance4 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( maintenance5 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( maintenance6 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( maintenance7 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( maintenance8 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( maintenance9 )
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( map_memory_placed )
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( memory_decompression )
@@ -850,7 +1004,7 @@ namespace gct {
     LIBGCT_EXTENSION_TO_JSON( mutable_descriptor_type )
 #endif
 #ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( nexted_command_buffer )
+    LIBGCT_EXTENSION_TO_JSON( nested_command_buffer )
 #endif
 #ifdef VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( non_seamless_cube_map )
@@ -870,7 +1024,16 @@ namespace gct {
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( performance_query )
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( pipeline_binary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_TO_JSON( pipeline_robustness )
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( partitioned_acceleration_structure )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( pipeline_creation_cache_control )
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
@@ -882,11 +1045,8 @@ namespace gct {
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( pipeline_properties )
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( pipeline_protected_access )
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( pipeline_robustness )
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( portability_subset )
@@ -906,7 +1066,7 @@ namespace gct {
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( primitives_generated_query )
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( private_data )
 #endif
 #ifdef VK_VERSION_1_1
@@ -978,7 +1138,7 @@ namespace gct {
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shader_core_builtins )
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_demote_to_helper_invocation )
 #endif
 #ifdef VK_VERSION_1_1
@@ -990,13 +1150,13 @@ namespace gct {
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shader_enqueue )
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_expect_assume )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_float16_int8 )
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_float_controls2 )
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
@@ -1005,7 +1165,7 @@ namespace gct {
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shader_image_footprint )
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_integer_dot_product )
 #endif
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
@@ -1029,13 +1189,13 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_subgroup_extended_types )
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_subgroup_rotate )
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shader_subgroup_uniform_control_flow )
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( shader_terminate_invocation )
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
@@ -1044,7 +1204,7 @@ namespace gct {
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( shading_rate_image )
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( subgroup_size_control )
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
@@ -1056,13 +1216,19 @@ namespace gct {
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( swapchain_maintenance1 )
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( synchronization2 )
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( texel_buffer_alignment )
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( tile_memory_heap )
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( tile_shading )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( texture_compression_astc_hdr )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
@@ -1077,7 +1243,7 @@ namespace gct {
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( variable_pointers )
 #endif
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_VERTEX_ATTRIBUTE_DIISOR_EXTENSION_NAME) || defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( vertex_attribute_divisor )
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -1101,7 +1267,7 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( ycbcr_image_array )
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( zero_initialize_workgroup_memory )
 #endif
   }
@@ -1147,6 +1313,9 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( blend_operation_advanced, "VK_EXT_blend_operation_advanced" )
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cluster_acceleration_structure, VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( border_color_swizzle, "VK_EXT_border_color_swizzle" )
 #endif
@@ -1171,11 +1340,17 @@ namespace gct {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( conditional_rendering, "VK_EXT_conditional_rendering" )
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix2, VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME )
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix, "VK_KHR_cooperative_matrix" )
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_matrix_nv, "VK_NV_cooperative_matrix" )
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( cooperative_vector, VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME )
 #endif
 #ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( copy_memory_indirect, "VK_NV_copy_memory_indrect" )
@@ -1216,6 +1391,9 @@ namespace gct {
 #ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( descriptor_buffer, "VK_EXT_descriptor_buffer" )
 #endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_EXT( descriptor_buffer_tensor, VK_ARM_TENSORS_EXTENSION_NAME )
+#endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( descriptor_indexing, 1, 2, 0, "VK_EXT_descriptor_indexing" )
 #endif
@@ -1226,7 +1404,10 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_EXT( device_generated_commands_compute, "VK_NV_device_generated_commands_compute" )
 #endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( device_generated_commands, "VK_NV_device_generated_commands" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( device_generated_commands_nv, "VK_NV_device_generated_commands" )
+#endif
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( device_generated_commands, VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME )
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( device_memory_report, "VK_EXT_device_memory_report" )
@@ -1238,10 +1419,10 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_EXT( displacement_micromap, "VK_NV_displacement_micromap" )
 #endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-      LIBGCT_EXTENSION_CREATE_IF_EXT( dynamic_rendering, "VK_KHR_dynamic_rendering" )
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( dynamic_rendering, 1, 3, 0,  "VK_KHR_dynamic_rendering" )
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( dynamic_rendering_local_read, "VK_KHR_dynamic_rendering_local_read" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( dynamic_rendering_local_read, 1, 4, 0, "VK_KHR_dynamic_rendering_local_read" )
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( dynamic_rendering_unused_attachments, "VK_EXT_dynamic_rendering_unused_attachments" )
@@ -1280,7 +1461,15 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map, "VK_EXT_fragment_density_map" )
 #endif
 #ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, "VK_QCOM_fragment_density_map_offset" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME )
+#endif
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_layered, VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME )
+#endif
+#ifdef VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME )
+#elif defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shader_barycentric, "VK_NV_fragment_shader_barycentric" )
@@ -1294,25 +1483,25 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shading_rate, "VK_KHR_fragment_shading_rate" )
 #endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( graphics_pipeline_library, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( host_image_copy, 1, 4, 0, VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME )
+#endif
 #ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( frame_boundary, "VK_EXT_frame_boundary" )
 #endif
-#ifdef VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( global_priority_query, "VK_KHR_global_priority" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( global_priority_query, 1, 4, 0, "VK_KHR_global_priority" )
 #elif defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_EXT( global_priority_query, "VK_EXT_global_priority_query" )
-#endif
-#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( graphics_pipeline_library, "VK_EXT_graphics_pipeline_library" )
-#endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( host_image_copy, "VK_EXT_host_image_copy" )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( host_query_reset, 1, 2, 0, "VK_EXT_host_query_reset" )
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
-      LIBGCT_EXTENSION_CREATE_IF_EXT( image_robustness, "VK_EXT_image_robustness" )
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( image_robustness, 1, 3, 0, "VK_EXT_image_robustness" )
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( image_sliced_view_of_3d, "VK_EXT_image_sliced_view_of_3d" )
@@ -1329,8 +1518,17 @@ namespace gct {
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( inherited_viewport_scissor, "VK_NV_inherited_viewport_scissor" )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( inline_uniform_block, "VK_EXT_inline_uniform_block" )
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( image_alignment_control, VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( image_processing2, VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( image_processing, VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( inline_uniform_block, 1, 3, 0, "VK_EXT_inline_uniform_block" )
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( invocation_mask, "VK_HUAWEI_invocation_mask" )
@@ -1338,20 +1536,37 @@ namespace gct {
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( legacy_dithering, "VK_EXT_legacy_dithering" )
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( legacy_vertex_attribute, VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( line_rasterization, 1, 4, 0, "VK_KHR_line_rasterization" )
+#elif defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_EXT( line_rasterization, "VK_EXT_line_rasterization" )
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( linear_color_attachment, "VK_NV_linear_color_attachment" )
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance4, "VK_KHR_maintenance4" )
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( maintenance4, 1, 3, 0, "VK_KHR_maintenance4" )
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance5, "VK_KHR_maintenance5" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( maintenance5, 1, 4, 0, "VK_KHR_maintenance5" )
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance6, "VK_KHR_maintenance6" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( maintenance6, 1, 4, 0, "VK_KHR_maintenance6" )
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance7, "VK_KHR_maintenance7" )
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance8, "VK_KHR_maintenance8" )
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( maintenance9, "VK_KHR_maintenance9" )
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( map_memory_placed, VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME )
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( memory_decompression, "VK_NV_memory_decompression" )
@@ -1386,13 +1601,13 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_EXT( mutable_descriptor_type, "VK_VALVE_mutable_descriptor_type" )
 #endif
 #ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( nexted_command_buffer, "VK_EXT_nested_command_buffer" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( nested_command_buffer, VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME )
 #endif
 #ifdef VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( non_seamless_cube_map, "VK_EXT_non_seamless_cube_map" )
 #endif
 #ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( opacity_micromap, "VK_EXT_opacity_micromap" )
+      LIBGCT_EXTENSION_CREATE_IF_EXT( opacity_micromap, VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME )
 #endif
 #ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( optical_flow, "VK_NV_optical_flow" )
@@ -1403,11 +1618,26 @@ namespace gct {
 #ifdef VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( per_stage_descriptor_set, "VK_NV_per_stage_descriptor_set" )
 #endif
+#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( nested_command_buffer, VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME )
+#endif
+#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( opacity_micromap, VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME )
+#endif
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( performance_query, "VK_KHR_performance_query" )
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_creation_cache_control, "VK_EXT_pipeline_creation_cache_control" )
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_binary, VK_KHR_PIPELINE_BINARY_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( pipeline_robustness, 1, 4, 0, VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME )
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( partitioned_acceleration_structure, VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( pipeline_creation_cache_control, 1, 3, 0, "VK_EXT_pipeline_creation_cache_control" )
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_executable_properties, "VK_KHR_pipeline_executable_properties" )
@@ -1418,11 +1648,8 @@ namespace gct {
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_properties, "VK_EXT_pipeline_properties" )
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_protected_access, "VK_EXT_pipeline_protected_access" )
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( pipeline_robustness, "VK_EXT_pipeline_robustness" )
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( pipeline_protected_access, 1, 4, 0, "VK_EXT_pipeline_protected_access" )
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( portability_subset, "VK_KHR_portability_subset" )
@@ -1442,8 +1669,8 @@ namespace gct {
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( primitives_generated_query, "VK_EXT_primitives_generated_query" )
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( private_data, "VK_EXT_private_data" )
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( private_data, 1, 3, 0, "VK_EXT_private_data" )
 #endif
 #ifdef VK_VERSION_1_1
       LIBGCT_EXTENSION_CREATE_IF_VERSION( protected_memory, 1, 1, 0 )
@@ -1514,8 +1741,8 @@ namespace gct {
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_core_builtins, "VK_ARM_shader_core_builtins" )
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_demote_to_helper_invocation, "VK_EXT_shader_demote_to_helper_invocation" )
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_demote_to_helper_invocation, 1, 3, 0, "VK_EXT_shader_demote_to_helper_invocation" )
 #endif
 #ifdef VK_VERSION_1_1
       LIBGCT_EXTENSION_CREATE_IF_VERSION( shader_draw_parameters, 1, 1, 0 )
@@ -1526,14 +1753,14 @@ namespace gct {
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_enqueue, "VK_AMDX_shader_enqueue" )
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_expect_assume, "VK_KHR_shader_expect_assume" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_expect_assume, 1, 4, 0, "VK_KHR_shader_expect_assume" )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_float16_int8, 1, 2, 0, "VK_KHR_shader_float16_int8" )
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_float_controls2, "VK_KHR_shader_float_controls2" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_float_controls2, 1, 4, 0, "VK_KHR_shader_float_controls2" )
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_image_atomic_int64, "VK_EXT_shader_image_atomic_int64" )
@@ -1541,8 +1768,8 @@ namespace gct {
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_image_footprint, "VK_NV_shader_image_footprint" )
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_integer_dot_product, "VK_KHR_shader_integer_dot_product" )
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_integer_dot_product, 1, 3, 0, "VK_KHR_shader_integer_dot_product" )
 #endif
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_integer_functions2, "VK_INTEL_shader_integer_functions2" )
@@ -1565,14 +1792,14 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_subgroup_extended_types, 1, 2, 0, "VK_KHR_shader_subgroup_extended_types" )
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_subgroup_rotate, "VK_KHR_shader_subgroup_rotate" )
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_subgroup_rotate, 1, 4, 0, "VK_KHR_shader_subgroup_rotate" )
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_subgroup_uniform_control_flow, "VK_KHR_shader_subgroup_uniform_control_flow" )
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( shader_terminate_invocation, "VK_KHR_shader_terminate_invocation" )
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( shader_terminate_invocation, 1, 3, 0, "VK_KHR_shader_terminate_invocation" )
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shader_tile_image, "VK_EXT_shader_tile_image" )
@@ -1580,8 +1807,8 @@ namespace gct {
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( shading_rate_image, "VK_NV_shading_rate_image" )
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
-      LIBGCT_EXTENSION_CREATE_IF_EXT( subgroup_size_control, "VK_EXT_subgroup_size_control" )
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( subgroup_size_control, 1, 3, 0, "VK_EXT_subgroup_size_control" )
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( subpass_merge_feedback, "VK_EXT_subpass_merge_feedback" )
@@ -1592,14 +1819,20 @@ namespace gct {
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( swapchain_maintenance1, "VK_EXT_swapchain_maintenance1" )
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( synchronization2, "VK_KHR_synchronization2" )
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( synchronization2, 1, 3, 0, "VK_KHR_synchronization2" )
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( texel_buffer_alignment, "VK_EXT_texel_buffer_alignment" )
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( texture_compression_astc_hdr, "VK_EXT_texture_compression_astc_hdr" )
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( tile_memory_heap, VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME )
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( tile_shading, VK_QCOM_TILE_SHADING_EXTENSION_NAME )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( texture_compression_astc_hdr, 1, 3, 0, "VK_EXT_texture_compression_astc_hdr" )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( timeline_semaphore, 1, 2, 0, "VK_KHR_timeline_semaphore" )
@@ -1613,7 +1846,9 @@ namespace gct {
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( variable_pointers, 1, 1, 0, "VK_KHR_variable_pointers" )
 #endif
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_EXT( vertex_attribute_divisor, "VK_KHR_vertex_attribute_divisor" )
+#elif defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_EXT( vertex_attribute_divisor, "VK_EXT_vertex_attribute_divisor" )
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -1637,8 +1872,8 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( ycbcr_image_array, "VK_EXT_ycbcr_image_arrays" )
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( zero_initialize_workgroup_memory, "VK_KHR_zero_initialize_workgroup_memory" )
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
+      LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( zero_initialize_workgroup_memory, 1, 3, 0, "VK_KHR_zero_initialize_workgroup_memory" )
 #endif
      rebuild_chain();
 #ifdef VK_VERSION_1_1
@@ -1696,6 +1931,9 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( blend_operation_advanced )
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( cluster_acceleration_structure )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( border_color_swizzle )
 #endif
@@ -1720,11 +1958,17 @@ namespace gct {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( conditional_rendering )
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_matrix2 )
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_matrix )
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( cooperative_vector )
 #endif
 #ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( copy_memory_indirect )
@@ -1762,6 +2006,12 @@ namespace gct {
 #ifdef VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( depth_clip_enable )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_buffer )
+#endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_buffer_tensor )
+#endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( descriptor_indexing )
 #endif
@@ -1771,8 +2021,11 @@ namespace gct {
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( device_generated_commands_compute )
 #endif
-#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( device_generated_commands )
+#endif
+#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( device_generated_commands_nv )
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( device_memory_report )
@@ -1786,7 +2039,7 @@ namespace gct {
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( dynamic_rendering )
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( dynamic_rendering_local_read )
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
@@ -1825,7 +2078,10 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map )
 #endif
-#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map_layered )
+#endif
+#if defined(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME) || defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map_offset )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
@@ -1840,22 +2096,24 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shading_rate )
 #endif
-#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( frame_boundary )
-#endif
-#if defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
-    LIBGCT_EXTENSION_REBUILD_CHAIN( global_priority_query )
-#endif
 #ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( graphics_pipeline_library )
 #endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
     LIBGCT_EXTENSION_REBUILD_CHAIN( host_image_copy )
+#elif defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( host_image_copy )
+#endif
+#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( frame_boundary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( global_priority_query )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( host_query_reset )
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( image_robustness )
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
@@ -1873,7 +2131,16 @@ namespace gct {
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( inherited_viewport_scissor )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( image_alignment_control )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( image_processing2 )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( image_processing )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( inline_uniform_block )
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
@@ -1882,20 +2149,35 @@ namespace gct {
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( legacy_dithering )
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( legacy_vertex_attribute )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME) || defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( line_rasterization )
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( linear_color_attachment )
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance4 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance5 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance6 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance7 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance8 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( maintenance9 )
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( map_memory_placed )
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( memory_decompression )
@@ -1927,14 +2209,8 @@ namespace gct {
 #if defined(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) || defined(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( mutable_descriptor_type )
 #endif
-#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( nexted_command_buffer )
-#endif
 #ifdef VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( non_seamless_cube_map )
-#endif
-#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( opacity_micromap )
 #endif
 #ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( optical_flow )
@@ -1945,8 +2221,26 @@ namespace gct {
 #ifdef VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( per_stage_descriptor_set )
 #endif
+#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( nested_command_buffer )
+#endif
+#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( opacity_micromap )
+#endif
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( performance_query )
+#endif
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_binary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_robustness )
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( partitioned_acceleration_structure )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
+      LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_creation_cache_control )
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_executable_properties )
@@ -1957,11 +2251,8 @@ namespace gct {
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_properties )
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_protected_access )
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( pipeline_robustness )
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( portability_subset )
@@ -1981,7 +2272,7 @@ namespace gct {
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( primitives_generated_query )
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( private_data )
 #endif
 #ifdef VK_VERSION_1_1
@@ -2056,7 +2347,7 @@ namespace gct {
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_core_builtins )
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_demote_to_helper_invocation )
 #endif
 #ifdef VK_VERSION_1_1
@@ -2068,13 +2359,13 @@ namespace gct {
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_enqueue )
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_expect_assume )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_float16_int8 )
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_float_controls2 )
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
@@ -2083,7 +2374,7 @@ namespace gct {
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_image_footprint )
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_integer_dot_product )
 #endif
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
@@ -2107,13 +2398,13 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_subgroup_extended_types )
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_subgroup_rotate )
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_subgroup_uniform_control_flow )
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( shader_terminate_invocation )
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
@@ -2122,7 +2413,7 @@ namespace gct {
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( shading_rate_image )
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( subgroup_size_control )
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
@@ -2134,13 +2425,19 @@ namespace gct {
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( swapchain_maintenance1 )
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( synchronization2 )
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( texel_buffer_alignment )
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( tile_memory_heap )
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( tile_shading )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( texture_compression_astc_hdr )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
@@ -2155,7 +2452,7 @@ namespace gct {
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( variable_pointers )
 #endif
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME) || defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( vertex_attribute_divisor )
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -2176,7 +2473,7 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( ycbcr_image_array )
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( zero_initialize_workgroup_memory )
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
@@ -2212,6 +2509,9 @@ namespace gct {
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( blend_operation_advanced )
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( cluster_acceleration_structure )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( border_color_swizzle )
 #endif
@@ -2236,11 +2536,17 @@ namespace gct {
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( conditional_rendering )
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( cooperative_matrix2 )
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( cooperative_matrix )
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( cooperative_vector )
 #endif
 #ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( copy_memory_indirect )
@@ -2278,6 +2584,12 @@ namespace gct {
 #ifdef VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( depth_clip_enable )
 #endif
+#ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( descriptor_buffer )
+#endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_CHECK_SUBSET( descriptor_buffer_tensor )
+#endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( descriptor_indexing )
 #endif
@@ -2287,8 +2599,11 @@ namespace gct {
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( device_generated_commands_compute )
 #endif
-#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( device_generated_commands )
+#endif
+#ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( device_generated_commands_nv )
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( device_memory_report )
@@ -2302,7 +2617,7 @@ namespace gct {
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( dynamic_rendering )
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( dynamic_rendering_local_read )
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
@@ -2341,7 +2656,10 @@ namespace gct {
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( fragment_density_map )
 #endif
-#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( fragment_density_map_layered )
+#endif
+#if defined(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME) || defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( fragment_density_map_offset )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
@@ -2356,22 +2674,22 @@ namespace gct {
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( fragment_shading_rate )
 #endif
-#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
-    LIBGCT_EXTENSION_CHECK_SUBSET( frame_boundary )
-#endif
-#if defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
-    LIBGCT_EXTENSION_CHECK_SUBSET( global_priority_query )
-#endif
 #ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( graphics_pipeline_library )
 #endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( host_image_copy )
+#endif
+#ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( frame_boundary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) || defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_CHECK_SUBSET( global_priority_query )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( host_query_reset )
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( image_robustness )
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
@@ -2389,7 +2707,16 @@ namespace gct {
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( inherited_viewport_scissor )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( image_alignment_control )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( image_processing2 )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( image_processing )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( inline_uniform_block )
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
@@ -2398,20 +2725,35 @@ namespace gct {
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( legacy_dithering )
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( legacy_vertex_attribute )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME) || defined(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( line_rasterization )
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( linear_color_attachment )
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( maintenance4 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( maintenance5 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( maintenance6 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( maintenance7 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( maintenance8 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( maintenance9 )
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( map_memory_placed )
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( memory_decompression )
@@ -2443,14 +2785,8 @@ namespace gct {
 #if defined(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME) || defined(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( mutable_descriptor_type )
 #endif
-#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-    LIBGCT_EXTENSION_CHECK_SUBSET( nexted_command_buffer )
-#endif
 #ifdef VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( non_seamless_cube_map )
-#endif
-#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
-    LIBGCT_EXTENSION_CHECK_SUBSET( opacity_micromap )
 #endif
 #ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( optical_flow )
@@ -2461,8 +2797,26 @@ namespace gct {
 #ifdef VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( per_stage_descriptor_set )
 #endif
+#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( nested_command_buffer )
+#endif
+#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( opacity_micromap )
+#endif
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( performance_query )
+#endif
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_binary )
+#endif
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_robustness )
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( partitioned_acceleration_structure )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
+    LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_creation_cache_control )
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_executable_properties )
@@ -2473,11 +2827,8 @@ namespace gct {
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_properties )
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_protected_access )
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-    LIBGCT_EXTENSION_CHECK_SUBSET( pipeline_robustness )
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( portability_subset )
@@ -2497,7 +2848,7 @@ namespace gct {
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( primitives_generated_query )
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( private_data )
 #endif
 #ifdef VK_VERSION_1_1
@@ -2572,7 +2923,7 @@ namespace gct {
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_core_builtins )
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_demote_to_helper_invocation )
 #endif
 #ifdef VK_VERSION_1_1
@@ -2584,13 +2935,13 @@ namespace gct {
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_enqueue )
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_expect_assume )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_float16_int8 )
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_float_controls2 )
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
@@ -2599,7 +2950,7 @@ namespace gct {
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_image_footprint )
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_integer_dot_product )
 #endif
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
@@ -2623,13 +2974,13 @@ namespace gct {
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_subgroup_extended_types )
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_subgroup_rotate )
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_subgroup_uniform_control_flow )
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( shader_terminate_invocation )
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
@@ -2638,7 +2989,7 @@ namespace gct {
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( shading_rate_image )
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( subgroup_size_control )
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
@@ -2650,13 +3001,19 @@ namespace gct {
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( swapchain_maintenance1 )
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( synchronization2 )
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( texel_buffer_alignment )
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( tile_memory_heap )
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( tile_shading )
+#endif
+#if defined(VK_VERSION_1_3) || defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( texture_compression_astc_hdr )
 #endif
 #if defined(VK_VERSION_1_2) || defined(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)
@@ -2671,7 +3028,7 @@ namespace gct {
 #if defined(VK_VERSION_1_1) || defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( variable_pointers )
 #endif
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#if defined(VK_VERSION_1_4) || defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME) || defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( vertex_attribute_divisor )
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -2692,7 +3049,7 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( ycbcr_image_array )
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( zero_initialize_workgroup_memory )
 #endif
   }

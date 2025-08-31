@@ -67,6 +67,9 @@ public:
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceBlendOperationAdvancedFeaturesEXT , blend_operation_advanced )
 #endif
+#ifdef VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceClusterAccelerationStructureFeaturesNV, cluster_acceleration_structure )
+#endif
 #ifdef VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceBorderColorSwizzleFeaturesEXT , border_color_swizzle )
 #endif
@@ -93,11 +96,17 @@ public:
 #ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceConditionalRenderingFeaturesEXT , conditional_rendering )
 #endif
+#ifdef VK_NV_COOPERATIVE_MATRIX_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrix2FeaturesNV, cooperative_matrix2 )
+#endif
 #ifdef VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrixFeaturesKHR , cooperative_matrix )
 #endif
 #ifdef VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeMatrixFeaturesNV , cooperative_matrix_nv )
+#endif
+#ifdef VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCooperativeVectorFeaturesNV, cooperative_vector )
 #endif
 #ifdef VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceCopyMemoryIndirectFeaturesNV , copy_memory_indirect )
@@ -138,6 +147,9 @@ public:
 #ifdef VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorBufferFeaturesEXT , descriptor_buffer )
 #endif
+#if defined(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME) && defined(VK_ARM_TENSORS_EXTENSION_NAME)
+   LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorBufferTensorFeaturesARM, descriptor_buffer_tensor )
+#endif
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDescriptorIndexingFeatures , descriptor_indexing )
 #elif defined(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)
@@ -149,8 +161,11 @@ public:
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_COMPUTE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsComputeFeaturesNV , device_generated_commands_compute )
 #endif
+#ifdef VK_EXT_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsFeaturesEXT , device_generated_commands )
+#endif
 #ifdef VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsFeaturesNV , device_generated_commands )
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceGeneratedCommandsFeaturesNV , device_generated_commands_nv )
 #endif
 #ifdef VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDeviceMemoryReportFeaturesEXT , device_memory_report )
@@ -166,7 +181,9 @@ public:
 #elif defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDynamicRenderingFeaturesKHR , dynamic_rendering )
 #endif
-#ifdef VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDynamicRenderingLocalReadFeatures , dynamic_rendering_local_read )
+#elif VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceDynamicRenderingLocalReadFeaturesKHR , dynamic_rendering_local_read )
 #endif
 #ifdef VK_EXT_DYNAMIC_RENDERING_UNUSED_ATTACHMENTS_EXTENSION_NAME
@@ -205,7 +222,12 @@ public:
 #ifdef VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapFeaturesEXT , fragment_density_map )
 #endif
-#ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+#ifdef VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE , fragment_density_map_layered )
+#endif
+#ifdef VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapOffsetFeaturesEXT , fragment_density_map_offset )
+#elif defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM , fragment_density_map_offset )
 #endif
 #ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
@@ -220,27 +242,32 @@ public:
 #ifdef VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShadingRateFeaturesKHR , fragment_shading_rate )
 #endif
+#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT , graphics_pipeline_library )
+#endif
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceHostImageCopyFeatures , host_image_copy )
+#elif defined(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceHostImageCopyFeaturesEXT , host_image_copy )
+#endif
 #ifdef VK_EXT_FRAME_BOUNDARY_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFrameBoundaryFeaturesEXT , frame_boundary )
 #endif
-#ifdef VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceGlobalPriorityQueryFeatures , global_priority_query )
+#elif defined(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceGlobalPriorityQueryFeaturesKHR , global_priority_query )
 #elif defined(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceGlobalPriorityQueryFeaturesEXT , global_priority_query )
 #endif
-#ifdef VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT , graphics_pipeline_library )
-#endif
-#ifdef VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceHostImageCopyFeaturesEXT, host_image_copy )
-#endif
-
 #ifdef VK_VERSION_1_2
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceHostQueryResetFeatures , host_query_reset )
 #elif defined(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceHostQueryResetFeaturesEXT , host_query_reset )
 #endif
-#ifdef VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME 
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceImageRobustnessFeatures , image_robustness )
+#elif defined(VK_EXT_IMAGE_ROBUSTNESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceImageRobustnessFeaturesEXT , image_robustness )
 #endif
 #ifdef VK_EXT_IMAGE_SLICED_VIEW_OF_3D_EXTENSION_NAME
@@ -260,7 +287,18 @@ public:
 #ifdef VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceInheritedViewportScissorFeaturesNV , inherited_viewport_scissor )
 #endif
-#ifdef VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME
+#ifdef VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceImageAlignmentControlFeaturesMESA , image_alignment_control )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_2_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceImageProcessing2FeaturesQCOM , image_processing2 )
+#endif
+#ifdef VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceImageProcessingFeaturesQCOM , image_processing )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceInlineUniformBlockFeatures , inline_uniform_block )
+#elif defined(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceInlineUniformBlockFeaturesEXT , inline_uniform_block )
 #endif
 #ifdef VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME
@@ -269,20 +307,45 @@ public:
 #ifdef VK_EXT_LEGACY_DITHERING_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLegacyDitheringFeaturesEXT , legacy_dithering )
 #endif
-#ifdef VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME
+#ifdef VK_EXT_LEGACY_VERTEX_ATTRIBUTES_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLegacyVertexAttributesFeaturesEXT , legacy_vertex_attribute )
+#endif
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLineRasterizationFeatures , line_rasterization )
+#elif defined(VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLineRasterizationFeaturesKHR , line_rasterization )
+#elif defiled(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLineRasterizationFeaturesEXT , line_rasterization )
 #endif
 #ifdef VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceLinearColorAttachmentFeaturesNV , linear_color_attachment )
 #endif
-#ifdef VK_KHR_MAINTENANCE_4_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance4Features , maintenance4 )
+#elif defined(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance4FeaturesKHR , maintenance4 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_5_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance5Features , maintenance5 )
+#elif defined(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance5FeaturesKHR , maintenance5 )
 #endif
-#ifdef VK_KHR_MAINTENANCE_6_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance6Features , maintenance6 )
+#elif defined(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance6FeaturesKHR , maintenance6 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_7_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance7FeaturesKHR , maintenance7 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_8_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance8FeaturesKHR , maintenance8 )
+#endif
+#ifdef VK_KHR_MAINTENANCE_9_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMaintenance9FeaturesKHR , maintenance9 )
+#endif
+#ifdef VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMapMemoryPlacedFeaturesEXT , map_memory_placed )
 #endif
 #ifdef VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMemoryDecompressionFeaturesNV , memory_decompression )
@@ -318,14 +381,8 @@ public:
 #elif defined(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceMutableDescriptorTypeFeaturesVALVE , mutable_descriptor_type )
 #endif
-#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceNestedCommandBufferFeaturesEXT , nexted_command_buffer )
-#endif
 #ifdef VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceNonSeamlessCubeMapFeaturesEXT , non_seamless_cube_map )
-#endif
-#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceOpacityMicromapFeaturesEXT , opacity_micromap )
 #endif
 #ifdef VK_NV_OPTICAL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceOpticalFlowFeaturesNV , optical_flow )
@@ -336,10 +393,29 @@ public:
 #ifdef VK_NV_PER_STAGE_DESCRIPTOR_SET_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePerStageDescriptorSetFeaturesNV , per_stage_descriptor_set )
 #endif
+#ifdef VK_EXT_NESTED_COMMAND_BUFFER_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceNestedCommandBufferFeaturesEXT , nested_command_buffer )
+#endif
+#ifdef VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceOpacityMicromapFeaturesEXT , opacity_micromap )
+#endif
 #ifdef VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePerformanceQueryFeaturesKHR , performance_query )
 #endif
-#ifdef VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME
+#ifdef VK_KHR_PIPELINE_BINARY_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineBinaryFeaturesKHR , pipeline_binary )
+#endif
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineRobustnessFeatures , pipeline_robustness )
+#elif defined(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineRobustnessFeaturesEXT , pipeline_robustness )
+#endif
+#ifdef VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePartitionedAccelerationStructureFeaturesNV , partitioned_acceleration_structure )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineCreationCacheControlFeatures , pipeline_creation_cache_control )
+#elif defined(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineCreationCacheControlFeaturesEXT , pipeline_creation_cache_control )
 #endif
 #ifdef VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME
@@ -351,11 +427,10 @@ public:
 #ifdef VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelinePropertiesFeaturesEXT , pipeline_properties )
 #endif
-#ifdef VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineProtectedAccessFeatures , pipeline_protected_access )
+#elif defined(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineProtectedAccessFeaturesEXT , pipeline_protected_access )
-#endif
-#ifdef VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePipelineRobustnessFeaturesEXT , pipeline_robustness )
 #endif
 #ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePortabilitySubsetFeaturesKHR , portability_subset )
@@ -375,7 +450,9 @@ public:
 #ifdef VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePrimitivesGeneratedQueryFeaturesEXT , primitives_generated_query )
 #endif
-#ifdef VK_EXT_PRIVATE_DATA_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePrivateDataFeatures , private_data )
+#elif defined(VK_EXT_PRIVATE_DATA_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDevicePrivateDataFeaturesEXT , private_data )
 #endif
 #ifdef VK_VERSION_1_1
@@ -455,7 +532,9 @@ public:
 #ifdef VK_ARM_SHADER_CORE_BUILTINS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderCoreBuiltinsFeaturesARM , shader_core_builtins )
 #endif
-#ifdef VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderDemoteToHelperInvocationFeatures , shader_demote_to_helper_invocation )
+#elif defined(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT , shader_demote_to_helper_invocation )
 #endif
 #ifdef VK_VERSION_1_1
@@ -467,7 +546,9 @@ public:
 #ifdef VK_AMDX_SHADER_ENQUEUE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderEnqueueFeaturesAMDX , shader_enqueue )
 #endif
-#ifdef VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderExpectAssumeFeatures , shader_expect_assume )
+#elif defined(VK_KHR_SHADER_EXPECT_ASSUME_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderExpectAssumeFeaturesKHR , shader_expect_assume )
 #endif
 #ifdef VK_VERSION_1_2
@@ -475,7 +556,9 @@ public:
 #elif defined(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderFloat16Int8FeaturesKHR , shader_float16_int8 )
 #endif
-#ifdef VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderFloatControls2Features , shader_float_controls2 )
+#elif defined(VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderFloatControls2FeaturesKHR , shader_float_controls2 )
 #endif
 #ifdef VK_EXT_SHADER_IMAGE_ATOMIC_INT64_EXTENSION_NAME
@@ -484,7 +567,9 @@ public:
 #ifdef VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderImageFootprintFeaturesNV , shader_image_footprint )
 #endif
-#ifdef VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderIntegerDotProductFeatures , shader_integer_dot_product )
+#elif defined(VK_KHR_SHADER_INTEGER_DOT_PRODUCT_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderIntegerDotProductFeaturesKHR , shader_integer_dot_product )
 #endif
 #ifdef VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME
@@ -510,13 +595,17 @@ public:
 #elif defined(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR , shader_subgroup_extended_types )
 #endif
-#ifdef VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderSubgroupRotateFeatures , shader_subgroup_rotate )
+#elif defined(VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderSubgroupRotateFeaturesKHR , shader_subgroup_rotate )
 #endif
 #ifdef VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR , shader_subgroup_uniform_control_flow )
 #endif
-#ifdef VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderTerminateInvocationFeatures , shader_terminate_invocation )
+#elif defined(VK_KHR_SHADER_TERMINATE_INVOCATION_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShaderTerminateInvocationFeaturesKHR , shader_terminate_invocation )
 #endif
 #ifdef VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME
@@ -525,7 +614,9 @@ public:
 #ifdef VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceShadingRateImageFeaturesNV , shading_rate_image )
 #endif
-#ifdef VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME 
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceSubgroupSizeControlFeatures , subgroup_size_control )
+#elif defined(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceSubgroupSizeControlFeaturesEXT , subgroup_size_control )
 #endif
 #ifdef VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME
@@ -537,13 +628,23 @@ public:
 #ifdef VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceSwapchainMaintenance1FeaturesEXT ,  swapchain_maintenance1 )
 #endif
-#ifdef VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceSynchronization2Features , synchronization2 )
+#elif defined(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceSynchronization2FeaturesKHR , synchronization2 )
 #endif
 #ifdef VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceTexelBufferAlignmentFeaturesEXT , texel_buffer_alignment )
 #endif
-#ifdef VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME
+#ifdef VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceTileMemoryHeapFeaturesQCOM , tile_memory_heap )
+#endif
+#ifdef VK_QCOM_TILE_SHADING_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceTileShadingFeaturesQCOM , tile_shading )
+#endif
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceTextureCompressionASTCHDRFeatures , texture_compression_astc_hdr )
+#elif defined(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceTextureCompressionASTCHDRFeaturesEXT , texture_compression_astc_hdr )
 #endif
 #ifdef VK_VERSION_1_2
@@ -564,7 +665,11 @@ public:
 #elif defined(VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceVariablePointersFeaturesKHR , variable_pointers )
 #endif
-#ifdef VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME
+#ifdef VK_VERSION_1_4
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceVertexAttributeDivisorFeatures , vertex_attribute_divisor )
+#elif defined(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceVertexAttributeDivisorFeaturesKHR , vertex_attribute_divisor )
+#elif defined(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceVertexAttributeDivisorFeaturesEXT , vertex_attribute_divisor )
 #endif
 #ifdef VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME
@@ -590,7 +695,9 @@ public:
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceYcbcrImageArraysFeaturesEXT , ycbcr_image_array )
 #endif
-#ifdef VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME
+#ifdef VK_VERSION_1_3
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures , zero_initialize_workgroup_memory )
+#elif defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR , zero_initialize_workgroup_memory )
 #endif
   };

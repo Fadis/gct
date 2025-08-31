@@ -366,6 +366,7 @@ target_link_libraries(
   Threads::Threads
   Boost::context
   Boost::system
+  KTX::ktx
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}

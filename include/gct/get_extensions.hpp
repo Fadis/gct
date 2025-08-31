@@ -1,6 +1,7 @@
 #ifndef LIBGCT_INCLUDE_GCT_GET_EXTENSIONS_HPP
 #define LIBGCT_INCLUDE_GCT_GET_EXTENSIONS_HPP
 
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <string>

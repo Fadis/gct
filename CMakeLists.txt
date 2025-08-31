@@ -102,6 +102,7 @@ if( LIBINPUT_VERSION VERSION_LESS "1.19" )
   add_definitions( -DGCT_LIBINPUT_NO_GESTURE_HOLD )
 endif()
 find_package(NNEF)
+find_package(Ktx CONFIG)
 
 
 configure_file(
