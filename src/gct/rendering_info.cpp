@@ -34,11 +34,20 @@
 #include <vulkan2json/RenderingFragmentShadingRateAttachmentInfoKHR.hpp>
 #endif
 #include <gct/rendering_info.hpp>
+#include <gct/image_view.hpp>
+#include <gct/image.hpp>
 
 namespace gct {
   void to_json( nlohmann::json &root, const rendering_info_t &v ) {
     root = nlohmann::json::object();
     root[ "basic" ] = v.get_basic();
+    LIBGCT_ARRAY_OF_TO_JSON( basic, pColorAttachments, color_attachment )
+    if( v.get_depth_attachment() ) {
+      root[ "basic" ][ "pDepthAttachment" ] = *v.get_depth_attachment();
+    }
+    if( v.get_stencil_attachment() ) {
+      root[ "basic" ][ "pStencilAttachment" ] = *v.get_stencil_attachment();
+    }
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_TO_JSON( device_group )
     LIBGCT_ARRAY_OF_TO_JSON( device_group, pDeviceRenderAreas, device_render_area )
@@ -70,6 +79,7 @@ namespace gct {
   void from_json( const nlohmann::json &root, rendering_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to rendering_info_t", __FILE__, __LINE__ );
     LIBGCT_EXTENSION_FROM_JSON( basic )
+    LIBGCT_ARRAY_OF_FROM_JSON( basic, pColorAttachments, color_attachment )
 #ifdef VK_VERSION_1_1
     LIBGCT_EXTENSION_FROM_JSON( device_group )
     LIBGCT_ARRAY_OF_FROM_JSON( device_group, pDeviceRenderAreas, device_render_area )
@@ -100,6 +110,44 @@ namespace gct {
   }
   rendering_info_t &rendering_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
+    LIBGCT_ARRAY_OF_REBUILD_CHAIN_WRAPPED( basic, ColorAttachmentCount, PColorAttachments, color_attachment )
+    if( depth_attachment ) {
+      basic.pDepthAttachment = &depth_attachment->get_basic();
+    }
+    if( stencil_attachment ) {
+      basic.pStencilAttachment = &stencil_attachment->get_basic();
+    }
+    if( extent_generated || basic.renderArea == vk::Rect2D{} ) {
+      vk::Extent2D min_extent{
+        std::numeric_limits< std::uint32_t >::max(),
+        std::numeric_limits< std::uint32_t >::max()
+      };
+      for( const auto &v: color_attachment ) {
+        if( v.get_view() ) {
+          const auto extent = v.get_view()->get_factory()->get_props().get_basic().extent;
+          min_extent.width = std::min( extent.width, min_extent.width );
+          min_extent.height = std::min( extent.height, min_extent.height );
+        }
+      }
+      if( depth_attachment && depth_attachment->get_view() ) {
+        const auto extent = depth_attachment->get_view()->get_factory()->get_props().get_basic().extent;
+        min_extent.width = std::min( extent.width, min_extent.width );
+        min_extent.height = std::min( extent.height, min_extent.height );
+      }
+      if( stencil_attachment && stencil_attachment->get_view() ) {
+        const auto extent = stencil_attachment->get_view()->get_factory()->get_props().get_basic().extent;
+        min_extent.width = std::min( extent.width, min_extent.width );
+        min_extent.height = std::min( extent.height, min_extent.height );
+      }
+      if(
+        min_extent.width == std::numeric_limits< std::uint32_t >::max() ||
+        min_extent.height == std::numeric_limits< std::uint32_t >::max()
+      ) {
+        throw exception::invalid_argument( "rendering_info_t::rebuild_chain : renderArea auto detection failed.", __FILE__, __LINE__ );
+      }
+      basic.renderArea.extent = min_extent;
+      extent_generated = true;
+    }
 #ifdef VK_VERSION_1_1
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( device_group, DeviceRenderAreaCount, PDeviceRenderAreas, device_render_area )
     LIBGCT_EXTENSION_REBUILD_CHAIN( device_group )

@@ -105,6 +105,7 @@ add_library( gct SHARED
   gct/render_pass.cpp
   gct/render_pass2.cpp
   gct/rendering_info.cpp
+  gct/rendering_attachment_info.cpp
   gct/begin_render_pass.cpp
   gct/begin_rendering.cpp
   gct/begin_query.cpp
@@ -244,6 +245,8 @@ add_library( gct SHARED
   gct/nnef_data.cpp
   gct/numeric_type_to_oiio_type.cpp
   gct/cubemap_matrix_generator.cpp
+  gct/cubemap_matrix_generator2.cpp
+  gct/cubemap_matrix_generator2_create_info.cpp
   gct/image_io_dimension.cpp
   gct/dynamic_size_image_allocation_info.cpp
   gct/image_io_create_info.cpp
@@ -265,6 +268,8 @@ add_library( gct SHARED
   gct/compute_create_info.cpp
   gct/graphics.cpp
   gct/graphics_create_info.cpp
+  gct/graphics_execution_shape.cpp
+  gct/color_attachment_name.cpp
   gct/tone_mapping_create_info.cpp
   gct/tone_mapping.cpp
   gct/shader_set.cpp
@@ -619,6 +624,11 @@ add_shader( gct gct/shader/scene_graph/light_pool/update.comp INSTALL )
 #add_shader( gct gct/shader/scene_graph/lambda_pool/read.comp INSTALL )
 
 add_shader( gct gct/shader/scene_graph/dummy/dummy.comp INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.vert INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.geom INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.frag INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.mesh INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.task INSTALL )
 
 add_shader( gct gct/shader/ao/hbao/hbao_0.comp INSTALL )
 add_shader( gct gct/shader/ao/hbao/hbao_45.comp INSTALL )
@@ -681,7 +691,6 @@ add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
-add_shader( gct gct/shader/generate_k+buffer/standard/dummy.comp INSTALL )
 
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
@@ -695,6 +704,16 @@ add_shader( gct gct/shader/bilateral_filter/12_32_1/vertical.comp INSTALL )
 add_shader( gct gct/shader/bloom/bloom.comp INSTALL )
 
 add_shader( gct gct/shader/merge/merge.comp INSTALL )
+
+add_shader( gct gct/shader/generate_shadow/standard/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_shadow/standard/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_shadow/standard/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/generate_depth/standard/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_depth/standard/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_depth/standard/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/cubemap_matrix_generator/generate.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

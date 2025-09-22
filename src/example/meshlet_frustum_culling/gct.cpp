@@ -1058,12 +1058,6 @@ int main( int argc, const char *argv[] ) {
             rec->setScissor( 0, 1, &gbuffer.get_scissor() );
             rec->setCullMode( vk::CullModeFlagBits::eBack );
             rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
-            rec.bind_descriptor_set(
-              vk::PipelineBindPoint::eGraphics,
-              1u,
-              sg->get_resource()->pipeline_layout,
-              global_descriptor_set
-            );
             (*il)(
               rec,
               geometry

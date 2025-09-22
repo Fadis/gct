@@ -413,49 +413,51 @@ void instance_list::operator()(
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
-  const graphics &compiled
+  const graphics &compiled,
+  std::uint32_t layer_count
 ) const {
   const auto pcmp = compiled.get_push_constant_member_pointer();
   if( props.parallel_mode3 ) {
     setup_resource_pair_buffer( true, compiled );
-    compiled( rec, 0u, 32u, meshlet_list_size, 1u );
+    compiled( rec, 0u, 32u, meshlet_list_size, layer_count );
   }
   else if( props.parallel_mode2 ) {
     setup_resource_pair_buffer( false, compiled );
-    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), 1u );
+    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), layer_count );
   }
   else if( props.parallel_mode ) {
     setup_resource_pair_buffer( false, compiled );
-    compiled( rec, 0u, 32u, draw_list.size(), 1u );
+    compiled( rec, 0u, 32u, draw_list.size(), layer_count );
   }
   else {
     // push constantsにresource_pairの何要素目から読むべきかを書く
     setup_resource_pair_buffer( false, compiled );
     // 描画対象の数だけタスクシェーダーのローカルワークグループを実行
-    compiled( rec, 0u, draw_list.size(), 1u, 1u );
+    compiled( rec, 0u, draw_list.size(), 1u, layer_count );
   }
 }
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
   const graphics &compiled,
-  const std::vector< resource_pair >::const_iterator &i
+  const std::vector< resource_pair >::const_iterator &i,
+  std::uint32_t layer_count
 ) const {
   if( props.parallel_mode3 ) {
     const auto inst = resource->inst.get( i->inst );
     setup_resource_pair_buffer( true, i, compiled );
-    compiled( rec, 0u, 32u, inst->mesh_task_count, 1u );
+    compiled( rec, 0u, 32u, inst->mesh_task_count, layer_count );
   }
   else if( props.parallel_mode2 ) {
     setup_resource_pair_buffer( false, i, compiled );
-    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), 1u );
+    compiled( rec, 0u, ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ), draw_list.size(), layer_count );
   }
   else if( props.parallel_mode ) {
     setup_resource_pair_buffer( false, i, compiled );
-    compiled( rec, 0u, 32u, 1u, 1u );
+    compiled( rec, 0u, 32u, 1u, layer_count );
   }
   else {
     setup_resource_pair_buffer( false, i, compiled );
-    compiled( rec, 0u, 1u, 1u, 1u );
+    compiled( rec, 0u, 1u, 1u, layer_count );
   }
 }
 void instance_list::for_each_unique_vertex(
@@ -495,6 +497,90 @@ std::vector< resource_pair > instance_list::get_last_visible_list() const {
   return visible_instance;
 }
 
+graphics_execution_shape instance_list::get_shape( std::uint32_t instance_count ) {
+  if( props.parallel_mode3 ) {
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( meshlet_list ? *meshlet_list : 0u )
+      .set_count( meshlet_list_size )
+      .set_x( 32u )
+      .set_y( meshlet_list_size )
+      .set_z( instance_count );
+  }
+  else if( props.parallel_mode2 ) {
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? *device_side_list : 0u )
+      .set_count( draw_list.size() )
+      .set_x( ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ) )
+      .set_y( draw_list.size() )
+      .set_z( instance_count );
+  }
+  else if( props.parallel_mode ) {
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? *device_side_list : 0u )
+      .set_count( draw_list.size() )
+      .set_x( 32u )
+      .set_y( draw_list.size() )
+      .set_z( instance_count );
+  }
+  else {
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? *device_side_list : 0u )
+      .set_count( draw_list.size() )
+      .set_x( draw_list.size())
+      .set_y( 1u )
+      .set_z( instance_count );
+  }
+}
+graphics_execution_shape instance_list::get_shape(
+  const std::vector< resource_pair >::const_iterator &i,
+  std::uint32_t instance_count
+) {
+  const auto inst = resource->inst.get( i->inst );
+  if( props.parallel_mode3 ) {
+    const std::size_t offset = inst->mesh_task_offset;
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( meshlet_list ? *meshlet_list + offset : offset )
+      .set_count( inst->mesh_task_count )
+      .set_x( 32u )
+      .set_y( meshlet_list_size )
+      .set_z( instance_count );
+  }
+  else if( props.parallel_mode2 ) {
+    const std::size_t offset = std::distance( draw_list.cbegin(), i );
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? ( *device_side_list + offset ) : offset )
+      .set_count( 1u )
+      .set_x( ( max_primitive_count / 32u ) + ( ( max_primitive_count % 32u ) ? 1u : 0u ) )
+      .set_y( draw_list.size() )
+      .set_z( instance_count );
+  }
+  else if( props.parallel_mode ) {
+    const std::size_t offset = std::distance( draw_list.cbegin(), i );
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? ( *device_side_list + offset ) : offset )
+      .set_count( 1u )
+      .set_x( 32u )
+      .set_y( 1u )
+      .set_z( instance_count );
+  }
+  else {
+    const std::size_t offset = std::distance( draw_list.cbegin(), i );
+    return graphics_execution_shape()
+      .set_list( shared_from_this() )
+      .set_offset( device_side_list ? ( *device_side_list + offset ) : offset )
+      .set_count( 1u )
+      .set_x( 1u )
+      .set_y( 1u )
+      .set_z( instance_count );
+  }
+}
 
 void append(
   const scene_graph_resource &resource,

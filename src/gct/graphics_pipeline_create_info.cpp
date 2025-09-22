@@ -8,6 +8,7 @@
 #include <gct/shader_module.hpp>
 #include <gct/get_device.hpp>
 #include <gct/gbuffer.hpp>
+#include <gct/spv2vk.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <vulkan2json/GraphicsPipelineCreateInfo.hpp>
 #ifdef VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
@@ -488,11 +489,37 @@ namespace gct {
     );
     set_render_pass( g.get_render_pass(), 0 );
     pipeline_color_blend_state_create_info_t temp;
-    for( unsigned int i = 0u; i != g.get_props().layer; ++i ) {
+    for( unsigned int i = 0u; i != g.get_props().color_buffer_count; ++i ) {
       temp.add_attachment();
     }
     set_color_blend( temp );
     return *this;
+  }
+  bool graphics_pipeline_create_info_t::has_reflection( vk::ShaderStageFlagBits s ) const {
+    auto found = std::find_if(
+      stage.begin(), stage.end(),
+      [s]( const auto &v ) -> bool {
+        if( !v.get_shader_module() ) return false;
+        if( !v.get_shader_module()->get_props().has_reflection() ) return false;
+        const auto &reflection = v.get_shader_module()->get_props().get_reflection();
+        return spv2vk( reflection->shader_stage ) == s;
+      }
+    );
+    return found != stage.end();
+  }
+  const shader_module_reflection_t &graphics_pipeline_create_info_t::get_reflection( vk::ShaderStageFlagBits s ) const {
+    auto found = std::find_if(
+      stage.begin(), stage.end(),
+      [s]( const auto &v ) -> bool {
+        if( !v.get_shader_module() ) return false;
+        if( !v.get_shader_module()->get_props().has_reflection() ) return false;
+        const auto &reflection = v.get_shader_module()->get_props().get_reflection();
+        return spv2vk( reflection->shader_stage ) == s;
+      }
+    );
+    if( found == stage.end() )
+      throw exception::invalid_argument( "graphics_pipeline_create_info_t::get_reflection : The pipeline doesn't have specified shader stage.", __FILE__, __LINE__ );
+    return found->get_shader_module()->get_props().get_reflection();
   }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {
     root = nlohmann::json::object();

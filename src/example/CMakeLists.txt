@@ -114,6 +114,7 @@ subdirs(
   cloth
   xpbd
   fluid
+  standard
 )
 if( DXC_FOUND )
 subdirs(

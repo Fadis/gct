@@ -1768,9 +1768,16 @@ std::string to_string( const compiled &src ) {
                       .set_config(
                         barrier_config()
                           .set_src_access_mask( vk::AccessFlagBits::eTransferWrite )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
                           .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -1786,10 +1793,24 @@ std::string to_string( const compiled &src ) {
                     barrier_state()
                       .set_config(
                         barrier_config()
-                          .set_src_access_mask( vk::AccessFlagBits::eShaderWrite )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_src_access_mask(
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
+                          )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -1807,11 +1828,25 @@ std::string to_string( const compiled &src ) {
                         barrier_config()
                           .set_src_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -1850,9 +1885,16 @@ std::string to_string( const compiled &src ) {
                         .set_config(
                           barrier_config()
                             .set_src_access_mask( vk::AccessFlagBits::eTransferWrite )
-                            .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                            .set_dest_access_mask(
+                              vk::AccessFlagBits::eShaderRead |
+                              vk::AccessFlagBits::eColorAttachmentRead |
+                              vk::AccessFlagBits::eDepthStencilAttachmentRead
+                            )
                             .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
-                            .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                            .set_dest_stage(
+                              vk::PipelineStageFlagBits::eComputeShader |
+                              vk::PipelineStageFlagBits::eAllGraphics
+                            )
                         )
                         .set_data(
                           resource->image->get( is->first )
@@ -1868,10 +1910,24 @@ std::string to_string( const compiled &src ) {
                       barrier_state()
                         .set_config(
                           barrier_config()
-                            .set_src_access_mask( vk::AccessFlagBits::eShaderWrite )
-                            .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                            .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                            .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                            .set_src_access_mask(
+                              vk::AccessFlagBits::eShaderWrite |
+                              vk::AccessFlagBits::eColorAttachmentWrite |
+                              vk::AccessFlagBits::eDepthStencilAttachmentWrite
+                            )
+                            .set_dest_access_mask(
+                              vk::AccessFlagBits::eShaderRead |
+                              vk::AccessFlagBits::eColorAttachmentRead |
+                              vk::AccessFlagBits::eDepthStencilAttachmentRead
+                            )
+                            .set_src_stage(
+                              vk::PipelineStageFlagBits::eComputeShader |
+                              vk::PipelineStageFlagBits::eAllGraphics
+                            )
+                            .set_dest_stage(
+                              vk::PipelineStageFlagBits::eComputeShader |
+                              vk::PipelineStageFlagBits::eAllGraphics
+                            )
                         )
                         .set_data(
                           resource->image->get( is->first )
@@ -1889,11 +1945,25 @@ std::string to_string( const compiled &src ) {
                           barrier_config()
                             .set_src_access_mask(
                               vk::AccessFlagBits::eShaderRead |
-                              vk::AccessFlagBits::eShaderWrite
+                              vk::AccessFlagBits::eShaderWrite |
+                              vk::AccessFlagBits::eColorAttachmentRead |
+                              vk::AccessFlagBits::eColorAttachmentWrite |
+                              vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                              vk::AccessFlagBits::eDepthStencilAttachmentWrite
                             )
-                            .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                            .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                            .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                            .set_dest_access_mask(
+                              vk::AccessFlagBits::eShaderRead |
+                              vk::AccessFlagBits::eColorAttachmentRead |
+                              vk::AccessFlagBits::eDepthStencilAttachmentRead
+                            )
+                            .set_src_stage(
+                              vk::PipelineStageFlagBits::eComputeShader |
+                              vk::PipelineStageFlagBits::eAllGraphics
+                             )
+                            .set_dest_stage(
+                              vk::PipelineStageFlagBits::eComputeShader |
+                              vk::PipelineStageFlagBits::eAllGraphics
+                            )
                         )
                         .set_data(
                           resource->image->get( is->first )
@@ -1932,10 +2002,17 @@ std::string to_string( const compiled &src ) {
                           )
                           .set_dest_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
                           .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -1953,14 +2030,28 @@ std::string to_string( const compiled &src ) {
                         barrier_config()
                           .set_src_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
                           .set_dest_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -1978,14 +2069,28 @@ std::string to_string( const compiled &src ) {
                         barrier_config()
                           .set_src_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
                           .set_dest_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -2049,14 +2154,26 @@ std::string to_string( const compiled &src ) {
                           vk::AccessFlagBits::eTransferRead |
                           vk::AccessFlagBits::eTransferWrite |
                           vk::AccessFlagBits::eShaderRead |
-                          vk::AccessFlagBits::eShaderWrite
+                          vk::AccessFlagBits::eShaderWrite |
+                          vk::AccessFlagBits::eColorAttachmentRead |
+                          vk::AccessFlagBits::eColorAttachmentWrite |
+                          vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                          vk::AccessFlagBits::eDepthStencilAttachmentWrite
                         )
-                        .set_dest_access_mask( vk::AccessFlagBits::eShaderWrite )
+                        .set_dest_access_mask(
+                          vk::AccessFlagBits::eShaderWrite |
+                          vk::AccessFlagBits::eColorAttachmentWrite |
+                          vk::AccessFlagBits::eDepthStencilAttachmentWrite
+                        )
                         .set_src_stage(
                           vk::PipelineStageFlagBits::eTransfer |
-                          vk::PipelineStageFlagBits::eComputeShader
+                          vk::PipelineStageFlagBits::eComputeShader |
+                          vk::PipelineStageFlagBits::eAllGraphics
                         )
-                        .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                        .set_dest_stage(
+                          vk::PipelineStageFlagBits::eComputeShader |
+                          vk::PipelineStageFlagBits::eAllGraphics
+                        )
                     )
                     .set_data(
                       resource->image->get( is->first )
@@ -2113,12 +2230,17 @@ std::string to_string( const compiled &src ) {
                         vk::AccessFlagBits::eTransferRead |
                         vk::AccessFlagBits::eTransferWrite |
                         vk::AccessFlagBits::eShaderRead |
-                        vk::AccessFlagBits::eShaderWrite
+                        vk::AccessFlagBits::eShaderWrite |
+                        vk::AccessFlagBits::eColorAttachmentRead |
+                        vk::AccessFlagBits::eColorAttachmentWrite |
+                        vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                        vk::AccessFlagBits::eDepthStencilAttachmentWrite
                       )
                       .set_dest_access_mask( vk::AccessFlagBits::eTransferWrite )
                       .set_src_stage(
                         vk::PipelineStageFlagBits::eTransfer |
-                        vk::PipelineStageFlagBits::eComputeShader
+                        vk::PipelineStageFlagBits::eComputeShader |
+                        vk::PipelineStageFlagBits::eAllGraphics
                       )
                       .set_dest_stage( vk::PipelineStageFlagBits::eTransfer )
                   )
@@ -2174,9 +2296,16 @@ std::string to_string( const compiled &src ) {
                       .set_config(
                         barrier_config()
                           .set_src_access_mask( vk::AccessFlagBits::eTransferWrite )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
                           .set_src_stage( vk::PipelineStageFlagBits::eTransfer )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader|
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -2192,10 +2321,24 @@ std::string to_string( const compiled &src ) {
                     barrier_state()
                       .set_config(
                         barrier_config()
-                          .set_src_access_mask( vk::AccessFlagBits::eShaderWrite )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_src_access_mask(
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
+                          )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -2213,11 +2356,25 @@ std::string to_string( const compiled &src ) {
                         barrier_config()
                           .set_src_access_mask(
                             vk::AccessFlagBits::eShaderRead |
-                            vk::AccessFlagBits::eShaderWrite
+                            vk::AccessFlagBits::eShaderWrite |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentWrite
                           )
-                          .set_dest_access_mask( vk::AccessFlagBits::eShaderRead )
-                          .set_src_stage( vk::PipelineStageFlagBits::eComputeShader )
-                          .set_dest_stage( vk::PipelineStageFlagBits::eComputeShader )
+                          .set_dest_access_mask(
+                            vk::AccessFlagBits::eShaderRead |
+                            vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eDepthStencilAttachmentRead
+                          )
+                          .set_src_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
+                          .set_dest_stage(
+                            vk::PipelineStageFlagBits::eComputeShader |
+                            vk::PipelineStageFlagBits::eAllGraphics
+                          )
                       )
                       .set_data(
                         resource->image->get( is->first )
@@ -2253,12 +2410,17 @@ std::string to_string( const compiled &src ) {
                           vk::AccessFlagBits::eTransferRead |
                           vk::AccessFlagBits::eTransferWrite |
                           vk::AccessFlagBits::eShaderRead |
-                          vk::AccessFlagBits::eShaderWrite
+                          vk::AccessFlagBits::eShaderWrite |
+                          vk::AccessFlagBits::eColorAttachmentRead |
+                          vk::AccessFlagBits::eColorAttachmentWrite |
+                          vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                          vk::AccessFlagBits::eDepthStencilAttachmentWrite
                         )
                         .set_dest_access_mask( vk::AccessFlagBits::eTransferWrite )
                         .set_src_stage(
                           vk::PipelineStageFlagBits::eTransfer |
-                          vk::PipelineStageFlagBits::eComputeShader
+                          vk::PipelineStageFlagBits::eComputeShader |
+                          vk::PipelineStageFlagBits::eAllGraphics
                         )
                         .set_dest_stage( vk::PipelineStageFlagBits::eTransfer )
                     )

@@ -134,6 +134,7 @@ namespace gct {
     [[nodiscard]] format_properties get_format_properties( vk::Format f ) const {
       return group.get_format_properties( f );
     }
+    [[nodiscard]] const physical_device_features_t &get_features() const;
   private:
     void create_command_pools( std::uint32_t activated_queue_family_index );
     device_group_t group;

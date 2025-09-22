@@ -458,5 +458,8 @@ namespace gct {
     ) );
   }
 #endif
+  const physical_device_features_t &device_t::get_features() const {
+    return group.devices[ 0 ]->get_features();
+  }
 }
 

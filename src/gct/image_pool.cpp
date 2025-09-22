@@ -42,6 +42,19 @@ void image_pool::state_type::release_index( image_pool::image_index_t index ) {
 }
 
 image_pool::views image_pool::state_type::allocate() {
+  return allocate(
+    vk::ImageUsageFlagBits::eTransferSrc |
+    vk::ImageUsageFlagBits::eTransferDst |
+    vk::ImageUsageFlagBits::eSampled |
+    vk::ImageUsageFlagBits::eStorage |
+    vk::ImageUsageFlagBits::eColorAttachment |
+    vk::ImageUsageFlagBits::eInputAttachment
+  );
+}
+
+image_pool::views image_pool::state_type::allocate(
+  vk::ImageUsageFlags usage
+) {
 
   const image_index_t normalized_index = allocate_index();
   const image_index_t srgb_index = allocate_index();
@@ -94,7 +107,9 @@ image_pool::views image_pool::state_type::allocate() {
           .setArrayLayers( 1 )
           .setSamples( vk::SampleCountFlagBits::e1 )
           .setTiling( vk::ImageTiling::eOptimal )
-          .setUsage( vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage )
+          .setUsage(
+            usage
+          )
           .setSharingMode( vk::SharingMode::eExclusive )
           .setQueueFamilyIndexCount( 0 )
           .setPQueueFamilyIndices( nullptr )
@@ -479,40 +494,46 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     std::vector< write_descriptor_set_t > updates;
     const auto target = (*props.external_descriptor_set[ props.image_descriptor_set_id ])[ props.descriptor_name ];
     for( const auto &req: write_request_list ) {
-      updates.push_back(
-        write_descriptor_set_t()
-          .set_basic(
-            vk::WriteDescriptorSet( target )
-              .setDstArrayElement( req.index )
-              .setDescriptorCount( 1u )
-          )
-          .add_image( req.final_image, vk::ImageLayout::eGeneral )
-          .set_index( req.index )
-      );
+      if( req.final_image->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eStorage ) {
+        updates.push_back(
+          write_descriptor_set_t()
+            .set_basic(
+              vk::WriteDescriptorSet( target )
+                .setDstArrayElement( req.index )
+                .setDescriptorCount( 1u )
+            )
+            .add_image( req.final_image, vk::ImageLayout::eGeneral )
+            .set_index( req.index )
+        );
+      }
     }
     for( const auto &req: rgb_to_xyz_request_list ) {
-      updates.push_back(
-        write_descriptor_set_t()
-          .set_basic(
-            vk::WriteDescriptorSet( target )
-              .setDstArrayElement( req.xyz )
-              .setDescriptorCount( 1u )
-          )
-          .add_image( req.xyz_image, vk::ImageLayout::eGeneral )
-          .set_index( req.xyz )
-      );
+      if( req.xyz_image->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eStorage ) {
+        updates.push_back(
+          write_descriptor_set_t()
+            .set_basic(
+              vk::WriteDescriptorSet( target )
+                .setDstArrayElement( req.xyz )
+                .setDescriptorCount( 1u )
+            )
+            .add_image( req.xyz_image, vk::ImageLayout::eGeneral )
+            .set_index( req.xyz )
+        );
+      }
     }
     for( const auto &req: convert_request_list ) {
-      updates.push_back(
-        write_descriptor_set_t()
-          .set_basic(
-            vk::WriteDescriptorSet( target )
-              .setDstArrayElement( req.index )
-              .setDescriptorCount( 1u )
-          )
-          .add_image( req.image, vk::ImageLayout::eGeneral )
-          .set_index( req.index )
-      );
+      if( req.image->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eStorage ) {
+        updates.push_back(
+          write_descriptor_set_t()
+            .set_basic(
+              vk::WriteDescriptorSet( target )
+                .setDstArrayElement( req.index )
+                .setDescriptorCount( 1u )
+            )
+            .add_image( req.image, vk::ImageLayout::eGeneral )
+            .set_index( req.index )
+        );
+      }
     }
     props.external_descriptor_set[ props.image_descriptor_set_id ]->update(
       std::move( updates )
@@ -725,6 +746,11 @@ image_pool::views image_pool::allocate(
 image_pool::views image_pool::allocate() {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate();
+}
+
+image_pool::views image_pool::allocate( vk::ImageUsageFlags usage ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( usage );
 }
 
 image_pool::views image_pool::allocate(

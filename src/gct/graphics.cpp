@@ -14,6 +14,8 @@
 #include <gct/graphics.hpp>
 #include <gct/graphics_create_info.hpp>
 #include <gct/shader_module_reflection.hpp>
+#include <gct/color_attachment_name.hpp>
+#include <gct/numeric_types.hpp>
 
 namespace gct {
   graphics::graphics(
@@ -205,6 +207,30 @@ namespace gct {
       );
     }
     rec.draw_mesh_task( x, y, z );
+  }
+  bool graphics::has_reflection( vk::ShaderStageFlagBits s ) const {
+    return pipeline->get_props().has_reflection( s );
+  }
+  const shader_module_reflection_t &graphics::get_reflection( vk::ShaderStageFlagBits s ) const {
+    return pipeline->get_props().get_reflection( s );
+  }
+  std::vector< color_attachment_name > graphics::get_color_attachment() const {
+    std::vector< color_attachment_name > ca;
+    const auto &reflection = graphics::get_reflection( vk::ShaderStageFlagBits::eFragment );
+    ca.reserve( reflection->output_variable_count );
+    for( unsigned int i = 0u; i != reflection->output_variable_count; ++i ) {
+      ca.push_back(
+      color_attachment_name()
+        .set_location( reflection->output_variables[ i ]->location )
+        .set_name( reflection->output_variables[ i ]->name )
+        .set_type( spv2numeric_type( *reflection->output_variables[ i ]->type_description ) )
+      );
+    }
+    return ca;
+  }
+  void to_json( nlohmann::json &dest, const graphics &src ) {
+    dest = nlohmann::json::object();
+    dest[ "props" ] = src.get_props();
   }
 }
 

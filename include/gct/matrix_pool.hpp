@@ -5,7 +5,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
-#include <filesystem>
 #include <vector>
 #include <optional>
 #include <functional>
@@ -91,6 +90,7 @@ public:
   [[nodiscard]] matrix_descriptor allocate(); // identity
   [[nodiscard]] matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
   [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
+  [[nodiscard]] matrix_descriptor allocate( std::uint32_t ); // standalone matrix
   [[nodiscard]] matrix_descriptor get_local( const matrix_descriptor& );
   [[nodiscard]] matrix_descriptor get_history( const matrix_descriptor& );
   [[nodiscard]] matrix_descriptor get_inversed( const matrix_descriptor& );
@@ -110,10 +110,11 @@ public:
 private:
   struct state_type : std::enable_shared_from_this< state_type > {
     state_type( const matrix_pool_create_info & );
-    [[nodiscard]] matrix_index_t allocate_index();
+    [[nodiscard]] matrix_index_t allocate_index( std::uint32_t );
     void release_index( matrix_index_t );
     [[nodiscard]] matrix_descriptor allocate( const glm::mat4& ); // standalone matrix
     [[nodiscard]] matrix_descriptor allocate( const matrix_descriptor&, const glm::mat4& ); // chained matrix
+    [[nodiscard]] matrix_descriptor allocate( std::uint32_t ); // standalone matrix
     void release( matrix_index_t );
     void touch( const matrix_descriptor& );
     void touch( matrix_index_t );
@@ -129,7 +130,7 @@ private:
     [[nodiscard]] std::vector< request_range > build_update_request_range();
     matrix_pool_create_info props;
     std::vector< matrix_state_type > matrix_state;
-    linear_allocator index_allocator;
+    sized_linear_allocator index_allocator;
     std::unordered_multimap< matrix_index_t, matrix_index_t > edge; // p -> c
     std::shared_ptr< buffer_t > staging_matrix; // mat4[]
     std::shared_ptr< mappable_buffer_t > receive_matrix; // mat4[]

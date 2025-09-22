@@ -1,8 +1,7 @@
-#version 460
+#ifndef GCT_SHADER_SCENE_GRAPH_DUMMY_H
+#define GCT_SHADER_SCENE_GRAPH_DUMMY_H
 
-#extension GL_ARB_separate_shader_objects : enable
-#extension GL_ARB_shading_language_420pack : enable
-#extension GL_EXT_nonuniform_qualifier : enable
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
@@ -30,8 +29,5 @@ layout(set=1, binding = 18) uniform SpatialHashConfig {
   hash_table_type config;
 } spatial_hash_config;
 
-layout(local_size_x = 16, local_size_y = 16 ) in;
-
-void main() {
-}
+#endif
 

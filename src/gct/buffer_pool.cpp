@@ -298,7 +298,13 @@ buffer_pool::state_type::state_type( const buffer_pool_create_info &ci ) :
     vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
-  staging_buffer = props.allocator_set.allocator->create_buffer( aligned_size * props.max_request_count, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU );
+  staging_buffer = props.allocator_set.allocator->create_buffer(
+    aligned_size * props.max_request_count,
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst,
+    VMA_MEMORY_USAGE_CPU_TO_GPU
+  );
 
   //const buffer_index_t dummy = allocate_index( 1 );
 }

@@ -23,6 +23,7 @@ namespace gct {
   class render_pass_t;
   class descriptor_set_layout_t;
   class gbuffer;
+  class shader_module_reflection_t;
   class graphics_pipeline_create_info_t : public chained_t {
     friend void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
   public:
@@ -156,6 +157,8 @@ namespace gct {
     graphics_pipeline_create_info_t &clear_render_pass();
     graphics_pipeline_create_info_t &fill_untouched();
     graphics_pipeline_create_info_t &set_gbuffer( const gbuffer& );
+    [[nodiscard]] bool has_reflection( vk::ShaderStageFlagBits ) const;
+    [[nodiscard]] const shader_module_reflection_t &get_reflection( vk::ShaderStageFlagBits ) const;
     void to_json( nlohmann::json &root );
   };
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );

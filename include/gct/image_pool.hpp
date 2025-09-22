@@ -112,6 +112,7 @@ public:
   image_pool( const image_pool_create_info & );
   [[nodiscard]] views allocate( const image_load_info& );
   [[nodiscard]] views allocate();
+  [[nodiscard]] views allocate( vk::ImageUsageFlags );
   [[nodiscard]] views allocate( const image_allocate_info& );
   [[nodiscard]] image_descriptor allocate( const std::shared_ptr< image_view_t >& );
   [[nodiscard]] const image_pool_create_info &get_props() const { return state->props; }
@@ -126,6 +127,7 @@ private:
     void release_index( image_index_t );
     [[nodiscard]] views allocate( const image_load_info& );
     [[nodiscard]] views allocate();
+    [[nodiscard]] views allocate( vk::ImageUsageFlags );
     [[nodiscard]] views allocate( const image_allocate_info& );
     [[nodiscard]] image_descriptor allocate( const std::shared_ptr< image_view_t >& );
     [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;

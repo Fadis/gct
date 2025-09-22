@@ -1,13 +1,12 @@
 #ifndef GCT_INSTANCE_LIST_HPP
 #define GCT_INSTANCE_LIST_HPP
 #include <optional>
-#include <unordered_map>
 #include <memory>
-#include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <gct/setter.hpp>
 #include <gct/graphics_pipeline.hpp>
 #include <gct/graphics.hpp>
+#include <gct/graphics_execution_shape.hpp>
 #include <gct/render_pass.hpp>
 #include <gct/scene_graph.hpp>
 #include <gct/compiled_scene_graph.hpp>
@@ -55,7 +54,8 @@ bool operator!=( const resource_pair &l, const resource_pair &r );
 void to_json( nlohmann::json &dest, const resource_pair &src );
 
 class instance_list :
-  public property< instance_list_create_info > {
+  public property< instance_list_create_info >,
+  public std::enable_shared_from_this< instance_list > {
 public:
   instance_list(
     const instance_list_create_info &ci,
@@ -106,18 +106,25 @@ public:
   ) const;
   void operator()(
     command_buffer_recorder_t&,
-    const graphics &compiled
+    const graphics &compiled,
+    std::uint32_t layer_count = 1u
   ) const;
   void operator()(
     command_buffer_recorder_t&,
     const graphics &compiled,
-    const std::vector< resource_pair >::const_iterator &i
+    const std::vector< resource_pair >::const_iterator &i,
+    std::uint32_t layer_count = 1u
   ) const;
   void for_each_unique_vertex(
     command_buffer_recorder_t &rec,
     const compute &compiled,
     const std::vector< resource_pair >::const_iterator &i
   ) const;
+  graphics_execution_shape get_shape( std::uint32_t instance_count = 1u );
+  graphics_execution_shape get_shape(
+    const std::vector< resource_pair >::const_iterator &i,
+    std::uint32_t instance_count
+  );
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] std::vector< resource_pair > &get_draw_list() {
     return draw_list;

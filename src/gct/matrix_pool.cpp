@@ -21,10 +21,10 @@
 
 namespace gct {
 
-matrix_pool::matrix_index_t matrix_pool::state_type::allocate_index() {
-  const auto index = index_allocator.allocate();
-  if( index >= matrix_state.size() ) {
-    matrix_state.resize( index + 1u );
+matrix_pool::matrix_index_t matrix_pool::state_type::allocate_index( std::uint32_t count ) {
+  const auto index = index_allocator.allocate( count );
+  if( ( index + count ) > matrix_state.size() ) {
+    matrix_state.resize( index + count );
   }
   return index; 
 }
@@ -45,9 +45,9 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
   auto write_requests = write_request_buffer->map< write_request >();
   auto staging = staging_matrix->map< glm::mat4 >();
 
-  const matrix_index_t index = allocate_index();
+  const matrix_index_t index = allocate_index( 1u );
   
-  const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
+  const matrix_index_t history_index = enable_copy ? allocate_index( 1u ) : matrix_index_t( 0u );
   
   const matrix_index_t staging_index = staging_index_allocator.allocate();
 
@@ -111,6 +111,30 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const glm::mat
   matrix_state[ index ].set_self( desc.get_weak() );
   return desc;
 }
+matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( std::uint32_t count ) {
+  if( execution_pending ) {
+    throw exception::runtime_error( "matrix_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
+  }
+  const matrix_index_t index = allocate_index( count );
+
+  matrix_state[ index ] =
+    matrix_state_type()
+      .set_valid( true );
+
+  matrix_descriptor desc(
+    new matrix_index_t( index ),
+    [self=shared_from_this()]( const matrix_index_t *p ) {
+      if( p ) {
+        self->release( *p );
+        delete p;
+      }
+    }
+  );
+  used_on_gpu.push_back( desc );
+
+  matrix_state[ index ].set_self( desc.get_weak() );
+  return desc;
+}
 matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_descriptor &parent, const glm::mat4 &value ) {
   if( execution_pending ) {
     throw exception::runtime_error( "matrix_pool::state_type::allocate : last execution is not completed yet", __FILE__, __LINE__ );
@@ -127,10 +151,10 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::allocate( const matrix_d
     update_request_list.resize( level + 1u );
   }
 
-  const matrix_index_t index = allocate_index();
-  const matrix_index_t history_index = enable_copy ? allocate_index() : matrix_index_t( 0u );
-  const matrix_index_t local_index = allocate_index();
-  const matrix_index_t local_history_index = enable_copy ? allocate_index() : matrix_index_t( 0u ) ;
+  const matrix_index_t index = allocate_index( 1u );
+  const matrix_index_t history_index = enable_copy ? allocate_index( 1u ) : matrix_index_t( 0u );
+  const matrix_index_t local_index = allocate_index( 1u );
+  const matrix_index_t local_history_index = enable_copy ? allocate_index( 1u ) : matrix_index_t( 0u ) ;
   const matrix_index_t staging_index = staging_index_allocator.allocate();
   const request_index_t write_request_index = write_request_index_allocator.allocate();
   const request_index_t history_write_request_index = enable_copy ? write_request_index_allocator.allocate() : request_index_t( 0u );
@@ -629,7 +653,7 @@ matrix_pool::matrix_descriptor matrix_pool::state_type::get_inversed( const matr
   const auto &s = matrix_state[ *desc ];
   if( s.inversed ) return s.inversed;
   
-  const matrix_index_t inversed_index = allocate_index();
+  const matrix_index_t inversed_index = allocate_index( 1u );
 
   matrix_state[ inversed_index ] =
     matrix_state_type()
@@ -858,6 +882,10 @@ matrix_pool::matrix_descriptor matrix_pool::allocate( const glm::mat4 &value ) {
 matrix_pool::matrix_descriptor matrix_pool::allocate( const matrix_descriptor &parent, const glm::mat4 &value ) {
   std::lock_guard< std::mutex > lock( state->guard );
   return state->allocate( parent, value );
+}
+matrix_pool::matrix_descriptor matrix_pool::allocate( std::uint32_t count ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->allocate( count );
 }
 void matrix_pool::touch( const matrix_descriptor &desc ) {
   std::lock_guard< std::mutex > lock( state->guard );

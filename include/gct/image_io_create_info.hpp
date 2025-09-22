@@ -18,11 +18,16 @@
 #include <gct/spv_member_pointer.hpp>
 #include <gct/image_io_dimension.hpp>
 #include <gct/dynamic_size_image_allocate_info.hpp>
+#include <gct/color_attachment_name.hpp>
+#include <gct/rendering_info.hpp>
+#include <gct/graphics_execution_shape.hpp>
 
 namespace gct {
 
+class graphics;
 class compute;
 class image_view_t;
+class rendering_info_t;
 
 namespace scene_graph {
   class scene_graph_resource;
@@ -33,6 +38,7 @@ struct image_io_plan {
   LIBGCT_SETTER( output )
   LIBGCT_SETTER( inout )
   LIBGCT_SETTER( node_name )
+  LIBGCT_SETTER( shape )
   image_io_plan &add_input(
     const std::string &name
   ) {
@@ -291,12 +297,16 @@ struct image_io_plan {
   ) {
     return set_dim( name, glm::vec4( scale.x, scale.x, scale.x, scale.y ) );
   }
+  image_io_plan &set_dim(
+    const graphics_execution_shape &s
+  );
   std::unordered_set< std::string > input;
   std::unordered_map< std::string, std::variant< image_pool::image_descriptor, image_allocate_info, dynamic_size_image_allocate_info > > output;
   std::unordered_set< std::string > inout;
   std::unordered_map< std::string, sampler_pool::sampler_descriptor > sampled;
   image_io_dimension dim;
   std::string node_name;
+  std::optional< graphics_execution_shape > shape;
 };
 
 void to_json( nlohmann::json&, const image_io_plan& );
@@ -307,6 +317,13 @@ struct image_io_create_info {
     const std::shared_ptr< scene_graph::scene_graph_resource > &r,
     const image_io_plan&
   );
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+  image_io_create_info(
+    const std::shared_ptr< graphics >&,
+    const std::shared_ptr< scene_graph::scene_graph_resource > &r,
+    const image_io_plan&
+  );
+#endif
   image_io_create_info &add_input(
     const std::string &name,
     const image_pool::image_descriptor &desc
@@ -337,6 +354,9 @@ struct image_io_create_info {
   [[nodiscard]] std::variant< image_pool::image_descriptor, texture_pool::texture_descriptor > get(
     const std::string &name
   ) const;
+  [[nodiscard]] const std::shared_ptr< graphics > &get_graphic_executable() const {
+    return graphic_executable;
+  }
   [[nodiscard]] const std::shared_ptr< compute > &get_executable() const {
     return executable;
   }
@@ -390,6 +410,9 @@ struct image_io_create_info {
     push_constant.data()->*((*pcmp)[ name ]) = value;
     return *this;
   }
+  [[nodiscard]] const rendering_info_t &get_rendering_info() const {
+    return rendering_info;
+  }
 private:
   void update_size(
     const std::string &name,
@@ -407,6 +430,11 @@ private:
     const std::string &name,
     const texture_pool::texture_descriptor &desc
   );
+  void update_rendering_info(
+    const std::string &name,
+    const image_pool::image_descriptor &desc,
+    bool is_inout
+  );
   std::shared_ptr< compute > executable;
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
   image_io_plan plan;
@@ -416,6 +444,11 @@ private:
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
   std::vector< std::uint8_t > push_constant;
   std::unordered_map< std::string, bool > shareable;
+  std::vector< color_attachment_name > ca;
+  std::shared_ptr< graphics > graphic_executable;
+#if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
+  rendering_info_t rendering_info;
+#endif
 };
 
 void to_json( nlohmann::json&, const image_io_create_info& );
