@@ -155,8 +155,8 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
       .add_master_shader( gct::get_system_shader_path() / "scene_graph" / "dummy" )
-      .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR )
+      .add_master_shader( gct::get_system_shader_path() / "occlusion_culling" / "roc" / "1.0" )
+      //.set_shader( CMAKE_CURRENT_BINARY_DIR )
       .set_enable_linear( true )
   );
 
@@ -327,7 +327,7 @@ int main( int argc, const char *argv[] ) {
 
   const auto aabb_csg = std::make_shared< gct::scene_graph::compiled_aabb_scene_graph >(
     gct::scene_graph::compiled_aabb_scene_graph_create_info()
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
+      .set_shader( gct::get_system_shader_path() / "occlusion_culling" / "roc" / "1.0" )
       .set_render_pass( aabb_gbuffer.get_render_pass() )
       .set_dynamic_cull_mode( true ),
     *sg
@@ -353,7 +353,7 @@ int main( int argc, const char *argv[] ) {
   const auto global_descriptor_set_layout = res.device->get_descriptor_set_layout(
     {
       gct::get_system_shader_path() / "scene_graph" / "dummy",
-      CMAKE_CURRENT_BINARY_DIR "/aabb"
+      gct::get_system_shader_path() / "occlusion_culling" / "roc" / "1.0"
     },
     1u
   );
@@ -465,7 +465,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator_set( res.allocator_set )
       .set_width( res.width/ 4 )
       .set_height( res.height/ 4 )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/sb/" )
+      .set_shader( gct::get_system_shader_path() / "starburst" / "1.0" )
       .set_texture( sb_texture_desc.linear )
       .set_matrix_count( 1 )
       .set_format( vk::Format::eR16G16B16A16Sfloat )
@@ -496,7 +496,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator_set( res.allocator_set )
       .set_width( res.width / 8 )
       .set_height( res.height / 8 )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/flare/" )
+      .set_shader( gct::get_system_shader_path() / "lens_flare" / "prtlf" / "1.0" )
       .set_texture( flare_texture_desc.linear )
       .set_matrix_count( 36 )
       .set_format( vk::Format::eR16G16B16A16Sfloat )
@@ -529,7 +529,6 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_descriptor_pool( res.descriptor_pool )
       .set_format( vk::Format::eR16G16B16A16Sfloat )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/skyview/" )
   );
   const auto transmittance_desc = sg->get_resource()->image->allocate( skyview.get_transmittance() );
   const auto skyview_desc = sg->get_resource()->image->allocate( skyview.get_output() );
@@ -553,7 +552,7 @@ int main( int argc, const char *argv[] ) {
   gct::gauss coc_gauss(
     gct::gauss_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/coc_gauss/" )
+      .set_shader( gct::get_system_shader_path() / "gauss" / "coc" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .set_node_name( "coc_gauss" )
@@ -570,7 +569,7 @@ int main( int argc, const char *argv[] ) {
   gct::gauss bloom_gauss(
     gct::gauss_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gauss/" )
+      .set_shader( gct::get_system_shader_path() / "gauss" / "12_32" )
       .set_scene_graph( sg->get_resource() )
       .set_node_name( "bloom_gauss" )
   );
@@ -641,7 +640,7 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( CMAKE_CURRENT_BINARY_DIR "/lighting/lighting.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "lighting" / "1.0" / "lighting.comp.spv" )
           .set_scene_graph( sg->get_resource() )
           .add_resource( { "global_uniforms", global_uniform } )
       ),
@@ -653,6 +652,7 @@ int main( int argc, const char *argv[] ) {
         .set_node_name( "lighting" )
     )
     .set_push_constant( "unproject", *unproject_to_world_desc )
+    .set_push_constant( "light", 0u )
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", extended_gbuffer_desc.linear )
@@ -663,7 +663,7 @@ int main( int argc, const char *argv[] ) {
     std::make_shared< gct::compute >(
       gct::compute_create_info()
         .set_allocator_set( res.allocator_set )
-        .set_shader( CMAKE_CURRENT_BINARY_DIR "/nearest_position/nearest_position.comp.spv" )
+        .set_shader( gct::get_system_shader_path() / "nearest_position" / "nearest_position.comp.spv" )
         .set_scene_graph( sg->get_resource() )
     ),
     gct::image_io_plan()
@@ -729,7 +729,7 @@ int main( int argc, const char *argv[] ) {
     std::make_shared< gct::compute >(
       gct::compute_create_info()
         .set_allocator_set( res.allocator_set )
-        .set_shader( CMAKE_CURRENT_BINARY_DIR "/merge/merge.comp.spv" )
+        .set_shader( gct::get_system_shader_path() / "merge" / "2.0" / "merge.comp.spv" )
         .set_scene_graph( sg->get_resource() )
         .add_resource( { "global_uniforms", global_uniform } )
         .add_resource( { "af_state", af_state_buffer } )
@@ -783,7 +783,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/distance/distance.comp.spv" )
+      .set_shader( gct::get_system_shader_path() / "tone_mapping" / "1.0" / "distance.comp.spv" )
       .set_swapchain_image_count( 1u )
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
       .add_resource( { "depth", extended_depth, vk::ImageLayout::eGeneral } )
@@ -807,7 +807,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/tone/tone.comp.spv" )
+      .set_shader( gct::get_system_shader_path() / "tone_mapping" / "1.0" / "tone.comp.spv" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ merged_view } )
       .set_output( tone_buffer )
   );
@@ -825,7 +825,7 @@ int main( int argc, const char *argv[] ) {
   auto generate_meshlet_info = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/meshlet_normal/meshlet_normal.comp.spv" )
+      .set_shader( gct::get_system_shader_path() / "meshlet_normal" / "1.0" / "meshlet_normal.comp.spv" )
       .set_swapchain_image_count( 1u )
       .set_scene_graph( sg->get_resource() )
   );
@@ -845,7 +845,7 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv" )
+      .set_shader( gct::get_system_shader_path() / "gamma" / "1.0" / "gamma.comp.spv" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >( res.swapchain_images.size(), merged_view ) )
       .set_output( res.swapchain_image_views )
       .add_resource( { "bloom_image", bloom_view, vk::ImageLayout::eGeneral } )
@@ -939,7 +939,6 @@ int main( int argc, const char *argv[] ) {
             .set_light_count( res.light_count )
             .set_ambient( res.ambient_level )
             .set_frame_counter( frame_counter )
-            .set_light( *light_desc )
             .set_gbuffer( *extended_gbuffer_desc.linear )
             .set_depth( *extended_depth_desc.linear );
           sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );

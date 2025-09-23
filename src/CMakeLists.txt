@@ -692,6 +692,10 @@ add_shader( gct gct/shader/generate_k+buffer/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
 
+add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/standard/geometry.frag INSTALL )
+
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.frag INSTALL )
@@ -704,6 +708,30 @@ add_shader( gct gct/shader/bilateral_filter/12_32_1/vertical.comp INSTALL )
 add_shader( gct gct/shader/bloom/bloom.comp INSTALL )
 
 add_shader( gct gct/shader/merge/merge.comp INSTALL )
+add_shader( gct gct/shader/merge/2.0/merge.comp INSTALL )
+
+add_shader( gct gct/shader/nearest_position/nearest_position.comp INSTALL )
+
+add_shader( gct gct/shader/gauss/12_32/horizontal.comp INSTALL )
+add_shader( gct gct/shader/gauss/12_32/vertical.comp INSTALL )
+add_shader( gct gct/shader/gauss/coc/horizontal.comp INSTALL )
+add_shader( gct gct/shader/gauss/coc/vertical.comp INSTALL )
+
+add_shader( gct gct/shader/lighting/1.0/lighting.comp INSTALL )
+
+add_shader( gct gct/shader/meshlet_normal/1.0/meshlet_normal.comp INSTALL )
+
+add_shader( gct gct/shader/starburst/1.0/world.vert INSTALL )
+add_shader( gct gct/shader/starburst/1.0/world.geom INSTALL )
+add_shader( gct gct/shader/starburst/1.0/world.frag INSTALL )
+
+add_shader( gct gct/shader/lens_flare/prtlf/1.0/world.vert INSTALL )
+add_shader( gct gct/shader/lens_flare/prtlf/1.0/world.geom INSTALL )
+add_shader( gct gct/shader/lens_flare/prtlf/1.0/world.frag INSTALL )
+
+add_shader( gct gct/shader/occlusion_culling/roc/1.0/world.vert INSTALL )
+add_shader( gct gct/shader/occlusion_culling/roc/1.0/world.geom INSTALL )
+add_shader( gct gct/shader/occlusion_culling/roc/1.0/world.frag INSTALL )
 
 add_shader( gct gct/shader/generate_shadow/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_shadow/standard/geometry.mesh INSTALL )
@@ -714,6 +742,11 @@ add_shader( gct gct/shader/generate_depth/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_depth/standard/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/cubemap_matrix_generator/generate.comp INSTALL )
+
+add_shader( gct gct/shader/tone_mapping/1.0/tone.comp INSTALL )
+add_shader( gct gct/shader/tone_mapping/1.0/distance.comp INSTALL )
+
+add_shader( gct gct/shader/gamma/1.0/gamma.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

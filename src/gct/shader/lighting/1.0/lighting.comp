@@ -24,6 +24,7 @@ layout(push_constant) uniform PushConstants {
   uint depth;
   uint dest;
   uint unproject;
+  uint light;
 } push_constants;
 
 void main()  {
@@ -53,7 +54,7 @@ void main()  {
   p.roughness = material.y;
   p.normal = read_kplus_buffer_normal( push_constants.src, src_pos, layer ).xyz;
   p.emissive = read_kplus_buffer_eo( push_constants.src, src_pos, layer ).xyz;
-  p.shadow_level.x = pcss_omni( light_pool[ global_uniforms.light ].shadow_map, p.pos.xyz, light_pool[ global_uniforms.light ].world_position.xyz, light_pool[ global_uniforms.light ].light_size );
+  p.shadow_level.x = pcss_omni( light_pool[ push_constants.light ].shadow_map, p.pos.xyz, light_pool[ push_constants.light ].world_position.xyz, light_pool[ push_constants.light ].light_size );
 
   if( p.shadow_level.x <= 0.0 ) {
     imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( p.emissive.rgb, p.albedo.a ) );
@@ -61,17 +62,17 @@ void main()  {
   }
 
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
-  const vec3 L = normalize(light_pool[global_uniforms.light ].world_position.xyz-p.pos);
+  const vec3 L = normalize(light_pool[ push_constants.light ].world_position.xyz-p.pos);
 
   vec3 diffuse = diffuse_with_mask(
     L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic, p.emissive,
-    light_pool[global_uniforms.light].energy.xyz,
+    light_pool[push_constants.light].energy.xyz,
     p.shadow_level.x
   );
   
   vec3 specular = specular_with_mask(
     L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic,
-    light_pool[global_uniforms.light].energy.xyz,
+    light_pool[push_constants.light].energy.xyz,
     p.shadow_level.x
   );
   imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( diffuse + specular, p.albedo.a ) );
