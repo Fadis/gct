@@ -23,6 +23,7 @@
 namespace gct {
 
 class compute;
+class graphics;
 class image_view_t;
 class image_io;
 class image_io_create_info;
@@ -33,6 +34,13 @@ namespace scene_graph {
 }
 
 namespace shader_graph {
+
+struct shader_graph_create_info {
+  LIBGCT_SETTER( allow_unused_input )
+  bool allow_unused_input = false;
+};
+
+
 
 struct internal_vertex_type {
   LIBGCT_SETTER( command )
@@ -90,7 +98,9 @@ public:
     ) : graph( g ), vertex_id( id ), command( ci ) {}
     subresult_type operator[]( const std::string name ) const;
     std::string get_node_name() const;
+    //operator subresult_type() const;
     operator subresult_type() const;
+    std::unordered_map< std::string, subresult_type > get() const;
   private:
     std::shared_ptr< graph_type > graph;
     graph_type::vertex_descriptor vertex_id;
@@ -115,10 +125,11 @@ public:
   };
   vertex(
     const std::shared_ptr< scene_graph::scene_graph_resource > &r,
+    const std::shared_ptr< shader_graph_create_info > &props_,
     const std::shared_ptr< graph_type > &g,
     graph_type::vertex_descriptor id,
     const vertex_command &ci
-  ) : resource( r ), graph( g ), vertex_id( id ), command( ci ) {}
+  ) : resource( r ), props( props_ ), graph( g ), vertex_id( id ), command( ci ) {}
   result_type operator()(
     const std::unordered_map< std::string, subresult_type > &input
   );
@@ -128,10 +139,14 @@ public:
   result_type operator()(
     const subresult_type &input
   );
+  result_type operator()(
+    const result_type &input
+  );
   result_type operator()();
   std::string get_node_name() const;
 private:
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
+  std::shared_ptr< shader_graph_create_info > props;
   std::shared_ptr< graph_type > graph;
   graph_type::vertex_descriptor vertex_id;
   vertex_command command;
@@ -228,9 +243,19 @@ private:
 public:
   builder(
     const std::shared_ptr< scene_graph::scene_graph_resource > &r
-  ) : resource( r ), graph( new graph_type() ) {}
+  ) : resource( r ), props( new shader_graph_create_info() ), graph( new graph_type() ) {}
+  builder(
+    const std::shared_ptr< scene_graph::scene_graph_resource > &r,
+    const std::shared_ptr< shader_graph_create_info > &props_
+  ) : resource( r ), props( props_ ), graph( new graph_type() ) {}
   auto get_image_io_create_info(
     const std::shared_ptr< compute > &e,
+    const image_io_plan &p
+  ) {
+    return image_io_create_info( e, resource, p );
+  }
+  auto get_image_io_create_info(
+    const std::shared_ptr< graphics > &e,
     const image_io_plan &p
   ) {
     return image_io_create_info( e, resource, p );
@@ -258,7 +283,7 @@ public:
   }
 private:
   std::vector< std::pair< graph_type::vertex_descriptor, std::string > > get_consumer_of(
-    const graph_type::vertex_descriptor &, const std::string&, bool include_middle
+    const graph_type::vertex_descriptor &, const std::string&, bool include_middle, bool include_indirect_inout
   ) const;
   bool shareable(
     const graph_type::vertex_descriptor &,
@@ -310,6 +335,7 @@ private:
     graph.reset( new graph_type() );
   }
   std::shared_ptr< scene_graph::scene_graph_resource > resource;
+  std::shared_ptr< shader_graph_create_info > props;
   std::shared_ptr< graph_type > graph;
   std::vector< image_binding > binding;
   std::vector< graph_type::vertex_descriptor > independent_vertex;

@@ -16,6 +16,8 @@ namespace gct {
   }
   pipeline_dynamic_state_create_info_t &pipeline_dynamic_state_create_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
+    std::sort( dynamic_state.begin(), dynamic_state.end() );
+    dynamic_state.erase( std::unique( dynamic_state.begin(), dynamic_state.end() ), dynamic_state.end() );
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, DynamicStateCount, PDynamicStates, dynamic_state )
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }

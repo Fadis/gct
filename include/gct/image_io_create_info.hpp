@@ -21,6 +21,7 @@
 #include <gct/color_attachment_name.hpp>
 #include <gct/rendering_info.hpp>
 #include <gct/graphics_execution_shape.hpp>
+#include <gct/format.hpp>
 
 namespace gct {
 
@@ -50,13 +51,25 @@ struct image_io_plan {
     const image_allocate_info &desc
   ) {
     auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage|
-      vk::ImageUsageFlagBits::eSampled
-    );
+    const auto aspect = format_to_aspect( basic.format );
+    if( aspect & vk::ImageAspectFlagBits::eColor ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eStorage|
+        vk::ImageUsageFlagBits::eSampled|
+        vk::ImageUsageFlagBits::eColorAttachment
+      );
+    }
+    else if( aspect & vk::ImageAspectFlagBits::eDepth || aspect & vk::ImageAspectFlagBits::eStencil ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eDepthStencilAttachment
+      );
+    }
     auto desc_ = desc;
     desc_.create_info.set_basic( basic );
     desc_.set_layout( vk::ImageLayout::eGeneral );
@@ -68,13 +81,25 @@ struct image_io_plan {
     const dynamic_size_image_allocate_info &desc
   ) {
     auto basic = desc.allocate_info.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage|
-      vk::ImageUsageFlagBits::eSampled
-    );
+    const auto aspect = format_to_aspect( basic.format );
+    if( aspect & vk::ImageAspectFlagBits::eColor ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eStorage|
+        vk::ImageUsageFlagBits::eSampled|
+        vk::ImageUsageFlagBits::eColorAttachment
+      );
+    }
+    else if( aspect & vk::ImageAspectFlagBits::eDepth || aspect & vk::ImageAspectFlagBits::eStencil ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eDepthStencilAttachment
+      );
+    }
     auto desc_ = desc;
     desc_.allocate_info.create_info.set_basic( basic );
     desc_.allocate_info.set_layout( vk::ImageLayout::eGeneral );
@@ -96,6 +121,27 @@ struct image_io_plan {
                 width,
                 height
               )
+            )
+        )
+    );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    unsigned int width,
+    unsigned int height,
+    vk::Format format
+  ) {
+    return add_output(
+      name,
+      gct::image_allocate_info()
+        .set_create_info(
+          gct::image_create_info_t()
+            .set_basic(
+              gct::basic_2d_image(
+                width,
+                height
+              )
+              .setFormat( format )
             )
         )
     );

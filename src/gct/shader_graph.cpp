@@ -96,6 +96,70 @@ std::string to_string( const compiled &src ) {
 }
 
 
+std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::get() const {
+  std::unordered_map< std::string, vertex::subresult_type > temp;
+  if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
+    const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
+    for( const auto &v : create_info->get_plan().output ) {
+      temp.insert(
+        std::make_pair(
+          v.first,
+          vertex::subresult_type(
+            graph,
+            vertex_id,
+            command,
+            v.first
+          )
+        )
+      );
+    }
+    for( const auto &v : create_info->get_plan().inout ) {
+      temp.insert(
+        std::make_pair(
+          v,
+          vertex::subresult_type(
+            graph,
+            vertex_id,
+            command,
+            v
+          )
+        )
+      );
+    }
+  }
+  else if( vertex_command_id( command.index() ) == vertex_command_id::fill ) {
+    const auto &fill_create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
+    temp.insert(
+      std::make_pair(
+        fill_create_info->name,
+        vertex::subresult_type(
+          graph,
+          vertex_id,
+          command,
+          fill_create_info->name
+        )
+      )
+    );
+  }
+  else if( vertex_command_id( command.index() ) == vertex_command_id::blit ) {
+    const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+    temp.insert(
+      std::make_pair(
+        create_info->output_name,
+        vertex::subresult_type(
+          graph,
+          vertex_id,
+          command,
+          create_info->output_name
+        )
+      )
+    );
+  }
+  else {
+    throw exception::runtime_error( "shader_graph::vertex::result_type::operator[] : Broken result_type", __FILE__, __LINE__ );
+  }
+  return temp;
+}
 
   vertex::subresult_type vertex::result_type::operator[]( const std::string name ) const {
     if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
@@ -143,6 +207,7 @@ std::string to_string( const compiled &src ) {
   vertex::result_type:: operator subresult_type() const {
     if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
+      
       if( create_info->get_plan().output.size() == 1u && create_info->get_plan().inout.size() == 0u ) {
         return vertex::subresult_type(
           graph,
@@ -248,15 +313,57 @@ std::string to_string( const compiled &src ) {
     return (*this)( input.get() );
   }
   vertex::result_type vertex::operator()(
+    const result_type &input
+  ) {
+    return (*this)( input.get() );
+  }
+  vertex::result_type vertex::operator()(
     const std::unordered_map< std::string, subresult_type > &input
   ) {
     if( called ) {
       throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Vertex must not be called multiple times", __FILE__, __LINE__ );
     }
+    auto input_ = input;
+    if( props->allow_unused_input ) {
+      if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
+        const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
+        std::vector< std::string > unused;
+        for( const auto &i: input_ ) {
+          if( create_info->get_plan().input.find( i.first ) == create_info->get_plan().input.end() ) {
+            if( create_info->get_plan().inout.find( i.first ) == create_info->get_plan().inout.end() ) {
+              if( create_info->get_plan().sampled.find( i.first ) == create_info->get_plan().sampled.end() ) {
+                unused.push_back( i.first );
+              }
+            }
+          }
+        }
+        for( const auto &n: unused ) {
+          input_.erase( n );
+        }
+      }
+      else if( vertex_command_id( command.index() ) == vertex_command_id::fill ) {
+        input_.clear();
+      }
+      else if( vertex_command_id( command.index() ) == vertex_command_id::blit ) {
+        const auto &create_info = std::get< std::shared_ptr< image_blit_create_info > >( command );
+        std::vector< std::string > unused;
+        for( const auto &i: input_ ) {
+          if( create_info->input_name != i.first ) {
+            unused.push_back( i.first );
+          }
+        }
+        for( const auto &n: unused ) {
+          input_.erase( n );
+        }
+      }
+      else {
+        throw exception::runtime_error( "shader_graph::vertex::result_type::operator() : Broken vertex", __FILE__, __LINE__ );
+      }
+    }
     std::unordered_set< graph_type::vertex_descriptor > incoming_fill;
     if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
-      for( const auto &i: input ) {
+      for( const auto &i: input_ ) {
         if( create_info->get_plan().input.find( i.first ) == create_info->get_plan().input.end() ) {
           if( create_info->get_plan().inout.find( i.first ) == create_info->get_plan().inout.end() ) {
             if( create_info->get_plan().sampled.find( i.first ) == create_info->get_plan().sampled.end() ) {
@@ -271,7 +378,7 @@ std::string to_string( const compiled &src ) {
     }
     else if( vertex_command_id( command.index() ) == vertex_command_id::fill ) {
       const auto &create_info = std::get< std::shared_ptr< image_fill_create_info > >( command );
-      if( !input.empty() ) {
+      if( !input_.empty() ) {
         throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Fill does not take any inputs", __FILE__, __LINE__ );
       }
     }
@@ -280,15 +387,15 @@ std::string to_string( const compiled &src ) {
       if( input.size() != 1 ) {
         throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Blit take only one input", __FILE__, __LINE__ );
       }
-      if( create_info->input_name != input.begin()->first ) {
-        throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Input image " + input.begin()->first + "does not exist", __FILE__, __LINE__ );
+      if( create_info->input_name != input_.begin()->first ) {
+        throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Input image " + input_.begin()->first + "does not exist", __FILE__, __LINE__ );
       }
     }
     else {
       throw exception::runtime_error( "shader_graph::vertex::result_type::operator() : Broken vertex", __FILE__, __LINE__ );
     }
     std::unordered_set< std::string > immediate;
-    for( const auto &i: input ) {
+    for( const auto &i: input_ ) {
       if( vertex_command_id( i.second.get_command().index() ) == vertex_command_id::immediate ) {
         immediate.insert( i.first );
         const auto &view = std::get< image_pool::image_descriptor >( i.second.get_command() );
@@ -320,7 +427,6 @@ std::string to_string( const compiled &src ) {
         }
       }
     }
-    auto input_ = input;
     for( const auto &i: immediate ) {
       input_.erase( i );
     }
@@ -416,7 +522,8 @@ std::string to_string( const compiled &src ) {
   builder::get_consumer_of(
     const graph_type::vertex_descriptor &generator,
     const std::string &name,
-    bool include_middle
+    bool include_middle,
+    bool include_indirect_inout
   ) const {
     std::vector< std::pair< graph_type::vertex_descriptor, std::string > > temp;
     std::unordered_set< std::pair< graph_type::vertex_descriptor, std::string >, subresult_hash > next_depth{ std::make_pair( generator, name ) };
@@ -447,7 +554,13 @@ std::string to_string( const compiled &src ) {
                 }
               );
               if( inout != create_info->get_plan().inout.end() ) {
-                next_depth.insert( std::make_pair( dest, connected->to ) );
+                if( include_indirect_inout ) {
+                  next_depth.insert( std::make_pair( dest, connected->to ) );
+                }
+                else {
+                  consumer.insert( std::make_pair( dest, connected->to ) );
+                }
+                consumed.insert( sub );
               }
               else {
                 const auto in = std::find_if(
@@ -511,7 +624,7 @@ std::string to_string( const compiled &src ) {
     auto desc = add_vertex( *graph );
     auto shared_v = std::make_shared< image_fill_create_info >( v );
     (*graph)[ desc ].set_command( shared_v );
-    return vertex( resource, graph, desc, shared_v );
+    return vertex( resource, props, graph, desc, shared_v );
   }
   vertex builder::fill( std::uint32_t width, std::uint32_t height, const std::array< float, 4u > &color ) {
     return fill(
@@ -524,13 +637,13 @@ std::string to_string( const compiled &src ) {
     auto desc = add_vertex( *graph );
     auto shared_v = std::make_shared< image_blit_create_info >( v );
     (*graph)[ desc ].set_command( shared_v );
-    return vertex( resource, graph, desc, shared_v );
+    return vertex( resource, props, graph, desc, shared_v );
   }
   vertex builder::call( const image_io_create_info &v ) {
     auto desc = add_vertex( *graph );
     auto shared_v = std::make_shared< image_io_create_info >( v );
     (*graph)[ desc ].set_command( shared_v );
-    return vertex( resource, graph, desc, shared_v );
+    return vertex( resource, props, graph, desc, shared_v );
   }
   vertex builder::call(
     const std::shared_ptr< compute > &e,
@@ -645,7 +758,7 @@ std::string to_string( const compiled &src ) {
       throw exception::invalid_argument( "shader_graph::builder::shareable : Corrupted vertex", __FILE__, __LINE__ );
     }
     bool has_consumer = false;
-    for( const auto &v: get_consumer_of( first_generator, first_subedge, false ) ) {
+    for( const auto &v: get_consumer_of( first_generator, first_subedge, false, true ) ) {
       has_consumer = true;
       if( v.first == second_generator ) {
         log += vertex.get_node_name() + "." + first_subedge + " and " + (*graph)[ second_generator ].get_node_name() + " output cannot share image : " + (*graph)[ second_generator ].get_node_name() + " is a direct consumer of " + vertex.get_node_name() + "." + first_subedge + ".\n";
@@ -712,7 +825,7 @@ std::string to_string( const compiled &src ) {
     const image_pool::image_descriptor &view,
     image_to_texture_map &texture
   ) {
-    for( const auto &c: get_consumer_of( v, name, true ) ) {
+    for( const auto &c: get_consumer_of( v, name, true, false ) ) {
       if( vertex_command_id( (*graph)[ c.first ].command.index() ) == vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ c.first ].command );
         const auto tex_config = create_info->get_plan().sampled.find( c.second );
@@ -933,7 +1046,7 @@ std::string to_string( const compiled &src ) {
                 bind( v, name, view, ai, shareable, texture );
               }
             }
-            if( out.second.index() == 2u ) {
+            else if( out.second.index() == 2u ) {
               auto ai = std::get< dynamic_size_image_allocate_info >( out.second );
               glm::vec4 size( 0.0f, 0.0f, 0.0f, 1.0f );
               std::optional< vk::ImageType > image_type;
@@ -1658,9 +1771,10 @@ std::string to_string( const compiled &src ) {
             is->second.mode == image_mode::writable_without_sync ||
             is->second.mode == image_mode::readable_after_sync ||
             is->second.mode == image_mode::readable_without_sync_writable_after_sync ||
-            is->second.mode == image_mode::readable_without_sync_writable_after_sync;
+            is->second.mode == image_mode::readable_without_sync_writable_after_sync ||
+            is->second.mode == image_mode::readable_after_sync_writable_after_sync;
           if( !ready ) {
-            log += (*graph)[ v ].get_node_name() + "(" + std::to_string( *is->first )+ ") is not ready to execute due to inout image " + i.first + " is not not readable mode.\n";
+            log += (*graph)[ v ].get_node_name() + "(" + std::to_string( *is->first )+ ") is not ready to execute due to inout image " + i.first + " is not not readable mode. :" + nlohmann::json( is->second.mode ).dump()  + " \n";
             return std::make_pair( false, 0 );
           }
           if( is->second.mode != image_mode::readable_after_sync_writable_after_sync ) {

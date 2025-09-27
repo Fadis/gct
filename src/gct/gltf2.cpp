@@ -884,7 +884,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // パーティクルの情報のオフセット
       if( props.enable_particle ) {
-        const auto desc = props.graph->get_resource()->particle->allocate( vertex_count );
+        const auto desc = props.graph->get_resource()->particle->allocate( unique_vertex_count );
         p.descriptor.set_particle( desc );
         if( mmp.has( "particle_offset" ) ) {
           m.data()->*mmp[ "particle_offset" ] = std::uint32_t( *desc );
@@ -898,7 +898,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 距離制約の情報のオフセット
       if( props.enable_distance_constraint ) {
-        const auto desc = props.graph->get_resource()->distance_constraint->allocate( vertex_count * 32u );
+        const auto desc = props.graph->get_resource()->distance_constraint->allocate( unique_vertex_count * 32u );
         p.descriptor.set_distance_constraint( desc );
         if( mmp.has( "distance_constraint_offset" ) ) {
           m.data()->*mmp[ "distance_constraint_offset" ] = std::uint32_t( *desc );
@@ -912,7 +912,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         const auto desc = props.graph->get_resource()->constraint->allocate(
           props.enable_rigid_constraint ?
           256u * 2u :
-          vertex_count * 128u
+          unique_vertex_count * 128u
         );
         p.descriptor.set_constraint( desc );
         if( mmp.has( "constraint_offset" ) ) {
@@ -925,7 +925,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 圧力制約の情報のオフセット
       if( props.enable_fluid_constraint ) {
-        const auto desc = props.graph->get_resource()->constraint->allocate( vertex_count * 128u );
+        const auto desc = props.graph->get_resource()->constraint->allocate( unique_vertex_count * 128u );
         p.descriptor.set_fluid_constraint( desc );
         if( mmp.has( "fluid_constraint_offset" ) ) {
           std::cout << "fluid_constraint offset : " << std::uint32_t( *desc ) << std::endl;
@@ -956,7 +956,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // 頂点からプリミティブを辿る為のテーブルのオフセット
       if( props.enable_vertex_to_primitive ) {
-        const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( vertex_count * 32u );
+        const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( unique_vertex_count * 32u );
         p.descriptor.set_vertex_to_primitive( desc );
         if( mmp.has( "vertex_to_primitive_offset" ) ) {
           m.data()->*mmp[ "vertex_to_primitive_offset" ] = std::uint32_t( *desc );
@@ -980,6 +980,16 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       else if( mmp.has( "lambda_offset" ) ) {
         m.data()->*mmp[ "lambda_offset" ] = 0xFFFFFFFFu;
+      }
+      if( props.enable_adjacency ) {
+        const auto desc = props.graph->get_resource()->adjacency->allocate( vertex_count );
+        p.descriptor.set_adjacency( desc );
+        if( mmp.has( "adjacency_offset" ) ) {
+          m.data()->*mmp[ "adjacency_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "adjacency_offset" ) ) {
+        m.data()->*mmp[ "adjacency_offset" ] = 0xFFFFFFFFu;
       }
       // 以上の値をGPU上のストレージバッファに書く
       props.graph->get_resource()->mesh->set( mesh_desc, m.data(), std::next( m.data(), m.size() ) );

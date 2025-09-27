@@ -15,6 +15,8 @@ struct mesh_type {
   uint vertex_to_primitive_offset;
   float stiffness;
   uint rigid;
+  uint adjacency_offset;
+  uint reserved[2];
 };
 
 #endif

@@ -1,0 +1,49 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint light;
+} push_constants;
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+void main() {
+  SetMeshOutputsEXT( 3, 1 );
+
+  // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
+  if( gl_SubgroupInvocationID != 0u ) return;
+
+  // 頂点のスクリーン座標系での座標を出力先に書く
+  gl_MeshVerticesEXT[ 0 ].gl_Position = vec4( 0.0, 0.0, 0.0, 1.0 );
+  gl_MeshVerticesEXT[ 1 ].gl_Position = vec4( 0.0, 1.0, 0.0, 1.0 );
+  gl_MeshVerticesEXT[ 2 ].gl_Position = vec4( 1.0, 0.0, 0.0, 1.0 );
+  gl_PrimitiveTriangleIndicesEXT[ 0 ] = uvec3( 0u, 1u, 2u );
+}
+

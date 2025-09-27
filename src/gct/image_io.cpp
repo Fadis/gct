@@ -28,8 +28,30 @@ void image_io::operator()(
       get_props().get_push_constant().data()
     );
     {
+      const_cast< rendering_info_t& >( get_props().get_rendering_info() ).rebuild_chain();
       const auto rendering = rec.begin_rendering( get_props().get_rendering_info() );
       const auto dim = get_props().get_dim();
+      rec->setViewport(
+        0u,
+        {
+          vk::Viewport()
+            .setWidth( get_props().get_rendering_info().get_basic().renderArea.extent.width )
+            .setHeight( get_props().get_rendering_info().get_basic().renderArea.extent.height )
+            .setMinDepth( 0.0f )
+            .setMaxDepth( 1.0f )
+        }
+      );
+      rec->setScissor(
+        0u,
+        {
+          vk::Rect2D(
+            vk::Offset2D(0, 0),
+            vk::Extent2D()
+              .setWidth( get_props().get_rendering_info().get_basic().renderArea.extent.width )
+              .setHeight( get_props().get_rendering_info().get_basic().renderArea.extent.height )
+          )
+        }
+      );
       (*get_props().get_graphic_executable())( rec, 0u, dim.x, dim.y, dim.z );
     }
   }

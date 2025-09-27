@@ -695,6 +695,15 @@ add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
@@ -747,6 +756,8 @@ add_shader( gct gct/shader/tone_mapping/1.0/tone.comp INSTALL )
 add_shader( gct gct/shader/tone_mapping/1.0/distance.comp INSTALL )
 
 add_shader( gct gct/shader/gamma/1.0/gamma.comp INSTALL )
+
+add_shader( gct gct/shader/generate_adjacency/1.0/generate_adjacency.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

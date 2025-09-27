@@ -163,6 +163,7 @@ namespace gct {
         .set_vertex_input( vistat )
         .set_layout( pipeline_layout )
         .fill_untouched()
+        .rebuild_chain()
     );
     for( const auto &s: pipeline->get_props().get_stage() ) {
       const auto &r = s.get_shader_module()->get_props().get_reflection();

@@ -112,5 +112,15 @@ namespace gct {
     chained = false;
     return *this;
   }
+  pipeline_viewport_state_create_info_t &pipeline_viewport_state_create_info_t::set_viewport_count(
+    unsigned int n
+  ) {
+    clear_viewport();
+    clear_scissor();
+    basic.viewportCount = n;
+    basic.scissorCount = n;
+    chained = false;
+    return *this;
+  }
 }
 
