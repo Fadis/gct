@@ -62,6 +62,8 @@ struct scene_graph_resource {
   LIBGCT_SETTER( resource_pair )
   LIBGCT_SETTER( vertex )
   LIBGCT_SETTER( light )
+  LIBGCT_SETTER( camera )
+  LIBGCT_SETTER( adjacency )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
   LIBGCT_SETTER( texture_descriptor_set )
@@ -96,6 +98,8 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > vertex_to_primitive;
   std::shared_ptr< buffer_pool > lambda;
   std::shared_ptr< buffer_pool > resource_pair;
+  std::shared_ptr< buffer_pool > camera;
+  std::shared_ptr< buffer_pool > adjacency;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::shared_ptr< light_pool > light;
@@ -252,6 +256,18 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->lambda->get_props().allocator_set ); \
       } \
       add_resource( { "lambda_pool", ( r ) ->lambda->get_buffer() } ); \
+    } \
+    if( ( r ) ->camera ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->camera->get_props().allocator_set ); \
+      } \
+      add_resource( { "camera_pool", ( r ) ->camera->get_buffer() } ); \
+    } \
+    if( ( r ) ->adjacency ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->adjacency->get_props().allocator_set ); \
+      } \
+      add_resource( { "adjacency_pool", ( r ) ->adjacency->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

@@ -1,10 +1,10 @@
 #ifndef GCT_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO_HPP
 #define GCT_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO_HPP
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
 #include <gct/extension.hpp>
 #include <gct/array_of.hpp>
+#include <gct/common_color_blend_mode.hpp>
 namespace gct {
   class pipeline_color_blend_state_create_info_t : public chained_t {
   public:
@@ -20,7 +20,17 @@ namespace gct {
 #endif
     LIBGCT_ARRAY_OF( vk::PipelineColorBlendAttachmentState, attachment )
   public:
+    pipeline_color_blend_state_create_info_t &add_common_attachment( common_color_blend_mode mode );
     pipeline_color_blend_state_create_info_t &add_attachment();
+    pipeline_color_blend_state_create_info_t &set_mode( common_color_blend_mode m ) {
+      mode = m;
+      return *this;
+    }
+    common_color_blend_mode get_mode() const {
+      return mode;
+    }
+  private:
+    common_color_blend_mode mode = common_color_blend_mode::none;
   };
   void to_json( nlohmann::json &root, const pipeline_color_blend_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_color_blend_state_create_info_t &v );

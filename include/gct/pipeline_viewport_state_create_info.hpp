@@ -39,6 +39,7 @@ namespace gct {
       unsigned int width,
       unsigned int height
     );
+    pipeline_viewport_state_create_info_t &set_viewport_count( unsigned int n );
   };
   void to_json( nlohmann::json &root, const pipeline_viewport_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_viewport_state_create_info_t &v );

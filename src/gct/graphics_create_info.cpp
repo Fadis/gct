@@ -54,6 +54,42 @@ graphics_create_info &graphics_create_info::set_scene_graph(
   LIBGCT_SET_SCENE_GRAPH_IMPL( r )
   return *this;
 }
+graphics_create_info &graphics_create_info::use_dynamic_rendering(
+  const std::vector< vk::Format > &color_attachment_format,
+  vk::Format depth_attachment_format,
+  vk::Format stencil_attachment_format
+) {
+  pipeline_create_info.use_dynamic_rendering(
+    color_attachment_format,
+    depth_attachment_format,
+    stencil_attachment_format
+  );
+  return *this;
+}
+graphics_create_info &graphics_create_info::use_dynamic_rendering(
+  vk::Format color_attachment_format,
+  vk::Format depth_attachment_format,
+  vk::Format stencil_attachment_format
+) {
+  pipeline_create_info.use_dynamic_rendering(
+    color_attachment_format,
+    depth_attachment_format,
+    stencil_attachment_format
+  );
+  return *this;
+}
+graphics_create_info &graphics_create_info::use_color_blend( common_color_blend_mode mode ) {
+  pipeline_create_info.use_color_blend( mode );
+  return *this;
+}
+graphics_create_info &graphics_create_info::disable_depth_test() {
+  pipeline_create_info.disable_depth_test();
+  return *this;
+}
+graphics_create_info &graphics_create_info::disable_depth_write() {
+  pipeline_create_info.disable_depth_write();
+  return *this;
+}
 
 void to_json( nlohmann::json &dest, const graphics_create_info &src ) {
   dest = nlohmann::json::object();

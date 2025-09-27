@@ -2,6 +2,8 @@
 #define GCT_GRAPHICS_PIPELINE_CREATE_INFO_HPP
 #include <memory>
 #include <vector>
+#include <tuple>
+#include <optional>
 #include <vulkan/vulkan.hpp>
 #include <glm/vec3.hpp>
 #include <gct/extension.hpp>
@@ -123,9 +125,10 @@ namespace gct {
     graphics_pipeline_create_info_t &set_depth_stencil( const pipeline_depth_stencil_state_create_info_t& );
     graphics_pipeline_create_info_t &set_depth_stencil();
     graphics_pipeline_create_info_t &clear_depth_stencil();
-    graphics_pipeline_create_info_t &disable_depth_stencil();
+    graphics_pipeline_create_info_t &disable_depth_test();
+    graphics_pipeline_create_info_t &disable_depth_write();
     graphics_pipeline_create_info_t &set_color_blend( const pipeline_color_blend_state_create_info_t& );
-    graphics_pipeline_create_info_t &set_color_blend();
+    graphics_pipeline_create_info_t &set_color_blend( common_color_blend_mode mode );
     [[nodiscard]] const pipeline_color_blend_state_create_info_t &get_color_blend() const;
     graphics_pipeline_create_info_t &clear_color_blend();
     graphics_pipeline_create_info_t &set_dynamic( const pipeline_dynamic_state_create_info_t& );
@@ -157,9 +160,23 @@ namespace gct {
     graphics_pipeline_create_info_t &clear_render_pass();
     graphics_pipeline_create_info_t &fill_untouched();
     graphics_pipeline_create_info_t &set_gbuffer( const gbuffer& );
+    graphics_pipeline_create_info_t &use_dynamic_rendering(
+      const std::vector< vk::Format > &color_attachment_format,
+      vk::Format depth_attachment_format,
+      vk::Format stencil_attachment_format
+    );
+    graphics_pipeline_create_info_t &use_dynamic_rendering(
+      vk::Format color_attachment_format,
+      vk::Format depth_attachment_format,
+      vk::Format stencil_attachment_format
+    );
+    graphics_pipeline_create_info_t &use_color_blend( common_color_blend_mode );
     [[nodiscard]] bool has_reflection( vk::ShaderStageFlagBits ) const;
     [[nodiscard]] const shader_module_reflection_t &get_reflection( vk::ShaderStageFlagBits ) const;
     void to_json( nlohmann::json &root );
+  private:
+    std::optional< std::tuple< vk::Format, vk::Format, vk::Format > > dynamic_rendering_format;
+    std::vector< vk::Format > color_attachment_format_list;
   };
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v );
 }

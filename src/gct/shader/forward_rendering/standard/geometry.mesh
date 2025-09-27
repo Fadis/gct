@@ -15,11 +15,20 @@
 // Subgroup演算拡張を使う
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph/accessor.h>
 #include <gct/global_uniforms.h>
+#include <gct/backface_culling.h>
+#include <gct/adjacency.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint light;
+} push_constants;
 
 // 1つのローカルワークグループには32スレッドが含まれる
 layout(local_size_x = 32, local_size_y = 1 ) in;
@@ -51,7 +60,7 @@ taskPayloadSharedEXT task_data td;
 
 void main() {
   // 描画対象のID
-  const resource_pair_type id = resource_pair[ push_constants.instance + td.resource_pair_id ];
+  const resource_pair_type id = resource_pair[ push_constants.offset + td.resource_pair_id ];
   // メッシュの情報を取得する
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
@@ -93,7 +102,16 @@ void main() {
 
   // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
   // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
-  const bool front = dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0;
+  //const bool front = backface_culling( wp0, wp1, wp2, global_uniforms.eye_pos.xyz );
+  const bool front = backface_culling(
+        mesh,
+        //adjacency_has_adjacency( input_primitive_id, 0u, mesh.adjacency_offset ) ?
+        //  adjacency_get( input_primitive_id, 0u, mesh.adjacency_offset ): 
+          input_primitive_id,
+        l2w,
+        global_uniforms.eye_pos.xyz
+  );
+
   const bool visible = in_range && ( prim.cull == 0 || front );
  
   // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)

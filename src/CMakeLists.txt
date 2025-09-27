@@ -87,6 +87,7 @@ add_library( gct SHARED
   gct/pipeline_viewport_state_create_info.cpp
   gct/pipeline_color_blend_state_create_info.cpp 
   gct/pipeline_dynamic_state_create_info.cpp
+  gct/common_color_blend_mode.cpp
   gct/compute_pipeline_create_info.cpp
   gct/compute_pipeline.cpp
   gct/graphics_pipeline_create_info.cpp
@@ -660,6 +661,7 @@ add_shader( gct gct/shader/update_particle_velocity/update_particle_velocity.com
 add_shader( gct gct/shader/update_particle_velocity/update_substep_particle_velocity.comp INSTALL )
 add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
 add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
+add_shader( gct gct/shader/vertex_to_primitive/same_position.comp INSTALL )
 add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
 add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
 
@@ -695,6 +697,15 @@ add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/triangle/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/fin/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/shell/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
@@ -747,6 +758,8 @@ add_shader( gct gct/shader/tone_mapping/1.0/tone.comp INSTALL )
 add_shader( gct gct/shader/tone_mapping/1.0/distance.comp INSTALL )
 
 add_shader( gct gct/shader/gamma/1.0/gamma.comp INSTALL )
+
+add_shader( gct gct/shader/generate_adjacency/1.0/generate_adjacency.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

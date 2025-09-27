@@ -68,6 +68,29 @@
 namespace gct {
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::rebuild_chain() {
     if( chained ) return *this;
+
+    if( dynamic_rendering_format && has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
+      const auto &reflection = get_reflection( vk::ShaderStageFlagBits::eFragment );
+      if( !dynamic ) {
+        dynamic.reset( new pipeline_dynamic_state_create_info_t() );
+      }
+      dynamic->add_dynamic_state( vk::DynamicState::eViewport );
+      dynamic->add_dynamic_state( vk::DynamicState::eScissor );
+      if( !viewport ) {
+        viewport.reset( new pipeline_viewport_state_create_info_t() );
+        viewport->set_viewport_count( reflection->output_variable_count );
+      }
+      color_attachment_format_list = std::vector< vk::Format >{ reflection->output_variable_count, std::get< 0 >( *dynamic_rendering_format ) };
+      const bool has_depth = depth_stencil && depth_stencil->get_basic().depthTestEnable;
+      const bool has_stencil = depth_stencil && depth_stencil->get_basic().stencilTestEnable;
+      set_rendering(
+        vk::PipelineRenderingCreateInfo()
+          .setColorAttachmentFormats( color_attachment_format_list )
+          .setDepthAttachmentFormat( has_depth ? std::get< 1 >( *dynamic_rendering_format ) : vk::Format::eUndefined )
+          .setStencilAttachmentFormat( has_stencil ? std::get< 2 >( *dynamic_rendering_format ) : vk::Format::eUndefined )
+      );
+    }
+
     if( vertex_input ) {
       vertex_input->rebuild_chain();
       basic
@@ -416,8 +439,23 @@ namespace gct {
     chained = false;
     return *this;
   }
-  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend() {
-    color_blend.reset( new pipeline_color_blend_state_create_info_t() );
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend( common_color_blend_mode mode ) {
+    if( !color_blend ) {
+      color_blend.reset( new pipeline_color_blend_state_create_info_t() );
+    }
+    color_blend->set_mode( mode );
+    if( color_blend->get_attachment().empty() ) {
+      if( has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
+        const auto &reflection = get_reflection( vk::ShaderStageFlagBits::eFragment );
+        pipeline_color_blend_state_create_info_t temp;
+        color_blend->clear_attachment();
+        for( unsigned int i = 0u; i != reflection->output_variable_count; ++i ) {
+          color_blend->add_attachment();
+        }
+      }
+    }
+    basic
+      .setPColorBlendState( &color_blend->get_basic() );
     chained = false;
     return *this;
   }
@@ -449,7 +487,7 @@ namespace gct {
     if( !rasterization ) set_rasterization();
     if( !multisample ) set_multisample();
     if( !depth_stencil ) set_depth_stencil();
-    if( !color_blend ) set_color_blend();
+    if( !color_blend ) set_color_blend( common_color_blend_mode::none );
     if( !dynamic ) set_dynamic();
     return *this;
   }
@@ -489,8 +527,9 @@ namespace gct {
     );
     set_render_pass( g.get_render_pass(), 0 );
     pipeline_color_blend_state_create_info_t temp;
+    temp.set_mode( g.get_props().blend_mode );
     for( unsigned int i = 0u; i != g.get_props().color_buffer_count; ++i ) {
-      temp.add_attachment();
+      temp.add_common_attachment( g.get_props().blend_mode );
     }
     set_color_blend( temp );
     return *this;
@@ -520,6 +559,67 @@ namespace gct {
     if( found == stage.end() )
       throw exception::invalid_argument( "graphics_pipeline_create_info_t::get_reflection : The pipeline doesn't have specified shader stage.", __FILE__, __LINE__ );
     return found->get_shader_module()->get_props().get_reflection();
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::use_dynamic_rendering(
+    const std::vector< vk::Format > &color_attachment_format,
+    vk::Format depth_attachment_format,
+    vk::Format stencil_attachment_format
+  ) {
+    if( !dynamic ) {
+      dynamic.reset( new pipeline_dynamic_state_create_info_t() );
+    }
+    dynamic->add_dynamic_state( vk::DynamicState::eViewport );
+    dynamic->add_dynamic_state( vk::DynamicState::eScissor );
+    if( !viewport ) {
+      viewport.reset( new pipeline_viewport_state_create_info_t() );
+      viewport->set_viewport_count( color_attachment_format.size() );
+    }
+    set_rendering(
+      vk::PipelineRenderingCreateInfo()
+        .setColorAttachmentFormats( color_attachment_format )
+        .setDepthAttachmentFormat( depth_attachment_format )
+        .setStencilAttachmentFormat( stencil_attachment_format )
+    );
+    chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::use_dynamic_rendering(
+    vk::Format color_attachment_format,
+    vk::Format depth_attachment_format,
+    vk::Format stencil_attachment_format
+  ) {
+    dynamic_rendering_format = std::make_tuple( color_attachment_format, depth_attachment_format, stencil_attachment_format );
+    dynamic.reset();
+    viewport.reset();
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::disable_depth_test() {
+    if( !depth_stencil ) {
+      set_depth_stencil();
+    }
+    auto basic = depth_stencil->get_basic();
+    basic.setDepthTestEnable( false );
+    depth_stencil->set_basic( basic );
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::disable_depth_write() {
+    if( !depth_stencil ) {
+      set_depth_stencil();
+    }
+    auto basic = depth_stencil->get_basic();
+    basic.setDepthWriteEnable( false );
+    depth_stencil->set_basic( basic );
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::use_color_blend( common_color_blend_mode mode ) {
+    if( !color_blend ) {
+      set_color_blend( mode );
+    }
+    else {
+      color_blend->set_mode( mode );
+    }
+    chained = false;
+    return *this;
   }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {
     root = nlohmann::json::object();

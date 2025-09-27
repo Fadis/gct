@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.hpp>
 #include <gct/setter.hpp>
 #include <gct/color.hpp>
+#include <gct/common_color_blend_mode.hpp>
 
 namespace gct {
 
@@ -24,6 +25,7 @@ struct gbuffer_create_info {
   LIBGCT_SETTER( clear_color )
   LIBGCT_SETTER( initial_depth )
   LIBGCT_SETTER( external_depth )
+  LIBGCT_SETTER( blend_mode )
   gbuffer_create_info &disable_depth() {
     has_depth = false;
     return *this;
@@ -48,6 +50,7 @@ struct gbuffer_create_info {
   vk::ClearDepthStencilValue initial_depth = vk::ClearDepthStencilValue( 1.f, 0 );
   std::vector< std::shared_ptr< image_view_t > > external_color;
   std::vector< std::shared_ptr< image_view_t > > external_depth;
+  common_color_blend_mode blend_mode;
 };
 
 void to_json( nlohmann::json &dest, const gbuffer_create_info &src );

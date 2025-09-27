@@ -56,6 +56,13 @@ public:
   buffer_descriptor allocate( std::uint32_t count = 1u );
   void set( const buffer_descriptor&, const std::uint8_t *begin, const std::uint8_t *end );
   void set( const buffer_descriptor&, std::uint32_t index, const std::uint8_t *begin, const std::uint8_t *end );
+  template< typename T >
+  void set(
+    const buffer_descriptor &desc, std::uint32_t index,
+    const T &value
+  ) {
+    set( desc, index, reinterpret_cast< const std::uint8_t* >( &value ), std::next( reinterpret_cast< const std::uint8_t* >( &value ), sizeof( T ) ) );
+  }
   void clear( const buffer_descriptor&, std::uint32_t index, std::uint32_t count = 1u );
   void clear( const buffer_descriptor& );
   void clear();

@@ -244,6 +244,9 @@ public:
   [[nodiscard]] constexpr const void *get_head() const noexcept {
     return head;
   }
+  [[nodiscard]] bool is_chained() const {
+    return chained;
+  }
 // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 protected:
   void *head = nullptr;

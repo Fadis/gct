@@ -112,6 +112,5 @@ namespace gct {
         .setLineWidth( 1.0f )
     ); 
   }
-
 }
 

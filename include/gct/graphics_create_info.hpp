@@ -10,6 +10,7 @@
 #include <gct/named_resource.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/allocator_set.hpp>
+#include <gct/common_color_blend_mode.hpp>
 
 namespace gct {
 
@@ -64,6 +65,19 @@ struct graphics_create_info {
      const std::shared_ptr< scene_graph::scene_graph_resource > &r
   );
   graphics_create_info &clear_shader();
+  graphics_create_info &use_dynamic_rendering(
+    const std::vector< vk::Format > &color_attachment_format,
+    vk::Format depth_attachment_format,
+    vk::Format stencil_attachment_format
+  );
+  graphics_create_info &use_dynamic_rendering(
+    vk::Format color_attachment_format,
+    vk::Format depth_attachment_format,
+    vk::Format stencil_attachment_format
+  );
+  graphics_create_info &use_color_blend( common_color_blend_mode );
+  graphics_create_info &disable_depth_test();
+  graphics_create_info &disable_depth_write();
   allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;

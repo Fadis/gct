@@ -25,6 +25,8 @@ scene_graph_create_info::scene_graph_create_info() {
   spatial_hash.set_buffer_name( "spatial_hash_pool" );
   vertex_to_primitive.set_buffer_name( "vertex_to_primitive_pool" );
   lambda.set_buffer_name( "lambda_pool" );
+  camera.set_buffer_name( "camera_pool" );
+  adjacency.set_buffer_name( "adjacency_pool" );
   const std::uint32_t max_particle_count = 2097152u;
   const std::uint32_t max_rigid_count = 65536u;
   particle.set_max_buffer_count( max_particle_count );
@@ -41,6 +43,8 @@ scene_graph_create_info::scene_graph_create_info() {
   vertex_to_primitive.set_max_request_count( 64u );
   lambda.set_max_buffer_count( max_particle_count * 32u );
   lambda.set_max_request_count( 64u );
+  adjacency.set_max_buffer_count( max_particle_count * 3u );
+  adjacency.set_max_request_count( 64u );
 }
 
 scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
@@ -63,6 +67,8 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   spatial_hash.set_shader( dir / "spatial_hash_pool" );
   vertex_to_primitive.set_shader( dir / "vertex_to_primitive_pool" );
   lambda.set_shader( dir / "lambda_pool" );
+  camera.set_shader( dir / "camera_pool" );
+  adjacency.set_shader( dir / "adjacency_pool" );
   return *this;
 }
 
@@ -95,6 +101,8 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "spatial_hash" ] = src.spatial_hash;
   dest[ "vertex_to_primitive" ] = src.vertex_to_primitive;
   dest[ "lambda" ] = src.lambda;
+  dest[ "camera" ] = src.camera;
+  dest[ "adjacency" ] = src.adjacency;
   dest[ "prim_pool_size" ] = src.prim_pool_size;
   dest[ "inst_pool_size" ] = src.inst_pool_size;
   dest[ "descriptor_set_id" ] = src.descriptor_set_id;

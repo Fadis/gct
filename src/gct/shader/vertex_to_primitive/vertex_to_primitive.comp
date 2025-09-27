@@ -43,7 +43,8 @@ void main() {
   vertex_to_primitive_insert(
     mesh.accessor,
     primitive_id,
-    mesh.vertex_to_primitive_offset
+    mesh.vertex_to_primitive_offset,
+    mesh.same_position_offset
   );
 }
 

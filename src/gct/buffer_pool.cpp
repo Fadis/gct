@@ -183,7 +183,7 @@ void buffer_pool::state_type::clear( const buffer_descriptor &desc, std::uint32_
       auto staging = staging_buffer->map< std::uint8_t >();
       std::fill( std::next( staging.begin(), si->second * aligned_size ), std::next( staging.begin(), ( si->second + 1u ) * aligned_size ), 0u );
       const request_index_t request_index = write_request_index_allocator.allocate();
-      write_request_index.insert( std::make_pair( index, request_index ) );
+      write_request_index.insert( std::make_pair( *desc + index, request_index ) );
       write_region.push_back(
         vk::BufferCopy()
           .setSrcOffset( si->second * aligned_size )
@@ -236,7 +236,7 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
           .setDstOffset( si->second * aligned_size )
           .setSize( aligned_size )
       );
-      read_request_index.insert( std::make_pair( index, request_index ) );
+      read_request_index.insert( std::make_pair( *desc + index, request_index ) );
     }
     else {
       cbs.insert( std::make_pair( *desc + index, cb ) );
@@ -248,8 +248,8 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
           .setDstOffset( staging_index_ * aligned_size )
           .setSize( aligned_size )
       );
-      read_request_index.insert( std::make_pair( index, request_index ) );
-      staging_index.insert( std::make_pair( index, staging_index_ ) );
+      read_request_index.insert( std::make_pair( *desc + index, request_index ) );
+      staging_index.insert( std::make_pair( *desc + index, staging_index_ ) );
       used_on_gpu.push_back( desc );
     }
   }
@@ -345,8 +345,10 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       {
         std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->staging_buffer->map< std::uint8_t >();
+        std::sort( self->used_on_gpu.begin(), self->used_on_gpu.end() );
+        self->used_on_gpu.erase( std::unique( self->used_on_gpu.begin(), self->used_on_gpu.end() ), self->used_on_gpu.end() );
         for( const auto &desc: self->used_on_gpu ) {
-          if( ( self->buffer_state.find( *desc ) == self->buffer_state.end() ) ) {
+          if( ( self->buffer_state.find( *desc ) != self->buffer_state.end() ) ) {
             auto &s = self->buffer_state[ *desc ];
             const auto begin = self->read_request_index.lower_bound( *desc );
             const auto array_size = self->index_allocator.get_size( *desc );

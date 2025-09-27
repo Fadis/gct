@@ -155,7 +155,20 @@ vertex_attribute read_vertex_attribute( mesh_type mesh, uint i ) {
 
 vec4 read_vertex_position( mesh_type mesh, uint i ) {
   const uint vertex_index = read_index( accessor_pool[ mesh.accessor + 0 ], i );
-  return read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index, vec4( 0.1, 0.2, 0.3, 1.0 ) );
+  return read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+}
+
+vec4 read_vertex_position_by_vertex_id( mesh_type mesh, uint i ) {
+  return read_vertex( accessor_pool[ mesh.accessor + 1 ], i, vec4( 0.1, 0.2, 0.3, 1.0 ) );
+}
+
+vec3 read_primitive_center( mesh_type mesh, uint primitive_id ) {
+  return
+    (
+      read_vertex_position( mesh, primitive_id * 3u + 0u ).xyz +
+      read_vertex_position( mesh, primitive_id * 3u + 1u ).xyz +
+      read_vertex_position( mesh, primitive_id * 3u + 2u ).xyz
+    ) / 3.0;
 }
 
 const vertex_attribute null_attr = vertex_attribute(

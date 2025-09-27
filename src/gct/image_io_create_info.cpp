@@ -20,10 +20,10 @@ image_io_plan &image_io_plan::set_dim(
     image_io_dimension()
       .set_size_transform(
         glm::mat4x4(
-          0.f, 0.f, 0.f, s.x,
-          0.f, 0.f, 0.f, s.y,
-          0.f, 0.f, 0.f, s.z,
-          0.f, 0.f, 0.f, 1.f
+          0.f, 0.f, 0.f, 0.f,
+          0.f, 0.f, 0.f, 0.f,
+          0.f, 0.f, 0.f, 0.f,
+          s.x, s.y, s.z, 1.f
         )
       )
       .set_preserve_layer_count( false )
@@ -82,7 +82,6 @@ image_io_create_info::image_io_create_info(
   }
   const auto pcmp = executable->get_push_constant_member_pointer();
   if( !pcmp ) {
-    std::cout << executable->get_props().shader << std::endl;
     throw exception::invalid_argument( "image_io_create_info::image_io_create_info : Push constants reflection is not available", __FILE__, __LINE__ );
   }
   std::unordered_set< std::string > duplicated_name;
@@ -113,7 +112,7 @@ image_io_create_info::image_io_create_info(
       throw exception::invalid_argument( "image_io_create_info::image_io_create_info : The shader doesn't have push constant value " + v, __FILE__, __LINE__ );
     }
   }
-  push_constant.resize( pcmp->get_aligned_size() );
+
   bool size_specified = false;
   if( plan.dim.relative_to ) {
     bool found = false;
@@ -231,7 +230,7 @@ image_io_create_info::image_io_create_info(
       }
     }
   }
-  push_constant.resize( pcmp->get_aligned_size() );
+  push_constant.resize( pcmp->get_aligned_size(), 0u );
   auto size = plan.dim.size_transform * glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
   size /= size.w;
   dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
@@ -242,12 +241,15 @@ image_io_create_info::image_io_create_info(
     else if( pcmp->has( "instance" ) ) {
       push_constant.data()->*((*pcmp)[ "instance" ]) = plan.shape->offset;
     }
-    if( pcmp->has( "couunt" ) ) {
+    if( pcmp->has( "count" ) ) {
       push_constant.data()->*((*pcmp)[ "count" ]) = plan.shape->count;
     }
     else if( pcmp->has( "primitive" ) ) {
       push_constant.data()->*((*pcmp)[ "primitive" ]) = plan.shape->count;
     }
+  }
+  if( pcmp->has( "loop_until" ) ) {
+    push_constant.data()->*(*pcmp)[ "loop_until" ] = plan.loop;
   }
 }
 #endif
@@ -332,9 +334,10 @@ void image_io_create_info::update_rendering_info(
   const image_pool::image_descriptor &desc,
   bool is_inout
 ) {
+  std::cout << plan.node_name << "." << name << std::endl;
   const auto view = resource->image->get( desc );
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
-  if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment ) {
+  if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eColorAttachment ) {
     const auto cai = std::find_if( ca.begin(), ca.end(), [name]( const auto &v ) { return v.name == name; } );
     if( cai != ca.end() ) {
       rendering_info.add_color_attachment(
@@ -350,14 +353,17 @@ void image_io_create_info::update_rendering_info(
               .setLoadOp( is_inout ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear )
               .setStoreOp( vk::AttachmentStoreOp::eStore )
               .setClearValue(
-                vk::ClearColorValue( 0.f, 0.f, 0.f, 0.f )
+                vk::ClearColorValue( 1.f, 0.f, 0.f, 0.f )
               )
           )
       );
     }
   }
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment ) {
-    if( name == "depth" ) {
+    const bool enable_depth =
+      graphic_executable->get_props().pipeline_create_info.has_rendering() &&
+      graphic_executable->get_props().pipeline_create_info.get_rendering().depthAttachmentFormat != vk::Format::eUndefined;
+    if( name == "depth" && enable_depth ) {
       rendering_info.set_depth_attachment(
         rendering_attachment_info_t()
           .set_view( view )
@@ -376,7 +382,10 @@ void image_io_create_info::update_rendering_info(
           )
       );
     }
-    if( name == "stencil" ) {
+    const bool enable_stencil =
+      graphic_executable->get_props().pipeline_create_info.has_rendering() &&
+      graphic_executable->get_props().pipeline_create_info.get_rendering().stencilAttachmentFormat != vk::Format::eUndefined;
+    if( name == "stencil" && enable_stencil ) {
       rendering_info.set_stencil_attachment(
         rendering_attachment_info_t()
           .set_view( view )
@@ -387,7 +396,7 @@ void image_io_create_info::update_rendering_info(
             vk::RenderingAttachmentInfoKHR()
 #endif
               .setImageLayout( vk::ImageLayout::eGeneral )
-              .setLoadOp( vk::AttachmentLoadOp::eClear )
+              .setLoadOp( is_inout ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear )
               .setStoreOp( vk::AttachmentStoreOp::eStore )
               .setClearValue(
                 vk::ClearDepthStencilValue( 1.f, 0 )
@@ -584,7 +593,9 @@ const std::optional< spv_member_pointer > &image_io_create_info::get_push_consta
 }
 void image_io_create_info::set_shareable( const std::string &name, bool s ) {
   if( plan.output.find( name ) == plan.output.end() ) {
-    throw exception::invalid_argument( "image_io_create_info::set_shareable : unknown output image "+name, __FILE__, __LINE__ );
+    if( plan.inout.find( name ) == plan.inout.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_shareable : unknown output image "+name, __FILE__, __LINE__ );
+    }
   }
   shareable.insert( std::make_pair( name, s ) );
 }

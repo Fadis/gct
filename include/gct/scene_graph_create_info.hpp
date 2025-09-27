@@ -46,6 +46,8 @@ struct scene_graph_create_info {
   LIBGCT_SETTER( spatial_hash )
   LIBGCT_SETTER( vertex_to_primitive )
   LIBGCT_SETTER( lambda )
+  LIBGCT_SETTER( camera )
+  LIBGCT_SETTER( adjacency )
   LIBGCT_SETTER( prim_pool_size )
   LIBGCT_SETTER( inst_pool_size )
   LIBGCT_SETTER( descriptor_set_id )
@@ -83,6 +85,8 @@ struct scene_graph_create_info {
   buffer_pool_create_info spatial_hash;
   buffer_pool_create_info vertex_to_primitive;
   buffer_pool_create_info lambda;
+  buffer_pool_create_info camera;
+  buffer_pool_create_info adjacency;
   std::uint32_t prim_pool_size = 65536u;
   std::uint32_t inst_pool_size = 65536u;
   std::uint32_t descriptor_set_id = 0u;

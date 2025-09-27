@@ -1,0 +1,298 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算拡張を使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+#include <gct/backface_culling.h>
+#include <gct/adjacency.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint light;
+  uint shell_thickness;
+  uint loop_counter;
+  uint loop_until;
+} push_constants;
+
+layout(local_size_x = 32, local_size_y = 1 ) in;
+layout(triangles, max_vertices = 96, max_primitives = 48) out;
+//layout(triangles, max_vertices = 256, max_primitives = 256) out;
+
+// 頂点属性
+layout (location = 0) out vec4 output_position[]; // 頂点座標
+layout (location = 1) out vec3 output_normal[]; // 法線
+layout (location = 2) out vec3 output_tangent[]; // 接線
+layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
+layout (location = 4) out vec4 output_optflow[];
+layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
+layout (location = 6) out vec4 output_previous_position[];
+
+// タスクペイロード
+struct task_data {
+  // 見えると判断されたメッシュレットのID
+  uint meshlet_index[ 32 ];
+  // ローカル座標系からワールド座標系への変換行列
+  mat4 l2w;
+  mat4 w2s;
+  // どのノードの下のどのメッシュを描くかを指定するID
+  uint resource_pair_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.offset + td.resource_pair_id ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+
+  // 変換行列をタスクペイロードから取り出す
+  const mat4 l2w = td.l2w;
+  const mat4 w2s = td.w2s;
+  
+  // メッシュレットの最大頂点数(32*3=96)
+  const uint max_input_vertex_count = gl_WorkGroupSize.x * 3u;
+
+  // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
+  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  // メッシュの頂点数からこのメッシュレットの頂点数を求める
+  // 端数の頂点を扱う最後のメッシュレット以外では96頂点になる
+  const uint local_vertex_count = min( mesh.vertex_count - meshlet_id * max_input_vertex_count, max_input_vertex_count );
+  
+  // スレッドが担当するプリミティブが存在するかを調べる
+  // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
+  const uint local_primitive_id = gl_LocalInvocationID.x;
+  const uint local_vertex_id = local_primitive_id * 3u;
+  const bool in_range = local_vertex_count > local_vertex_id;
+  
+  // このスレッドが処理すべき3つの頂点の最初の要素までのオフセットを求める
+  const uint input_primitive_id = meshlet_id * 32u + local_primitive_id;
+  
+  // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
+  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
+  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
+  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
+
+  vec3 wn0 = mat3( l2w ) * v0.normal.xyz;
+  vec3 wn1 = mat3( l2w ) * v1.normal.xyz;
+  vec3 wn2 = mat3( l2w ) * v2.normal.xyz;
+
+  // 頂点の座標をローカル座標系からワールド座標系に変換する
+  const vec4 wp0 = l2w * v0.position;
+  const vec4 wp1 = l2w * v1.position;
+  const vec4 wp2 = l2w * v2.position;
+
+  // 頂点座標からワールド座標系での面の法線を求める
+  const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
+
+  // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
+  // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
+  const bool front = dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0;
+
+  const bool[4] adj_visible = bool[4](
+    in_range ? backface_culling( wp0, wp1, wp2, global_uniforms.eye_pos.xyz ) : false,
+    ( adjacency_has_adjacency( input_primitive_id, 0u, mesh.adjacency_offset ) ) ?
+      backface_culling(
+        mesh,
+        adjacency_get( input_primitive_id, 0u, mesh.adjacency_offset ),
+        l2w,
+        global_uniforms.eye_pos.xyz
+      ) : true,
+    ( adjacency_has_adjacency( input_primitive_id, 1u, mesh.adjacency_offset ) ) ?
+      backface_culling(
+        mesh,
+        adjacency_get( input_primitive_id, 1u, mesh.adjacency_offset ),
+        l2w,
+        global_uniforms.eye_pos.xyz
+      ) : true,
+    ( adjacency_has_adjacency( input_primitive_id, 2u, mesh.adjacency_offset ) ) ?
+      backface_culling(
+        mesh,
+        adjacency_get( input_primitive_id, 2u, mesh.adjacency_offset ),
+        l2w,
+        global_uniforms.eye_pos.xyz
+      ) : true
+  );
+
+  bool[3] enable_fin = bool[3](
+    adj_visible[ 0 ] && !adj_visible[ 1 ], //&& adjacency_is_convex( mesh, input_primitive_id, 0u, global_uniforms.eye_pos.xyz ), 
+    adj_visible[ 0 ] && !adj_visible[ 2 ], //&& adjacency_is_convex( mesh, input_primitive_id, 1u, global_uniforms.eye_pos.xyz ),
+    adj_visible[ 0 ] && !adj_visible[ 3 ] //&& adjacency_is_convex( mesh, input_primitive_id, 2u, global_uniforms.eye_pos.xyz )
+  );
+
+  uint fin_vertex_count = 0u;
+  fin_vertex_count += enable_fin[ 0 ] ? 4u : 0u;
+  fin_vertex_count += enable_fin[ 1 ] ? 4u : 0u;
+  fin_vertex_count += enable_fin[ 2 ] ? 4u : 0u;
+  uint fin_primitive_count = 0u;
+  fin_primitive_count += enable_fin[ 0 ] ? 2u : 0u;
+  fin_primitive_count += enable_fin[ 1 ] ? 2u : 0u;
+  fin_primitive_count += enable_fin[ 2 ] ? 2u : 0u;
+  uint fin_offset[3] = uint[3](
+    0u,
+    ( enable_fin[ 0 ] ) ? 1u : 0u,
+    ( enable_fin[ 0 ] ) ? ( ( enable_fin[ 1 ] ) ? 2u : 1u ) : ( ( enable_fin[ 1 ] ) ? 1u : 0u )
+  );
+
+  const uint max_output_vertex_count = 96u;
+  const uint max_output_primitive_count = 48u;
+  //const uint max_output_vertex_count = 128u;
+  //const uint max_output_primitive_count = 96u;
+
+  uint filtered_vertex_count = min( subgroupAdd( fin_vertex_count ), max_output_vertex_count );
+  const uint filtered_vertex_offset = subgroupExclusiveAdd( fin_vertex_count );
+
+  uint filtered_primitive_count = min( subgroupAdd( fin_primitive_count ), max_output_primitive_count );
+  const uint filtered_primitive_offset = subgroupExclusiveAdd( fin_primitive_count );
+
+  const bool no_space_left =
+    ( filtered_vertex_count < filtered_vertex_offset + fin_vertex_count ) ||
+    ( filtered_primitive_count < filtered_primitive_offset + fin_primitive_count );
+
+  filtered_vertex_count = subgroupMax(
+    no_space_left ?
+    0u :
+    filtered_vertex_offset + fin_vertex_count
+  );
+  filtered_primitive_count = subgroupMax(
+    no_space_left ?
+    0u :
+    filtered_primitive_offset + fin_primitive_count
+  );
+
+  if( no_space_left ) {
+    enable_fin =  bool[ 3 ]( false, false, false );
+    fin_vertex_count = 0u;
+    fin_primitive_count = 0u;
+    fin_offset = uint[ 3 ]( 0u, 0u, 0u );
+  }
+
+  SetMeshOutputsEXT( filtered_vertex_count, filtered_primitive_count );
+
+  if( fin_primitive_count == 0u ) return;
+
+  const float fin_scale = 10.0;
+
+  const float fin_length = 0.1;// push_constants.shell_thickness;
+
+  const vec2 tex_coord[ 4 ] = vec2[ 4 ](
+    vec2( 0, 0 ),
+    vec2( fin_scale, 0 ),
+    vec2( fin_scale, 1 ),
+    vec2( 0, 1 )
+  );
+  
+  if( enable_fin[ 0 ] ) {
+    const vec4 rwp[ 4 ] = vec4[ 4 ](
+      wp1,
+      wp0,
+      ( wp0 + vec4( wn0 * fin_length, 0.0 ) ),
+      ( wp1 + vec4( wn1 * fin_length, 0.0 ) )
+    );
+    const vec3 tangent[ 4 ] = vec3[ 4 ](
+      v1.tangent.xyz,
+      v0.tangent.xyz,
+      v0.tangent.xyz,
+      v1.tangent.xyz
+    );
+    const uint fvo = filtered_vertex_offset + fin_offset[ 0 ] * 4u;
+    const uint fpo = filtered_primitive_offset + fin_offset[ 0 ] * 2u;
+    for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
+      gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
+      output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
+      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
+      output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
+      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+    }
+    for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
+      gl_PrimitiveTriangleIndicesEXT[ fpo + primitive_id ] = uvec3(
+        fvo + 0u,
+        fvo + 1u + primitive_id,
+        fvo + 2u + primitive_id
+      );
+    }
+  }
+  if( enable_fin[ 1 ] ) {
+    const vec4 rwp[ 4 ] = vec4[ 4 ](
+      wp2,
+      wp1,
+      ( wp1 + vec4( wn1 * fin_length, 0.0 ) ),
+      ( wp2 + vec4( wn2 * fin_length, 0.0 ) )
+    );
+    const vec3 tangent[ 4 ] = vec3[ 4 ](
+      v2.tangent.xyz,
+      v1.tangent.xyz,
+      v1.tangent.xyz,
+      v2.tangent.xyz
+    );
+    const uint fvo = filtered_vertex_offset + fin_offset[ 1 ] * 4u;
+    const uint fpo = filtered_primitive_offset + fin_offset[ 1 ] * 2u;
+    for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
+      gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
+      output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
+      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
+      output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
+      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+    }
+    for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
+      gl_PrimitiveTriangleIndicesEXT[ fpo + primitive_id ] = uvec3(
+        fvo + 0u,
+        fvo + 1u + primitive_id,
+        fvo + 2u + primitive_id
+      );
+    }
+  }
+  if( enable_fin[ 2 ] ) {
+    const vec4 rwp[ 4 ] = vec4[ 4 ](
+      wp0,
+      wp2,
+      ( wp2 + vec4( wn2 * fin_length, 0.0 ) ),
+      ( wp0 + vec4( wn0 * fin_length, 0.0 ) )
+    );
+    const vec3 tangent[ 4 ] = vec3[ 4 ](
+      v0.tangent.xyz,
+      v2.tangent.xyz,
+      v2.tangent.xyz,
+      v0.tangent.xyz
+    );
+    const uint fvo = filtered_vertex_offset + fin_offset[ 2 ] * 4u;
+    const uint fpo = filtered_primitive_offset + fin_offset[ 2 ] * 2u;
+    for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
+      gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
+      output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
+      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
+      output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
+      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+    }
+    for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
+      gl_PrimitiveTriangleIndicesEXT[ fpo + primitive_id ] = uvec3(
+        fvo + 0u,
+        fvo + 1u + primitive_id,
+        fvo + 2u + primitive_id
+      );
+    }
+  }
+}
+

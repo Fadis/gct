@@ -21,6 +21,7 @@
 #include <gct/color_attachment_name.hpp>
 #include <gct/rendering_info.hpp>
 #include <gct/graphics_execution_shape.hpp>
+#include <gct/format.hpp>
 
 namespace gct {
 
@@ -39,6 +40,7 @@ struct image_io_plan {
   LIBGCT_SETTER( inout )
   LIBGCT_SETTER( node_name )
   LIBGCT_SETTER( shape )
+  LIBGCT_SETTER( loop )
   image_io_plan &add_input(
     const std::string &name
   ) {
@@ -50,13 +52,25 @@ struct image_io_plan {
     const image_allocate_info &desc
   ) {
     auto basic = desc.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage|
-      vk::ImageUsageFlagBits::eSampled
-    );
+    const auto aspect = format_to_aspect( basic.format );
+    if( aspect & vk::ImageAspectFlagBits::eColor ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eStorage|
+        vk::ImageUsageFlagBits::eSampled|
+        vk::ImageUsageFlagBits::eColorAttachment
+      );
+    }
+    else if( aspect & vk::ImageAspectFlagBits::eDepth || aspect & vk::ImageAspectFlagBits::eStencil ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eDepthStencilAttachment
+      );
+    }
     auto desc_ = desc;
     desc_.create_info.set_basic( basic );
     desc_.set_layout( vk::ImageLayout::eGeneral );
@@ -68,13 +82,25 @@ struct image_io_plan {
     const dynamic_size_image_allocate_info &desc
   ) {
     auto basic = desc.allocate_info.create_info.get_basic();
-    basic.setUsage(
-      basic.usage |
-      vk::ImageUsageFlagBits::eTransferSrc |
-      vk::ImageUsageFlagBits::eTransferDst |
-      vk::ImageUsageFlagBits::eStorage|
-      vk::ImageUsageFlagBits::eSampled
-    );
+    const auto aspect = format_to_aspect( basic.format );
+    if( aspect & vk::ImageAspectFlagBits::eColor ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eStorage|
+        vk::ImageUsageFlagBits::eSampled|
+        vk::ImageUsageFlagBits::eColorAttachment
+      );
+    }
+    else if( aspect & vk::ImageAspectFlagBits::eDepth || aspect & vk::ImageAspectFlagBits::eStencil ) {
+      basic.setUsage(
+        basic.usage |
+        vk::ImageUsageFlagBits::eTransferSrc |
+        vk::ImageUsageFlagBits::eTransferDst |
+        vk::ImageUsageFlagBits::eDepthStencilAttachment
+      );
+    }
     auto desc_ = desc;
     desc_.allocate_info.create_info.set_basic( basic );
     desc_.allocate_info.set_layout( vk::ImageLayout::eGeneral );
@@ -96,6 +122,27 @@ struct image_io_plan {
                 width,
                 height
               )
+            )
+        )
+    );
+  }
+  image_io_plan &add_output(
+    const std::string &name,
+    unsigned int width,
+    unsigned int height,
+    vk::Format format
+  ) {
+    return add_output(
+      name,
+      gct::image_allocate_info()
+        .set_create_info(
+          gct::image_create_info_t()
+            .set_basic(
+              gct::basic_2d_image(
+                width,
+                height
+              )
+              .setFormat( format )
             )
         )
     );
@@ -307,6 +354,7 @@ struct image_io_plan {
   image_io_dimension dim;
   std::string node_name;
   std::optional< graphics_execution_shape > shape;
+  std::uint32_t loop = 1u;
 };
 
 void to_json( nlohmann::json&, const image_io_plan& );
@@ -410,6 +458,30 @@ struct image_io_create_info {
     push_constant.data()->*((*pcmp)[ name ]) = value;
     return *this;
   }
+  template< typename T >
+  const image_io_create_info &set_push_constant(
+    const std::string &name,
+    const T &value
+  ) const {
+    auto pcmp = get_push_constant_member_pointer();
+    if( !pcmp ) {
+      throw exception::runtime_error( "image_io_create_info::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
+    }
+    if( !pcmp->has( name ) ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
+    }
+    if( plan.input.find( name ) != plan.input.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for input image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.output.find( name ) != plan.output.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for output image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.inout.find( name ) != plan.inout.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for inout image ID" , __FILE__, __LINE__ );
+    }
+    push_constant.data()->*((*pcmp)[ name ]) = value;
+    return *this;
+  }
   [[nodiscard]] const rendering_info_t &get_rendering_info() const {
     return rendering_info;
   }
@@ -442,7 +514,7 @@ private:
   std::unordered_map< std::string, image_pool::image_descriptor > inout;
   std::unordered_map< std::string, texture_pool::texture_descriptor > sampled;
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
-  std::vector< std::uint8_t > push_constant;
+  mutable std::vector< std::uint8_t > push_constant;
   std::unordered_map< std::string, bool > shareable;
   std::vector< color_attachment_name > ca;
   std::shared_ptr< graphics > graphic_executable;

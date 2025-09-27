@@ -48,7 +48,9 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     data.size(),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
-    vk::BufferUsageFlagBits::eStorageBuffer
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst
   );
   {
     auto mapped = b->map< std::uint8_t >();
@@ -92,7 +94,9 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     data.size() * sizeof( glm::vec4 ),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
-    vk::BufferUsageFlagBits::eStorageBuffer
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst
   );
   {
     auto mapped = b->map< std::uint8_t >();
@@ -140,7 +144,9 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     data.size(),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
-    vk::BufferUsageFlagBits::eStorageBuffer
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst
   );
   {
     auto mapped = b->map< std::uint8_t >();
@@ -187,7 +193,9 @@ vertex_buffer_pool::vertex_buffer_descriptor vertex_buffer_pool::state_type::all
     count * sizeof( glm::vec4 ),
     vk::BufferUsageFlagBits::eVertexBuffer|
     vk::BufferUsageFlagBits::eIndexBuffer|
-    vk::BufferUsageFlagBits::eStorageBuffer,
+    vk::BufferUsageFlagBits::eStorageBuffer|
+    vk::BufferUsageFlagBits::eTransferSrc|
+    vk::BufferUsageFlagBits::eTransferDst,
     VMA_MEMORY_USAGE_GPU_ONLY
   );
   const vertex_buffer_index_t index = allocate_index();

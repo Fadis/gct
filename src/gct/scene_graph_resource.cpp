@@ -114,6 +114,12 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.lambda ) {
     dest[ "lambda" ] = *src.lambda;
   }
+  if( src.camera ) {
+    dest[ "camera" ] = *src.camera;
+  }
+  if( src.adjacency ) {
+    dest[ "adjacency" ] = *src.adjacency;
+  }
   dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
     if( v.second ) {

@@ -27,6 +27,8 @@ struct gltf2_create_info {
   LIBGCT_SETTER( enable_fluid_constraint )
   LIBGCT_SETTER( enable_rigid_constraint )
   LIBGCT_SETTER( enable_lambda )
+  LIBGCT_SETTER( enable_adjacency )
+  LIBGCT_SETTER( enable_same_position )
   std::filesystem::path filename;
   std::shared_ptr< scene_graph::scene_graph > graph;
   std::shared_ptr< scene_graph::node > root;
@@ -40,6 +42,8 @@ struct gltf2_create_info {
   bool enable_lambda = false;
   bool enable_fluid_constraint = false;
   bool enable_rigid_constraint = false;
+  bool enable_adjacency = false;
+  bool enable_same_position = false;
 };
 
 }

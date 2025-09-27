@@ -46,9 +46,7 @@ image_pool::views image_pool::state_type::allocate() {
     vk::ImageUsageFlagBits::eTransferSrc |
     vk::ImageUsageFlagBits::eTransferDst |
     vk::ImageUsageFlagBits::eSampled |
-    vk::ImageUsageFlagBits::eStorage |
-    vk::ImageUsageFlagBits::eColorAttachment |
-    vk::ImageUsageFlagBits::eInputAttachment
+    vk::ImageUsageFlagBits::eStorage
   );
 }
 

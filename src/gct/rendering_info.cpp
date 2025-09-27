@@ -111,10 +111,15 @@ namespace gct {
   rendering_info_t &rendering_info_t::rebuild_chain() {
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_ARRAY_OF_REBUILD_CHAIN_WRAPPED( basic, ColorAttachmentCount, PColorAttachments, color_attachment )
+    if( basic.layerCount == 0u && basic.viewMask == 0u ) {
+      basic.setLayerCount( 1u );
+    }
     if( depth_attachment ) {
+      depth_attachment->rebuild_chain();
       basic.pDepthAttachment = &depth_attachment->get_basic();
     }
     if( stencil_attachment ) {
+      stencil_attachment->rebuild_chain();
       basic.pStencilAttachment = &stencil_attachment->get_basic();
     }
     if( extent_generated || basic.renderArea == vk::Rect2D{} ) {

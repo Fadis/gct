@@ -266,6 +266,14 @@ scene_graph::scene_graph(
     std::cout << "Using system lambda_pool" << std::endl;
     props->lambda.set_shader( shader_path / "dummy" );
   }
+  if( !props->camera.shader_exists() ) {
+    std::cout << "Using system camera_pool" << std::endl;
+    props->camera.set_shader( shader_path / "dummy" );
+  }
+  if( !props->adjacency.shader_exists() ) {
+    std::cout << "Using system adjacency_pool" << std::endl;
+    props->adjacency.set_shader( shader_path / "dummy" );
+  }
 
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
@@ -374,6 +382,14 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->lambda )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->camera.reset( new buffer_pool(
+    buffer_pool_create_info( props->camera )
+      .set_allocator_set( props->allocator_set )
+  ) );
+  resource->adjacency.reset( new buffer_pool(
+    buffer_pool_create_info( props->adjacency )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -451,6 +467,12 @@ scene_graph::scene_graph(
   }
   if( resource->lambda && resource->descriptor_set->has( "lambda_pool" ) ) {
     u.push_back( { "lambda_pool", resource->lambda->get_buffer() } );
+  }
+  if( resource->camera && resource->descriptor_set->has( "camera_pool" ) ) {
+    u.push_back( { "camera_pool", resource->camera->get_buffer() } );
+  }
+  if( resource->adjacency && resource->descriptor_set->has( "adjacency_pool" ) ) {
+    u.push_back( { "adjacency_pool", resource->adjacency->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -560,6 +582,14 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->lambda ) {
     (*resource->lambda)( rec );
     s.add( resource->lambda->get_buffer() );
+  }
+  if( resource->camera ) {
+    (*resource->camera)( rec );
+    s.add( resource->camera->get_buffer() );
+  }
+  if( resource->adjacency ) {
+    (*resource->adjacency)( rec );
+    s.add( resource->adjacency->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

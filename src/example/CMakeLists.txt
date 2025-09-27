@@ -115,6 +115,11 @@ subdirs(
   xpbd
   fluid
   standard
+  forward
+  forward2
+  dump_adjacency
+  dump_v2p
+  dump_sp
 )
 if( DXC_FOUND )
 subdirs(
