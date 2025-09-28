@@ -12,8 +12,8 @@ bool backface_culling(
   vec4 wp2,
   vec3 eye_pos
 ) {
-  const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
-  return dot( fn.xyz, eye_pos - wp0.xyz ) >= 0;
+  const vec3 fn = normalize( cross( normalize( wp2.xyz - wp0.xyz ), normalize( wp1.xyz - wp0.xyz ) ) );
+  return dot( fn.xyz, normalize( eye_pos - wp0.xyz ) ) >= 0;
 }
 
 bool backface_culling(

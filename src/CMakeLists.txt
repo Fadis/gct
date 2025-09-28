@@ -660,6 +660,7 @@ add_shader( gct gct/shader/update_particle_velocity/update_particle_velocity.com
 add_shader( gct gct/shader/update_particle_velocity/update_substep_particle_velocity.comp INSTALL )
 add_shader( gct gct/shader/particle_to_mesh/particle_to_mesh.comp INSTALL )
 add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL )
+add_shader( gct gct/shader/vertex_to_primitive/same_position.comp INSTALL )
 add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
 add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
 

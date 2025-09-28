@@ -38,33 +38,36 @@ common_sample_setup::common_sample_setup(
   desc.add_options()
     ( "help,h", "show this message" )
     ( "debug,d", po::bool_switch(), "enable debug log" )
-    ( "validation,v", po::bool_switch(), "enable validation layer" );
+    ( "validation,v", po::bool_switch(), "enable validation layer" )
+    ( "record,r", po::bool_switch(), "record frames" );
+  if( enable_gltf ) {
+    desc.add_options()
+      ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" );
+  }
   if( enable_glfw ) {
     desc.add_options()
       ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
       ( "fullscreen,f", po::bool_switch(), "fullscreen" )
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
-      ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
       ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
-      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" )
-      ( "record,r", po::bool_switch(), "record frames" );
+      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" );
   }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
   po::notify( vm );
-  if( vm.count( "help" ) || ( enable_glfw && enable_gltf && ( !vm.count( "model" ) || vm[ "model" ].as< std::vector< std::string > >().empty() ) ) ) {
+  if( vm.count( "help" ) || ( enable_gltf && ( !vm.count( "model" ) || vm[ "model" ].as< std::vector< std::string > >().empty() ) ) ) {
     std::cout << desc << std::endl;
     exit( 0 );
   }
   
   std::vector< const char* > iext{};
+  if( enable_gltf ) {
+    model_filename = vm[ "model" ].as< std::vector< std::string > >()[ 0 ];
+    model_filename_list = vm[ "model" ].as< std::vector< std::string > >();
+  }
   if( enable_glfw ) {
     walk_state_filename = vm[ "walk" ].as< std::string >();
-    if( enable_gltf ) {
-      model_filename = vm[ "model" ].as< std::vector< std::string > >()[ 0 ];
-      model_filename_list = vm[ "model" ].as< std::vector< std::string > >();
-    }
     ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
     glfw::get();
     uint32_t iext_count = 0u;

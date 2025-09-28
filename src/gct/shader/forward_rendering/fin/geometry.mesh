@@ -35,7 +35,7 @@ layout(push_constant) uniform PushConstants {
 
 layout(local_size_x = 32, local_size_y = 1 ) in;
 //layout(triangles, max_vertices = 96, max_primitives = 48) out;
-layout(triangles, max_vertices = 128, max_primitives = 96) out;
+layout(triangles, max_vertices = 256, max_primitives = 256) out;
 
 // 頂点属性
 layout (location = 0) out vec4 output_position[]; // 頂点座標
@@ -92,9 +92,9 @@ void main() {
   const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
   const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
 
-  const vec3 wn0 = mat3( l2w ) * v0.normal.xyz;
-  const vec3 wn1 = mat3( l2w ) * v1.normal.xyz;
-  const vec3 wn2 = mat3( l2w ) * v2.normal.xyz;
+  vec3 wn0 = mat3( l2w ) * v0.normal.xyz;
+  vec3 wn1 = mat3( l2w ) * v1.normal.xyz;
+  vec3 wn2 = mat3( l2w ) * v2.normal.xyz;
 
   // 頂点の座標をローカル座標系からワールド座標系に変換する
   const vec4 wp0 = l2w * v0.position;
@@ -110,24 +110,24 @@ void main() {
 
   const bool[4] adj_visible = bool[4](
     in_range ? backface_culling( wp0, wp1, wp2, global_uniforms.eye_pos.xyz ) : false,
-    ( adjacency_has_adjacency( primitive_id, 0u, mesh.adjacency_offset ) ) ?
+    ( adjacency_has_adjacency( input_primitive_id, 0u, mesh.adjacency_offset ) ) ?
       backface_culling(
         mesh,
-        adjacency_get( primitive_id, 0u, mesh.adjacency_offset ),
+        adjacency_get( input_primitive_id, 0u, mesh.adjacency_offset ),
         l2w,
         global_uniforms.eye_pos.xyz
       ) : true,
-    ( adjacency_has_adjacency( primitive_id, 1u, mesh.adjacency_offset ) ) ?
+    ( adjacency_has_adjacency( input_primitive_id, 1u, mesh.adjacency_offset ) ) ?
       backface_culling(
         mesh,
-        adjacency_get( primitive_id, 1u, mesh.adjacency_offset ),
+        adjacency_get( input_primitive_id, 1u, mesh.adjacency_offset ),
         l2w,
         global_uniforms.eye_pos.xyz
       ) : true,
-    ( adjacency_has_adjacency( primitive_id, 2u, mesh.adjacency_offset ) ) ?
+    ( adjacency_has_adjacency( input_primitive_id, 2u, mesh.adjacency_offset ) ) ?
       backface_culling(
         mesh,
-        adjacency_get( primitive_id, 2u, mesh.adjacency_offset ),
+        adjacency_get( input_primitive_id, 2u, mesh.adjacency_offset ),
         l2w,
         global_uniforms.eye_pos.xyz
       ) : true
@@ -153,10 +153,10 @@ void main() {
     ( enable_fin[ 0 ] ) ? ( ( enable_fin[ 1 ] ) ? 2u : 1u ) : ( ( enable_fin[ 1 ] ) ? 1u : 0u )
   );
 
-  //const uint max_output_vertex_count = 96u;
-  //const uint max_output_primitive_count = 48u;
-  const uint max_output_vertex_count = 128u;
-  const uint max_output_primitive_count = 96u;
+  const uint max_output_vertex_count = 256u;
+  const uint max_output_primitive_count = 256u;
+  //const uint max_output_vertex_count = 128u;
+  //const uint max_output_primitive_count = 96u;
 
   uint filtered_vertex_count = min( subgroupAdd( fin_vertex_count ), max_output_vertex_count );
   const uint filtered_vertex_offset = subgroupExclusiveAdd( fin_vertex_count );
@@ -192,7 +192,7 @@ void main() {
 
   const float fin_scale = 10.0;
 
-  const float fin_length = 0.01;// push_constants.shell_thickness;
+  const float fin_length = 0.1;// push_constants.shell_thickness;
 
   const vec2 tex_coord[ 4 ] = vec2[ 4 ](
     vec2( 0, 0 ),

@@ -39,12 +39,14 @@ void main() {
   if( !in_range ) return;
 
   if( mesh.vertex_to_primitive_offset == 0xFFFFFFFF ) return;
+  if( mesh.same_position_offset == 0xFFFFFFFF ) return;
   if( mesh.adjacency_offset == 0xFFFFFFFF ) return;
 
   adjacency_generate(
     mesh.accessor,
     primitive_id,
     mesh.vertex_to_primitive_offset,
+    mesh.same_position_offset,
     mesh.adjacency_offset
   );
 }

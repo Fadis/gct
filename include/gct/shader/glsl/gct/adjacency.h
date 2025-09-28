@@ -21,7 +21,10 @@ bool adjacency_has_adjacency(
   uint edge_id,
   uint adjacency_id_offset
 ) {
-  return adjacency_pool[ adjacency_id_offset + from_primitive_id * 3u + edge_id ] != 0u;
+  return
+    ( adjacency_id_offset != 0xFFFFFFFF ) ?
+    ( adjacency_pool[ adjacency_id_offset + from_primitive_id * 3u + edge_id ] != 0u ) :
+    false;
 }
 
 uint adjacency_get(
@@ -45,6 +48,7 @@ void adjacency_generate(
   uint accessor_id_offset,
   uint primitive_id,
   uint v2p_id_offset,
+  uint sp_id_offset,
   uint adjacency_id_offset
 ) {
   const uint i0 = read_index( accessor_pool[ accessor_id_offset + 0 ], primitive_id * 3u + 0u );
@@ -54,26 +58,28 @@ void adjacency_generate(
   for( uint slot_id = 0u; slot_id != 32u; slot_id++ ) {
     if( !vertex_to_primitive_is_end( i0_iter ) ) {
       const uint candidate_id = vertex_to_primitive_get( i0_iter );
-      const uint ci0 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 0u );
-      const uint ci1 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 1u );
-      const uint ci2 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 2u );
-      if( ci0 == i1 ) {
-        adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci0 == i2 ) {
-        adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci1 == i1 ) {
-        adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci1 == i2 ) {
-        adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci2 == i1 ) {
-        adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci2 == i2 ) {
-        adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
+      if( candidate_id != primitive_id ) {
+        const uint ci0 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 0u );
+        const uint ci1 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 1u );
+        const uint ci2 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 2u );
+        if( same_position_equal( ci0, i1, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci0, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci1, i1, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci1, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci2, i1, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 0u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci2, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 2u, candidate_id, adjacency_id_offset );
+        }
       }
     }
     i0_iter = vertex_to_primitive_next( i0_iter );
@@ -82,17 +88,19 @@ void adjacency_generate(
   for( uint slot_id = 0u; slot_id != 32u; slot_id++ ) {
     if( !vertex_to_primitive_is_end( i1_iter ) ) {
       const uint candidate_id = vertex_to_primitive_get( i1_iter );
-      const uint ci0 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 0u );
-      const uint ci1 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 1u );
-      const uint ci2 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 2u );
-      if( ci0 == i2 ) {
-        adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci1 == i2 ) {
-        adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
-      }
-      else if( ci2 == i2 ) {
-        adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
+      if( candidate_id != primitive_id ) {
+        const uint ci0 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 0u );
+        const uint ci1 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 1u );
+        const uint ci2 = read_index( accessor_pool[ accessor_id_offset + 0 ], candidate_id * 3u + 2u );
+        if( same_position_equal( ci0, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci1, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
+        }
+        else if( same_position_equal( ci2, i2, sp_id_offset ) ) {
+          adjacency_insert( primitive_id, 1u, candidate_id, adjacency_id_offset );
+        }
       }
     }
     i1_iter = vertex_to_primitive_next( i1_iter );

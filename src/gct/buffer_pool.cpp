@@ -1,3 +1,4 @@
+#include <iostream>
 #include <boost/range/iterator_range.hpp>
 #include <nlohmann/json.hpp>
 #include <vulkan2json/BufferCopy.hpp>
@@ -183,7 +184,7 @@ void buffer_pool::state_type::clear( const buffer_descriptor &desc, std::uint32_
       auto staging = staging_buffer->map< std::uint8_t >();
       std::fill( std::next( staging.begin(), si->second * aligned_size ), std::next( staging.begin(), ( si->second + 1u ) * aligned_size ), 0u );
       const request_index_t request_index = write_request_index_allocator.allocate();
-      write_request_index.insert( std::make_pair( index, request_index ) );
+      write_request_index.insert( std::make_pair( *desc + index, request_index ) );
       write_region.push_back(
         vk::BufferCopy()
           .setSrcOffset( si->second * aligned_size )
@@ -236,7 +237,7 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
           .setDstOffset( si->second * aligned_size )
           .setSize( aligned_size )
       );
-      read_request_index.insert( std::make_pair( index, request_index ) );
+      read_request_index.insert( std::make_pair( *desc + index, request_index ) );
     }
     else {
       cbs.insert( std::make_pair( *desc + index, cb ) );
@@ -248,8 +249,8 @@ void buffer_pool::state_type::get( const buffer_descriptor &desc, std::uint32_t 
           .setDstOffset( staging_index_ * aligned_size )
           .setSize( aligned_size )
       );
-      read_request_index.insert( std::make_pair( index, request_index ) );
-      staging_index.insert( std::make_pair( index, staging_index_ ) );
+      read_request_index.insert( std::make_pair( *desc + index, request_index ) );
+      staging_index.insert( std::make_pair( *desc + index, staging_index_ ) );
       used_on_gpu.push_back( desc );
     }
   }
@@ -330,6 +331,7 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     );
     rec.transfer_barrier( { buffer }, {} );
   }
+  std::cout << nlohmann::json( read_region ) << std::endl;
   if( !read_region.empty() ) {
     rec->copyBuffer(
       **buffer,
@@ -345,14 +347,23 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       {
         std::lock_guard< std::mutex > lock( self->guard );
         auto staging = self->staging_buffer->map< std::uint8_t >();
+        std::cout <<  self->props.buffer_name << " " << __FILE__ << " " << __LINE__ << std::endl;
+        std::sort( self->used_on_gpu.begin(), self->used_on_gpu.end() );
+        self->used_on_gpu.erase( std::unique( self->used_on_gpu.begin(), self->used_on_gpu.end() ), self->used_on_gpu.end() );
         for( const auto &desc: self->used_on_gpu ) {
-          if( ( self->buffer_state.find( *desc ) == self->buffer_state.end() ) ) {
+          std::cout <<  self->props.buffer_name << " " << __FILE__ << " " << __LINE__ << " " << *desc << std::endl;
+          if( ( self->buffer_state.find( *desc ) != self->buffer_state.end() ) ) {
             auto &s = self->buffer_state[ *desc ];
             const auto begin = self->read_request_index.lower_bound( *desc );
             const auto array_size = self->index_allocator.get_size( *desc );
             const auto end = self->read_request_index.lower_bound( *desc + array_size );
+            std::cout <<  self->props.buffer_name << " " << __FILE__ << " " << __LINE__ << " rrr count : " << std::distance( begin, end ) << " " << self->read_request_index.size() << std::endl;
+            for( const auto &index_rrr: self->read_request_index ) {
+              std::cout << "  " << index_rrr.first << " " << nlohmann::json( index_rrr.second ) << std::endl;
+            }
             for( const auto &index_rrr: boost::make_iterator_range( begin, end ) ) {
               const auto &[index,rrr] = index_rrr;
+              std::cout <<  self->props.buffer_name << " " << __FILE__ << " " << __LINE__ << " index : " << index << std::endl;
               const auto si = self->staging_index.find( index );
               if( si != self->staging_index.end() ) {
                 const auto corresponding = self->cbs.equal_range( index );

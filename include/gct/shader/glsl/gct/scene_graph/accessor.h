@@ -158,6 +158,10 @@ vec4 read_vertex_position( mesh_type mesh, uint i ) {
   return read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index, vec4( 0.1, 0.2, 0.3, 1.0 ) );
 }
 
+vec4 read_vertex_position_by_vertex_id( mesh_type mesh, uint i ) {
+  return read_vertex( accessor_pool[ mesh.accessor + 1 ], i, vec4( 0.1, 0.2, 0.3, 1.0 ) );
+}
+
 const vertex_attribute null_attr = vertex_attribute(
   vec4( 0, 0, 0, 1 ),
   vec4( 0, 0, 0, 1 ),

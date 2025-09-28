@@ -32,18 +32,18 @@ void main() {
 
   // スレッドが担当するプリミティブが存在するかを調べる
   // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
-  const uint primitive_id = gl_GlobalInvocationID.x;
-  const uint vertex_id = primitive_id * 3u;
-  const bool in_range = mesh.vertex_count > vertex_id;
+  const uint from_vertex_id = gl_GlobalInvocationID.x;
+  const uint to_vertex_id = gl_GlobalInvocationID.y;
+  const bool in_range = mesh.vertex_count > from_vertex_id && mesh.vertex_count > to_vertex_id;
 
   if( !in_range ) return;
 
-  if( mesh.vertex_to_primitive_offset == 0xFFFFFFFF ) return;
+  if( mesh.same_position_offset == 0xFFFFFFFF ) return;
 
-  vertex_to_primitive_insert(
+  generate_same_position(
     mesh.accessor,
-    primitive_id,
-    mesh.vertex_to_primitive_offset,
+    from_vertex_id,
+    to_vertex_id,
     mesh.same_position_offset
   );
 }

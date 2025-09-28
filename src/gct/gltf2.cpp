@@ -965,6 +965,16 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       else if( mmp.has( "vertex_to_primitive_offset" ) ) {
         m.data()->*mmp[ "vertex_to_primitive_offset" ] = 0xFFFFFFFFu;
       }
+      if( props.enable_same_position ) {
+        const auto desc = props.graph->get_resource()->vertex_to_primitive->allocate( unique_vertex_count * 32u );
+        p.descriptor.set_same_position( desc );
+        if( mmp.has( "same_position_offset" ) ) {
+          m.data()->*mmp[ "same_position_offset" ] = std::uint32_t( *desc );
+        }
+      }
+      else if( mmp.has( "same_position_offset" ) ) {
+        m.data()->*mmp[ "same_position_offset" ] = 0xFFFFFFFFu;
+      }
       // xpbdのラムダのテーブルのオフセット
       if( props.enable_lambda ) {
         const auto desc = props.graph->get_resource()->lambda->allocate(
@@ -984,6 +994,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( props.enable_adjacency ) {
         const auto desc = props.graph->get_resource()->adjacency->allocate( vertex_count );
         p.descriptor.set_adjacency( desc );
+        std::cout << "allocated adjacency : " << *p.descriptor.adjacency << std::endl;
         if( mmp.has( "adjacency_offset" ) ) {
           m.data()->*mmp[ "adjacency_offset" ] = std::uint32_t( *desc );
         }

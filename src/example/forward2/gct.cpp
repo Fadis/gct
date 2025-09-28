@@ -192,6 +192,7 @@ int main( int argc, const char *argv[] ) {
         .set_root( sg->get_root_node() )
         .set_aspect_ratio( float( res.width )/float( res.height ) )
         .set_enable_vertex_to_primitive( true )
+        .set_enable_same_position( true )
         .set_enable_adjacency( true )
     ) );
   }
@@ -368,6 +369,15 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
   );
 
+  auto same_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "vertex_to_primitive" / "same_position.comp.spv" )
+      .set_swapchain_image_count( 1u )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
   auto vertex_to_primitive = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -401,6 +411,8 @@ int main( int argc, const char *argv[] ) {
         generate_meshlet_info( recorder, 0u, i->get_mesh_count(), i->get_max_primitive_count(), 1u );
       }
       il[ 1 ]->setup_resource_pair_buffer( recorder );
+      same_position( recorder, 0, il1_prim->unique_vertex_count, il1_prim->unique_vertex_count, 1u );
+      recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
       vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
       generate_adjacency( recorder, 0, il1_prim->count / 3, 1u, 1u );
