@@ -40,6 +40,7 @@ struct image_io_plan {
   LIBGCT_SETTER( inout )
   LIBGCT_SETTER( node_name )
   LIBGCT_SETTER( shape )
+  LIBGCT_SETTER( loop )
   image_io_plan &add_input(
     const std::string &name
   ) {
@@ -353,6 +354,7 @@ struct image_io_plan {
   image_io_dimension dim;
   std::string node_name;
   std::optional< graphics_execution_shape > shape;
+  std::uint32_t loop = 1u;
 };
 
 void to_json( nlohmann::json&, const image_io_plan& );
@@ -456,6 +458,30 @@ struct image_io_create_info {
     push_constant.data()->*((*pcmp)[ name ]) = value;
     return *this;
   }
+  template< typename T >
+  const image_io_create_info &set_push_constant(
+    const std::string &name,
+    const T &value
+  ) const {
+    auto pcmp = get_push_constant_member_pointer();
+    if( !pcmp ) {
+      throw exception::runtime_error( "image_io_create_info::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
+    }
+    if( !pcmp->has( name ) ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
+    }
+    if( plan.input.find( name ) != plan.input.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for input image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.output.find( name ) != plan.output.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for output image ID" , __FILE__, __LINE__ );
+    }
+    if( plan.inout.find( name ) != plan.inout.end() ) {
+      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for inout image ID" , __FILE__, __LINE__ );
+    }
+    push_constant.data()->*((*pcmp)[ name ]) = value;
+    return *this;
+  }
   [[nodiscard]] const rendering_info_t &get_rendering_info() const {
     return rendering_info;
   }
@@ -488,7 +514,7 @@ private:
   std::unordered_map< std::string, image_pool::image_descriptor > inout;
   std::unordered_map< std::string, texture_pool::texture_descriptor > sampled;
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
-  std::vector< std::uint8_t > push_constant;
+  mutable std::vector< std::uint8_t > push_constant;
   std::unordered_map< std::string, bool > shareable;
   std::vector< color_attachment_name > ca;
   std::shared_ptr< graphics > graphic_executable;

@@ -50,6 +50,7 @@ void to_json( nlohmann::json &dest, const gbuffer_create_info &src ) {
   dest[ "has_depth" ] = src.has_depth;
   dest[ "format" ] = src.format;
   dest[ "flags" ] = src.flags;
+  dest[ "blend_mode" ] = src.blend_mode;
 }
 
 }

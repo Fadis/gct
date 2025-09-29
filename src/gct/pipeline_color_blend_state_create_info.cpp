@@ -14,7 +14,7 @@ namespace gct {
   void to_json( nlohmann::json &root, const pipeline_color_blend_state_create_info_t &v ) {
     root = nlohmann::json::object();
     root[ "basic" ] = v.get_basic();
-    LIBGCT_ARRAY_OF_TO_JSON( write, pAttachments, attachment );
+    LIBGCT_ARRAY_OF_TO_JSON( basic, pAttachments, attachment );
 #ifdef VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( advanced )
 #endif
@@ -22,6 +22,7 @@ namespace gct {
     LIBGCT_EXTENSION_TO_JSON( write )
     LIBGCT_ARRAY_OF_TO_JSON( write, pColorWriteEnables, color_write_enable );
 #endif
+    root[ "mode" ] = v.get_mode();
   }
   void from_json( const nlohmann::json &root, pipeline_color_blend_state_create_info_t &v ) {
     if( !root.is_object() ) throw incompatible_json( "The JSON is incompatible to pipeline_color_blend_state_create_info_t", __FILE__, __LINE__ );
@@ -47,19 +48,60 @@ namespace gct {
 #endif
     LIBGCT_EXTENSION_END_REBUILD_CHAIN
   }
-  pipeline_color_blend_state_create_info_t &pipeline_color_blend_state_create_info_t::add_attachment() {
-    add_attachment(
-      vk::PipelineColorBlendAttachmentState()
-        .setBlendEnable( false )
-        .setColorWriteMask(
-          vk::ColorComponentFlagBits::eR |
-          vk::ColorComponentFlagBits::eG |
-          vk::ColorComponentFlagBits::eB |
-          vk::ColorComponentFlagBits::eA
-        )
-    );
+  pipeline_color_blend_state_create_info_t &pipeline_color_blend_state_create_info_t::add_common_attachment( common_color_blend_mode mode_ ) {
+    if( mode == common_color_blend_mode::rgbi ) {
+      add_attachment(
+        vk::PipelineColorBlendAttachmentState()
+          .setBlendEnable( true )
+          .setColorBlendOp( vk::BlendOp::eAdd )
+          .setSrcColorBlendFactor( vk::BlendFactor::eOneMinusSrcAlpha )
+          .setDstColorBlendFactor( vk::BlendFactor::eSrcAlpha )
+          .setAlphaBlendOp( vk::BlendOp::eMultiplyEXT )
+          .setSrcAlphaBlendFactor( vk::BlendFactor::eOne )
+          .setDstAlphaBlendFactor( vk::BlendFactor::eOne )
+          .setColorWriteMask(
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
+          )
+      );
+    }
+    else if( mode == common_color_blend_mode::rgb ) {
+      add_attachment(
+        vk::PipelineColorBlendAttachmentState()
+          .setBlendEnable( true )
+          .setColorBlendOp( vk::BlendOp::eAdd )
+          .setSrcColorBlendFactor( vk::BlendFactor::eSrcAlpha )
+          .setDstColorBlendFactor( vk::BlendFactor::eOneMinusSrcAlpha )
+          .setAlphaBlendOp( vk::BlendOp::eAdd )
+          .setSrcAlphaBlendFactor( vk::BlendFactor::eOne )
+          .setDstAlphaBlendFactor( vk::BlendFactor::eZero )
+          .setColorWriteMask(
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
+          )
+      );
+    }
+    else {
+      add_attachment(
+        vk::PipelineColorBlendAttachmentState()
+          .setBlendEnable( false )
+          .setColorWriteMask(
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
+          )
+      );
+    }
     chained = false;
     return *this;
+  }
+  pipeline_color_blend_state_create_info_t &pipeline_color_blend_state_create_info_t::add_attachment() {
+    return add_common_attachment( mode );
   }
 }
 

@@ -87,6 +87,7 @@ add_library( gct SHARED
   gct/pipeline_viewport_state_create_info.cpp
   gct/pipeline_color_blend_state_create_info.cpp 
   gct/pipeline_dynamic_state_create_info.cpp
+  gct/common_color_blend_mode.cpp
   gct/compute_pipeline_create_info.cpp
   gct/compute_pipeline.cpp
   gct/graphics_pipeline_create_info.cpp

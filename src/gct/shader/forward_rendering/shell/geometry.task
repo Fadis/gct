@@ -19,7 +19,7 @@ layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
   uint light;
-  uint shell_thickness;
+  float shell_thickness;
   uint loop_counter;
   uint loop_until;
 } push_constants;

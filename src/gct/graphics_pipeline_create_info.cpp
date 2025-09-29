@@ -439,22 +439,23 @@ namespace gct {
     chained = false;
     return *this;
   }
-  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend() {
-    if( has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
-      const auto &reflection = get_reflection( vk::ShaderStageFlagBits::eFragment );
-      pipeline_color_blend_state_create_info_t temp;
-      for( unsigned int i = 0u; i != reflection->output_variable_count; ++i ) {
-        temp.add_attachment();
-      }
-      color_blend.reset( new pipeline_color_blend_state_create_info_t( temp ) );
-      basic
-        .setPColorBlendState( &color_blend->get_basic() );
-    }
-    else {
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_color_blend( common_color_blend_mode mode ) {
+    if( !color_blend ) {
       color_blend.reset( new pipeline_color_blend_state_create_info_t() );
-      basic
-        .setPColorBlendState( &color_blend->get_basic() );
     }
+    color_blend->set_mode( mode );
+    if( color_blend->get_attachment().empty() ) {
+      if( has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
+        const auto &reflection = get_reflection( vk::ShaderStageFlagBits::eFragment );
+        pipeline_color_blend_state_create_info_t temp;
+        color_blend->clear_attachment();
+        for( unsigned int i = 0u; i != reflection->output_variable_count; ++i ) {
+          color_blend->add_attachment();
+        }
+      }
+    }
+    basic
+      .setPColorBlendState( &color_blend->get_basic() );
     chained = false;
     return *this;
   }
@@ -486,7 +487,7 @@ namespace gct {
     if( !rasterization ) set_rasterization();
     if( !multisample ) set_multisample();
     if( !depth_stencil ) set_depth_stencil();
-    if( !color_blend ) set_color_blend();
+    if( !color_blend ) set_color_blend( common_color_blend_mode::none );
     if( !dynamic ) set_dynamic();
     return *this;
   }
@@ -526,8 +527,9 @@ namespace gct {
     );
     set_render_pass( g.get_render_pass(), 0 );
     pipeline_color_blend_state_create_info_t temp;
+    temp.set_mode( g.get_props().blend_mode );
     for( unsigned int i = 0u; i != g.get_props().color_buffer_count; ++i ) {
-      temp.add_attachment();
+      temp.add_common_attachment( g.get_props().blend_mode );
     }
     set_color_blend( temp );
     return *this;
@@ -607,6 +609,16 @@ namespace gct {
     auto basic = depth_stencil->get_basic();
     basic.setDepthWriteEnable( false );
     depth_stencil->set_basic( basic );
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::use_color_blend( common_color_blend_mode mode ) {
+    if( !color_blend ) {
+      set_color_blend( mode );
+    }
+    else {
+      color_blend->set_mode( mode );
+    }
+    chained = false;
     return *this;
   }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {

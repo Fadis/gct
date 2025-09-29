@@ -867,7 +867,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // トポロジを記録
       if( mmp.has( "topology" ) ) {
-        std::cout << "topology id : " << std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) ) << std::endl;
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
       }
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
@@ -916,7 +915,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         );
         p.descriptor.set_constraint( desc );
         if( mmp.has( "constraint_offset" ) ) {
-          std::cout << "constraint offset : " << std::uint32_t( *desc ) << std::endl;
           m.data()->*mmp[ "constraint_offset" ] = std::uint32_t( *desc );
         }
       }
@@ -928,7 +926,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         const auto desc = props.graph->get_resource()->constraint->allocate( unique_vertex_count * 128u );
         p.descriptor.set_fluid_constraint( desc );
         if( mmp.has( "fluid_constraint_offset" ) ) {
-          std::cout << "fluid_constraint offset : " << std::uint32_t( *desc ) << std::endl;
           m.data()->*mmp[ "fluid_constraint_offset" ] = std::uint32_t( *desc );
         }
       }
@@ -984,7 +981,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         );
         p.descriptor.set_lambda( desc );
         if( mmp.has( "lambda_offset" ) ) {
-          std::cout << "lambda offset : " << *desc << std::endl;
           m.data()->*mmp[ "lambda_offset" ] = std::uint32_t( *desc );
         }
       }
@@ -994,7 +990,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( props.enable_adjacency ) {
         const auto desc = props.graph->get_resource()->adjacency->allocate( vertex_count );
         p.descriptor.set_adjacency( desc );
-        std::cout << "allocated adjacency : " << *p.descriptor.adjacency << std::endl;
         if( mmp.has( "adjacency_offset" ) ) {
           m.data()->*mmp[ "adjacency_offset" ] = std::uint32_t( *desc );
         }

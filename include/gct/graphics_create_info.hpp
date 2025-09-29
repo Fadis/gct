@@ -10,6 +10,7 @@
 #include <gct/named_resource.hpp>
 #include <gct/graphics_pipeline_create_info.hpp>
 #include <gct/allocator_set.hpp>
+#include <gct/common_color_blend_mode.hpp>
 
 namespace gct {
 
@@ -74,6 +75,7 @@ struct graphics_create_info {
     vk::Format depth_attachment_format,
     vk::Format stencil_attachment_format
   );
+  graphics_create_info &use_color_blend( common_color_blend_mode );
   graphics_create_info &disable_depth_test();
   graphics_create_info &disable_depth_write();
   allocator_set_t allocator_set;

@@ -19,7 +19,7 @@ layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
   uint light;
-  uint shell_thickness;
+  float shell_thickness;
   uint loop_counter;
   uint loop_until;
 } push_constants;
@@ -57,6 +57,6 @@ void main() {
   const vec3 ambient = global_uniforms.ambient * p.albedo.rgb;
 
   //output_color = vec4( ambient + diffuse + specular, p.albedo.a );
-  output_color = vec4( 0.0, 1.0, 0.0, 1.0 );
+  output_color = vec4( 0.0, 1.0, 0.0, 0.05 );
 }
 

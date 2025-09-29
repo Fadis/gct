@@ -107,5 +107,31 @@ void adjacency_generate(
   }
 }
 
+vec3 adjacency_get_direction(
+  mesh_type mesh,
+  uint from_primitive_id,
+  uint edge_id
+) {
+  if( !adjacency_has_adjacency( from_primitive_id, edge_id, mesh.adjacency_offset ) ) {
+    return vec3( 0.0, 0.0, 0.0 );
+  }
+  const uint to_primitive_id = adjacency_get( from_primitive_id, edge_id, mesh.adjacency_offset );
+  return
+    read_primitive_center( mesh, to_primitive_id ) -
+    read_primitive_center( mesh, from_primitive_id );
+}
+
+bool adjacency_is_convex(
+  mesh_type mesh,
+  uint from_primitive_id,
+  uint edge_id,
+  vec3 eye_pos
+) {
+  return dot(
+    adjacency_get_direction( mesh, from_primitive_id, edge_id ),
+    eye_pos - read_primitive_center( mesh, from_primitive_id )
+  ) <= 0.0;
+}
+
 #endif
 

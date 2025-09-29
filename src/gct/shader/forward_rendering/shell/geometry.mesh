@@ -27,7 +27,7 @@ layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
   uint light;
-  uint shell_thickness;
+  float shell_thickness;
   uint loop_counter;
   uint loop_until;
 } push_constants;
@@ -103,9 +103,9 @@ void main() {
   const vec4 wpb0 = l2w * v0.position;
   const vec4 wpb1 = l2w * v1.position;
   const vec4 wpb2 = l2w * v2.position;
-  const vec4 wp0 = l2w * wpb0 + vec4( wn0 * displace_distance, 0.0 );
-  const vec4 wp1 = l2w * wpb1 + vec4( wn1 * displace_distance, 0.0 );
-  const vec4 wp2 = l2w * wpb2 + vec4( wn2 * displace_distance, 0.0 );
+  const vec4 wp0 = wpb0 + vec4( wn0 * displace_distance, 0.0 );
+  const vec4 wp1 = wpb1 + vec4( wn1 * displace_distance, 0.0 );
+  const vec4 wp2 = wpb2 + vec4( wn2 * displace_distance, 0.0 );
 
   const float fin_scale = 10.0;
 

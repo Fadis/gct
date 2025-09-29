@@ -130,7 +130,8 @@ int main( int argc, const char *argv[] ) {
       VK_KHR_MULTIVIEW_EXTENSION_NAME,
       VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
       VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
-      VK_EXT_MESH_SHADER_EXTENSION_NAME
+      VK_EXT_MESH_SHADER_EXTENSION_NAME,
+      VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME
     },
     gct::descriptor_pool_create_info_t()
       .set_basic(
@@ -296,6 +297,7 @@ int main( int argc, const char *argv[] ) {
         vk::Format::eUndefined
       )
       .disable_depth_write()
+      .use_color_blend( gct::common_color_blend_mode::rgb )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
@@ -312,6 +314,7 @@ int main( int argc, const char *argv[] ) {
         vk::Format::eUndefined
       )
       .disable_depth_write()
+      .use_color_blend( gct::common_color_blend_mode::rgb )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
@@ -356,10 +359,26 @@ int main( int argc, const char *argv[] ) {
     lighting2_desc
   );
 
-  builder.output( fin2_desc[ "output_color" ] );
+  const auto shell2_desc = builder.call(
+    builder.get_image_io_create_info(
+      shell,
+      gct::image_io_plan()
+        .add_inout( "output_color" )
+        .add_inout( "depth" )
+        .set_dim( il[ 1 ]->get_shape() )
+        .set_node_name( "shell" )
+        .set_loop( 15u )
+    )
+    .set_push_constant( "light", 0u )
+    .set_push_constant( "shell_thickness", 0.1f )
+  )(
+    fin2_desc
+  );
+
+  builder.output( shell2_desc[ "output_color" ] );
   const auto compiled = builder();
   std::cout << builder.get_log() << std::endl;
-  const auto merged_view = compiled.get_view( fin2_desc[ "output_color" ] );
+  const auto merged_view = compiled.get_view( shell2_desc[ "output_color" ] );
 
   auto generate_meshlet_info = gct::compute(
     gct::compute_create_info()

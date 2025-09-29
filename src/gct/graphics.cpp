@@ -150,13 +150,17 @@ namespace gct {
         }
       }
     }
-
     if( props.pipeline_create_info.get_color_blend().get_attachment().empty() ) {
-      props.pipeline_create_info
-        .set_color_blend(
-          pipeline_color_blend_state_create_info_t( props.pipeline_create_info.get_color_blend() )
-            .add_attachment()
-        );
+      if( props.pipeline_create_info.has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
+        const auto &reflection = props.pipeline_create_info.get_reflection( vk::ShaderStageFlagBits::eFragment );
+        pipeline_color_blend_state_create_info_t temp( props.pipeline_create_info.get_color_blend() );
+        temp.clear_attachment();
+        for( unsigned int i = 0u; i != reflection->output_variable_count; ++i ) {
+          temp.add_attachment();
+        }
+        props.pipeline_create_info
+          .set_color_blend( temp );
+      }
     }
     pipeline = props.allocator_set.pipeline_cache->get_pipeline(
       props.pipeline_create_info

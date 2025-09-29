@@ -34,8 +34,8 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 layout(local_size_x = 32, local_size_y = 1 ) in;
-//layout(triangles, max_vertices = 96, max_primitives = 48) out;
-layout(triangles, max_vertices = 256, max_primitives = 256) out;
+layout(triangles, max_vertices = 96, max_primitives = 48) out;
+//layout(triangles, max_vertices = 256, max_primitives = 256) out;
 
 // 頂点属性
 layout (location = 0) out vec4 output_position[]; // 頂点座標
@@ -76,16 +76,16 @@ void main() {
   const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
   // メッシュの頂点数からこのメッシュレットの頂点数を求める
   // 端数の頂点を扱う最後のメッシュレット以外では96頂点になる
-  const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_input_vertex_count, max_input_vertex_count );
+  const uint local_vertex_count = min( mesh.vertex_count - meshlet_id * max_input_vertex_count, max_input_vertex_count );
   
   // スレッドが担当するプリミティブが存在するかを調べる
   // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
-  const uint primitive_id = gl_LocalInvocationID.x;
-  const uint vertex_id = primitive_id * 3u;
-  const bool in_range = vertex_count > vertex_id;
+  const uint local_primitive_id = gl_LocalInvocationID.x;
+  const uint local_vertex_id = local_primitive_id * 3u;
+  const bool in_range = local_vertex_count > local_vertex_id;
   
   // このスレッドが処理すべき3つの頂点の最初の要素までのオフセットを求める
-  const uint input_primitive_id = meshlet_id * 32u + primitive_id;
+  const uint input_primitive_id = meshlet_id * 32u + local_primitive_id;
   
   // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
   const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
@@ -134,9 +134,9 @@ void main() {
   );
 
   bool[3] enable_fin = bool[3](
-    adj_visible[ 0 ] && !adj_visible[ 1 ], 
-    adj_visible[ 0 ] && !adj_visible[ 2 ],
-    adj_visible[ 0 ] && !adj_visible[ 3 ]
+    adj_visible[ 0 ] && !adj_visible[ 1 ], //&& adjacency_is_convex( mesh, input_primitive_id, 0u, global_uniforms.eye_pos.xyz ), 
+    adj_visible[ 0 ] && !adj_visible[ 2 ], //&& adjacency_is_convex( mesh, input_primitive_id, 1u, global_uniforms.eye_pos.xyz ),
+    adj_visible[ 0 ] && !adj_visible[ 3 ] //&& adjacency_is_convex( mesh, input_primitive_id, 2u, global_uniforms.eye_pos.xyz )
   );
 
   uint fin_vertex_count = 0u;
@@ -153,8 +153,8 @@ void main() {
     ( enable_fin[ 0 ] ) ? ( ( enable_fin[ 1 ] ) ? 2u : 1u ) : ( ( enable_fin[ 1 ] ) ? 1u : 0u )
   );
 
-  const uint max_output_vertex_count = 256u;
-  const uint max_output_primitive_count = 256u;
+  const uint max_output_vertex_count = 96u;
+  const uint max_output_primitive_count = 48u;
   //const uint max_output_vertex_count = 128u;
   //const uint max_output_primitive_count = 96u;
 

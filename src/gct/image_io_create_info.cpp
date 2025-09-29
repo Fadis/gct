@@ -112,7 +112,7 @@ image_io_create_info::image_io_create_info(
       throw exception::invalid_argument( "image_io_create_info::image_io_create_info : The shader doesn't have push constant value " + v, __FILE__, __LINE__ );
     }
   }
-  push_constant.resize( pcmp->get_aligned_size() );
+
   bool size_specified = false;
   if( plan.dim.relative_to ) {
     bool found = false;
@@ -230,7 +230,7 @@ image_io_create_info::image_io_create_info(
       }
     }
   }
-  push_constant.resize( pcmp->get_aligned_size() );
+  push_constant.resize( pcmp->get_aligned_size(), 0u );
   auto size = plan.dim.size_transform * glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
   size /= size.w;
   dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
@@ -247,6 +247,9 @@ image_io_create_info::image_io_create_info(
     else if( pcmp->has( "primitive" ) ) {
       push_constant.data()->*((*pcmp)[ "primitive" ]) = plan.shape->count;
     }
+  }
+  if( pcmp->has( "loop_until" ) ) {
+    push_constant.data()->*(*pcmp)[ "loop_until" ] = plan.loop;
   }
 }
 #endif
