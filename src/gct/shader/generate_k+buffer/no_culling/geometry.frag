@@ -4,8 +4,10 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_fragment_shader_interlock : enable
+#extension GL_EXT_shader_image_load_formatted : enable
 
 #include "io_with_tangent.h"
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #define GCT_MAKE_IMAGE_COHERENT
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
@@ -23,26 +25,22 @@ void main() {
     input_previous_position
   );
  
-  //if( p.albedo.a <= 0.0 ) discard;
-
-  float shadow_level0 = 0.0;
-  float shadow_level1 = 0.0;
-  float shadow_level2 = 0.0;
-  float shadow_level3 = 1.0;
+  if( p.albedo.a <= 0.0 ) discard;
 
   const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   visibility_pool[ visibility_index ] = 1;
 
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
   beginInvocationInterlockARB();
-  update_kplus_buffer16(
-    global_uniforms.gbuffer,
-    global_uniforms.depth,
-    image_pos,
+  kplus_iter iter = kplus_begin(
+    kplus_image( global_uniforms.gbuffer, global_uniforms.depth ),
+    image_pos
+  );
+  kplus_insert(
+    iter,
     p,
     gl_FragCoord.z,
-    input_id.xy,
-    vec4( shadow_level0, shadow_level1, shadow_level2, shadow_level3 )
+    input_id.xy
   );
   endInvocationInterlockARB();
 }

@@ -120,6 +120,7 @@ subdirs(
   dump_adjacency
   dump_v2p
   dump_sp
+  ppll
 )
 if( DXC_FOUND )
 subdirs(

@@ -32,6 +32,7 @@ layout(push_constant) uniform PushConstants {
 #include <gct/scene_graph/buffer_pool.h>
 #include <gct/scene_graph/camera_pool.h>
 #include <gct/scene_graph/adjacency_pool.h>
+#include <gct/scene_graph/ppll_state_pool.h>
 #include <gct/scene_graph/load_filter_cache.h>
 #include <gct/scene_graph/read_primitive.h>
 #include <gct/scene_graph/k+buffer.h>

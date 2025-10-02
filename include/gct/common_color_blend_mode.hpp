@@ -7,7 +7,8 @@ namespace gct {
 enum class common_color_blend_mode {
   none = 0,
   rgb,
-  rgbi
+  rgbi,
+  add
 };
 
 void to_json( nlohmann::json&, const common_color_blend_mode& );

@@ -269,6 +269,24 @@ struct image_io_plan {
     return *this;
   }
   image_io_plan &set_dim(
+    std::uint32_t x,
+    std::uint32_t y,
+    std::uint32_t z
+  ) {
+    return set_dim(
+      gct::image_io_dimension()
+        .set_size_transform(
+          glm::mat4(
+            0.0f, 0.0f, 0.0f, x,
+            0.0f, 0.0f, 0.0f, y,
+            0.0f, 0.0f, 0.0f, z,
+            0.0f, 0.0f, 0.0f, 1.0f
+          )
+        )
+    );
+    return *this;
+  }
+  image_io_plan &set_dim(
     const image_io_dimension &d
   ) {
     dim = d;

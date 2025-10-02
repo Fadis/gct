@@ -10,6 +10,9 @@ struct primitive_value {
   float roughness;
   float occlusion;
   vec3 optflow;
+  vec3 tangent;
+  vec2 texcoord[ 4 ];
+  vec4 color[ 2 ];
 };
 
 #endif

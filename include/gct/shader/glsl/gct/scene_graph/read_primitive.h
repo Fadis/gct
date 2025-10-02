@@ -67,6 +67,8 @@ primitive_value read_primitive(
   temp.roughness = roughness;
   temp.occlusion = occlusion;
   temp.optflow = optflow;
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord;
   return temp;
 }
 
@@ -120,6 +122,7 @@ primitive_value read_primitive(
   temp.roughness = roughness;
   temp.occlusion = occlusion;
   temp.optflow = optflow;
+  temp.texcoord[ 0 ] = vert_texcoord;
   return temp;
 }
 
@@ -150,6 +153,8 @@ primitive_value read_primitive_reduced(
   temp.pos = pos;
   temp.normal = normal;
   temp.albedo = vec4( 0, 0, 0, 1 );
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord;
   return temp;
 }
 
@@ -168,6 +173,7 @@ primitive_value read_primitive_reduced(
   temp.pos = pos;
   temp.normal = normal;
   temp.albedo = vec4( 0, 0, 0, 1 );
+  temp.texcoord[ 0 ] = vert_texcoord;
   return temp;
 }
 

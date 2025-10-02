@@ -13,6 +13,9 @@ void to_json( nlohmann::json &dest, const common_color_blend_mode &src ) {
   else if( src == common_color_blend_mode::rgbi ) {
     dest = "rgbi";
   }
+  else if( src == common_color_blend_mode::add ) {
+    dest = "add";
+  }
   else {
     dest = "unknown";
   }
@@ -26,6 +29,9 @@ void from_json( const nlohmann::json &src, common_color_blend_mode &dest ) {
   }
   else if( src == "rgbi" ) {
     dest = common_color_blend_mode::rgbi;
+  }
+  else if( src == "add" ) {
+    dest = common_color_blend_mode::add;
   }
   else {
     throw incompatible_json( "from_json to common_color_blend_mode : Unknown value " + src.dump(), __FILE__, __LINE__ );
