@@ -27,6 +27,7 @@ scene_graph_create_info::scene_graph_create_info() {
   lambda.set_buffer_name( "lambda_pool" );
   camera.set_buffer_name( "camera_pool" );
   adjacency.set_buffer_name( "adjacency_pool" );
+  ppll_state.set_buffer_name( "ppll_state_pool" );
   const std::uint32_t max_particle_count = 2097152u;
   const std::uint32_t max_rigid_count = 65536u;
   particle.set_max_buffer_count( max_particle_count );
@@ -69,6 +70,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   lambda.set_shader( dir / "lambda_pool" );
   camera.set_shader( dir / "camera_pool" );
   adjacency.set_shader( dir / "adjacency_pool" );
+  ppll_state.set_shader( dir / "ppll_state_pool" );
   return *this;
 }
 

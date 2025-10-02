@@ -24,9 +24,14 @@ void main()  {
     vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ] ).xy) /
     vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
   const ivec2 src_pos = ivec2( screen_pos * scale );
-  const bool has_layer = imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( src_pos, 32 ) ).x != 0;
-  const uint layer = max( uint( imageLoad( image_pool_2d_array[ nonuniformEXT( push_constants.src ) ], ivec3( src_pos, 32 ) ).x ) - 1, 0 );
-  const float depth = read_kplus_buffer_depth( push_constants.depth, src_pos, layer );
+  
+  kplus_iter iter = kplus_begin(
+    kplus_image( push_constants.src, push_constants.depth ),
+    src_pos
+  );
+  kplus_iter nearest = kplus_nearest( iter );
+  const bool has_layer = !kplus_is_end( nearest );
+  const float depth = has_layer ? kplus_get_depth( nearest ) : 1.0;
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, 0.0, 0.0, 0.0 ) );
 }
 

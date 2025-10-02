@@ -164,6 +164,7 @@ image_io_create_info::image_io_create_info(
     size /= size.w;
     dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
   }
+  push_constant.resize( pcmp->get_aligned_size(), 0u );
 }
 
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)

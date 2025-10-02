@@ -460,7 +460,7 @@ int main( int argc, const char *argv[] ) {
     sb_image_desc
   );
   
-  gct::lens_flare sb(
+  /*gct::lens_flare sb(
     gct::lens_flare_create_info()
       .set_allocator_set( res.allocator_set )
       .set_width( res.width/ 4 )
@@ -473,9 +473,9 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
-  );
+  );*/
 
-  const auto sb_rendered_desc = sg->get_resource()->image->allocate( sb.get_image_view() );
+  //const auto sb_rendered_desc = sg->get_resource()->image->allocate( sb.get_image_view() );
 
   const auto flare_image_desc = sg->get_resource()->image->allocate(
     gct::image_load_info()
@@ -491,7 +491,7 @@ int main( int argc, const char *argv[] ) {
     flare_image_desc
   );
   
-  gct::lens_flare flare(
+  /*gct::lens_flare flare(
     gct::lens_flare_create_info()
       .set_allocator_set( res.allocator_set )
       .set_width( res.width / 8 )
@@ -506,7 +506,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
   );
 
-  const auto flare_rendered_desc = sg->get_resource()->image->allocate( flare.get_image_view() );
+  const auto flare_rendered_desc = sg->get_resource()->image->allocate( flare.get_image_view() );*/
 
   std::shared_ptr< gct::mappable_buffer_t > af_state_buffer =
     res.allocator->create_mappable_buffer(
@@ -632,7 +632,6 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", shadow_uniform } )
   );
 
-
   gct::shader_graph::builder builder( sg->get_resource() );
   
   const auto lighting_desc = builder.call(
@@ -734,12 +733,9 @@ int main( int argc, const char *argv[] ) {
         .add_resource( { "global_uniforms", global_uniform } )
         .add_resource( { "af_state", af_state_buffer } )
         .add_resource( { "tone", tone_buffer->get_buffer() } )
-        .add_resource( { "sb", sb.get_image_view(), vk::ImageLayout::eGeneral } )
     ),
     gct::image_io_plan()
       .add_input( "src" )
-      .add_sampled( "star", linear_sampler_desc )
-      .add_sampled( "flare", linear_sampler_desc )
       .add_sampled( "skyview", linear_sampler_desc )
       .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
       .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
@@ -749,16 +745,84 @@ int main( int argc, const char *argv[] ) {
     gct::shader_graph::vertex::combined_result_type()
       .add( "src", dof_desc )
       .add( "skyview", skyview_desc )
-      .add( "star", sb_rendered_desc )
-      .add( "flare", flare_rendered_desc )
+  );
+
+  const auto starburst_desc = builder.call(
+    builder.get_image_io_create_info(
+      std::make_shared< gct::graphics >(
+        gct::graphics_create_info()
+          .set_swapchain_image_count( 1u )
+          .add_shader( gct::get_system_shader_path() / "starburst" / "2.0" / "geometry.mesh.spv" )
+          .add_shader( gct::get_system_shader_path() / "starburst" / "2.0" / "geometry.frag.spv" )
+          .use_dynamic_rendering(
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eUndefined,
+            vk::Format::eUndefined
+          )
+          .disable_depth_write()
+          .disable_depth_test()
+          .use_color_blend( gct::common_color_blend_mode::add )
+          .set_scene_graph( sg->get_resource() )
+          .add_resource( { "global_uniforms", global_uniform } )
+          .add_resource( { "af_state", af_state_buffer } )
+      ),
+      gct::image_io_plan()
+        .add_inout( "output_color" )
+        .set_dim( 1u, 1u, 1u )
+        .set_node_name( "starburst" )
+    )
+    .set_push_constant( "light", 0u )
+    .set_push_constant( "texture_id", *sb_texture_desc.linear )
+    .set_push_constant(
+      "sensor_size", glm::vec2( 0.036f, 0.036f*9.0f/16.0f )
+    )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "output_color", merge_desc[ "dest" ] )
   );
   
+  const auto flare_desc = builder.call(
+    builder.get_image_io_create_info(
+      std::make_shared< gct::graphics >(
+        gct::graphics_create_info()
+          .set_swapchain_image_count( 1u )
+          .add_shader( gct::get_system_shader_path() / "lens_flare" / "prtlf" / "2.0" / "geometry.mesh.spv" )
+          .add_shader( gct::get_system_shader_path() / "lens_flare" / "prtlf" / "2.0" / "geometry.frag.spv" )
+          .use_dynamic_rendering(
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eUndefined,
+            vk::Format::eUndefined
+          )
+          .disable_depth_write()
+          .disable_depth_test()
+          .use_color_blend( gct::common_color_blend_mode::add )
+          .set_scene_graph( sg->get_resource() )
+          .add_resource( { "global_uniforms", global_uniform } )
+          .add_resource( { "af_state", af_state_buffer } )
+      ),
+      gct::image_io_plan()
+        .add_inout( "output_color" )
+        .set_dim( 36u, 1u, 1u )
+        .set_node_name( "starburst" )
+    )
+    .set_push_constant( "light", 0u )
+    .set_push_constant( "texture_id", *flare_texture_desc.linear )
+    .set_push_constant(
+      "sensor_size", glm::vec2( 0.036f, 0.036f*9.0f/16.0f )
+    )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "output_color", starburst_desc )
+  );
+
+
+
   const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
 
-  builder.output( merge_desc[ "dest" ] );
+  builder.output( flare_desc[ "output_color" ] );
   builder.output( filtered_bloom );
   const auto compiled = builder();
-  const auto merged_view = compiled.get_view( merge_desc[ "dest" ] );
+  const auto merged_view = compiled.get_view( flare_desc[ "output_color" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
   
   const auto skyview_param =
@@ -785,12 +849,16 @@ int main( int argc, const char *argv[] ) {
       .set_pipeline_cache( res.pipeline_cache )
       .set_shader( gct::get_system_shader_path() / "tone_mapping" / "1.0" / "distance.comp.spv" )
       .set_swapchain_image_count( 1u )
-      .add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
-      .add_resource( { "depth", extended_depth, vk::ImageLayout::eGeneral } )
+      //.add_resource( { "gbuffer", extended_gbuffer, vk::ImageLayout::eGeneral } )
+      //.add_resource( { "depth", extended_depth, vk::ImageLayout::eGeneral } )
+      .set_scene_graph( sg->get_resource() )
       .add_resource( { "af_state", af_state_buffer } )
   );
-
+  std::cout << "gbuffer : " << *extended_gbuffer_desc.linear << std::endl;
+  std::cout << "depth : " << *extended_depth_desc.linear << std::endl;
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
+  update_af.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
+  update_af.set_push_constant( "depth", *extended_depth_desc.linear );
   
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -817,7 +885,7 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( merged_view, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( sb.get_image_view(), vk::ImageLayout::eGeneral );
+      //recorder.set_image_layout( sb.get_image_view(), vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
   }
@@ -1087,17 +1155,17 @@ int main( int argc, const char *argv[] ) {
           rec.barrier( extended_depth );
         }
           
-        rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
-        flare( rec );
-        rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
-        rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
-        sb( rec );
-        rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
-        rec.barrier(
-          gct::syncable()
-            .add( flare.get_image_view() )
-            .add( sb.get_image_view() )
-        );
+        //rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
+        //flare( rec );
+        //rec.convert_image( flare.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
+        //rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eColorAttachmentOptimal );
+        //sb( rec );
+        //rec.convert_image( sb.get_image_view()->get_factory(), vk::ImageLayout::eGeneral );
+        //rec.barrier(
+        //  gct::syncable()
+        //    .add( flare.get_image_view() )
+            //.add( sb.get_image_view() )
+        //);
         
         glm::ivec2 focus( res.width/2, res.height/2 );
         

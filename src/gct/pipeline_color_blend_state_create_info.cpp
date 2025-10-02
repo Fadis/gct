@@ -85,6 +85,24 @@ namespace gct {
           )
       );
     }
+    else if( mode == common_color_blend_mode::add ) {
+      add_attachment(
+        vk::PipelineColorBlendAttachmentState()
+          .setBlendEnable( true )
+          .setSrcColorBlendFactor( vk::BlendFactor::eOne )
+          .setDstColorBlendFactor( vk::BlendFactor::eOne )
+          .setColorBlendOp( vk::BlendOp::eAdd )
+          .setSrcAlphaBlendFactor( vk::BlendFactor::eOne )
+          .setDstAlphaBlendFactor( vk::BlendFactor::eOne )
+          .setAlphaBlendOp( vk::BlendOp::eAdd )
+          .setColorWriteMask(
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
+          )
+      );
+    }
     else {
       add_attachment(
         vk::PipelineColorBlendAttachmentState()

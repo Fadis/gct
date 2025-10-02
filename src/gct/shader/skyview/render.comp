@@ -30,17 +30,29 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
-  const uint layer = gl_GlobalInvocationID.z;
-  const float albedo_alpha = read_kplus_buffer_albedo( push_constants.gbuffer, screen_pos, layer ).a;
-  if( albedo_alpha == 0.0 ) {
-    imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  const int layer = int(gl_GlobalInvocationID.z);
+
+  kplus_iter iter = kplus_direct(
+    kplus_image( push_constants.gbuffer, push_constants.depth ),
+    screen_pos,
+    layer
+  );
+
+  if( kplus_is_end( iter ) ) {
     return;
   }
-  
+
+  gbuffer_value p;
+  const float albedo_alpha = kplus_get_albedo( iter ).w;
+  if( p.albedo.a == 0.0 ) {
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 1 ) );
+    return;
+  }
+
   const vec3 pos = depth_to_world_position(
     screen_pos,
     imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy,
-    read_kplus_buffer_depth( push_constants.depth, screen_pos, layer ),
+    kplus_get_depth( iter ),
     matrix_pool[ push_constants.unproject ]
   ).xyz;
   
@@ -72,6 +84,6 @@ void main() {
     transmittance = texture( texture_pool_3d[ nonuniformEXT( push_constants.froxel ) ], sample_pos_in_froxel ).w;
   }
 
-  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ], ivec3( screen_pos, layer ), vec4( sum, transmittance ) );
+  kplus_set( iter, push_constants.dest, vec4( sum, transmittance ) );
 }
 

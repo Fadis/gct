@@ -324,6 +324,32 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
       throw exception::invalid_argument( "shader_graph::vertex::result_type::operator() : Vertex must not be called multiple times", __FILE__, __LINE__ );
     }
     auto input_ = input;
+    if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
+      const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );
+      const auto total_input_count =
+        create_info->get_plan().input.size() +
+        create_info->get_plan().inout.size() +
+        create_info->get_plan().sampled.size();
+      const bool implicitly_assignable = total_input_count == 1u && input_.size() == 1u;
+      if( implicitly_assignable ) {
+        std::string name;
+        if( create_info->get_plan().input.size() == 1u ) {
+          name = *create_info->get_plan().input.begin();
+        }
+        else if( create_info->get_plan().inout.size() == 1u ) {
+          name = *create_info->get_plan().inout.begin();
+        }
+        else if( create_info->get_plan().sampled.size() == 1u ) {
+          name = create_info->get_plan().sampled.begin()->first;
+        }
+        const std::string existing_name = input_.begin()->first;
+        if( existing_name != name ) {
+          auto &subresult = input_.at( existing_name );
+          input_.insert( std::make_pair( name, subresult ) );
+          input_.erase( existing_name );
+        }
+      }
+    }
     if( props->allow_unused_input ) {
       if( vertex_command_id( command.index() ) == vertex_command_id::call ) {
         const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( command );

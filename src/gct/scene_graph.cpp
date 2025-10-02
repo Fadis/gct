@@ -274,6 +274,10 @@ scene_graph::scene_graph(
     std::cout << "Using system adjacency_pool" << std::endl;
     props->adjacency.set_shader( shader_path / "dummy" );
   }
+  if( !props->ppll_state.shader_exists() ) {
+    std::cout << "Using system ppll_state_pool" << std::endl;
+    props->ppll_state.set_shader( shader_path / "dummy" );
+  }
 
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
@@ -390,6 +394,10 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->adjacency )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->ppll_state.reset( new buffer_pool(
+    buffer_pool_create_info( props->ppll_state )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -473,6 +481,9 @@ scene_graph::scene_graph(
   }
   if( resource->adjacency && resource->descriptor_set->has( "adjacency_pool" ) ) {
     u.push_back( { "adjacency_pool", resource->adjacency->get_buffer() } );
+  }
+  if( resource->ppll_state && resource->descriptor_set->has( "ppll_state_pool" ) ) {
+    u.push_back( { "ppll_state_pool", resource->ppll_state->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -590,6 +601,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->adjacency ) {
     (*resource->adjacency)( rec );
     s.add( resource->adjacency->get_buffer() );
+  }
+  if( resource->ppll_state ) {
+    (*resource->ppll_state)( rec );
+    s.add( resource->ppll_state->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

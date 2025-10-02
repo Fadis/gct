@@ -1,0 +1,134 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/scene_graph/omnishadow.h>
+#include <gct/lens_flare/prtlf.h>
+
+layout (std430, binding = 13) buffer AFState {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+  float visible_range;
+} af_state;
+
+layout(push_constant) uniform PushConstants {
+  vec2 sensor_size;
+  uint light;
+  uint texture_id;
+  uint output_color;
+} push_constants;
+
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+layout(triangles, max_vertices = 128, max_primitives = 64) out;
+
+layout (location = 1) out vec2 output_texcoord[];
+layout (location = 2) out vec4 output_energy[];
+
+const uint flare_matrix_count = 36u;
+const mat2 flare_matrices[36]=mat2[](
+#include <gct/lens_flare/prtlf_flare.inc>
+);
+
+void main() {
+  const vec3 light_pos = light_pool[ push_constants.light ].world_position.xyz;
+  const vec3 eye_pos = global_uniforms.eye_pos.xyz;
+
+  const float shadow_level = simple_shadow_omni(
+    light_pool[ push_constants.light ].shadow_map,
+    eye_pos,
+    light_pos
+  );
+
+  const vec4 light_pos_in_camera =
+    matrix_pool[ global_uniforms.camera_matrix ] * vec4( light_pos, 1.0 );
+
+  vec4 light_pos_in_screen =  
+    matrix_pool[ global_uniforms.projection_matrix ] * light_pos_in_camera;
+  light_pos_in_screen /= light_pos_in_screen.w;
+  const ivec2 image_size = imageSize( image_pool_2d[ push_constants.output_color ] ).xy;
+  const ivec2 screen_pos = ivec2( image_size * ( light_pos_in_screen.xy * vec2( 0.5,  0.5 ) + 0.5 ) );
+  
+  const bool visible = !(
+    light_pos_in_screen.x < -1.0 || light_pos_in_screen.x > 1.0 ||
+    light_pos_in_screen.y < -1.0 || light_pos_in_screen.y > 1.0 ||
+    light_pos_in_camera.z > 0.0 || shadow_level == 0.0
+  );
+
+  SetMeshOutputsEXT(
+    visible ? 4u * flare_matrix_count : 0u,
+    visible ? 2u * flare_matrix_count : 0u
+  );
+
+  if( !visible ) return;
+
+  if( flare_matrix_count <= gl_GlobalInvocationID.x ) return;
+
+  const vec4 light = prtlf_get_light_dir( light_pos_in_camera.xyz, af_state.lens_size );
+  vec2 light0 = light.xy;
+  vec2 light1 = light.zw;
+  const uint index = gl_GlobalInvocationID.x;
+  const vec2 flare_direction = length( light_pos_in_camera.xy ) > 0.01 ? normalize( light_pos_in_camera.xy ) : vec2( 0.0, 0.0 );
+
+  const float r0 = ( flare_matrices[ index ] * light0 ).x;
+  const float r1 = ( flare_matrices[ index ] * light1 ).x;
+  // レンズフレアの中心座標と半径を求める
+  const float center = ( r0 + r1 )*0.5;
+  const float radius = abs( r0 - r1 )*0.5;
+  // レンズフレアが現れる範囲にビルボードを作る
+  const vec2 center_pos = flare_direction * center * 64; // ?
+
+  const vec2 v0 = center_pos + vec2( -radius,  radius )/push_constants.sensor_size;
+  const vec2 v1 = center_pos + vec2( -radius, -radius )/push_constants.sensor_size;
+  const vec2 v2 = center_pos + vec2(  radius,  radius )/push_constants.sensor_size;
+  const vec2 v3 = center_pos + vec2(  radius, -radius )/push_constants.sensor_size;
+  
+  const vec4 energy = vec4(
+    light_pool[ global_uniforms.light ].energy.xyz *
+    min( (af_state.lens_size*af_state.lens_size)/max(radius*radius,0.0000001), 10000.0 ) *
+    0.05*0.05,
+    1.0
+  );
+
+  gl_MeshVerticesEXT[ index * 4 + 0 ].gl_Position = vec4( v0, 0, 1 );
+  output_texcoord[ index * 4 + 0 ] = vec2( 0, 1 );
+  output_energy[ index * 4 + 0 ] = energy;
+  gl_MeshVerticesEXT[ index * 4 + 1 ].gl_Position = vec4( v1, 0, 1 );
+  output_texcoord[ index * 4 + 1 ] = vec2( 0, 0 );
+  output_energy[ index * 4 + 1 ] = energy;
+  gl_MeshVerticesEXT[ index * 4 + 2 ].gl_Position = vec4( v2, 0, 1 );
+  output_texcoord[ index * 4 + 2 ] = vec2( 1, 1 );
+  output_energy[ index * 4 + 2 ] = energy;
+  gl_MeshVerticesEXT[ index * 4 + 3 ].gl_Position = vec4( v3, 0, 1 );
+  output_texcoord[ index * 4 + 3 ] = vec2( 1, 0 );
+  output_energy[ index * 4 + 3 ] = energy;
+
+  gl_PrimitiveTriangleIndicesEXT[ index * 2 + 0 ] = uvec3( index * 4 + 0, index * 4 + 1, index * 4 + 2 );
+  gl_PrimitiveTriangleIndicesEXT[ index * 2 + 1 ] = uvec3( index * 4 + 2, index * 4 + 1, index * 4 + 3 );
+
+}
+

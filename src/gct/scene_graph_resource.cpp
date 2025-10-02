@@ -120,6 +120,9 @@ void to_json( nlohmann::json &dest, const scene_graph_resource &src ) {
   if( src.adjacency ) {
     dest[ "adjacency" ] = *src.adjacency;
   }
+  if( src.ppll_state ) {
+    dest[ "ppll_state" ] = *src.ppll_state;
+  }
   dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
     if( v.second ) {

@@ -4,6 +4,7 @@
 #include <gct/skyview_froxel2_create_info.hpp>
 #include <gct/property.hpp>
 #include <gct/shader_graph.hpp>
+#include <gct/buffer_pool.hpp>
 
 namespace gct {
   class image_view_t;
@@ -18,6 +19,15 @@ namespace gct {
       const shader_graph::vertex::subresult_type &gbuffer,
       const shader_graph::vertex::subresult_type &depth,
       const shader_graph::vertex::subresult_type &transmittance
+    ) const;
+    shader_graph::vertex::combined_result_type operator()(
+      shader_graph::builder &b,
+      const shader_graph::vertex::subresult_type &gbuffer,
+      const shader_graph::vertex::subresult_type &position,
+      const shader_graph::vertex::subresult_type &start,
+      const shader_graph::vertex::subresult_type &next,
+      const shader_graph::vertex::subresult_type &transmittance,
+      const buffer_pool::buffer_descriptor &ppll_state_id
     ) const;
   private:
     std::shared_ptr< compute > generate;

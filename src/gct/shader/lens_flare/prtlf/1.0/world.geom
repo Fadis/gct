@@ -26,7 +26,7 @@ layout (triangle_strip,max_vertices=18) out;
 const uint flare_matrix_count = 36;
 // 事前に求めた36種類のレンズフレアの経路の行列
 const mat2 flare_matrices[36]=mat2[](
-#include "flare.inc"
+#include <gct/lens_flare/prtlf_flare.inc>
 );
 
 in gl_PerVertex
@@ -52,10 +52,14 @@ void main() {
   vec4 light_pos_in_screen = gl_in[ 0 ].gl_Position;
   light_pos_in_screen/=light_pos_in_screen.w;
   ivec2 screen_pos = ivec2( imageSize( image_pool_2d[ global_uniforms.gbuffer ] ).xy * ( light_pos_in_screen.xy * vec2( 0.5,  0.5 ) + 0.5 ) );
-  vec4 layer_index = imageLoad( image_pool_2d_array[ nonuniformEXT( global_uniforms.gbuffer ) ], ivec3( screen_pos, 32 ) );
+  kplus_iter iter = kplus_begin(
+    kplus_image( global_uniforms.gbuffer, global_uniforms.depth ),
+    screen_pos
+  );
+  iter = kplus_nearest( iter );
   const float depth = 
-    ( layer_index.x != 0 ) ?
-    read_kplus_buffer_depth( global_uniforms.depth, screen_pos, uint( layer_index.x ) ):
+    !kplus_is_end( iter ) ?
+    kplus_get_depth( iter ):
     2.0;
   if(
     light_pos_in_screen.x < -1.0 || light_pos_in_screen.x > 1.0 ||

@@ -13,6 +13,9 @@ struct gbuffer_value {
   float occlusion;
   vec3 optflow;
   vec4 shadow_level;
+  vec3 tangent;
+  vec2 texcoord[4];
+  vec4 color[2];
 };
 
 #endif

@@ -3,6 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
 
 // メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
@@ -16,6 +17,7 @@
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph/accessor.h>
