@@ -223,6 +223,7 @@ add_library( gct SHARED
   gct/cubemap.cpp
   gct/gbuffer.cpp
   gct/gbuffer_create_info.cpp
+  gct/gbuffer_format.cpp
   gct/voxel_image.cpp
   gct/voxel_buffer.cpp
   gct/voxel_framebuffer.cpp
@@ -652,6 +653,8 @@ add_shader( gct gct/shader/skyview/generate_skyview.comp INSTALL )
 add_shader( gct gct/shader/skyview/generate_transmittance.comp INSTALL )
 add_shader( gct gct/shader/skyview/ppll/1.0/render.comp INSTALL )
 add_shader( gct gct/shader/skyview/ppll/1.0/generate.comp INSTALL )
+add_shader( gct gct/shader/skyview/kplus/1.0/render.comp INSTALL )
+add_shader( gct gct/shader/skyview/kplus/1.0/generate.comp INSTALL )
 
 add_shader( gct gct/shader/mesh_to_constraint/mesh_to_constraint.comp INSTALL )
 add_shader( gct gct/shader/mesh_to_particle/mesh_to_particle.comp INSTALL )
@@ -695,6 +698,10 @@ add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.frag INSTALL )
+
 
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.mesh INSTALL )
@@ -703,6 +710,9 @@ add_shader( gct gct/shader/generate_ppll/no_culling/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_ppll/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_ppll/standard/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
@@ -732,10 +742,14 @@ add_shader( gct gct/shader/merge/merge.comp INSTALL )
 add_shader( gct gct/shader/merge/2.0/merge.comp INSTALL )
 
 add_shader( gct gct/shader/nearest_position/nearest_position.comp INSTALL )
+add_shader( gct gct/shader/nearest_position/kplus/2.0/nearest_position.comp INSTALL )
 add_shader( gct gct/shader/nearest_position/ppll/1.0/nearest_position.comp INSTALL )
 
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll.comp INSTALL )
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll_external.comp INSTALL )
+
+add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus.comp INSTALL )
+add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus_external.comp INSTALL )
 
 add_shader( gct gct/shader/gauss/12_32/horizontal.comp INSTALL )
 add_shader( gct gct/shader/gauss/12_32/vertical.comp INSTALL )
@@ -746,6 +760,7 @@ add_shader( gct gct/shader/box_filter/3x3/1.0/filter.comp INSTALL )
 add_shader( gct gct/shader/box_filter/5x5/1.0/filter.comp INSTALL )
 
 add_shader( gct gct/shader/lighting/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/kplus/2.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/1.0/lighting.comp INSTALL )
 
 add_shader( gct gct/shader/meshlet_normal/1.0/meshlet_normal.comp INSTALL )

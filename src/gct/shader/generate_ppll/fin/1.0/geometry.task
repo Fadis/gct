@@ -3,7 +3,6 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_EXT_shader_image_load_formatted : enable
 
 // メッシュシェーダー拡張を使う
 #extension GL_EXT_mesh_shader : enable
@@ -13,17 +12,19 @@
 #extension GL_KHR_shader_subgroup_ballot : enable
 
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
-#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
-#define GCT_MAKE_IMAGE_COHERENT
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
+  uint light;
+  uint shell_thickness;
+  uint loop_counter;
+  uint loop_until;
   uint ppll_state_id;
-  uint gbuffer_format;
   uint gbuffer;
+  uint gbuffer_format;
   uint position;
   uint start;
   uint next;
@@ -39,8 +40,7 @@ struct task_data {
   uint meshlet_index[ 32 ];
   // ローカル座標系からワールド座標系への変換行列
   mat4 l2w;
-  // ローカル座標系からスクリーン座標系への変換行列
-  mat4 l2s;
+  mat4 w2s;
   // どのノードの下のどのメッシュを描くかを指定するID
   uint resource_pair_id;
 };
@@ -65,14 +65,11 @@ void main() {
     l2w;
   // 変換行列をタスクペイロードに書く
   td.l2w = l2w;
-  td.l2s = l2s;
+  td.w2s = w2s;
 
-  // オクルージョンカリングの結果(メッシュが見える位置にあるかどうか)を得る
-  const uint visibility = last_visibility_pool[ inst.visibility ];
-  
   uint visible_invocation_count = 0u;
   // メッシュが見える位置にある場合
-  if( visibility != 0u ) {
+  {
     // メッシュの情報を取得する
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];

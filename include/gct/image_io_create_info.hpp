@@ -22,6 +22,7 @@
 #include <gct/rendering_info.hpp>
 #include <gct/graphics_execution_shape.hpp>
 #include <gct/format.hpp>
+#include <gct/push_constant_storage.hpp>
 
 namespace gct {
 
@@ -377,7 +378,8 @@ struct image_io_plan {
 
 void to_json( nlohmann::json&, const image_io_plan& );
 
-struct image_io_create_info {
+struct image_io_create_info :
+  public push_constant_storage {
   image_io_create_info(
     const std::shared_ptr< compute >&,
     const std::shared_ptr< scene_graph::scene_graph_resource > &r,
@@ -448,22 +450,11 @@ struct image_io_create_info {
   }
   bool independent() const;
   bool filled() const;
-  [[nodiscard]] const std::vector< std::uint8_t > &get_push_constant() const {
-    return push_constant;
-  }
-  [[nodiscard]] const std::optional< spv_member_pointer > &get_push_constant_member_pointer() const;
   template< typename T >
   image_io_create_info &set_push_constant(
     const std::string &name,
     const T &value
   ) {
-    auto pcmp = get_push_constant_member_pointer();
-    if( !pcmp ) {
-      throw exception::runtime_error( "image_io_create_info::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
-    }
-    if( !pcmp->has( name ) ) {
-      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
-    }
     if( plan.input.find( name ) != plan.input.end() ) {
       throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for input image ID" , __FILE__, __LINE__ );
     }
@@ -473,7 +464,7 @@ struct image_io_create_info {
     if( plan.inout.find( name ) != plan.inout.end() ) {
       throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for inout image ID" , __FILE__, __LINE__ );
     }
-    push_constant.data()->*((*pcmp)[ name ]) = value;
+    push_constant_storage::set_push_constant< T >( name, value );
     return *this;
   }
   template< typename T >
@@ -481,13 +472,6 @@ struct image_io_create_info {
     const std::string &name,
     const T &value
   ) const {
-    auto pcmp = get_push_constant_member_pointer();
-    if( !pcmp ) {
-      throw exception::runtime_error( "image_io_create_info::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
-    }
-    if( !pcmp->has( name ) ) {
-      throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
-    }
     if( plan.input.find( name ) != plan.input.end() ) {
       throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for input image ID" , __FILE__, __LINE__ );
     }
@@ -497,7 +481,7 @@ struct image_io_create_info {
     if( plan.inout.find( name ) != plan.inout.end() ) {
       throw exception::invalid_argument( "image_io_create_info::set_push_constant : Push constant variable " + name + " is used for inout image ID" , __FILE__, __LINE__ );
     }
-    push_constant.data()->*((*pcmp)[ name ]) = value;
+    push_constant_storage::set_push_constant< T >( name, value );
     return *this;
   }
   [[nodiscard]] const rendering_info_t &get_rendering_info() const {
@@ -532,7 +516,6 @@ private:
   std::unordered_map< std::string, image_pool::image_descriptor > inout;
   std::unordered_map< std::string, texture_pool::texture_descriptor > sampled;
   glm::ivec3 dim = glm::ivec3( 1, 1, 1 );
-  mutable std::vector< std::uint8_t > push_constant;
   std::unordered_map< std::string, bool > shareable;
   std::vector< color_attachment_name > ca;
   std::shared_ptr< graphics > graphic_executable;

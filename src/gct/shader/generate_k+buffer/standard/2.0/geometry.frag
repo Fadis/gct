@@ -11,21 +11,16 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #define GCT_MAKE_IMAGE_COHERENT
 #include <gct/scene_graph.h>
-#include <gct/scene_graph/ppll.h>
 #include <gct/global_uniforms.h>
-
 
 //layout(early_fragment_tests) in;
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint ppll_state_id;
   uint gbuffer_format;
   uint gbuffer;
-  uint position;
-  uint start;
-  uint next;
+  uint depth;
 } push_constants;
 
 void main() {
@@ -45,15 +40,13 @@ void main() {
   visibility_pool[ visibility_index ] = 1;
 
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
-  
   beginInvocationInterlockARB();
-  ppll_iter iter = ppll_begin(
-    push_constants.ppll_state_id,
-    ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
+  kplus_iter iter = kplus_begin(
+    kplus_image( push_constants.gbuffer, push_constants.depth ),
     image_pos,
     push_constants.gbuffer_format
   );
-  ppll_insert(
+  kplus_insert(
     iter,
     p,
     gl_FragCoord.z,

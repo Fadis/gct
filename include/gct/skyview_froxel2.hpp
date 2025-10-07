@@ -5,6 +5,7 @@
 #include <gct/property.hpp>
 #include <gct/shader_graph.hpp>
 #include <gct/buffer_pool.hpp>
+#include <gct/gbuffer_format.hpp>
 
 namespace gct {
   class image_view_t;
@@ -28,6 +29,23 @@ namespace gct {
       const shader_graph::vertex::subresult_type &next,
       const shader_graph::vertex::subresult_type &transmittance,
       const buffer_pool::buffer_descriptor &ppll_state_id
+    ) const;
+    shader_graph::vertex::combined_result_type operator()(
+      shader_graph::builder &b,
+      const shader_graph::vertex::subresult_type &gbuffer,
+      const shader_graph::vertex::subresult_type &depth,
+      const shader_graph::vertex::subresult_type &transmittance,
+      gbuffer_format
+    ) const;
+    shader_graph::vertex::combined_result_type operator()(
+      shader_graph::builder &b,
+      const shader_graph::vertex::subresult_type &gbuffer,
+      const shader_graph::vertex::subresult_type &position,
+      const shader_graph::vertex::subresult_type &start,
+      const shader_graph::vertex::subresult_type &next,
+      const shader_graph::vertex::subresult_type &transmittance,
+      const buffer_pool::buffer_descriptor &ppll_state_id,
+      gbuffer_format
     ) const;
   private:
     std::shared_ptr< compute > generate;

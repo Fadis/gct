@@ -67,13 +67,13 @@ struct graphics_create_info {
   graphics_create_info &clear_shader();
   graphics_create_info &use_dynamic_rendering(
     const std::vector< vk::Format > &color_attachment_format,
-    vk::Format depth_attachment_format,
-    vk::Format stencil_attachment_format
+    vk::Format depth_attachment_format = vk::Format::eUndefined,
+    vk::Format stencil_attachment_format = vk::Format::eUndefined
   );
   graphics_create_info &use_dynamic_rendering(
     vk::Format color_attachment_format,
-    vk::Format depth_attachment_format,
-    vk::Format stencil_attachment_format
+    vk::Format depth_attachment_format = vk::Format::eUndefined,
+    vk::Format stencil_attachment_format = vk::Format::eUndefined
   );
   graphics_create_info &use_color_blend( common_color_blend_mode );
   graphics_create_info &disable_depth_test();

@@ -24,13 +24,7 @@ void image_io::operator()(
     }
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
     if( get_props().get_graphic_executable() ) {
-      rec->pushConstants(
-        **get_props().get_graphic_executable()->get_pipeline()->get_props().get_layout(),
-        get_props().get_graphic_executable()->get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-        get_props().get_graphic_executable()->get_push_constant_member_pointer()->get_offset(),
-        get_props().get_push_constant().size(),
-        get_props().get_push_constant().data()
-      );
+      get_props()( rec, get_props().get_graphic_executable()->get_pipeline() );
       {
         const_cast< rendering_info_t& >( get_props().get_rendering_info() ).rebuild_chain();
         const auto rendering = rec.begin_rendering( get_props().get_rendering_info() );
@@ -61,13 +55,7 @@ void image_io::operator()(
     }
     else {
 #endif
-      rec->pushConstants(
-        **get_props().get_executable()->get_pipeline()->get_props().get_layout(),
-        get_props().get_executable()->get_pipeline()->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-        get_props().get_executable()->get_push_constant_member_pointer()->get_offset(),
-        get_props().get_push_constant().size(),
-        get_props().get_push_constant().data()
-      );
+      get_props()( rec, get_props().get_executable()->get_pipeline() );
       const auto dim = get_props().get_dim();
       (*get_props().get_executable())( rec, 0u, dim.x, dim.y, dim.z );
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)

@@ -18,7 +18,32 @@ namespace gct {
 graphics_create_info &graphics_create_info::add_shader(
   const std::filesystem::path &p
 ) {
-  shaders.push_back( p );
+  if( std::filesystem::is_directory( p ) ) {
+    if( std::filesystem::exists( p / "geometry.vert.spv" ) ) {
+      add_shader( p / "geometry.vert.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.tesc.spv" ) ) {
+      add_shader( p / "geometry.tesc.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.tese.spv" ) ) {
+      add_shader( p / "geometry.tese.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.geom.spv" ) ) {
+      add_shader( p / "geometry.geom.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.frag.spv" ) ) {
+      add_shader( p / "geometry.frag.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.task.spv" ) ) {
+      add_shader( p / "geometry.task.spv" );
+    }
+    if( std::filesystem::exists( p / "geometry.mesh.spv" ) ) {
+      add_shader( p / "geometry.mesh.spv" );
+    }
+  }
+  else {
+    shaders.push_back( p );
+  }
   return *this;
 }
 graphics_create_info &graphics_create_info::add_shader(

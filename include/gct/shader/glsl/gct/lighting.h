@@ -265,4 +265,97 @@ vec3 diffuse_with_mask(
   return linear;
 }
 
+vec3 diffuse_kajiya_kay(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 emissive,
+  vec3 light_energy,
+  float masked
+) {
+  const float u = dot( L, T );
+  const float iu2 = ( 1.0 - u * u );
+  const float diffuse = iu2 * iu2;
+  return mix(
+    emissive,
+    ( 1 - metallicness ) * diffuse * diffuse_color * light_energy + emissive,
+    masked
+  );
+}
+
+vec3 specular_kajiya_kay(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  const vec3 H = normalize( ( L + V ) * 0.5 );
+  const float v = dot( T, H );
+  const float iv2 = ( 1.0 - v * v );
+  const float specular = iv2 * iv2;
+  return mix(
+    vec3( 0, 0, 0 ),
+    mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
+    masked
+  );
+}
+
+vec3 diffuse_stalling(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 emissive,
+  vec3 light_energy,
+  float masked
+) {
+  return diffuse_kajiya_kay(
+    L,
+    V,
+    T,
+    diffuse_color,
+    roughness,
+    metallicness,
+    emissive,
+    light_energy,
+    masked
+  );
+}
+
+float roughness_to_blinn_phong_shininess( float roughness ) {
+  const float eps = 0.001;
+  return  2.0 / ( eps + roughness * roughness * roughness * roughness ) - 2.0;
+}
+
+vec3 specular_stalling(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  const float LT = dot( L, T );
+  const float VT = dot( V, T );
+  const float VR = sqrt( 1.0 - LT * LT ) * sqrt( 1.0 - VT * VT ) - LT * VT;
+  const float shininess = roughness_to_blinn_phong_shininess( roughness );
+  const float specular = pow( VR, shininess );
+  return mix(
+    vec3( 0, 0, 0 ),
+    mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
+    masked
+  );
+}
+
 #endif

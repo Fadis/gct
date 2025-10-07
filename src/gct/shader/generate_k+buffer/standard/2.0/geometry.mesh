@@ -16,25 +16,21 @@
 // Subgroup演算拡張を使う
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 
-#define GCT_ENABLE_8BIT_16BIT_STORAGE
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
-#define GCT_MAKE_IMAGE_COHERENT
 #include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
 #include <gct/scene_graph/accessor.h>
 #include <gct/global_uniforms.h>
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint ppll_state_id;
   uint gbuffer_format;
   uint gbuffer;
-  uint position;
-  uint start;
-  uint next;
+  uint depth;
 } push_constants;
-
 
 // 1つのローカルワークグループには32スレッドが含まれる
 layout(local_size_x = 32, local_size_y = 1 ) in;

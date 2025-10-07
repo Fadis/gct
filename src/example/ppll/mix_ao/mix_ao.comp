@@ -17,6 +17,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 
 layout(push_constant) uniform PushConstants {
   uint ppll_state_id;
+  uint gbuffer_format;
   uint gbuffer;
   uint position;
   uint start;
@@ -58,7 +59,8 @@ void main()  {
   ppll_iter iter = ppll_begin(
     push_constants.ppll_state_id,
     ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
-    screen_pos
+    screen_pos,
+    push_constants.gbuffer_format
   );
 
   pre_dof_pixel mixed = ppll_mix(

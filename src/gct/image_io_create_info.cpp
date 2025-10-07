@@ -164,7 +164,7 @@ image_io_create_info::image_io_create_info(
     size /= size.w;
     dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
   }
-  push_constant.resize( pcmp->get_aligned_size(), 0u );
+  enable_push_constant( *pcmp );
 }
 
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
@@ -231,26 +231,26 @@ image_io_create_info::image_io_create_info(
       }
     }
   }
-  push_constant.resize( pcmp->get_aligned_size(), 0u );
+  enable_push_constant( *pcmp );
   auto size = plan.dim.size_transform * glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
   size /= size.w;
   dim = glm::ivec3( std::max( 1.0f, size.x ), std::max( 1.0f, size.y ), std::max( 1.0f, size.z ) );
   if( plan.shape ) {
     if( pcmp->has( "offset" ) ) {
-      push_constant.data()->*((*pcmp)[ "offset" ]) = plan.shape->offset;
+      set_push_constant( "offset", plan.shape->offset );
     }
     else if( pcmp->has( "instance" ) ) {
-      push_constant.data()->*((*pcmp)[ "instance" ]) = plan.shape->offset;
+      set_push_constant( "instance", plan.shape->offset );
     }
     if( pcmp->has( "count" ) ) {
-      push_constant.data()->*((*pcmp)[ "count" ]) = plan.shape->count;
+      set_push_constant( "count", plan.shape->count );
     }
     else if( pcmp->has( "primitive" ) ) {
-      push_constant.data()->*((*pcmp)[ "primitive" ]) = plan.shape->count;
+      set_push_constant( "primitive", plan.shape->count );
     }
   }
   if( pcmp->has( "loop_until" ) ) {
-    push_constant.data()->*(*pcmp)[ "loop_until" ] = plan.loop;
+    set_push_constant( "loop_until", plan.loop );
   }
 }
 #endif
@@ -321,12 +321,8 @@ void image_io_create_info::update_pc(
 ) {
   const auto view = resource->image->get( desc );
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eStorage ) {
-    const auto pcmp =
-      graphic_executable ?
-      graphic_executable->get_push_constant_member_pointer() :
-      executable->get_push_constant_member_pointer();
-    if( pcmp->has( name ) ) {
-      push_constant.data()->*(*pcmp)[ name ] = *desc;
+    if( get_push_constant_member_pointer()->has( name ) ) {
+      push_constant_storage::set_push_constant( name, *desc );
     }
   }
 }
@@ -413,11 +409,7 @@ void image_io_create_info::update_pc(
   const std::string &name,
   const texture_pool::texture_descriptor &desc
 ) {
-  const auto pcmp =
-    graphic_executable ?
-    graphic_executable->get_push_constant_member_pointer() :
-    executable->get_push_constant_member_pointer();
-  push_constant.data()->*(*pcmp)[ name ] = *desc;
+  set_push_constant( name, *desc );
 }
 
 image_io_create_info &image_io_create_info::add_input(
@@ -585,12 +577,6 @@ bool image_io_create_info::filled() const {
     if( v.second.index() != 0u ) return false;
   }
   return true;
-}
-const std::optional< spv_member_pointer > &image_io_create_info::get_push_constant_member_pointer() const {
-  return
-    graphic_executable ?
-    graphic_executable->get_push_constant_member_pointer() :
-    executable->get_push_constant_member_pointer();
 }
 void image_io_create_info::set_shareable( const std::string &name, bool s ) {
   if( plan.output.find( name ) == plan.output.end() ) {

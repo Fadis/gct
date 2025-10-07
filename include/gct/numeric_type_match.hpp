@@ -44,6 +44,17 @@ struct numeric_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_
 };
 
 template< typename T >
+struct numeric_type_match< T, std::enable_if_t< std::is_enum_v< std::remove_cvref_t< T > > > > {
+  [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
+    return
+      v.component == numeric_component_type_t::int_ &&
+      v.composite == numeric_composite_type_t::scalar &&
+      v.sign == std::is_signed_v< std::remove_cvref_t< T > > &&
+      sizeof( std::remove_cvref_t< T > ) * 8u == v.depth;
+  }
+};
+
+template< typename T >
 struct numeric_type_match< T, std::enable_if_t< std::is_floating_point_v< std::remove_cvref_t< T > > > > {
   [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
     return

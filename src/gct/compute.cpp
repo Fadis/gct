@@ -93,7 +93,7 @@ namespace gct {
     }
     auto pcmp = get_reflection().get_push_constant_member_pointer_maybe( "PushConstants" );
     if( pcmp ) {
-      push_constant_mp = *pcmp;
+      enable_push_constant( *pcmp );
     }
   }
   void compute::operator()(
@@ -107,26 +107,11 @@ namespace gct {
       pipeline,
       descriptor_set[ image_index ]
     );
-    if( use_internal_push_constant && push_constant_mp && !push_constant.empty() ) {
-      rec->pushConstants(
-        **pipeline->get_props().get_layout(),
-        pipeline->get_props().get_layout()->get_props().get_push_constant_range()[ 0 ].stageFlags,
-        push_constant_mp->get_offset(),
-        push_constant.size(),
-        push_constant.data()
-      );
-    }
+    push_constant_storage::operator()( rec, pipeline );
     rec.dispatch_threads( x, y, z );
   }
   const shader_module_reflection_t &compute::get_reflection() const {
     return pipeline->get_props().get_stage().get_shader_module()->get_props().get_reflection(); 
-  }
-  std::vector< std::uint8_t > &compute::get_push_constant() const {
-    if( push_constant_mp ) {
-      use_internal_push_constant = true;
-      push_constant.resize( push_constant_mp->get_aligned_size(), 0u );
-    }
-    return push_constant;
   }
   void to_json( nlohmann::json &dest, const compute &src ) {
     dest = nlohmann::json::object();
