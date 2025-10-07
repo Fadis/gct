@@ -62,6 +62,7 @@ public:
   [[nodiscard]] bool operator!=( const spv_member_pointer& ) const;
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] bool has( const std::string &name ) const;
+  [[nodiscard]] std::size_t get_member_count() const;
 private:
   std::size_t begin_;
   const SpvReflectTypeDescription *type;

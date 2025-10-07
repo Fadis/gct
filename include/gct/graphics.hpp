@@ -6,6 +6,7 @@
 #include <gct/vertex_attributes.hpp>
 #include <gct/property.hpp>
 #include <gct/spv_member_pointer.hpp>
+#include <gct/push_constant_storage.hpp>
 
 namespace gct {
   class allocator_t;
@@ -19,7 +20,8 @@ namespace gct {
   class color_attachment_name;
   class graphics :
     public property< graphics_create_info >,
-    public std::enable_shared_from_this< graphics > {
+    public std::enable_shared_from_this< graphics >,
+    public push_constant_storage {
   public:
     graphics(
       const graphics_create_info &ci
@@ -47,23 +49,12 @@ namespace gct {
     [[nodiscard]] const std::shared_ptr< pipeline_layout_t > get_layout() const {
       return pipeline_layout;
     }
-    [[nodiscard]] const std::optional< spv_member_pointer > &get_push_constant_member_pointer() const {
-      return push_constant_mp;
-    }
-    [[nodiscard]] std::vector< std::uint8_t > &get_push_constant() const;
     template< typename T >
     graphics &set_push_constant(
       const std::string &name,
       const T &value
     ) {
-      auto pcmp = get_push_constant_member_pointer();
-      if( !pcmp ) {
-        throw exception::runtime_error( "graphics::set_push_constant : Push constant member pointer is not available", __FILE__, __LINE__ );
-      }
-      if( !pcmp->has( name ) ) {
-        throw exception::invalid_argument( "graphics::set_push_constant : Push constant variable " + name + " does not exist" , __FILE__, __LINE__ );
-      }
-      get_push_constant().data()->*((*pcmp)[ name ]) = value;
+      push_constant_storage::set_push_constant< T >( name, value );
       return *this;
     }
     const std::vector< std::vector< std::shared_ptr< descriptor_set_t > > > &get_descriptor_set() const {
@@ -80,9 +71,6 @@ namespace gct {
     gct::pipeline_vertex_input_state_create_info_t vistat;
     std::unordered_map< vertex_attribute_usage_t, vertex_input_detail_t > vamap;
     std::uint32_t stride;
-    mutable bool use_internal_push_constant = false;
-    mutable std::vector< std::uint8_t > push_constant;
-    std::optional< spv_member_pointer > push_constant_mp;
   };
   void to_json( nlohmann::json &dest, const graphics &src );
 }

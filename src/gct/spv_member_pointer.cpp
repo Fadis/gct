@@ -216,6 +216,15 @@ namespace gct {
     }
     return true;
   }
+  std::size_t spv_member_pointer::get_member_count() const {
+    if( stride != 0u ) {
+      throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
+    }
+    if( !child || child->empty() ) {
+      throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
+    }
+    return child->size();
+  }
   void spv_member_pointer::to_json( nlohmann::json &dest ) const {
     dest = nlohmann::json::object();
     dest[ "begin" ] = begin_;

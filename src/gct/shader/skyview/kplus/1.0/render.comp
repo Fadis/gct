@@ -16,47 +16,45 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 #include <gct/scene_graph/texture_pool.h>
 #include <gct/scene_graph/light_pool.h>
 #include <gct/scene_graph/omnishadow.h>
-#include <gct/scene_graph/ppll.h>
+#include <gct/scene_graph/k+buffer.h>
 #include <gct/depth.h>
 
 layout(push_constant) uniform PushConstants {
+  uint gbuffer_format;
+  uint gbuffer;
+  uint depth;
   uint froxel;
   uint dest;
   uint world_to_screen;
   uint unproject;
-  uint ppll_state_id;
-  uint gbuffer_format;
-  uint gbuffer;
-  uint position;
-  uint start;
-  uint next;
 } push_constants;
 
 void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const int layer = int(gl_GlobalInvocationID.z);
 
-  ppll_iter iter = ppll_direct(
-    push_constants.ppll_state_id,
-    ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
+  kplus_iter iter = kplus_direct(
+    kplus_image( push_constants.gbuffer, push_constants.depth ),
     screen_pos,
+    layer,
     push_constants.gbuffer_format
   );
 
-  if( ppll_is_end( iter ) ) {
+  if( kplus_is_end( iter ) ) {
     return;
   }
 
   gbuffer_value p;
-  const float albedo_alpha = ppll_get_albedo( iter ).w;
+  const float albedo_alpha = kplus_get_albedo( iter ).w;
   if( p.albedo.a == 0.0 ) {
-    ppll_set( iter, push_constants.dest, vec4( 0, 0, 0, 1 ) );
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 1 ) );
     return;
   }
 
   const vec3 pos = depth_to_world_position(
     screen_pos,
     imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy,
-    ppll_get_depth( iter ),
+    kplus_get_depth( iter ),
     matrix_pool[ push_constants.unproject ]
   ).xyz;
   
@@ -88,6 +86,6 @@ void main() {
     transmittance = texture( texture_pool_3d[ nonuniformEXT( push_constants.froxel ) ], sample_pos_in_froxel ).w;
   }
 
-  ppll_set( iter, push_constants.dest, vec4( sum, transmittance ) );
+  kplus_set( iter, push_constants.dest, vec4( sum, transmittance ) );
 }
 

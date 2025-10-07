@@ -1012,7 +1012,7 @@ kplus_iter kplus_nearest(
   kplus_iter iter
 ) {
   iter.index = 0;
-  iter.layer = max( int( imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, 32 ) ).x ) - 1, 0 );
+  iter.layer = max( int( imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, gbuffer_get_layer_count( iter.active_layer ) * 4u ) ).x ) - 1, 0 );
   return iter;
 }
 

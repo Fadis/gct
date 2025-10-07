@@ -13,20 +13,25 @@
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/ppll.h>
 #include <gct/global_uniforms.h>
-
+#include <gct/scene_graph/read_hair_primitive.h>
 
 //layout(early_fragment_tests) in;
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
+  uint light;
+  uint shell_thickness;
+  uint loop_counter;
+  uint loop_until;
   uint ppll_state_id;
-  uint gbuffer_format;
   uint gbuffer;
+  uint gbuffer_format;
   uint position;
   uint start;
   uint next;
 } push_constants;
+
 
 void main() {
   primitive_value p = read_primitive(
@@ -51,7 +56,11 @@ void main() {
     push_constants.ppll_state_id,
     ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
     image_pos,
-    push_constants.gbuffer_format
+    GCT_GBUFFER_ALBEDO_ALPHA |
+    GCT_GBUFFER_TANGENT |
+    GCT_GBUFFER_EMISSIVE_OCCLUSION |
+    GCT_GBUFFER_METALLIC_ROUGHNESS_ID |
+    GCT_GBUFFER_OPTFLOW_MARK
   );
   ppll_insert(
     iter,

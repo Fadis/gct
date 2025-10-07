@@ -10,43 +10,30 @@
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
 #include <gct/scene_graph/image_pool.h>
-#include <gct/scene_graph/ppll.h>
+#include <gct/scene_graph/k+buffer.h>
 
 layout(push_constant) uniform PushConstants {
   uint dest;
-  uint ppll_state_id;
   uint gbuffer_format;
   uint gbuffer;
-  uint position;
-  uint start;
-  uint next;
-  uint layer;
+  uint depth;
 } push_constants;
 
 void main()  {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   const vec2 scale =
-    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.start ) ] ).xy) /
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy) /
     vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
   const ivec2 src_pos = ivec2( screen_pos * scale );
-
-  ppll_iter iter = ppll_begin(
-    push_constants.ppll_state_id,
-    ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
+  
+  kplus_iter iter = kplus_begin(
+    kplus_image( push_constants.gbuffer, push_constants.depth ),
     src_pos,
     push_constants.gbuffer_format
   );
-  ppll_iter nearest = ppll_nearest(
-    iter
-  );
-  const bool has_layer = !ppll_is_end( nearest );
-  const vec4 value =
-    has_layer ?
-    ppll_get_component(
-      nearest,
-      push_constants.layer,
-      vec4( 0, 1, 0, 1 )
-    ) : vec4( 1, 0, 0, 1 );
-  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, value );
+  kplus_iter nearest = kplus_nearest( iter );
+  const bool has_layer = !kplus_is_end( nearest );
+  const float depth = has_layer ? kplus_get_depth( nearest ) : 1.0;
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, 0.0, 0.0, 0.0 ) );
 }
 

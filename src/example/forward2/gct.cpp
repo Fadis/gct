@@ -355,6 +355,7 @@ int main( int argc, const char *argv[] ) {
         .set_node_name( "fin" )
     )
     .set_push_constant( "light", 0u )
+    .set_push_constant( "shell_thickness", 0.1f )
   )(
     lighting2_desc
   );

@@ -28,9 +28,15 @@ layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
   uint light;
-  float shell_thickness;
+  uint shell_thickness;
   uint loop_counter;
   uint loop_until;
+  uint ppll_state_id;
+  uint gbuffer;
+  uint gbuffer_format;
+  uint position;
+  uint start;
+  uint next;
 } push_constants;
 
 layout(local_size_x = 32, local_size_y = 1 ) in;

@@ -16,6 +16,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 #include <gct/scene_graph/k+buffer.h>
 
 layout(push_constant) uniform PushConstants {
+  uint gbuffer_format;
   uint gbuffer;
   uint depth;
   uint occlusion;
@@ -57,7 +58,8 @@ void main()  {
 
   kplus_iter iter = kplus_begin(
     kplus_image( push_constants.gbuffer, push_constants.depth ),
-    src_pos
+    src_pos,
+    push_constants.gbuffer_format
   );
 
   pre_dof_pixel mixed = kplus_mix(
@@ -72,6 +74,7 @@ void main()  {
     light_pool[ global_uniforms.light ].energy.xyz,
     ao
   );
+  //mixed.far_total = vec4( 1, 0, 1, 1 );
   vec4 near_total = mixed.near_total;
   vec4 far_total = mixed.far_total;
   float near_depth = mixed.near_depth;
