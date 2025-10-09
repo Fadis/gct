@@ -40,11 +40,6 @@ void main()  {
     screen_pos,
     push_constants.gbuffer_format
   );
-  /*ppll_iter iter = ppll_begin(
-    push_constants.ppll_state_id,
-    ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
-    screen_pos
-  );*/
 
   if( ppll_is_end( iter ) ) {
     return;
@@ -87,6 +82,5 @@ void main()  {
     p.shadow_level.x
   );
   ppll_set( iter, push_constants.dest, vec4( diffuse + specular, p.albedo.a ) );
-  //ppll_set( iter, push_constants.dest, vec4( 1, 0, 0, 1 ) /*p.albedo*/ );
 }
 

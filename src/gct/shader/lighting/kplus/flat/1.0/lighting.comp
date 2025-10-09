@@ -1,0 +1,60 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/lighting.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/scene_graph/light_pool.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+#include <gct/scene_graph/omnishadow.h>
+
+layout(push_constant) uniform PushConstants {
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+  uint dest;
+  uint unproject;
+  uint light;
+} push_constants;
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const vec2 scale =
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy) /
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
+  const ivec2 src_pos = ivec2( screen_pos * scale );
+  const int layer = int( gl_GlobalInvocationID.z );
+
+  kplus_iter iter = kplus_direct(
+    kplus_image( push_constants.gbuffer, push_constants.position ),
+    src_pos,
+    layer,
+    push_constants.gbuffer_format
+  );
+
+  if( kplus_is_end( iter ) ) {
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
+    return;
+  }
+
+  gbuffer_value p;
+  p.albedo = kplus_get_albedo( iter );
+  if( p.albedo.a == 0.0 ) {
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
+    return;
+  }
+
+  kplus_set( iter, push_constants.dest, p.albedo );
+}
+

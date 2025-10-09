@@ -26,7 +26,7 @@ layout(push_constant) uniform PushConstants {
   uint count;
   uint gbuffer_format;
   uint gbuffer;
-  uint depth;
+  uint position;
 } push_constants;
 
 // 1つのローカルワークグループには32スレッドが含まれる

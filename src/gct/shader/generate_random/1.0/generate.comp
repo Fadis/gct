@@ -1,0 +1,29 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/random.h>
+
+layout(push_constant) uniform PushConstants {
+  uint dest;
+} push_constants;
+
+const int kernel_size = 32;
+shared vec3[gl_WorkGroupSize.x+kernel_size*2+1] cache;
+
+void main() {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const float value = rand1( vec2( screen_pos ) );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( value, 0.0, 0.0, 1.0 ) );
+}
+

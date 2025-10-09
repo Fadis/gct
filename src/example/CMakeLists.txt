@@ -121,6 +121,9 @@ subdirs(
   dump_v2p
   dump_sp
   ppll
+  shell_and_fin
+  shell_and_fin_shadow
+  generate_hair
 )
 if( DXC_FOUND )
 subdirs(

@@ -15,15 +15,13 @@
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph/read_hair_primitive.h>
 
-//layout(early_fragment_tests) in;
+layout(early_fragment_tests) in;
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint light;
-  uint shell_thickness;
-  uint loop_counter;
-  uint loop_until;
+  float shell_thickness;
+  uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
   uint gbuffer_format;
@@ -32,35 +30,73 @@ layout(push_constant) uniform PushConstants {
   uint next;
 } push_constants;
 
+primitive_value read_primitive_hair(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_tangent,
+  vec2 vert_texcoord0,
+  vec2 vert_texcoord1,
+  uint fin_texture
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 tangent = normalize( vert_tangent.xyz );
+  const vec3 pos = vert_position.xyz;
+  const vec3 albedo = (
+    ( prim.base_color_texture != 0 ) ?
+    texture( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord0 ) :
+    prim.base_color
+  ).xyz;
+  const float alpha =
+    texture( texture_pool[ nonuniformEXT( fin_texture) ], vert_texcoord1 ).r;
+
+  const float occlusion = vert_texcoord1.y * 0.5 + 0.5;
+
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = texture( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord0 );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.tangent = tangent;
+  temp.albedo = vec4( albedo, alpha );
+  temp.occlusion = occlusion;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
+  temp.texcoord[ 0 ] = vert_texcoord0;
+  temp.texcoord[ 1 ] = vert_texcoord1;
+  return temp;
+}
+
 
 void main() {
-  primitive_value p = read_primitive(
+  primitive_value p = read_primitive_hair(
     uint( input_id.y ),
     input_position,
-    input_normal,
     input_tangent,
-    input_texcoord,
-    input_optflow,
-    input_previous_position
+    input_texcoord0,
+    input_texcoord1,
+    push_constants.fin_texture
   );
-  
+ 
   if( p.albedo.a <= 0.0 ) discard;
 
-  const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
-  visibility_pool[ visibility_index ] = 1;
-
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
-  
+
   beginInvocationInterlockARB();
   ppll_iter iter = ppll_begin(
     push_constants.ppll_state_id,
     ppll_image( push_constants.gbuffer, push_constants.position, push_constants.start, push_constants.next ),
     image_pos,
-    GCT_GBUFFER_ALBEDO_ALPHA |
-    GCT_GBUFFER_TANGENT |
-    GCT_GBUFFER_EMISSIVE_OCCLUSION |
-    GCT_GBUFFER_METALLIC_ROUGHNESS_ID |
-    GCT_GBUFFER_OPTFLOW_MARK
+    push_constants.gbuffer_format
   );
   ppll_insert(
     iter,

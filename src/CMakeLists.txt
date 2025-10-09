@@ -713,6 +713,13 @@ add_shader( gct gct/shader/generate_ppll/standard/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_ppll/fin/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.frag INSTALL )
+
+add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_hair/straight/1.0/mix.comp INSTALL )
 
 add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
@@ -747,9 +754,11 @@ add_shader( gct gct/shader/nearest_position/ppll/1.0/nearest_position.comp INSTA
 
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll.comp INSTALL )
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll_external.comp INSTALL )
+add_shader( gct gct/shader/probe_ppll/1.0/mix.comp INSTALL )
 
 add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus.comp INSTALL )
 add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus_external.comp INSTALL )
+add_shader( gct gct/shader/probe_kplus/1.0/mix.comp INSTALL )
 
 add_shader( gct gct/shader/gauss/12_32/horizontal.comp INSTALL )
 add_shader( gct gct/shader/gauss/12_32/vertical.comp INSTALL )
@@ -759,9 +768,16 @@ add_shader( gct gct/shader/gauss/coc/vertical.comp INSTALL )
 add_shader( gct gct/shader/box_filter/3x3/1.0/filter.comp INSTALL )
 add_shader( gct gct/shader/box_filter/5x5/1.0/filter.comp INSTALL )
 
+add_shader( gct gct/shader/generate_random/1.0/generate.comp INSTALL )
+
+add_shader( gct gct/shader/generate_fur_texture/1.0/fin.comp INSTALL )
+
 add_shader( gct gct/shader/lighting/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/2.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/kplus/flat/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/ppll/kajiya_kay/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/ppll/flat/1.0/lighting.comp INSTALL )
 
 add_shader( gct gct/shader/meshlet_normal/1.0/meshlet_normal.comp INSTALL )
 

@@ -78,7 +78,7 @@ namespace gct {
       dynamic->add_dynamic_state( vk::DynamicState::eScissor );
       if( !viewport ) {
         viewport.reset( new pipeline_viewport_state_create_info_t() );
-        viewport->set_viewport_count( reflection->output_variable_count );
+        viewport->set_viewport_count( 1u );
       }
       color_attachment_format_list = std::vector< vk::Format >{ reflection->output_variable_count, std::get< 0 >( *dynamic_rendering_format ) };
       const bool has_depth = depth_stencil && depth_stencil->get_basic().depthTestEnable;
@@ -593,6 +593,17 @@ namespace gct {
     viewport.reset();
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::enable_depth_test() {
+    if( !depth_stencil ) {
+      set_depth_stencil();
+    }
+    auto basic = depth_stencil->get_basic();
+    basic.setDepthTestEnable( true );
+    basic.setDepthWriteEnable( true );
+    basic.setDepthCompareOp( vk::CompareOp::eLessOrEqual );
+    depth_stencil->set_basic( basic );
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::disable_depth_test() {
     if( !depth_stencil ) {
       set_depth_stencil();
@@ -607,7 +618,9 @@ namespace gct {
       set_depth_stencil();
     }
     auto basic = depth_stencil->get_basic();
+    basic.setDepthTestEnable( true );
     basic.setDepthWriteEnable( false );
+    basic.setDepthCompareOp( vk::CompareOp::eLessOrEqual );
     depth_stencil->set_basic( basic );
     return *this;
   }
@@ -619,6 +632,13 @@ namespace gct {
       color_blend->set_mode( mode );
     }
     chained = false;
+    return *this;
+  }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_line_width( float w ) {
+    if( !rasterization ) {
+      set_rasterization();
+    }
+    rasterization->set_line_width( w );
     return *this;
   }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {

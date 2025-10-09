@@ -18,10 +18,8 @@
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint light;
-  uint shell_thickness;
-  uint loop_counter;
-  uint loop_until;
+  float shell_thickness;
+  uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
   uint gbuffer_format;
@@ -67,9 +65,12 @@ void main() {
   td.l2w = l2w;
   td.w2s = w2s;
 
+  // オクルージョンカリングの結果(メッシュが見える位置にあるかどうか)を得る
+  const uint visibility = last_visibility_pool[ inst.visibility ];
+  
   uint visible_invocation_count = 0u;
   // メッシュが見える位置にある場合
-  {
+  /*if( visibility != 0u )*/ {
     // メッシュの情報を取得する
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];

@@ -37,7 +37,7 @@ void main() {
   const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
   vec4 average = vec4( 0, 0, 0, 0 );
   for( uint i = 0u; i != 9u; ++i ) {
-    average += imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], screen_pos + pixel_offset[ i ] );
+    average += imageLoad( image_pool_2d[ nonuniformEXT( push_constants.src ) ], ( screen_pos + pixel_offset[ i ] ) % ivec2( imageSize( image_pool_2d[ nonuniformEXT( push_constants.src ) ] ) ) );
   }
   average /= 9.0;
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, average );

@@ -2,12 +2,10 @@
 #define GCT_SHADER_IO_WITH_TANGENT_H
 
 layout (location = 0) in vec4 input_position;
-layout (location = 1) in vec3 input_normal;
-layout (location = 2) in vec3 input_tangent;
-layout (location = 3) in vec2 input_texcoord;
-layout (location = 4) in vec4 input_optflow;
-layout (location = 5) flat in vec4 input_id;
-layout (location = 6) in vec4 input_previous_position;
+layout (location = 1) in vec3 input_tangent;
+layout (location = 2) in vec2 input_texcoord0;
+layout (location = 3) in vec2 input_texcoord1;
+layout (location = 4) flat in vec4 input_id;
 
 /*
 layout (location = 0) out vec4 output_position;

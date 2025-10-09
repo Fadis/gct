@@ -9,6 +9,7 @@ const mat3 bt709_to_xyz = mat3(
   0.3575896, 0.7151791, 0.1191965,
   0.1804326, 0.0721730, 0.9502783
 );
+const float sqrt_two_pi_inv = 0.3989422804014327; // sqrt( 1 / ( 2 * pi ) )
 
 #endif
 

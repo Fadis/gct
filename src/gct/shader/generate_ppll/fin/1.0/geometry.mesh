@@ -27,10 +27,8 @@
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint light;
-  uint shell_thickness;
-  uint loop_counter;
-  uint loop_until;
+  float shell_thickness;
+  uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
   uint gbuffer_format;
@@ -45,12 +43,10 @@ layout(triangles, max_vertices = 96, max_primitives = 48) out;
 
 // 頂点属性
 layout (location = 0) out vec4 output_position[]; // 頂点座標
-layout (location = 1) out vec3 output_normal[]; // 法線
-layout (location = 2) out vec3 output_tangent[]; // 接線
-layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
-layout (location = 4) out vec4 output_optflow[];
-layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
-layout (location = 6) out vec4 output_previous_position[];
+layout (location = 1) out vec3 output_tangent[]; // 接線
+layout (location = 2) out vec2 output_tex_coord0[]; // テクスチャ座標
+layout (location = 3) out vec2 output_tex_coord1[]; // テクスチャ座標
+layout (location = 4) flat out vec4 output_id[]; // ノードのIDとメッシュのID
 
 // タスクペイロード
 struct task_data {
@@ -196,11 +192,11 @@ void main() {
 
   if( fin_primitive_count == 0u ) return;
 
-  const float fin_scale = 10.0;
+  const float fin_scale = 1.0;
 
   const float fin_length = 0.1;// push_constants.shell_thickness;
 
-  const vec2 tex_coord[ 4 ] = vec2[ 4 ](
+  const vec2 tex_coord1[ 4 ] = vec2[ 4 ](
     vec2( 0, 0 ),
     vec2( fin_scale, 0 ),
     vec2( fin_scale, 1 ),
@@ -215,19 +211,26 @@ void main() {
       ( wp1 + vec4( wn1 * fin_length, 0.0 ) )
     );
     const vec3 tangent[ 4 ] = vec3[ 4 ](
-      v1.tangent.xyz,
-      v0.tangent.xyz,
-      v0.tangent.xyz,
-      v1.tangent.xyz
+      v1.normal.xyz,
+      v0.normal.xyz,
+      v0.normal.xyz,
+      v1.normal.xyz
     );
+    const vec2 tex_coord0[ 4 ] = vec2[ 4 ](
+      v0.tex_coord0.xy,
+      v1.tex_coord0.xy,
+      v1.tex_coord0.xy,
+      v0.tex_coord0.xy
+    );
+
     const uint fvo = filtered_vertex_offset + fin_offset[ 0 ] * 4u;
     const uint fpo = filtered_primitive_offset + fin_offset[ 0 ] * 2u;
     for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
       gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
       output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
-      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
       output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
-      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_tex_coord0[ fvo + vertex_id ] = tex_coord0[ vertex_id ];
+      output_tex_coord1[ fvo + vertex_id ] = tex_coord1[ vertex_id ];
       output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
     }
     for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
@@ -246,19 +249,25 @@ void main() {
       ( wp2 + vec4( wn2 * fin_length, 0.0 ) )
     );
     const vec3 tangent[ 4 ] = vec3[ 4 ](
-      v2.tangent.xyz,
-      v1.tangent.xyz,
-      v1.tangent.xyz,
-      v2.tangent.xyz
+      v2.normal.xyz,
+      v1.normal.xyz,
+      v1.normal.xyz,
+      v2.normal.xyz
+    );
+    const vec2 tex_coord0[ 4 ] = vec2[ 4 ](
+      v2.tex_coord0.xy,
+      v1.tex_coord0.xy,
+      v1.tex_coord0.xy,
+      v2.tex_coord0.xy
     );
     const uint fvo = filtered_vertex_offset + fin_offset[ 1 ] * 4u;
     const uint fpo = filtered_primitive_offset + fin_offset[ 1 ] * 2u;
     for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
       gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
       output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
-      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
       output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
-      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_tex_coord0[ fvo + vertex_id ] = tex_coord0[ vertex_id ];
+      output_tex_coord1[ fvo + vertex_id ] = tex_coord1[ vertex_id ];
       output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
     }
     for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
@@ -277,19 +286,25 @@ void main() {
       ( wp0 + vec4( wn0 * fin_length, 0.0 ) )
     );
     const vec3 tangent[ 4 ] = vec3[ 4 ](
-      v0.tangent.xyz,
-      v2.tangent.xyz,
-      v2.tangent.xyz,
-      v0.tangent.xyz
+      v0.normal.xyz,
+      v2.normal.xyz,
+      v2.normal.xyz,
+      v0.normal.xyz
+    );
+    const vec2 tex_coord0[ 4 ] = vec2[ 4 ](
+      v0.tex_coord0.xy,
+      v2.tex_coord0.xy,
+      v2.tex_coord0.xy,
+      v0.tex_coord0.xy
     );
     const uint fvo = filtered_vertex_offset + fin_offset[ 2 ] * 4u;
     const uint fpo = filtered_primitive_offset + fin_offset[ 2 ] * 2u;
     for( uint vertex_id = 0u; vertex_id != 4u; ++vertex_id ) {
       gl_MeshVerticesEXT[ fvo + vertex_id ].gl_Position = w2s * rwp[ vertex_id ];
       output_position[ fvo + vertex_id ] = rwp[ vertex_id ];
-      output_normal[ fvo + vertex_id ] = normalize( global_uniforms.eye_pos.xyz - rwp[ vertex_id ].xyz );
       output_tangent[ fvo + vertex_id ] = mat3(l2w) * tangent[ vertex_id ];
-      output_tex_coord[ fvo + vertex_id ] = tex_coord[ vertex_id ];
+      output_tex_coord0[ fvo + vertex_id ] = tex_coord0[ vertex_id ];
+      output_tex_coord1[ fvo + vertex_id ] = tex_coord1[ vertex_id ];
       output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
     }
     for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {

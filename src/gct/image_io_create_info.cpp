@@ -1,4 +1,3 @@
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/compute.hpp>
@@ -126,6 +125,7 @@ image_io_create_info::image_io_create_info(
     if( e != plan.output.end() ) {
       if( e->second.index() == 0 ) {
         update_pc( e->first, std::get< image_pool::image_descriptor >( e->second ) );
+        update_rendering_info( e->first, std::get< image_pool::image_descriptor >( e->second ), false );
         update_size( e->first, std::get< image_pool::image_descriptor >( e->second ) );
         size_specified = true;
       }
@@ -331,7 +331,6 @@ void image_io_create_info::update_rendering_info(
   const image_pool::image_descriptor &desc,
   bool is_inout
 ) {
-  std::cout << plan.node_name << "." << name << std::endl;
   const auto view = resource->image->get( desc );
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eColorAttachment ) {
@@ -356,11 +355,14 @@ void image_io_create_info::update_rendering_info(
       );
     }
   }
+  std::cout << "set depth to rendering_info 0 " << name << std::endl;
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment ) {
+    std::cout << "set depth to rendering_info 1 " << nlohmann::json( graphic_executable->get_props().pipeline_create_info.get_rendering().depthAttachmentFormat ) << " " << graphic_executable->get_props().pipeline_create_info.has_rendering()  << std::endl;
     const bool enable_depth =
       graphic_executable->get_props().pipeline_create_info.has_rendering() &&
       graphic_executable->get_props().pipeline_create_info.get_rendering().depthAttachmentFormat != vk::Format::eUndefined;
     if( name == "depth" && enable_depth ) {
+      std::cout << "set depth to rendering_info 2" << std::endl;
       rendering_info.set_depth_attachment(
         rendering_attachment_info_t()
           .set_view( view )

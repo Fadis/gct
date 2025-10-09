@@ -1050,7 +1050,7 @@ pre_dof_pixel kplus_mix(
 ) {
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  float near_depth = focus;
+  float near_depth = zfar;
   float far_depth = zfar;
   for( uint i = 0u; i != 4u; i++ ) {
     const vec4 albedo = kplus_get_albedo( iter );
@@ -1095,6 +1095,93 @@ pre_dof_pixel kplus_mix(
     near_depth,
     far_depth
   );
+}
+
+pre_dof_pixel kplus_mix(
+  kplus_iter iter,
+  uint lighting_image,
+  float focus,
+  float znear,
+  float zfar,
+  float visible_range,
+  vec3 ambient_factor,
+  float ao
+) {
+  vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  float near_depth = zfar;
+  float far_depth = zfar;
+  for( uint i = 0u; i != 4u; i++ ) {
+    const vec4 albedo = kplus_get_albedo( iter );
+    const bool has_layer = !kplus_is_end( iter );
+    const bool is_nearest = kplus_is_nearest( iter );
+    const float depth = has_layer ? 
+      decode_depth( kplus_get_depth( iter ), znear, zfar ) :
+      zfar;
+    const vec3 ambient =
+      ( has_layer ) ?
+      ambient_factor *
+      ( is_nearest ? ao : 1.0 ) *
+      albedo.xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec3 lighting = 
+      ( has_layer ) ?
+      kplus_get( iter, lighting_image ).xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec4 radiance = 
+      vec4( ( ambient + ( lighting.rgb ) ), albedo.a );
+    near_depth = min( depth, near_depth );
+    far_depth = min( depth, far_depth );
+    if( has_layer ) { 
+      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+      if( depth < focus ) {
+        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+      }
+      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
+      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
+      iter = kplus_next( iter );
+    }
+  }
+  near_depth = min( focus, near_depth + visible_range );
+  far_depth = max( focus, far_depth - visible_range );
+  return pre_dof_pixel(
+    near_total,
+    far_total,
+    near_depth,
+    far_depth
+  );
+}
+
+vec4 kplus_mix(
+  kplus_iter iter,
+  uint lighting_image,
+  vec3 ambient_factor,
+  float ao
+) {
+  vec4 total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  for( uint i = 0u; i != 4u; i++ ) {
+    const vec4 albedo = kplus_get_albedo( iter );
+    const bool has_layer = !kplus_is_end( iter );
+    const bool is_nearest = kplus_is_nearest( iter );
+    const vec3 ambient =
+      ( has_layer ) ?
+      ambient_factor *
+      ( is_nearest ? ao : 1.0 ) *
+      albedo.xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec3 lighting = 
+      ( has_layer ) ?
+      kplus_get( iter, lighting_image ).xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec4 radiance = 
+      vec4( ( ambient + ( lighting.rgb ) ), albedo.a );
+    if( has_layer ) { 
+      total.xyz = mix( total.xyz, radiance.xyz, albedo.a );
+      total.a = ( 1.0 - ( 1.0 - total.a ) * ( 1.0 - albedo.a ) );
+      iter = kplus_next( iter );
+    }
+  }
+  return total;
 }
 
 

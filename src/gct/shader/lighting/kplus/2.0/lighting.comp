@@ -22,7 +22,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 layout(push_constant) uniform PushConstants {
   uint gbuffer_format;
   uint gbuffer;
-  uint depth;
+  uint position;
   uint dest;
   uint unproject;
   uint light;
@@ -37,21 +37,21 @@ void main()  {
   const int layer = int( gl_GlobalInvocationID.z );
 
   kplus_iter iter = kplus_direct(
-    kplus_image( push_constants.gbuffer, push_constants.depth ),
+    kplus_image( push_constants.gbuffer, push_constants.position ),
     src_pos,
     layer,
     push_constants.gbuffer_format
   );
 
   if( kplus_is_end( iter ) ) {
-    kplus_set( iter, push_constants.dest, vec4( 0, 0, 1, 1 ) );
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
     return;
   }
 
   gbuffer_value p;
   p.albedo = kplus_get_albedo( iter );
   if( p.albedo.a == 0.0 ) {
-    kplus_set( iter, push_constants.dest, vec4( 0, 1, 0, 1 ) );
+    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
     return;
   }
 

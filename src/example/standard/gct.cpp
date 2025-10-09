@@ -237,7 +237,7 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = 4u * 4u + 1u;
+  constexpr std::size_t egbuf_count = 4u * 8u + 1u - 1u;
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -500,7 +500,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
   geometry.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
-  geometry.set_push_constant( "depth", *extended_depth_desc.linear );
+  geometry.set_push_constant( "position", *extended_depth_desc.linear );
   geometry.set_push_constant( "gbuffer_format", gbuffer_format );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
@@ -554,7 +554,7 @@ int main( int argc, const char *argv[] ) {
       ),
       gct::image_io_plan()
         .add_input( "gbuffer" )
-        .add_input( "depth" )
+        .add_input( "position" )
         .add_output( "dest", "gbuffer", { 1.f, -4.f }, vk::Format::eR16G16B16A16Sfloat )
         .set_dim( "gbuffer", { 1.f, -4.f } )
         .set_node_name( "lighting" )
@@ -565,7 +565,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", extended_gbuffer_desc.linear )
-      .add( "depth", extended_depth_desc.linear )    
+      .add( "position", extended_depth_desc.linear )    
   );
   
   const auto np_desc = builder.call(
@@ -578,7 +578,7 @@ int main( int argc, const char *argv[] ) {
       ),
       gct::image_io_plan()
         .add_input( "gbuffer" )
-        .add_input( "depth" )
+        .add_input( "position" )
         .add_output( "dest", "gbuffer", glm::vec2( 1.f, -1.f ), vk::Format::eR32Sfloat )
         .set_dim( "gbuffer", glm::vec2( 1.f, -1.f ) )
         .set_node_name( "nearest_position" )
@@ -587,7 +587,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", extended_gbuffer_desc.linear )
-      .add( "depth", extended_depth_desc.linear )    
+      .add( "position", extended_depth_desc.linear )    
   );
 
   const auto ao_out_desc = hbao(
@@ -614,7 +614,7 @@ int main( int argc, const char *argv[] ) {
       ),
       gct::image_io_plan()
         .add_input( "gbuffer" )
-        .add_input( "depth" )
+        .add_input( "position" )
         .add_input( "occlusion" )
         .add_input( "scattering" )
         .add_input( "lighting_image" )
@@ -627,7 +627,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", extended_gbuffer_desc.linear )
-      .add( "depth", extended_depth_desc.linear )    
+      .add( "position", extended_depth_desc.linear )    
       .add( "occlusion", ao_out_desc[ "dest" ] )
       .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
       .add( "lighting_image", lighting_desc )
@@ -763,7 +763,8 @@ int main( int argc, const char *argv[] ) {
   );
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
   update_af.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
-  update_af.set_push_constant( "depth", *extended_depth_desc.linear );
+  update_af.set_push_constant( "position", *extended_depth_desc.linear );
+  update_af.set_push_constant( "gbuffer_format", gbuffer_format );
   
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -1029,7 +1030,7 @@ int main( int argc, const char *argv[] ) {
         if( res.force_geometry || walk.light_moved() || walk.camera_moved() ) {
           {
             rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
-            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.fill( extended_depth->get_factory(), gct::color::web::white );
             rec.barrier(
               gct::syncable()
                 .add( extended_gbuffer )

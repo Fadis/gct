@@ -894,7 +894,8 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
     const image_pool::image_descriptor &view,
     const image_allocate_info &ai,
     bool shareable,
-    image_to_texture_map &texture
+    image_to_texture_map &texture,
+    bool external_image_inout
   ) {
     log += "binding " + (*graph)[ v ].get_node_name() + "." + name + " to new image " + std::to_string( *view ) + ".\n";
     binding.push_back(
@@ -904,6 +905,9 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
         .add_used_by( v, name )
         .set_shareable( shareable )
     );
+    if( external_image_inout ) {
+      binding.back().initial_consumer.push_back( v );
+    }
     if( vertex_command_id( (*graph)[ v ].command.index() ) == vertex_command_id::call ) {
       const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ v ].command );
       if( !create_info->is_ready( name ) ) {
@@ -1037,7 +1041,8 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
                     .set_layer_count( view->get_props().get_basic().subresourceRange.layerCount )
                 ),
               false,
-              texture
+              texture,
+              true
             );
           }
           for( const auto &out: create_info->get_plan().output ) {
