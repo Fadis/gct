@@ -121,6 +121,7 @@ subdirs(
   dump_v2p
   dump_sp
   ppll
+  shell_and_fin
 )
 if( DXC_FOUND )
 subdirs(

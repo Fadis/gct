@@ -237,8 +237,8 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = 4u * 8u + 1u - 1u;
-  const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
+  constexpr std::size_t egbuf_count = 4u * 8u + 1u;
+  const auto bg_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
         gct::image_create_info_t()
@@ -262,7 +262,7 @@ int main( int argc, const char *argv[] ) {
       )
   );
 
-  const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
+  const auto bg_gbuffer = sg->get_resource()->image->get( bg_gbuffer_desc.linear );
 
   const auto gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
@@ -300,7 +300,7 @@ int main( int argc, const char *argv[] ) {
     auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
-      recorder.set_image_layout( extended_gbuffer, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( bg_gbuffer, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( extended_depth, vk::ImageLayout::eGeneral );
     }
     command_buffer->execute_and_wait();
@@ -499,7 +499,7 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
-  geometry.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
+  geometry.set_push_constant( "gbuffer", *bg_gbuffer_desc.linear );
   geometry.set_push_constant( "depth", *extended_depth_desc.linear );
   geometry.set_push_constant( "gbuffer_format", gbuffer_format );
 
@@ -564,7 +564,7 @@ int main( int argc, const char *argv[] ) {
     .set_push_constant( "gbuffer_format", gbuffer_format )
   )(
     gct::shader_graph::vertex::combined_result_type()
-      .add( "gbuffer", extended_gbuffer_desc.linear )
+      .add( "gbuffer", bg_gbuffer_desc.linear )
       .add( "depth", extended_depth_desc.linear )    
   );
   
@@ -586,7 +586,7 @@ int main( int argc, const char *argv[] ) {
     .set_push_constant( "gbuffer_format", gbuffer_format )
   )(
     gct::shader_graph::vertex::combined_result_type()
-      .add( "gbuffer", extended_gbuffer_desc.linear )
+      .add( "gbuffer", bg_gbuffer_desc.linear )
       .add( "depth", extended_depth_desc.linear )    
   );
 
@@ -596,7 +596,7 @@ int main( int argc, const char *argv[] ) {
   );
   const auto skyview_froxel_out_desc = skyview_froxel2(
     builder,
-    extended_gbuffer_desc.linear,
+    bg_gbuffer_desc.linear,
     extended_depth_desc.linear,
     transmittance_desc,
     gbuffer_format
@@ -626,7 +626,7 @@ int main( int argc, const char *argv[] ) {
     .set_push_constant( "gbuffer_format", gbuffer_format )
   )(
     gct::shader_graph::vertex::combined_result_type()
-      .add( "gbuffer", extended_gbuffer_desc.linear )
+      .add( "gbuffer", bg_gbuffer_desc.linear )
       .add( "depth", extended_depth_desc.linear )    
       .add( "occlusion", ao_out_desc[ "dest" ] )
       .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
@@ -735,7 +735,149 @@ int main( int argc, const char *argv[] ) {
   const auto compiled = builder();
   const auto merged_view = compiled.get_view( flare_desc[ "output_color" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
+
+
+  const auto random_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( 128u, 128u )
+              .setFormat( vk::Format::eR16Sfloat )
+              .setUsage(
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  const auto random = sg->get_resource()->image->get( random_desc.linear );
   
+  const auto fur_shell_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( 128u, 128u )
+              .setFormat( vk::Format::eR16Sfloat )
+              .setUsage(
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  const auto fur_shell = sg->get_resource()->image->get( fur_shell_desc.linear );
+ 
+  const auto fur_fin_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( 128u, 128u )
+              .setFormat( vk::Format::eR16Sfloat )
+              .setUsage(
+                vk::ImageUsageFlagBits::eSampled|
+                vk::ImageUsageFlagBits::eStorage|
+                vk::ImageUsageFlagBits::eTransferSrc|
+                vk::ImageUsageFlagBits::eTransferDst
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  const auto fur_fin = sg->get_resource()->image->get( fur_fin_desc.linear );
+
+
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      rec.convert_image(
+        random->get_factory(), vk::ImageLayout::eGeneral
+      );
+      rec.convert_image(
+        fur_shell->get_factory(), vk::ImageLayout::eGeneral
+      );
+      rec.convert_image(
+        fur_fin->get_factory(), vk::ImageLayout::eGeneral
+      );
+    }
+    command_buffer->execute_and_wait();
+  }
+
+  auto generate_random = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "generate_random" / "1.0" / "generate.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+  );
+  generate_random.set_push_constant( "dest", *random_desc.linear );
+
+
+  auto generate_fur_shell = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "box_filter" / "3x3" / "1.0" / "filter.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+  );
+  generate_fur_shell.set_push_constant( "src", *random_desc.linear );
+  generate_fur_shell.set_push_constant( "dest", *fur_shell_desc.linear );
+  
+  auto generate_fur_fin = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "generate_fur_texture" / "1.0" / "fin.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+  );
+  generate_fur_fin.set_push_constant( "src", *fur_shell_desc.linear );
+  generate_fur_fin.set_push_constant( "dest", *fur_fin_desc.linear );
+  generate_fur_fin.set_push_constant( "shell_texture_clamp_max", 0.8f );
+  generate_fur_fin.set_push_constant( "shell_texture_clamp_min", 0.6f );
+  
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      generate_random( rec, 0u, 128u, 128u, 1u );
+      rec.barrier(
+        gct::syncable()
+          .add( random )
+      );
+      generate_fur_shell( rec, 0u, 128u, 128u, 1u );
+      rec.barrier(
+        gct::syncable()
+          .add( fur_shell )
+      );
+      generate_fur_fin( rec, 0u, 128u, 128u, 1u );
+      rec.barrier(
+        gct::syncable()
+          .add( fur_fin )
+      );
+      rec.dump_image(
+        res.allocator,
+        fur_fin->get_factory(),
+        "fin.png",
+        0u,
+        0u
+      );
+      (*sg)( rec );
+    }
+    command_buffer->execute_and_wait();
+  }
+
   const auto skyview_param =
     gct::skyview_parameter()
       .set_convert_to_xyz( false )
@@ -762,7 +904,7 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "af_state", af_state_buffer } )
   );
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
-  update_af.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
+  update_af.set_push_constant( "gbuffer", *bg_gbuffer_desc.linear );
   update_af.set_push_constant( "depth", *extended_depth_desc.linear );
   
   {
@@ -906,9 +1048,7 @@ int main( int argc, const char *argv[] ) {
             .set_eye_pos( glm::vec4( walk.get_camera_pos(), 1.0 ) )
             .set_light_count( res.light_count )
             .set_ambient( res.ambient_level )
-            .set_frame_counter( frame_counter )
-            .set_gbuffer( *extended_gbuffer_desc.linear )
-            .set_depth( *extended_depth_desc.linear );
+            .set_frame_counter( frame_counter );
           sg->get_resource()->matrix->set( camera_desc, walk.get_lookat() );
           sg->get_resource()->matrix->set( world_to_screen_desc, projection * walk.get_lookat() );
           sg->get_resource()->matrix->set( screen_to_world_desc, glm::inverse( projection * walk.get_lookat() ) );
@@ -1028,11 +1168,11 @@ int main( int argc, const char *argv[] ) {
         }
         if( res.force_geometry || walk.light_moved() || walk.camera_moved() ) {
           {
-            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
-            rec.fill( extended_depth->get_factory(), gct::color::web::white );
+            rec.fill( bg_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.fill( extended_depth->get_factory(), gct::color::special::transparent );
             rec.barrier(
               gct::syncable()
-                .add( extended_gbuffer )
+                .add( bg_gbuffer )
                 .add( extended_depth )
             );
             auto render_pass_token = rec.begin_render_pass(
@@ -1051,7 +1191,7 @@ int main( int argc, const char *argv[] ) {
           if( walk.get_current_camera() == 0 ) {
             sg->rotate_visibility( rec );
           }
-          rec.barrier( extended_gbuffer );
+          rec.barrier( bg_gbuffer );
           rec.barrier( extended_depth );
         }
           

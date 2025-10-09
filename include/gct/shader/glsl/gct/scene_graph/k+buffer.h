@@ -1074,16 +1074,16 @@ pre_dof_pixel kplus_mix(
       kplus_get( iter, scattering_image ) :
       vec4( 0.0, 0.0, 0.0, 0.0 );
     const vec4 radiance = 
-      vec4( ( ambient + ( lighting.rgb ) ) * scat.w + scat.rgb, albedo.a );
+      vec4( ( ambient + ( lighting.rgb ) ) * scat.w + scat.rgb, has_layer ? albedo.a : 0.0 );
     near_depth = min( depth, near_depth );
     far_depth = min( depth, far_depth );
     if( has_layer ) { 
-      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+      near_total.xyz = mix( near_total.xyz, radiance.xyz, radiance.a );
       if( depth < focus ) {
-        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - radiance.a ) );
       }
-      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
-      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
+      far_total.xyz = mix( far_total.xyz, radiance.xyz, radiance.a );
+      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - radiance.a ) );
       iter = kplus_next( iter );
     }
   }
