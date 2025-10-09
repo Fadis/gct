@@ -18,12 +18,10 @@
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint light;
   float shell_thickness;
   uint loop_counter;
   uint loop_until;
   uint shell_texture;
-  float relative_shell_height;
   float shell_texture_clamp_min;
   float shell_texture_clamp_max;
   uint ppll_state_id;
@@ -33,8 +31,6 @@ layout(push_constant) uniform PushConstants {
   uint start;
   uint next;
 } push_constants;
-
-layout (location = 0) out vec4 output_color;
 
 layout(early_fragment_tests) in;
 

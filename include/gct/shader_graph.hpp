@@ -160,6 +160,7 @@ struct image_binding {
   LIBGCT_SETTER( view )
   LIBGCT_SETTER( used_by )
   LIBGCT_SETTER( shareable )
+  LIBGCT_SETTER( initial_consumer )
   image_binding &add_used_by(
     const graph_type::vertex_descriptor &v,
     const std::string &n
@@ -171,6 +172,7 @@ struct image_binding {
   image_pool::image_descriptor view;
   std::shared_ptr< std::vector< std::pair< graph_type::vertex_descriptor, std::string > > > used_by;
   bool shareable = true;
+  std::vector< graph_type::vertex_descriptor > initial_consumer;
 };
 
 std::string to_string( const image_binding &b );
@@ -215,7 +217,7 @@ private:
   struct image_state {
     image_state(
       const image_binding &b
-    ) : generators( b.used_by ) {}
+    ) : generators( b.used_by ), expected_consumer( b.initial_consumer ) {}
     LIBGCT_SETTER( mode )
     LIBGCT_SETTER( expected_consumer )
     LIBGCT_SETTER( next_expected_consumer )
@@ -310,7 +312,8 @@ private:
     const image_pool::image_descriptor &view,
     const image_allocate_info &ai,
     bool shareable,
-    image_to_texture_map &texture
+    image_to_texture_map &texture,
+    bool external_image_inout = false
   );
   void reuse(
     std::vector< image_binding >::iterator iter,

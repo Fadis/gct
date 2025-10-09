@@ -20,7 +20,7 @@ layout(push_constant) uniform PushConstants {
   uint count;
   uint gbuffer_format;
   uint gbuffer;
-  uint depth;
+  uint position;
 } push_constants;
 
 void main() {
@@ -42,7 +42,7 @@ void main() {
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
   beginInvocationInterlockARB();
   kplus_iter iter = kplus_begin(
-    kplus_image( push_constants.gbuffer, push_constants.depth ),
+    kplus_image( push_constants.gbuffer, push_constants.position ),
     image_pos,
     push_constants.gbuffer_format
   );

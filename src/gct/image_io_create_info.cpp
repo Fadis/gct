@@ -1,4 +1,3 @@
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/image_io_create_info.hpp>
 #include <gct/compute.hpp>
@@ -331,7 +330,6 @@ void image_io_create_info::update_rendering_info(
   const image_pool::image_descriptor &desc,
   bool is_inout
 ) {
-  std::cout << plan.node_name << "." << name << std::endl;
   const auto view = resource->image->get( desc );
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eColorAttachment ) {

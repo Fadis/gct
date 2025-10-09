@@ -78,7 +78,7 @@ namespace gct {
       dynamic->add_dynamic_state( vk::DynamicState::eScissor );
       if( !viewport ) {
         viewport.reset( new pipeline_viewport_state_create_info_t() );
-        viewport->set_viewport_count( reflection->output_variable_count );
+        viewport->set_viewport_count( 1u );
       }
       color_attachment_format_list = std::vector< vk::Format >{ reflection->output_variable_count, std::get< 0 >( *dynamic_rendering_format ) };
       const bool has_depth = depth_stencil && depth_stencil->get_basic().depthTestEnable;

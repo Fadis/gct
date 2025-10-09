@@ -35,8 +35,9 @@ layout (std430, binding = 13) buffer Output {
 
 layout(push_constant) uniform PushConstants {
   ivec2 focus_pos;
+  uint gbuffer_format;
   uint gbuffer;
-  uint depth;
+  uint position;
 } push_constants;
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
@@ -47,8 +48,9 @@ void main()  {
   ivec2 screen_pos = ( push_constants.focus_pos - 8 ) + ivec2( gl_GlobalInvocationID.xy );
 
   kplus_iter iter = kplus_begin(
-    kplus_image( push_constants.gbuffer, push_constants.depth ),
-    screen_pos
+    kplus_image( push_constants.gbuffer, push_constants.position ),
+    screen_pos,
+    push_constants.gbuffer_format
   );
   kplus_iter nearest = kplus_nearest( iter );
   const bool has_layer = !kplus_is_end( nearest );

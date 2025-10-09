@@ -18,7 +18,7 @@ layout(local_size_x = 16, local_size_y = 16 ) in;
 layout(push_constant) uniform PushConstants {
   uint gbuffer_format;
   uint gbuffer;
-  uint depth;
+  uint position;
   uint occlusion;
   uint lighting_image;
   uint scattering;
@@ -57,7 +57,7 @@ void main()  {
   const float ao = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.occlusion ) ], ivec2( screen_pos * occlusion_scale ) ).r;
 
   kplus_iter iter = kplus_begin(
-    kplus_image( push_constants.gbuffer, push_constants.depth ),
+    kplus_image( push_constants.gbuffer, push_constants.position ),
     src_pos,
     push_constants.gbuffer_format
   );
