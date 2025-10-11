@@ -297,7 +297,7 @@ vec3 diffuse_kajiya_kay(
   const float u = dot( L, T );
   const float iu2 = ( 1.0 - u * u );
   const float diffuse = iu2 * iu2;
-  return mix(
+  return 1.0/pi * mix(
     vec3( 0, 0, 0 ),
     ( 1 - metallicness ) * diffuse * diffuse_color * light_energy,
     masked
@@ -318,7 +318,7 @@ vec3 specular_kajiya_kay(
   const float v = dot( T, H );
   const float iv2 = ( 1.0 - v * v );
   const float specular = iv2 * iv2;
-  return mix(
+  return 1.0/pi * mix(
     vec3( 0, 0, 0 ),
     mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
     masked
@@ -367,7 +367,7 @@ vec3 specular_stalling(
   const float VR = sqrt( 1.0 - LT * LT ) * sqrt( 1.0 - VT * VT ) - LT * VT;
   const float shininess = roughness_to_blinn_phong_shininess( roughness );
   const float specular = pow( VR, shininess );
-  return mix(
+  return 1.0/pi * mix(
     vec3( 0, 0, 0 ),
     mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
     masked

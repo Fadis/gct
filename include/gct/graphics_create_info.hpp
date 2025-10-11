@@ -76,6 +76,7 @@ struct graphics_create_info {
     vk::Format stencil_attachment_format = vk::Format::eUndefined
   );
   graphics_create_info &use_color_blend( common_color_blend_mode );
+  graphics_create_info &enable_depth_test();
   graphics_create_info &disable_depth_test();
   graphics_create_info &disable_depth_write();
   allocator_set_t allocator_set;

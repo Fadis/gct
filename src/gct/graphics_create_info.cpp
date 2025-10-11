@@ -107,6 +107,10 @@ graphics_create_info &graphics_create_info::use_color_blend( common_color_blend_
   pipeline_create_info.use_color_blend( mode );
   return *this;
 }
+graphics_create_info &graphics_create_info::enable_depth_test() {
+  pipeline_create_info.enable_depth_test();
+  return *this;
+}
 graphics_create_info &graphics_create_info::disable_depth_test() {
   pipeline_create_info.disable_depth_test();
   return *this;

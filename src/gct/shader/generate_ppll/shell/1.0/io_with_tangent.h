@@ -7,6 +7,7 @@ layout (location = 2) in vec3 input_tangent;
 layout (location = 3) in vec2 input_texcoord0;
 layout (location = 4) in vec2 input_texcoord1;
 layout (location = 5) flat in vec4 input_id;
+layout (location = 6) flat in float input_relative_height;
 
 /*
 layout (location = 0) out vec4 output_position;

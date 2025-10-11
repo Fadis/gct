@@ -154,6 +154,6 @@ void main() {
     td.resource_pair_id = gl_GlobalInvocationID.y;
   }
   // 見える可能性があるメッシュレットの数だけメッシュシェーダーを実行する
-  EmitMeshTasksEXT( visible_invocation_count, 1, 1 );
+  EmitMeshTasksEXT( visible_invocation_count, 1, 16 );
 }
 

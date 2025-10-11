@@ -125,6 +125,7 @@ namespace gct {
     graphics_pipeline_create_info_t &set_depth_stencil( const pipeline_depth_stencil_state_create_info_t& );
     graphics_pipeline_create_info_t &set_depth_stencil();
     graphics_pipeline_create_info_t &clear_depth_stencil();
+    graphics_pipeline_create_info_t &enable_depth_test();
     graphics_pipeline_create_info_t &disable_depth_test();
     graphics_pipeline_create_info_t &disable_depth_write();
     graphics_pipeline_create_info_t &set_color_blend( const pipeline_color_blend_state_create_info_t& );

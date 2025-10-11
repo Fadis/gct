@@ -69,6 +69,14 @@ primitive_value read_primitive(
     1.0
   );
 
+  const float width0 = 1.0 - ( height - 1.0/16.0 );
+  const float width1 = 1.0 - height;
+  const float coverage =
+    ( height >= relative_shell_height ) ?
+    ( width0 + width1 ) / 2.0 :
+    0.0;
+
+
   const float alpha = ( height >= relative_shell_height ) ? 1.0 : 0.0;
   const vec3 emissive =
     ( prim.emissive_texture != 0 ) ?
@@ -90,7 +98,7 @@ primitive_value read_primitive(
   primitive_value temp;
   temp.pos = pos;
   temp.tangent = normal;
-  temp.albedo = vec4( albedo, alpha );
+  temp.albedo = vec4( albedo, coverage );
   temp.emissive = emissive;
   temp.metallic = metallic;
   temp.roughness = roughness;
@@ -106,7 +114,7 @@ void main() {
     input_texcoord0,
     input_texcoord1,
     push_constants.shell_texture,
-    float( push_constants.loop_counter + 1u ) / float( push_constants.loop_until ),
+    input_relative_height,
     push_constants.shell_texture_clamp_min,
     push_constants.shell_texture_clamp_max
   );

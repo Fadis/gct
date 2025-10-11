@@ -9,22 +9,18 @@
 
 layout(local_size_x = 16, local_size_y = 16 ) in;
 
-#include <gct/constants.h>
-#include <gct/global_uniforms.h>
-#include <gct/lighting.h>
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/scene_graph/image_pool.h>
-#include <gct/scene_graph/texture_pool.h>
 #include <gct/scene_graph/light_pool.h>
-#include <gct/scene_graph/matrix_pool.h>
 #include <gct/scene_graph/k+buffer.h>
-#include <gct/scene_graph/omnishadow.h>
 
 layout(push_constant) uniform PushConstants {
+  uint dest;
   uint gbuffer_format;
   uint gbuffer;
   uint position;
-  uint dest;
-  uint unproject;
+  uint src;
+  float ambient;
   uint light;
 } push_constants;
 
@@ -34,27 +30,21 @@ void main()  {
     vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.gbuffer ) ] ).xy) /
     vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy);
   const ivec2 src_pos = ivec2( screen_pos * scale );
-  const int layer = int( gl_GlobalInvocationID.z );
 
-  kplus_iter iter = kplus_direct(
+  kplus_iter iter = kplus_begin(
     kplus_image( push_constants.gbuffer, push_constants.position ),
     src_pos,
-    layer,
     push_constants.gbuffer_format
   );
 
-  if( kplus_is_end( iter ) ) {
-    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
-    return;
-  }
+  vec4 value = kplus_mix(
+    iter,
+    push_constants.src,
+    push_constants.ambient *
+    light_pool[ push_constants.light ].energy.xyz,
+    1.0
+  );
 
-  gbuffer_value p;
-  p.albedo = kplus_get_albedo( iter );
-  if( p.albedo.a == 0.0 ) {
-    kplus_set( iter, push_constants.dest, vec4( 0, 0, 0, 0 ) );
-    return;
-  }
-
-  kplus_set( iter, push_constants.dest, p.albedo );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, value );
 }
 

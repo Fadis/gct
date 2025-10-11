@@ -593,6 +593,17 @@ namespace gct {
     viewport.reset();
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::enable_depth_test() {
+    if( !depth_stencil ) {
+      set_depth_stencil();
+    }
+    auto basic = depth_stencil->get_basic();
+    basic.setDepthTestEnable( true );
+    basic.setDepthWriteEnable( true );
+    basic.setDepthCompareOp( vk::CompareOp::eLessOrEqual );
+    depth_stencil->set_basic( basic );
+    return *this;
+  }
   graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::disable_depth_test() {
     if( !depth_stencil ) {
       set_depth_stencil();
@@ -607,7 +618,9 @@ namespace gct {
       set_depth_stencil();
     }
     auto basic = depth_stencil->get_basic();
+    basic.setDepthTestEnable( true );
     basic.setDepthWriteEnable( false );
+    basic.setDepthCompareOp( vk::CompareOp::eLessOrEqual );
     depth_stencil->set_basic( basic );
     return *this;
   }

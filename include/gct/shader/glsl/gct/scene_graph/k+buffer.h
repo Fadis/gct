@@ -1097,6 +1097,38 @@ pre_dof_pixel kplus_mix(
   );
 }
 
+vec4 kplus_mix(
+  kplus_iter iter,
+  uint lighting_image,
+  vec3 ambient_factor,
+  float ao
+) {
+  vec4 total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  for( uint i = 0u; i != 4u; i++ ) {
+    const vec4 albedo = kplus_get_albedo( iter );
+    const bool has_layer = !kplus_is_end( iter );
+    const bool is_nearest = kplus_is_nearest( iter );
+    const vec3 ambient =
+      ( has_layer ) ?
+      ambient_factor *
+      ( is_nearest ? ao : 1.0 ) *
+      albedo.xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec3 lighting = 
+      ( has_layer ) ?
+      kplus_get( iter, lighting_image ).xyz :
+      vec3( 0.0, 0.0, 0.0 );
+    const vec4 radiance = 
+      vec4( ( ambient + ( lighting.rgb ) ), albedo.a );
+    if( has_layer ) { 
+      total.xyz = mix( total.xyz, radiance.xyz, albedo.a );
+      total.a = ( 1.0 - ( 1.0 - total.a ) * ( 1.0 - albedo.a ) );
+      iter = kplus_next( iter );
+    }
+  }
+  return total;
+}
+
 
 
 #endif

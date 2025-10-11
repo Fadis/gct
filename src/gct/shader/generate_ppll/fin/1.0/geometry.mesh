@@ -27,7 +27,7 @@
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint shell_thickness;
+  float shell_thickness;
   uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
@@ -192,7 +192,7 @@ void main() {
 
   if( fin_primitive_count == 0u ) return;
 
-  const float fin_scale = 10.0;
+  const float fin_scale = 1.0;
 
   const float fin_length = 0.1;// push_constants.shell_thickness;
 

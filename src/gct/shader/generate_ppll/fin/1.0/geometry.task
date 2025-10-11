@@ -18,7 +18,7 @@
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint shell_thickness;
+  float shell_thickness;
   uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
@@ -70,7 +70,7 @@ void main() {
   
   uint visible_invocation_count = 0u;
   // メッシュが見える位置にある場合
-  if( visibility != 0u ) {
+  /*if( visibility != 0u )*/ {
     // メッシュの情報を取得する
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];

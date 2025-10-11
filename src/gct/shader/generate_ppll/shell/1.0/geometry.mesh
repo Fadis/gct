@@ -29,8 +29,6 @@ layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
   float shell_thickness;
-  uint loop_counter;
-  uint loop_until;
   uint shell_texture;
   float shell_texture_clamp_min;
   float shell_texture_clamp_max;
@@ -55,6 +53,7 @@ layout (location = 2) out vec3 output_tangent[]; // 接線
 layout (location = 3) out vec2 output_tex_coord0[]; // テクスチャ座標
 layout (location = 4) out vec2 output_tex_coord1[]; // テクスチャ座標
 layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
+layout (location = 6) flat out float output_relative_height[];
 
 // タスクペイロード
 struct task_data {
@@ -106,7 +105,8 @@ void main() {
   const vec3 wn1 = mat3( l2w ) * v1.normal.xyz;
   const vec3 wn2 = mat3( l2w ) * v2.normal.xyz;
 
-  const float displace_distance = ( float( push_constants.loop_counter + 1u ) / float( push_constants.loop_until ) ) * push_constants.shell_thickness;
+  const float relative_height = ( float( gl_GlobalInvocationID.z + 1u ) / float( 16u ) );
+  const float displace_distance = relative_height * push_constants.shell_thickness;
 
   // 頂点の座標をローカル座標系からワールド座標系に変換する
   const vec4 wpb0 = l2w * v0.position;
@@ -118,7 +118,7 @@ void main() {
 
   const float fin_scale = 10.0;
 
-  const vec2 texcoord0 = v0.tex_coord0.xy;
+  const vec2 texcoord0 = v0.tex_coord0.xy + wpb0.xy;
   const vec2 texcoord1 = texcoord0 + normalize( v1.tex_coord0.xy - v0.tex_coord0.xy ) * distance( wpb0.xyz, wpb1.xyz ) * fin_scale;
   const vec2 texcoord2 = texcoord1 + normalize( v2.tex_coord0.xy - v0.tex_coord0.xy ) * distance( wpb0.xyz, wpb2.xyz ) * fin_scale;
 
@@ -169,6 +169,9 @@ void main() {
   output_id[ filtered_vertex_offset ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ filtered_vertex_offset + 1u ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ filtered_vertex_offset + 2u ] = vec4( id.inst, id.prim, 0, 0 );
+  output_relative_height[ filtered_vertex_offset ] = relative_height;
+  output_relative_height[ filtered_vertex_offset + 1u ] = relative_height;
+  output_relative_height[ filtered_vertex_offset + 2u ] = relative_height;
   // 上の3頂点で1つの三角形プリミティブになる事を書く
   gl_PrimitiveTriangleIndicesEXT[ filtered_vertex_offset / 3 ] = uvec3( filtered_vertex_offset, filtered_vertex_offset + 1, filtered_vertex_offset + 2 );
 }

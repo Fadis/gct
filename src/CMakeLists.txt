@@ -750,9 +750,11 @@ add_shader( gct gct/shader/nearest_position/ppll/1.0/nearest_position.comp INSTA
 
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll.comp INSTALL )
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll_external.comp INSTALL )
+add_shader( gct gct/shader/probe_ppll/1.0/mix.comp INSTALL )
 
 add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus.comp INSTALL )
 add_shader( gct gct/shader/probe_kplus/1.0/probe_kplus_external.comp INSTALL )
+add_shader( gct gct/shader/probe_kplus/1.0/mix.comp INSTALL )
 
 add_shader( gct gct/shader/gauss/12_32/horizontal.comp INSTALL )
 add_shader( gct gct/shader/gauss/12_32/vertical.comp INSTALL )

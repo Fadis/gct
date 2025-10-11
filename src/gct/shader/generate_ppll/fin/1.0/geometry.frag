@@ -15,12 +15,12 @@
 #include <gct/global_uniforms.h>
 #include <gct/scene_graph/read_hair_primitive.h>
 
-//layout(early_fragment_tests) in;
+layout(early_fragment_tests) in;
 
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;
-  uint shell_thickness;
+  float shell_thickness;
   uint fin_texture;
   uint ppll_state_id;
   uint gbuffer;
@@ -50,10 +50,13 @@ primitive_value read_primitive_hair(
   const float alpha =
     texture( texture_pool[ nonuniformEXT( fin_texture) ], vert_texcoord1 ).r;
 
+  const float occlusion = vert_texcoord1.y * 0.5 + 0.5;
+
   primitive_value temp;
   temp.pos = pos;
   temp.tangent = tangent;
   temp.albedo = vec4( albedo, alpha );
+  temp.occlusion = occlusion;
   temp.texcoord[ 0 ] = vert_texcoord0;
   temp.texcoord[ 1 ] = vert_texcoord1;
   return temp;
@@ -69,7 +72,7 @@ void main() {
     input_texcoord1,
     push_constants.fin_texture
   );
-  
+ 
   if( p.albedo.a <= 0.0 ) discard;
 
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
