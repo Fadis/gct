@@ -79,6 +79,10 @@ struct graphics_create_info {
   graphics_create_info &enable_depth_test();
   graphics_create_info &disable_depth_test();
   graphics_create_info &disable_depth_write();
+  graphics_create_info &set_line_width( float w ) {
+    pipeline_create_info.set_line_width( w );
+    return *this;
+  }
   allocator_set_t allocator_set;
   std::vector< std::filesystem::path > shaders;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;

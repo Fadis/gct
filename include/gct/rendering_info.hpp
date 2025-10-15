@@ -81,6 +81,10 @@ namespace gct {
     const std::shared_ptr< rendering_attachment_info_t > &get_stencil_attachment() const {
       return stencil_attachment;
     }
+    rendering_info_t &set_render_area( const vk::Rect2D &area ) {
+      basic.setRenderArea( area );
+      return *this;
+    }
   private:
     std::shared_ptr< rendering_attachment_info_t > depth_attachment;
     std::shared_ptr< rendering_attachment_info_t > stencil_attachment;

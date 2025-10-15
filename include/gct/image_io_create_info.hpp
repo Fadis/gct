@@ -150,6 +150,95 @@ struct image_io_plan {
   }
   image_io_plan &add_output(
     const std::string &name,
+    unsigned int width,
+    unsigned int height,
+    unsigned int depth,
+    unsigned int layer,
+    vk::Format format
+  ) {
+    if( depth <= 1u ) {
+      if( layer <= 1u ) {
+        return add_output(
+          name,
+          gct::image_allocate_info()
+            .set_create_info(
+              gct::image_create_info_t()
+                .set_basic(
+                  gct::basic_2d_image(
+                    width,
+                    height
+                  )
+                  .setFormat( format )
+                )
+            )
+        );
+      }
+      else {
+        return add_output(
+          name,
+          gct::image_allocate_info()
+            .set_create_info(
+              gct::image_create_info_t()
+                .set_basic(
+                  gct::basic_2d_image(
+                    width,
+                    height
+                  )
+                  .setFormat( format )
+                  .setArrayLayers( layer )
+                )
+            )
+            .set_range(
+              gct::subview_range()
+                .set_layer_count( layer )
+            )
+        );
+      }
+    }
+    else {
+      if( layer <= 1u ) {
+        return add_output(
+          name,
+          gct::image_allocate_info()
+            .set_create_info(
+              gct::image_create_info_t()
+                .set_basic(
+                  gct::basic_3d_image(
+                    width,
+                    height,
+                    depth
+                  )
+                  .setFormat( format )
+                )
+            )
+        );
+      }
+      else {
+        return add_output(
+          name,
+          gct::image_allocate_info()
+            .set_create_info(
+              gct::image_create_info_t()
+                .set_basic(
+                  gct::basic_3d_image(
+                    width,
+                    height,
+                    depth
+                  )
+                  .setFormat( format )
+                  .setArrayLayers( layer )
+                )
+            )
+            .set_range(
+              gct::subview_range()
+                .set_layer_count( layer )
+            )
+        );
+      }
+    }
+  }
+  image_io_plan &add_output(
+    const std::string &name,
     const std::string &relative_to,
     const glm::vec4 &scale
   ) {
@@ -278,10 +367,10 @@ struct image_io_plan {
       gct::image_io_dimension()
         .set_size_transform(
           glm::mat4(
-            0.0f, 0.0f, 0.0f, x,
-            0.0f, 0.0f, 0.0f, y,
-            0.0f, 0.0f, 0.0f, z,
-            0.0f, 0.0f, 0.0f, 1.0f
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            x, y, z, 1.0f
           )
         )
     );
@@ -486,6 +575,10 @@ struct image_io_create_info :
   }
   [[nodiscard]] const rendering_info_t &get_rendering_info() const {
     return rendering_info;
+  }
+  image_io_create_info &set_render_area( const vk::Rect2D &area ) {
+    rendering_info.set_render_area( area );
+    return *this;
   }
 private:
   void update_size(

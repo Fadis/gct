@@ -717,6 +717,10 @@ add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.frag INSTALL )
 
+add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_hair/straight/1.0/mix.comp INSTALL )
+
 add_shader( gct gct/shader/forward_rendering/standard/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.mesh INSTALL )
 add_shader( gct gct/shader/forward_rendering/standard/geometry.frag INSTALL )

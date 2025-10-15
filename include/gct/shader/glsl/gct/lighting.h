@@ -2,6 +2,7 @@
 #define GCT_SHADER_LIGHTING_H
 
 #include <gct/constants.h>
+#include <gct/project.h>
 
 float schlick_fresnel( float angle ) {
     float c = 1 - clamp( angle, 0, 1 );
@@ -294,7 +295,7 @@ vec3 diffuse_kajiya_kay(
   vec3 light_energy,
   float masked
 ) {
-  const float u = dot( L, T );
+  const float u = max( dot( L, T ), 0.0 );
   const float iu2 = ( 1.0 - u * u );
   const float diffuse = iu2 * iu2;
   return 1.0/pi * mix(
@@ -315,7 +316,7 @@ vec3 specular_kajiya_kay(
   float masked
 ) {
   const vec3 H = normalize( ( L + V ) * 0.5 );
-  const float v = dot( T, H );
+  const float v = max( dot( T, H ), 0.0 );
   const float iv2 = ( 1.0 - v * v );
   const float specular = iv2 * iv2;
   return 1.0/pi * mix(
@@ -348,7 +349,8 @@ vec3 diffuse_stalling(
 }
 
 float roughness_to_blinn_phong_shininess( float roughness ) {
-  const float eps = 0.001;
+  const float eps = 0.01;
+  //return 2.0 / ( eps + roughness * roughness ) - 2.0;
   return  2.0 / ( eps + roughness * roughness * roughness * roughness ) - 2.0;
 }
 
@@ -362,9 +364,9 @@ vec3 specular_stalling(
   vec3 light_energy,
   float masked
 ) {
-  const float LT = dot( L, T );
-  const float VT = dot( V, T );
-  const float VR = sqrt( 1.0 - LT * LT ) * sqrt( 1.0 - VT * VT ) - LT * VT;
+  const float LT = max( dot( L, T ), 0.0 );
+  const float VT = max( dot( V, T ), 0.0 );
+  const float VR = max( sqrt( 1.0 - LT * LT ) * sqrt( 1.0 - VT * VT ) - LT * VT, 0.0 );
   const float shininess = roughness_to_blinn_phong_shininess( roughness );
   const float specular = pow( VR, shininess );
   return 1.0/pi * mix(
@@ -398,7 +400,9 @@ vec3 specular_marschner_karis(
   const float sin_theta_r = dot( V, T );
   const float cos_theta_i = sqrt( 1 - sin_theta_i * sin_theta_i );
   const float cos_theta_r = sqrt( 1 - sin_theta_r * sin_theta_r );
-  const float cos_phi_d = 0.0;/////
+  const vec3 projected_L = normalize( project( L, T ) );
+  const vec3 projected_V = normalize( project( V, T ) );
+  const float cos_phi_d = dot( projected_L, projected_V );
   const float cos_half_phi = cos( acos( cos_phi_d ) / 2.0 );
   const float cos_theta_d = ( 1 + cos_theta_i * cos_theta_r + sin_theta_i * sin_theta_r ) * 0.5;
 
@@ -456,7 +460,9 @@ vec3 diffuse_marschner_karis(
   const float sin_theta_i = dot( L, T );
   const float sin_theta_r = dot( V, T );
   const float cos_theta_i = sqrt( 1 - sin_theta_i * sin_theta_i );
-  const float cos_phi_d = 0.0;/////
+  const vec3 projected_L = normalize( project( L, T ) );
+  const vec3 projected_V = normalize( project( V, T ) );
+  const float cos_phi_d = dot( projected_L, projected_V );
   const float cos_half_phi = cos( acos( cos_phi_d ) / 2.0 );
 
   const float cos_l = dot( T, L );

@@ -1,0 +1,96 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+#include <gct/random.h>
+
+layout(push_constant) uniform PushConstants {
+  float straight_factor;
+} push_constants;
+
+layout(local_size_x = 25, local_size_y = 1 ) in;
+
+layout(lines, max_vertices = 125, max_primitives = 100) out;
+
+// 頂点属性
+layout (location = 0) out float output_alpha[];
+layout (location = 1) out float output_depth[];
+
+vec2 seed;
+
+void init_random() {
+  seed.x = rand1( vec2( gl_GlobalInvocationID.x, gl_GlobalInvocationID.z ) );
+  seed.y = rand1( vec2( gl_GlobalInvocationID.z, seed.x ) );
+}
+
+float rand2() {
+  float y = seed.y;
+  seed.y = rand1( seed );
+  seed.x = y;
+  return fract( y );
+}
+
+vec4 get_vertex( vec3 xcoef, vec3 zcoef, float y ) {
+  //return vec4( 0.5, y, 0.0, 1.0 ) * vec4( 2, 2, 0, 1 ) + vec4( -1, -1, 0, 0 );
+  return vec4(
+    y * y * xcoef.x + y * xcoef.y + xcoef.z,
+    y,
+    y * y * zcoef.x + y * zcoef.y + zcoef.z,
+    1.0
+  ) * vec4( 2, 2, 0, 1 ) + vec4( -1, -1, 0, 0 );
+}
+
+void main() {
+  init_random();
+  const float x0 = rand2();//gl_GlobalInvocationID.z / 16.0;
+  const float x1 = mix( rand2(), x0, push_constants.straight_factor );
+  const float x2 = mix( rand2(), x0, push_constants.straight_factor );
+  const float z0 = rand2();
+  const float z1 = mix( rand2(), z0, push_constants.straight_factor );
+  const float z2 = mix( rand2(), z0, push_constants.straight_factor );
+
+  const float length = rand2();
+
+  const vec3 xcoef = vec3(
+    2.0 * x0 - 4.0 * x1 + 2.0 * x2,
+    -3.0 * x0 + 4.0 * x1 - x2,
+    x0
+  );
+  const vec3 zcoef = vec3(
+    2.0 * z0 - 4.0 * z1 + 2.0 * z2,
+    -3.0 * z0 + 4.0 * z1 - z2,
+    z0
+  );
+
+  SetMeshOutputsEXT( 100, 125 );
+
+  if( gl_LocalInvocationID.x >= 25 ) return;
+
+  const vec4 vertex[ 5 ] = vec4[ 5 ](
+    get_vertex( xcoef, zcoef, 0.0 ),
+    get_vertex( xcoef, zcoef, 0.25 ),
+    get_vertex( xcoef, zcoef, 0.5 ),
+    get_vertex( xcoef, zcoef, 0.75 ),
+    get_vertex( xcoef, zcoef, 1.0 )
+  );
+
+  const uint vertex_offset = gl_LocalInvocationID.x * 5u;
+
+  for( uint i = 0u; i != 5u; i++ ) {
+    gl_MeshVerticesEXT[ vertex_offset + i ].gl_Position = vertex[ i ];
+    output_depth[ vertex_offset + i ] = vertex[ i ].z;
+    output_alpha[ vertex_offset + i ] = max( 1.0 - ( 0.25 * i ) / length, 0.0 );
+  }
+  
+  const uint primitive_offset = gl_LocalInvocationID.x * 4u;
+
+  for( uint i = 0u; i != 4u; i++ ) {
+    gl_PrimitiveLineIndicesEXT[ primitive_offset + i ] = uvec2( vertex_offset + i, vertex_offset + i + 1u );
+  }
+}
+

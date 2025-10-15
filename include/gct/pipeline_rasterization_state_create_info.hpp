@@ -32,6 +32,10 @@ namespace gct {
     LIBGCT_EXTENSION_SETTER( vk::PipelineRasterizationStateStreamCreateInfoEXT, stream )
 #endif
     pipeline_rasterization_state_create_info_t();
+    pipeline_rasterization_state_create_info_t &set_line_width( float w ) {
+      basic.setLineWidth( w );
+      return *this;
+    }
   };
   void to_json( nlohmann::json &root, const pipeline_rasterization_state_create_info_t &v );
   void from_json( const nlohmann::json &root, pipeline_rasterization_state_create_info_t &v );

@@ -634,6 +634,13 @@ namespace gct {
     chained = false;
     return *this;
   }
+  graphics_pipeline_create_info_t &graphics_pipeline_create_info_t::set_line_width( float w ) {
+    if( !rasterization ) {
+      set_rasterization();
+    }
+    rasterization->set_line_width( w );
+    return *this;
+  }
   void to_json( nlohmann::json &root, const graphics_pipeline_create_info_t &v ) {
     root = nlohmann::json::object();
     root[ "basic" ] = v.get_basic();

@@ -52,11 +52,25 @@ primitive_value read_primitive_hair(
 
   const float occlusion = vert_texcoord1.y * 0.5 + 0.5;
 
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = texture( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord0 );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+
   primitive_value temp;
   temp.pos = pos;
   temp.tangent = tangent;
   temp.albedo = vec4( albedo, alpha );
   temp.occlusion = occlusion;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
   temp.texcoord[ 0 ] = vert_texcoord0;
   temp.texcoord[ 1 ] = vert_texcoord1;
   return temp;

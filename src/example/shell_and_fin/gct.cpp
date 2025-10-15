@@ -642,8 +642,6 @@ int main( int argc, const char *argv[] ) {
     ) );
   }
 
-
-
   auto command_buffer = res.queue->get_command_pool()->allocate();
   {
     {
@@ -1101,24 +1099,36 @@ int main( int argc, const char *argv[] ) {
             .add_resource( { "af_state", af_state_buffer } )
         ),
         gct::image_io_plan()
-          .add_input( "gbuffer" )
-          .add_input( "position" )
+          .add_input( "bg_gbuffer" )
+          .add_input( "bg_position" )
           .add_input( "occlusion" )
           .add_input( "scattering" )
-          .add_input( "lighting_image" )
-          .add_output( "coc_image", "gbuffer", glm::vec2( 1.0f, -2.0f ), vk::Format::eR16G16B16A16Sfloat )
-          .add_output( "dest_image", "gbuffer", glm::vec2( 1.0f, -2.0f ), vk::Format::eR16G16B16A16Sfloat )
-          .set_dim( "gbuffer", glm::vec2( 1.0f, -1.0f ) )
+          .add_input( "bg_lighting_image" )
+          .add_input( "fur_gbuffer" )
+          .add_input( "fur_position" )
+          .add_input( "fur_start" )
+          .add_input( "fur_next" )
+          .add_input( "fur_lighting_image" )
+          .add_output( "coc_image", "bg_gbuffer", glm::vec2( 1.0f, -2.0f ), vk::Format::eR16G16B16A16Sfloat )
+          .add_output( "dest_image", "bg_gbuffer", glm::vec2( 1.0f, -2.0f ), vk::Format::eR16G16B16A16Sfloat )
+          .set_dim( "bg_gbuffer", glm::vec2( 1.0f, -1.0f ) )
           .set_node_name( "mix_ao" )
       )
-      .set_push_constant( "gbuffer_format", bg_gbuffer_format )
+      .set_push_constant( "bg_gbuffer_format", bg_gbuffer_format )
+      .set_push_constant( "fur_gbuffer_format", fur_gbuffer_format )
+      .set_push_constant( "fur_ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", bg_gbuffer_desc.linear )
-        .add( "position", bg_depth_desc.linear )    
+        .add( "bg_gbuffer", bg_gbuffer_desc.linear )
+        .add( "bg_position", bg_depth_desc.linear )    
         .add( "occlusion", ao_out_desc[ "dest" ] )
         .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
-        .add( "lighting_image", bg_lighting_desc )
+        .add( "bg_lighting_image", bg_lighting_desc )
+        .add( "fur_gbuffer", fur_gbuffer_desc.linear )
+        .add( "fur_position", fur_position_desc.linear )    
+        .add( "fur_start", fur_start_desc.linear )    
+        .add( "fur_next", fur_next_desc.linear )
+        .add( "fur_lighting_image", fur_lighting_desc[ "dest" ] )
     );
  
     const auto filtered_coc = coc_gauss( builder, mix_ao_desc[ "coc_image" ]  );
@@ -1592,18 +1602,10 @@ int main( int argc, const char *argv[] ) {
                 .add( fur_start )
                 .add( fur_next )
             );
-            /*auto render_pass_token = rec.begin_render_pass(
-              gbuffer.get_render_pass_begin_info( 0 ),
-              vk::SubpassContents::eInline
-            );*/
             rec->setViewport( 0, 1, &gbuffer.get_viewport() );
             rec->setScissor( 0, 1, &gbuffer.get_scissor() );
             rec->setCullMode( vk::CullModeFlagBits::eBack );
             rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
-            /*(*il[ 0 ])(
-              rec,
-              bg_geometry
-            );*/
             (*generate_gbuffer)( rec );
           }
           if( walk.get_current_camera() == 0 ) {

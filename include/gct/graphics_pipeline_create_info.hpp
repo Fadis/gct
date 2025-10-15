@@ -172,6 +172,7 @@ namespace gct {
       vk::Format stencil_attachment_format
     );
     graphics_pipeline_create_info_t &use_color_blend( common_color_blend_mode );
+    graphics_pipeline_create_info_t &set_line_width( float w );
     [[nodiscard]] bool has_reflection( vk::ShaderStageFlagBits ) const;
     [[nodiscard]] const shader_module_reflection_t &get_reflection( vk::ShaderStageFlagBits ) const;
     void to_json( nlohmann::json &root );
