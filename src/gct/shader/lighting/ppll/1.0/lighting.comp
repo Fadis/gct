@@ -54,7 +54,9 @@ void main()  {
 
   const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest ) ] ).xy;
   p.pos = ppll_get_pos_depth( iter ).xyz;
-  p.emissive = ppll_get_eo( iter ).xyz;
+  const vec4 eo = ppll_get_eo( iter );
+  p.emissive = eo.xyz;
+  p.occlusion = eo.w;
   p.shadow_level.x = pcss_omni( light_pool[ push_constants.light ].shadow_map, p.pos.xyz, light_pool[ push_constants.light ].world_position.xyz, light_pool[ push_constants.light ].light_size );
 
   if( p.shadow_level.x <= 0.0 ) {
@@ -70,16 +72,21 @@ void main()  {
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
   const vec3 L = normalize(light_pool[ push_constants.light ].world_position.xyz-p.pos);
 
-  const vec3 diffuse = diffuse_with_mask(
+  /*const vec3 diffuse = diffuse_with_mask(
     L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic, p.emissive,
     light_pool[push_constants.light].energy.xyz,
     p.shadow_level.x
-  );
+  );*/
+  vec3 diffuse = diffuse_eon(
+    L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic,
+    light_pool[push_constants.light].energy.xyz,
+    p.shadow_level.x * p.occlusion
+  ) + p.emissive;
   
   const vec3 specular = specular_with_mask(
     L, V, p.normal, p.albedo.rgb, p.roughness, p.metallic,
     light_pool[push_constants.light].energy.xyz,
-    p.shadow_level.x
+    p.shadow_level.x * p.occlusion
   );
   ppll_set( iter, push_constants.dest, vec4( diffuse + specular, p.albedo.a ) );
 }

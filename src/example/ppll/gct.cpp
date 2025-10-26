@@ -974,7 +974,6 @@ int main( int argc, const char *argv[] ) {
     auto &sync = framebuffers[ current_frame ];
     gct::blocking_timer frame_rate;
     ++walk;
-    // depth
     {
       {
         auto rec = command_buffer->begin();
@@ -1033,7 +1032,6 @@ int main( int argc, const char *argv[] ) {
           );
 
         }
-        // occlusion query
         if( res.force_geometry || walk.camera_moved() ) {
           il->setup_resource_pair_buffer( rec );
           {
@@ -1200,7 +1198,6 @@ int main( int argc, const char *argv[] ) {
     ++frame_counter;
     walk.reset_flags();
     current_frame %= framebuffers.size();
-   // break;
   }
   (*res.queue)->waitIdle();
   walk.save( res.walk_state_filename );

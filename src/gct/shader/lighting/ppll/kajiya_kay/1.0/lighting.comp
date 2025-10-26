@@ -70,20 +70,18 @@ void main()  {
   const vec3 V = normalize(global_uniforms.eye_pos.xyz-p.pos);
   const vec3 L = normalize(light_pool[ push_constants.light ].world_position.xyz-p.pos);
 
-  const vec3 diffuse = diffuse_stalling(
+  const vec3 diffuse = diffuse_kajiya_kay(
     L, V, p.tangent, p.albedo.rgb, p.roughness, p.metallic,
     light_pool[push_constants.light].energy.xyz,
     p.shadow_level.x * p.occlusion
   );
   
-  const vec3 specular = specular_stalling(
-  //const vec3 specular = specular_kajiya_kay(
+  const vec3 specular = specular_kajiya_kay(
     L, V, p.tangent, p.albedo.rgb, p.roughness, p.metallic,
     light_pool[push_constants.light].energy.xyz,
     p.shadow_level.x * p.occlusion
   );
 
   ppll_set( iter, push_constants.dest, vec4( diffuse + specular, p.albedo.a ) );
-  //ppll_set( iter, push_constants.dest, p.albedo );
 }
 

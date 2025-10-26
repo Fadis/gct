@@ -60,7 +60,7 @@ public:
   get_primitive() const {
     return prim;
   }
-  void operator()( command_buffer_recorder_t&, std::uint32_t instance_count ) const;
+  void operator()( command_buffer_recorder_t&, std::uint32_t instance_offset, std::uint32_t instance_count ) const;
 private:
   void load_graph(
     const scene_graph &graph,

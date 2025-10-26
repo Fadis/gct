@@ -131,7 +131,7 @@ int main( int argc, const char *argv[] ) {
       VK_KHR_MULTIVIEW_EXTENSION_NAME,
       VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
       VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
-      VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+      VK_EXT_MESH_SHADER_EXTENSION_NAME
     },
     gct::descriptor_pool_create_info_t()
       .set_basic(
@@ -206,7 +206,7 @@ int main( int argc, const char *argv[] ) {
 
   gct::cubemap_images2 cubemap_images( shadow_gbuffer.get_image_views() );
  
-  auto linear_repeat_sampler_desc= sg->get_resource()->sampler->allocate(
+  auto shell_sampler_desc= sg->get_resource()->sampler->allocate(
     gct::sampler_create_info_t()
       .set_basic(
         vk::SamplerCreateInfo()
@@ -215,6 +215,26 @@ int main( int argc, const char *argv[] ) {
           .setMipmapMode( vk::SamplerMipmapMode::eLinear )
           .setAddressModeU( vk::SamplerAddressMode::eRepeat )
           .setAddressModeV( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeW( vk::SamplerAddressMode::eRepeat )
+          .setAnisotropyEnable( false )
+          .setCompareEnable( false )
+          .setMipLodBias( 0.f )
+          .setMinLod( 0.f )
+          .setMaxLod( VK_LOD_CLAMP_NONE )
+          .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+          .setUnnormalizedCoordinates( false )
+      )
+  );
+  
+  auto fin_sampler_desc= sg->get_resource()->sampler->allocate(
+    gct::sampler_create_info_t()
+      .set_basic(
+        vk::SamplerCreateInfo()
+          .setMagFilter( vk::Filter::eLinear )
+          .setMinFilter( vk::Filter::eLinear )
+          .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+          .setAddressModeU( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeV( vk::SamplerAddressMode::eClampToEdge )
           .setAddressModeW( vk::SamplerAddressMode::eRepeat )
           .setAnisotropyEnable( false )
           .setCompareEnable( false )
@@ -244,7 +264,7 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t gbuf_count = 0u;
+  /*constexpr std::size_t gbuf_count = 0u;
   gct::gbuffer gbuffer(
     gct::gbuffer_create_info()
       .set_allocator( res.allocator )
@@ -255,67 +275,7 @@ int main( int argc, const char *argv[] ) {
       .set_color_buffer_count( gbuf_count )
       .set_format( vk::Format::eR16G16B16A16Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
-  );
-
-  constexpr std::size_t egbuf_count = 4u * 8u + 1u;
-  const auto bg_gbuffer_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height )
-              .setFormat( vk::Format::eR16G16B16A16Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-              .setArrayLayers( egbuf_count )
-          )
-      )
-      .set_range(
-        gct::subview_range()
-          .set_layer_count( egbuf_count )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-
-  const auto bg_gbuffer = sg->get_resource()->image->get( bg_gbuffer_desc.linear );
-
-  const auto bg_gbuffer_format =
-      gct::gbuffer_format::albedo_alpha |
-      gct::gbuffer_format::normal |
-      gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
- 
-  const auto bg_depth_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height )
-              .setFormat( vk::Format::eR32Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-              .setArrayLayers( 4u )
-          )
-      )
-      .set_range(
-        gct::subview_range()
-          .set_layer_count( 4u )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  
-  const auto bg_depth = sg->get_resource()->image->get( bg_depth_desc.linear );
-
+  );*/
 
   const auto random_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
@@ -363,7 +323,7 @@ int main( int argc, const char *argv[] ) {
   );
   const auto fur_shell = sg->get_resource()->image->get( fur_shell_desc.linear );
   const auto fur_shell_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_shell_desc.linear
+    shell_sampler_desc, fur_shell_desc.linear
   );
 
   const auto fur_fin_desc = sg->get_resource()->image->allocate(
@@ -387,7 +347,7 @@ int main( int argc, const char *argv[] ) {
   );
   const auto fur_fin = sg->get_resource()->image->get( fur_fin_desc.linear );
   const auto fur_fin_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_fin_desc.linear
+    fin_sampler_desc, fur_fin_desc.linear
   );
 
   {
@@ -467,120 +427,7 @@ int main( int argc, const char *argv[] ) {
     command_buffer->execute_and_wait();
   }
 
-
-
-
-  const auto fur_gbuffer_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height * 8u )
-              .setFormat( vk::Format::eR16G16B16A16Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-              .setArrayLayers( 4u )
-          )
-      )
-      .set_range(
-        gct::subview_range()
-          .set_layer_count( 4u )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-
-  const auto fur_gbuffer = sg->get_resource()->image->get( fur_gbuffer_desc.linear );
- 
-  const auto fur_gbuffer_format =
-      gct::gbuffer_format::albedo_alpha |
-      gct::gbuffer_format::tangent |
-      gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
- 
-  const auto fur_position_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height * 8u )
-              .setFormat( vk::Format::eR32G32B32A32Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  
-  const auto fur_position = sg->get_resource()->image->get( fur_position_desc.linear );
-
-  const auto fur_start_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height )
-              .setFormat( vk::Format::eR32Uint )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  
-  const auto fur_start = sg->get_resource()->image->get( fur_start_desc.linear );
-
-  const auto fur_next_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height * 8u )
-              .setFormat( vk::Format::eR32Uint )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-
-  const auto fur_next = sg->get_resource()->image->get( fur_next_desc.linear );
-
   const auto ppll_state_desc = sg->get_resource()->ppll_state->allocate();
-
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto recorder = command_buffer->begin();
-      recorder.set_image_layout( bg_gbuffer, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( bg_depth, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( fur_gbuffer, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( fur_position, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( fur_start, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( fur_next, vk::ImageLayout::eGeneral );
-    }
-    command_buffer->execute_and_wait();
-  }
-
 
   gct::gbuffer aabb_gbuffer(
     gct::gbuffer_create_info()
@@ -786,43 +633,71 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .set_node_name( "bloom_gauss" )
   );
+  
+  const auto bg_gbuffer_format =
+      gct::gbuffer_format::albedo_alpha |
+      gct::gbuffer_format::normal |
+      gct::gbuffer_format::emissive_occlusion |
+      gct::gbuffer_format::metallic_roughness_id;
+ 
+  const auto fur_gbuffer_format =
+      gct::gbuffer_format::albedo_alpha |
+      gct::gbuffer_format::tangent |
+      gct::gbuffer_format::emissive_occlusion |
+      gct::gbuffer_format::metallic_roughness_id;
 
   std::shared_ptr< gct::shader_graph::compiled > generate_gbuffer;
+  gct::image_pool::image_descriptor bg_gbuffer_desc;
+  gct::image_pool::image_descriptor bg_depth_desc;
+  gct::image_pool::image_descriptor fur_gbuffer_desc;
+  gct::image_pool::image_descriptor fur_position_desc;
+  gct::image_pool::image_descriptor fur_start_desc;
+  gct::image_pool::image_descriptor fur_next_desc;
   {
     gct::shader_graph::builder builder( sg->get_resource() );
         
-    auto standard = std::make_shared< gct::graphics >(
-      gct::graphics_create_info()
-        .set_swapchain_image_count( 1u )
-        .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" )
-        .use_dynamic_rendering(
-          vk::Format::eR16G16B16A16Sfloat,
-          vk::Format::eD32Sfloat
-        )
-        .enable_depth_test()
-        .set_scene_graph( sg->get_resource() )
-        .add_resource( { "global_uniforms", global_uniform } )
-    );
     
     const auto bg0_desc = builder.call(
       builder.get_image_io_create_info(
-        standard,
+        std::make_shared< gct::graphics >(
+          gct::graphics_create_info()
+            .set_swapchain_image_count( 1u )
+            .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" )
+            .use_dynamic_rendering(
+              vk::Format::eR16G16B16A16Sfloat,
+              vk::Format::eD32Sfloat
+            )
+            .enable_depth_test()
+            .set_scene_graph( sg->get_resource() )
+            .add_resource( { "global_uniforms", global_uniform } )
+        ),
         gct::image_io_plan()
-          .add_inout( "gbuffer" )
-          .add_inout( "position" )
+          .add_output(
+            "gbuffer", res.width, res.height, 1u,
+            4u * 8u + 1u,
+            vk::Format::eR16G16B16A16Sfloat
+          )
+          .add_output( "position", res.width, res.height, 1u, 4u, vk::Format::eR32Sfloat )
           .add_output( "depth", res.width, res.height, vk::Format::eD32Sfloat )
           .set_dim( il[ 0 ]->get_shape() )
           .set_node_name( "bg0" )
       )
       .set_push_constant( "gbuffer_format", bg_gbuffer_format )
-    )(
-      gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", bg_gbuffer_desc.linear )
-        .add( "position", bg_depth_desc.linear )
-    );
+    )();
     const auto bg1_desc = builder.call(
       builder.get_image_io_create_info(
-        standard,
+        std::make_shared< gct::graphics >(
+          gct::graphics_create_info()
+            .set_swapchain_image_count( 1u )
+            .add_shader( CMAKE_CURRENT_BINARY_DIR "/fur" )
+            .use_dynamic_rendering(
+              vk::Format::eR16G16B16A16Sfloat,
+              vk::Format::eD32Sfloat
+            )
+            .enable_depth_test()
+            .set_scene_graph( sg->get_resource() )
+            .add_resource( { "global_uniforms", global_uniform } )
+        ),
         gct::image_io_plan()
           .add_inout( "gbuffer" )
           .add_inout( "position" )
@@ -850,10 +725,14 @@ int main( int argc, const char *argv[] ) {
             .add_resource( { "global_uniforms", global_uniform } )
         ),
         gct::image_io_plan()
-          .add_inout( "gbuffer" )
-          .add_inout( "position" )
-          .add_inout( "start" )
-          .add_inout( "next" )
+          .add_output(
+            "gbuffer", res.width, res.height * 8u, 1u,
+            gct::get_ppll_layer_count( fur_gbuffer_format ),
+            vk::Format::eR16G16B16A16Sfloat
+          )
+          .add_output( "position", res.width, res.height * 8u, 1u, 1u, vk::Format::eR32G32B32A32Sfloat )
+          .add_output( "start", res.width, res.height, 1u, 1u, vk::Format::eR32Uint )
+          .add_output( "next", res.width, res.height * 8u, 1u, 1u, vk::Format::eR32Uint )
           .add_inout( "depth" )
           .set_dim( il[ 1 ]->get_shape() )
           .set_node_name( "shell" )
@@ -861,15 +740,11 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "shell_thickness", 0.1f )
       .set_push_constant( "shell_texture", *fur_shell_texture_desc )
       .set_push_constant( "gbuffer_format", fur_gbuffer_format )
-      .set_push_constant( "shell_texture_clamp_max", 0.65f )
-      .set_push_constant( "shell_texture_clamp_min", 0.55f )
+      .set_push_constant( "shell_texture_clamp_max", 0.60f )
+      .set_push_constant( "shell_texture_clamp_min", 0.52f )
       .set_push_constant( "ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", fur_gbuffer_desc.linear )
-        .add( "position", fur_position_desc.linear )
-        .add( "start", fur_start_desc.linear )
-        .add( "next", fur_next_desc.linear )
         .add( "depth", bg1_desc[ "depth" ] )
     );
 
@@ -902,11 +777,6 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        //.add( "gbuffer", fur_gbuffer_desc.linear )
-        //.add( "position", fur_position_desc.linear )
-        //.add( "start", fur_start_desc.linear )
-        //.add( "next", fur_next_desc.linear )
-        //.add( "depth", bg1_desc[ "depth" ] )
         .add( "gbuffer", shell_desc[ "gbuffer" ] )
         .add( "position", shell_desc[ "position" ] )
         .add( "start", shell_desc[ "start" ] )
@@ -917,10 +787,26 @@ int main( int argc, const char *argv[] ) {
 
 
     builder.output( fin_desc[ "gbuffer" ] );
+    builder.output( fin_desc[ "position" ] );
+    builder.output( fin_desc[ "start" ] );
+    builder.output( fin_desc[ "next" ] );
     builder.output( bg1_desc[ "gbuffer" ] );
+    builder.output( bg1_desc[ "position" ] );
     generate_gbuffer = std::make_shared< gct::shader_graph::compiled >( builder() );
+    bg_gbuffer_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "gbuffer" ] ); 
+    bg_depth_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "position" ] ); 
+    fur_gbuffer_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "gbuffer" ] ); 
+    fur_position_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "position" ] ); 
+    fur_start_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "start" ] ); 
+    fur_next_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "next" ] ); 
     std::cout << builder.get_log() << std::endl;
   }
+  const auto bg_gbuffer = sg->get_resource()->image->get( bg_gbuffer_desc );
+  const auto bg_depth = sg->get_resource()->image->get( bg_depth_desc );
+  const auto fur_gbuffer = sg->get_resource()->image->get( fur_gbuffer_desc );
+  const auto fur_position = sg->get_resource()->image->get( fur_position_desc );
+  const auto fur_start = sg->get_resource()->image->get( fur_start_desc );
+  const auto fur_next = sg->get_resource()->image->get( fur_next_desc );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
   shadow_uniform =
@@ -960,6 +846,23 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", shadow_uniform } )
   );
 
+  const auto skyview_param =
+    gct::skyview_parameter()
+      .set_convert_to_xyz( false )
+      .set_sigma_ma( sigma[ 0 ] )
+      .set_sigma_oa( sigma[ 1 ] )
+      .set_sigma_rs( sigma[ 2 ] )
+      .set_sigma_ms( sigma[ 3 ] );
+  
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      skyview( rec, skyview_param );
+    }
+    command_buffer->execute_and_wait();
+  }
+
   std::shared_ptr< gct::shader_graph::compiled > compiled;
   std::shared_ptr< gct::image_view_t > merged_view;
   std::shared_ptr< gct::image_view_t > bloom_view;
@@ -988,8 +891,8 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "gbuffer_format", bg_gbuffer_format )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", bg_gbuffer_desc.linear )
-        .add( "position", bg_depth_desc.linear )    
+        .add( "gbuffer", bg_gbuffer_desc )
+        .add( "position", bg_depth_desc )
     );
    
     const auto fur_lighting_desc = builder.call(
@@ -997,7 +900,7 @@ int main( int argc, const char *argv[] ) {
         std::make_shared< gct::compute >(
           gct::compute_create_info()
             .set_allocator_set( res.allocator_set )
-            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "kajiya_kay" / "1.0" / "lighting.comp.spv" )
+            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "marschner_karis" / "1.0" / "lighting.comp.spv" )
             .set_scene_graph( sg->get_resource() )
             .add_resource( { "global_uniforms", global_uniform } )
         ),
@@ -1016,10 +919,10 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", fur_gbuffer_desc.linear )
-        .add( "position", fur_position_desc.linear )    
-        .add( "start", fur_start_desc.linear )    
-        .add( "next", fur_next_desc.linear )
+        .add( "gbuffer", fur_gbuffer_desc )
+        .add( "position", fur_position_desc )    
+        .add( "start", fur_start_desc )
+        .add( "next", fur_next_desc )
     );
     
     const auto probe_fur_desc = builder.call(
@@ -1047,10 +950,10 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", fur_gbuffer_desc.linear )
-        .add( "position", fur_position_desc.linear )    
-        .add( "start", fur_start_desc.linear )    
-        .add( "next", fur_next_desc.linear )
+        .add( "gbuffer", fur_gbuffer_desc )
+        .add( "position", fur_position_desc )
+        .add( "start", fur_start_desc ) 
+        .add( "next", fur_next_desc )
         .add( "src", fur_lighting_desc[ "dest" ] )
     );
 
@@ -1072,8 +975,8 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "gbuffer_format", bg_gbuffer_format )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", bg_gbuffer_desc.linear )
-        .add( "position", bg_depth_desc.linear )    
+        .add( "gbuffer", bg_gbuffer_desc )
+        .add( "position", bg_depth_desc )
     );
  
     const auto ao_out_desc = hbao(
@@ -1082,8 +985,8 @@ int main( int argc, const char *argv[] ) {
     );
     const auto skyview_froxel_out_desc = skyview_froxel2(
       builder,
-      bg_gbuffer_desc.linear,
-      bg_depth_desc.linear,
+      bg_gbuffer_desc,
+      bg_depth_desc,
       transmittance_desc,
       bg_gbuffer_format
     );
@@ -1119,15 +1022,15 @@ int main( int argc, const char *argv[] ) {
       .set_push_constant( "fur_ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
-        .add( "bg_gbuffer", bg_gbuffer_desc.linear )
-        .add( "bg_position", bg_depth_desc.linear )    
+        .add( "bg_gbuffer", bg_gbuffer_desc )
+        .add( "bg_position", bg_depth_desc )
         .add( "occlusion", ao_out_desc[ "dest" ] )
         .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
         .add( "bg_lighting_image", bg_lighting_desc )
-        .add( "fur_gbuffer", fur_gbuffer_desc.linear )
-        .add( "fur_position", fur_position_desc.linear )    
-        .add( "fur_start", fur_start_desc.linear )    
-        .add( "fur_next", fur_next_desc.linear )
+        .add( "fur_gbuffer", fur_gbuffer_desc )
+        .add( "fur_position", fur_position_desc )    
+        .add( "fur_start", fur_start_desc )
+        .add( "fur_next", fur_next_desc )
         .add( "fur_lighting_image", fur_lighting_desc[ "dest" ] )
     );
  
@@ -1238,23 +1141,6 @@ int main( int argc, const char *argv[] ) {
     std::cout << builder.get_log() << std::endl;
   }
 
-  const auto skyview_param =
-    gct::skyview_parameter()
-      .set_convert_to_xyz( false )
-      .set_sigma_ma( sigma[ 0 ] )
-      .set_sigma_oa( sigma[ 1 ] )
-      .set_sigma_rs( sigma[ 2 ] )
-      .set_sigma_ms( sigma[ 3 ] );
-  
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto rec = command_buffer->begin();
-      skyview( rec, skyview_param );
-    }
-    command_buffer->execute_and_wait();
-  }
-  
   auto update_af = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -1264,8 +1150,8 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "af_state", af_state_buffer } )
   );
   update_af.set_push_constant( "focus_pos", glm::ivec2( res.width/2, res.height/2 ) );
-  update_af.set_push_constant( "gbuffer", *bg_gbuffer_desc.linear );
-  update_af.set_push_constant( "position", *bg_depth_desc.linear );
+  update_af.set_push_constant( "gbuffer", *bg_gbuffer_desc );
+  update_af.set_push_constant( "position", *bg_depth_desc );
   update_af.set_push_constant( "gbuffer_format", bg_gbuffer_format );
   
   {
@@ -1436,7 +1322,6 @@ int main( int argc, const char *argv[] ) {
     auto &sync = framebuffers[ current_frame ];
     gct::blocking_timer frame_rate;
     ++walk;
-    // depth
     {
       {
         auto rec = command_buffer->begin();
@@ -1500,7 +1385,6 @@ int main( int argc, const char *argv[] ) {
             );
           }
         }
-        // occlusion query
         if( res.force_geometry || walk.camera_moved() ) {
           {
             auto render_pass_token = rec.begin_render_pass(
@@ -1602,10 +1486,6 @@ int main( int argc, const char *argv[] ) {
                 .add( fur_start )
                 .add( fur_next )
             );
-            rec->setViewport( 0, 1, &gbuffer.get_viewport() );
-            rec->setScissor( 0, 1, &gbuffer.get_scissor() );
-            rec->setCullMode( vk::CullModeFlagBits::eBack );
-            rec->setDepthCompareOp( vk::CompareOp::eLessOrEqual );
             (*generate_gbuffer)( rec );
           }
           if( walk.get_current_camera() == 0 ) {
@@ -1678,7 +1558,6 @@ int main( int argc, const char *argv[] ) {
     ++frame_counter;
     walk.reset_flags();
     current_frame %= framebuffers.size();
-   // break;
   }
   (*res.queue)->waitIdle();
   walk.save( res.walk_state_filename );

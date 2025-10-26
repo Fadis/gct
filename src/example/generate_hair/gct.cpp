@@ -129,7 +129,7 @@ int main( int argc, const char *argv[] ) {
       VK_KHR_MULTIVIEW_EXTENSION_NAME,
       VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
       VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
-      VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+      VK_EXT_MESH_SHADER_EXTENSION_NAME
     },
     gct::descriptor_pool_create_info_t()
       .set_basic(
@@ -162,7 +162,7 @@ int main( int argc, const char *argv[] ) {
   const auto hair_gbuffer_format =
     gct::gbuffer_format::albedo_alpha;
 
-  const unsigned int hair_tex_size = 256u;
+  const unsigned int hair_tex_size = 512u;
   std::shared_ptr< gct::shader_graph::compiled > generate_hair;
   std::shared_ptr< gct::image_view_t > hair_view;
   {
@@ -186,8 +186,7 @@ int main( int argc, const char *argv[] ) {
           .add_output( "position", hair_tex_size, hair_tex_size * 64u, vk::Format::eR32G32B32A32Sfloat )
           .add_output( "start", hair_tex_size, hair_tex_size, vk::Format::eR32Uint )
           .add_output( "next", hair_tex_size, hair_tex_size * 64u, vk::Format::eR32Uint )
-          //.add_output( "depth", hair_tex_size, hair_tex_size, vk::Format::eD32Sfloat )
-          .set_dim( 25u, 1u, 64u )
+          .set_dim( 25u, 1u, 128u )
           .set_node_name( "generate_hair" )
       )
       .set_render_area(

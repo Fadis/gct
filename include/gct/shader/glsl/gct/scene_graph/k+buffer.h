@@ -926,7 +926,7 @@ vec3 kplus_get_tangent(
 vec4 kplus_get_eo(
   kplus_iter iter
 ) {
-  return kplus_get_component( iter, GCT_GBUFFER_EMISSIVE_OCCLUSION, vec4( 0, 0, 0, 0 ) );
+  return kplus_get_component( iter, GCT_GBUFFER_EMISSIVE_OCCLUSION, vec4( 0, 0, 0, 1 ) );
 }
 
 vec4 kplus_get_mrid(
@@ -1050,10 +1050,11 @@ pre_dof_pixel kplus_mix(
 ) {
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  float near_depth = zfar;
+  float near_depth = focus;
   float far_depth = zfar;
   for( uint i = 0u; i != 4u; i++ ) {
     const vec4 albedo = kplus_get_albedo( iter );
+    const float occlusion = kplus_get_eo( iter ).w;
     const bool has_layer = !kplus_is_end( iter );
     const bool is_nearest = kplus_is_nearest( iter );
     const float depth = has_layer ? 
@@ -1063,6 +1064,7 @@ pre_dof_pixel kplus_mix(
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 
@@ -1087,8 +1089,6 @@ pre_dof_pixel kplus_mix(
       iter = kplus_next( iter );
     }
   }
-  near_depth = min( focus, near_depth + visible_range );
-  far_depth = max( focus, far_depth - visible_range );
   return pre_dof_pixel(
     near_total,
     far_total,
@@ -1109,10 +1109,11 @@ pre_dof_pixel kplus_mix(
 ) {
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  float near_depth = zfar;
+  float near_depth = focus;
   float far_depth = zfar;
   for( uint i = 0u; i != 4u; i++ ) {
     const vec4 albedo = kplus_get_albedo( iter );
+    const float occlusion = kplus_get_eo( iter ).w;
     const bool has_layer = !kplus_is_end( iter );
     const bool is_nearest = kplus_is_nearest( iter );
     const float depth = has_layer ? 
@@ -1122,6 +1123,7 @@ pre_dof_pixel kplus_mix(
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 
@@ -1142,8 +1144,6 @@ pre_dof_pixel kplus_mix(
       iter = kplus_next( iter );
     }
   }
-  near_depth = min( focus, near_depth + visible_range );
-  far_depth = max( focus, far_depth - visible_range );
   return pre_dof_pixel(
     near_total,
     far_total,
@@ -1161,12 +1161,14 @@ vec4 kplus_mix(
   vec4 total = vec4( 0.0, 0.0, 0.0, 0.0 );
   for( uint i = 0u; i != 4u; i++ ) {
     const vec4 albedo = kplus_get_albedo( iter );
+    const float occlusion = kplus_get_eo( iter ).w;
     const bool has_layer = !kplus_is_end( iter );
     const bool is_nearest = kplus_is_nearest( iter );
     const vec3 ambient =
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 

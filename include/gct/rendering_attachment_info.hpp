@@ -27,6 +27,10 @@ public:
   const std::shared_ptr< image_view_t > &get_view() const {
     return view;
   }
+  rendering_attachment_info_t &make_inout() {
+    basic.setLoadOp( vk::AttachmentLoadOp::eLoad );
+    return *this;
+  }
 private:
   std::shared_ptr< image_view_t > view;
 };

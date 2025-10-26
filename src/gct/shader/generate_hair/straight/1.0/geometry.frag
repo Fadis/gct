@@ -23,22 +23,8 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 layout (location = 0) in float input_alpha;
-layout (location = 1) in float input_depth;
 
 void main() {
-struct primitive_value {
-  vec3 pos;
-  vec3 normal;
-  vec4 albedo;
-  vec3 emissive;
-  float metallic;
-  float roughness;
-  float occlusion;
-  vec3 optflow;
-  vec3 tangent;
-  vec2 texcoord[ 4 ];
-  vec4 color[ 2 ];
-};
   primitive_value p;
   p.pos = vec3( gl_FragCoord.xyz );
   p.albedo = vec4( 1.0, 1.0, 1.0, input_alpha );

@@ -140,7 +140,7 @@ ppll_iter ppll_nearest(
   const ivec2 gbuffer_size = imageSize( image_pool_2du[ nonuniformEXT( iter.image.gbuffer ) ] ).xy;
   uint prev = 0u;
   uint next = iter.index;
-  for( uint i = 0u; i != 32u; ++i ) {
+  for( uint i = 0u; i != 64u; ++i ) {
     if( next != 0u ) {
       prev = next;
       next = imageLoad(
@@ -160,7 +160,7 @@ ppll_iter ppll_nearest_in_slice(
   const ivec2 gbuffer_size = imageSize( image_pool_2du[ nonuniformEXT( iter.image.gbuffer ) ] ).xy;
   uint prev = 0u;
   uint next = iter.index;
-  for( uint i = 0u; i != 32u; ++i ) {
+  for( uint i = 0u; i != 64u; ++i ) {
     if( next != 0u ) {
       float existing_depth = imageLoad(
         image_pool_2d[ nonuniformEXT( iter.image.position ) ],
@@ -218,7 +218,7 @@ void ppll_insert(
   const uint start = imageLoad( image_pool_2du[ nonuniformEXT( iter.image.start ) ], iter.image_pos ).r;
   uint prev = 0u;
   uint next = start;
-  for( uint i = 0u; i != 32u; ++i ) {
+  for( uint i = 0u; i != 64u; ++i ) {
     if( next != 0u ) {
       float existing_depth = imageLoad(
         image_pool_2d[ nonuniformEXT( iter.image.position ) ],
@@ -381,7 +381,7 @@ vec3 ppll_get_normal(
 vec4 ppll_get_eo(
   ppll_iter iter
 ) {
-  return ppll_get_component( iter, GCT_GBUFFER_EMISSIVE_OCCLUSION, vec4( 0, 0, 0, 0 ) );
+  return ppll_get_component( iter, GCT_GBUFFER_EMISSIVE_OCCLUSION, vec4( 0, 0, 0, 1 ) );
 }
 
 vec4 ppll_get_mrid(
@@ -470,14 +470,16 @@ pre_dof_pixel ppll_mix(
   float zfar,
   float visible_range,
   vec3 ambient_factor,
-  float ao
+  float ao,
+  float zthreshold
 ) {
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   float near_depth = focus;
-  float far_depth = zfar;
-  for( uint i = 0u; i != 32u; i++ ) {
+  float far_depth = zthreshold;
+  for( uint i = 0u; i != 64u; i++ ) {
     const vec4 albedo = ppll_get_albedo( iter );
+    const float occlusion = ppll_get_eo( iter ).w;
     const bool has_layer = !ppll_is_end( iter );
     const bool is_nearest = ppll_is_nearest( iter );
     const float depth = has_layer ? 
@@ -487,6 +489,7 @@ pre_dof_pixel ppll_mix(
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 
@@ -502,17 +505,19 @@ pre_dof_pixel ppll_mix(
     near_depth = min( depth, near_depth );
     far_depth = min( depth, far_depth );
     if( has_layer ) { 
-      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
-      if( depth < focus ) {
-        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+      if( depth < zthreshold ) {
+        if( depth < focus ) {
+          near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+        }
+        near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+        far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
+        far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
       }
-      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
-      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
       iter = ppll_next( iter );
     }
   }
-  near_depth = min( focus, near_depth + visible_range );
-  far_depth = max( focus, far_depth - visible_range );
+  //near_depth = min( focus, near_depth + visible_range );
+  //far_depth = max( focus, far_depth - visible_range );
   return pre_dof_pixel(
     near_total,
     far_total,
@@ -529,14 +534,16 @@ pre_dof_pixel ppll_mix(
   float zfar,
   float visible_range,
   vec3 ambient_factor,
-  float ao
+  float ao,
+  float zthreshold
 ) {
   vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
   float near_depth = focus;
-  float far_depth = zfar;
-  for( uint i = 0u; i != 32u; i++ ) {
+  float far_depth = zthreshold;
+  for( uint i = 0u; i != 64u; i++ ) {
     const vec4 albedo = ppll_get_albedo( iter );
+    const float occlusion = ppll_get_eo( iter ).w;
     const bool has_layer = !ppll_is_end( iter );
     const bool is_nearest = ppll_is_nearest( iter );
     const float depth = has_layer ? 
@@ -546,6 +553,7 @@ pre_dof_pixel ppll_mix(
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 
@@ -557,17 +565,19 @@ pre_dof_pixel ppll_mix(
     near_depth = min( depth, near_depth );
     far_depth = min( depth, far_depth );
     if( has_layer ) { 
-      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
-      if( depth < focus ) {
-        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+      if( depth < zthreshold ) {
+        if( depth < focus ) {
+          near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+        }
+        near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+        far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
+        far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
       }
-      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
-      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
       iter = ppll_next( iter );
     }
   }
-  near_depth = min( focus, near_depth + visible_range );
-  far_depth = max( focus, far_depth - visible_range );
+  //near_depth = min( focus, near_depth + visible_range );
+  //far_depth = max( focus, far_depth - visible_range );
   return pre_dof_pixel(
     near_total,
     far_total,
@@ -583,14 +593,16 @@ vec4 ppll_mix(
   float ao
 ) {
   vec4 total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  for( uint i = 0u; i != 32u; i++ ) {
+  for( uint i = 0u; i != 64u; i++ ) {
     const vec4 albedo = ppll_get_albedo( iter );
+    const float occlusion = ppll_get_eo( iter ).w;
     const bool has_layer = !ppll_is_end( iter );
     const bool is_nearest = ppll_is_nearest( iter );
     const vec3 ambient =
       ( has_layer ) ?
       ambient_factor *
       ( is_nearest ? ao : 1.0 ) *
+      occlusion *
       albedo.xyz :
       vec3( 0.0, 0.0, 0.0 );
     const vec3 lighting = 
@@ -613,7 +625,7 @@ vec4 ppll_mix(
   uint layer
 ) {
   vec4 total = vec4( 0.0, 0.0, 0.0, 0.0 );
-  for( uint i = 0u; i != 32u; i++ ) {
+  for( uint i = 0u; i != 64u; i++ ) {
     const vec4 albedo = ppll_get_component( iter, layer, vec4( 0, 0, 0, 0 ) );
     const bool has_layer = !ppll_is_end( iter );
     if( has_layer ) { 

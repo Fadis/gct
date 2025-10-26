@@ -17,6 +17,8 @@
 #include <gct/shader_flag.hpp>
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/compiled_aabb_scene_graph.hpp>
+#include <gct/shader_module_reflection.hpp>
+
 namespace gct::scene_graph {
 
 void compiled_aabb_primitive::operator()(
@@ -220,10 +222,34 @@ void compiled_aabb_scene_graph::load_graph(
   }
 }
 
-void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec, std::uint32_t instance_count ) const {
+void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec, std::uint32_t instance_offset, std::uint32_t instance_count ) const {
   rec.bind_pipeline( pipeline );
   auto b = resource->vertex->get( vertex_buffer_desc );
   rec->bindVertexBuffers( 0u, { **b }, { 0u } );
+  if( pipeline->get_props().has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
+    const auto pcmp = pipeline->get_props().get_reflection( vk::ShaderStageFlagBits::eFragment ).get_push_constant_member_pointer( "push_constants" );
+    std::vector< std::uint8_t > push_constant( pcmp.get_aligned_size(), 0u );
+    if( pcmp.has( "offset" ) ) {
+      push_constant.data() ->* pcmp[ "offset" ] = instance_offset;
+    }
+    else if( pcmp.has( "instance" ) ) {
+      push_constant.data() ->* pcmp[ "instance" ] = instance_offset;
+    }
+    if( pcmp.has( "count" ) ) {
+      push_constant.data() ->* pcmp[ "count" ] = std::uint32_t( instance_count );
+    }
+    else if( pcmp.has( "primitive" ) ) {
+      push_constant.data() ->* pcmp[ "primitive" ] = std::uint32_t( instance_count );
+    }
+    rec->pushConstants(
+      **resource->pipeline_layout,
+      resource->pipeline_layout->get_props().get_push_constant_range()[ 0 ].stageFlags,
+      pcmp.get_offset(),
+      push_constant.size(),
+      push_constant.data()
+    );
+    
+  }
   rec.draw( 1, instance_count, 0, 0 );
 }
 

@@ -1,0 +1,125 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/light_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+#include <gct/scene_graph/ppll.h>
+#include <gct/pre_dof_pixel.h>
+
+layout(push_constant) uniform PushConstants {
+  uint bg_gbuffer_format;
+  uint bg_gbuffer;
+  uint bg_position;
+  uint fur_ppll_state_id;
+  uint fur_gbuffer_format;
+  uint fur_gbuffer;
+  uint fur_position;
+  uint fur_start;
+  uint fur_next;
+  uint occlusion;
+  uint bg_lighting_image;
+  uint fur_lighting_image;
+  uint scattering;
+  uint dest_image;
+  uint coc_image;
+} push_constants;
+
+layout (std430, binding = 13) buffer Output {
+  uint history;
+  uint max_history;
+  float depth;
+  float znear;
+  float zfar;
+  float focal_distance;
+  float lens_size;
+  float sensor_size;
+  float apeture_rotation;
+  float visible_range;
+} af_state;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+  const vec2 scale =
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.bg_gbuffer ) ] ).xy) /
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy);
+  const ivec2 src_pos = ivec2( screen_pos * scale );
+  const ivec2 image_size = imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy;
+  
+  const float far_threshold = af_state.depth;
+
+  const vec2 occlusion_scale =
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.occlusion ) ] ).xy) /
+    vec2(imageSize( image_pool_2d_array[ nonuniformEXT( push_constants.dest_image ) ] ).xy);
+  const float ao = imageLoad( image_pool_2d[ nonuniformEXT( push_constants.occlusion ) ], ivec2( screen_pos * occlusion_scale ) ).r;
+
+  pre_dof_pixel bg;
+  {
+    kplus_iter iter = kplus_begin(
+      kplus_image( push_constants.bg_gbuffer, push_constants.bg_position ),
+      src_pos,
+      push_constants.bg_gbuffer_format
+    );
+ 
+    bg = kplus_mix(
+      iter,
+      push_constants.bg_lighting_image,
+      push_constants.scattering,
+      af_state.depth,
+      af_state.znear,
+      af_state.zfar,
+      af_state.visible_range,
+      global_uniforms.ambient *
+      light_pool[ global_uniforms.light ].energy.xyz,
+      ao
+    );
+  }
+  pre_dof_pixel fur;
+  {
+    ppll_iter iter = ppll_begin(
+      push_constants.fur_ppll_state_id,
+      ppll_image( push_constants.fur_gbuffer, push_constants.fur_position, push_constants.fur_start, push_constants.fur_next ),
+      screen_pos,
+      push_constants.fur_gbuffer_format
+    );
+ 
+    fur = ppll_mix(
+      iter,
+      push_constants.fur_lighting_image,
+      af_state.depth,
+      af_state.znear,
+      af_state.zfar,
+      af_state.visible_range,
+      global_uniforms.ambient *
+      light_pool[ global_uniforms.light ].energy.xyz,
+      1.0,
+      bg.far_depth
+    );
+  }
+  pre_dof_pixel mixed = pdp_mix( bg, fur );
+  vec4 near_total = vec4( 0, 0, 0, 0 );//mixed.near_total;
+  vec4 far_total = mixed.far_total;
+  float near_depth = min( af_state.depth, mixed.near_depth + af_state.visible_range );
+  float far_depth = max( af_state.depth, mixed.far_depth - af_state.visible_range );
+
+  const float near_coc = min( max( ( af_state.lens_size * abs( near_depth - af_state.depth )/( near_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
+  const float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
+  
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 0 ), near_total );
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.dest_image ) ], ivec3( screen_pos, 1 ), far_total );
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.coc_image ) ], ivec3( screen_pos, 0 ), vec4( near_coc, 0.0, 0.0, 0.0 ) );
+  imageStore( image_pool_2d_array[ nonuniformEXT( push_constants.coc_image ) ], ivec3( screen_pos, 1 ), vec4( far_coc, 0.0, 0.0, 0.0 ) );
+}
+

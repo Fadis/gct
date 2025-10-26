@@ -18,6 +18,7 @@ image_io::image_io(
 void image_io::operator()(
   command_buffer_recorder_t &rec
 ) const {
+  std::optional< rendering_info_t > ri;
   for( std::uint32_t cycle = 0u; cycle != get_props().get_plan().loop; ++cycle ) {
     if( get_props().get_push_constant_member_pointer()->has( "loop_counter" ) ) {
       get_props().set_push_constant( "loop_counter", cycle );
@@ -26,8 +27,16 @@ void image_io::operator()(
     if( get_props().get_graphic_executable() ) {
       get_props()( rec, get_props().get_graphic_executable()->get_pipeline() );
       {
-        const_cast< rendering_info_t& >( get_props().get_rendering_info() ).rebuild_chain();
-        const auto rendering = rec.begin_rendering( get_props().get_rendering_info() );
+        if( cycle == 0u ) {
+          const_cast< rendering_info_t& >( get_props().get_rendering_info() ).rebuild_chain();
+          ri = get_props().get_rendering_info();
+        }
+        if( cycle == 1u ) {
+          (*ri)
+            .make_inout()
+            .rebuild_chain();
+        }
+        const auto rendering = rec.begin_rendering( *ri );
         const auto dim = get_props().get_dim();
         rec->setViewport(
           0u,
@@ -50,7 +59,6 @@ void image_io::operator()(
             )
           }
         );
-        std::cout << "graphics : " << dim.x << " " << dim.y << " " << dim.z << std::endl;
         (*get_props().get_graphic_executable())( rec, 0u, dim.x, dim.y, dim.z );
       }
     }

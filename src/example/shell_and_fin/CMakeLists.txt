@@ -19,3 +19,6 @@ target_link_libraries(
 
 add_shader( shell_and_fin mix_ao/mix_ao.comp )
 
+add_shader( shell_and_fin fur/geometry.task INSTALL )
+add_shader( shell_and_fin fur/geometry.mesh INSTALL )
+add_shader( shell_and_fin fur/geometry.frag INSTALL )

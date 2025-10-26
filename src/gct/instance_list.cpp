@@ -393,7 +393,7 @@ void instance_list::operator()(
       resource->image_descriptor_set
     );
   }
-  compiled( rec, draw_list.size() );
+  compiled( rec, *draw_list.begin()->inst, draw_list.size() );
   /*for( const auto &i: draw_list ) {
     const auto inst = resource->inst.get( i.inst );
     auto p = prim.find( i.prim );

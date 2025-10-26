@@ -551,6 +551,17 @@ target_link_libraries( list_vertex
   Boost::system
 )
 
+add_executable( list_triangle list_triangle.cpp )
+target_link_libraries( list_triangle
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+
 add_executable( test_quaternion test_quaternion.cpp )
 #target_link_libraries( list_vertex
 #  gct
@@ -717,6 +728,10 @@ add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_ppll/shell/1.0/geometry.frag INSTALL )
 
+add_shader( gct gct/shader/generate_ppll/hair_blade/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_ppll/hair_blade/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_ppll/hair_blade/1.0/geometry.frag INSTALL )
+
 add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_hair/straight/1.0/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_hair/straight/1.0/mix.comp INSTALL )
@@ -733,6 +748,18 @@ add_shader( gct gct/shader/forward_rendering/fin/geometry.frag INSTALL )
 add_shader( gct gct/shader/forward_rendering/shell/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/shell/geometry.mesh INSTALL )
 add_shader( gct gct/shader/forward_rendering/shell/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/stalling/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/stalling/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/stalling/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay_blinn_phong/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay_blinn_phong/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/kajiya_kay_blinn_phong/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
@@ -775,8 +802,12 @@ add_shader( gct gct/shader/generate_fur_texture/1.0/fin.comp INSTALL )
 add_shader( gct gct/shader/lighting/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/2.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/flat/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/kplus/simple/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/kajiya_kay/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/ppll/stalling/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/ppll/kajiya_kay_blinn_phong/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/ppll/marschner_karis/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/flat/1.0/lighting.comp INSTALL )
 
 add_shader( gct gct/shader/meshlet_normal/1.0/meshlet_normal.comp INSTALL )
@@ -808,6 +839,7 @@ add_shader( gct gct/shader/generate_depth/standard/geometry.frag INSTALL )
 add_shader( gct gct/shader/cubemap_matrix_generator/generate.comp INSTALL )
 
 add_shader( gct gct/shader/tone_mapping/1.0/tone.comp INSTALL )
+add_shader( gct gct/shader/tone_mapping/1.0/apply.comp INSTALL )
 add_shader( gct gct/shader/tone_mapping/1.0/distance.comp INSTALL )
 add_shader( gct gct/shader/tone_mapping/ppll/1.0/distance.comp INSTALL )
 

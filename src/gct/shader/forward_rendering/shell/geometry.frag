@@ -57,6 +57,6 @@ void main() {
   const vec3 ambient = global_uniforms.ambient * p.albedo.rgb;
 
   //output_color = vec4( ambient + diffuse + specular, p.albedo.a );
-  output_color = vec4( 0.0, 1.0, 0.0, 0.05 );
+  output_color = vec4( 0.0, 1.0, 0.0, 0.002 );
 }
 
