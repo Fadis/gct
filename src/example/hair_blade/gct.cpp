@@ -157,6 +157,96 @@ int main( int argc, const char *argv[] ) {
       .set_enable_linear( true )
   );
 
+  const auto ppll_state_desc = sg->get_resource()->ppll_state->allocate();
+
+  const auto hair_gbuffer_format =
+    gct::gbuffer_format::albedo_alpha;
+
+  gct::image_pool::image_descriptor hair_desc;
+  {
+    const unsigned int hair_tex_size = 512u;
+    std::shared_ptr< gct::shader_graph::compiled > generate_hair;
+    {
+      gct::shader_graph::builder builder( sg->get_resource() );
+          
+      
+      const auto generate_hair_desc = builder.call(
+        builder.get_image_io_create_info(
+          std::make_shared< gct::graphics >(
+            gct::graphics_create_info()
+              .set_swapchain_image_count( 1u )
+              .add_shader( gct::get_system_shader_path() / "generate_hair" / "straight" / "1.0" )
+              .use_dynamic_rendering(
+                vk::Format::eR16G16B16A16Sfloat
+              )
+              .set_scene_graph( sg->get_resource() )
+              .set_line_width( 1.0f )
+          ),
+          gct::image_io_plan()
+            .add_output( "gbuffer", hair_tex_size, hair_tex_size * 64u, vk::Format::eR16G16B16A16Sfloat )
+            .add_output( "position", hair_tex_size, hair_tex_size * 64u, vk::Format::eR32G32B32A32Sfloat )
+            .add_output( "start", hair_tex_size, hair_tex_size, vk::Format::eR32Uint )
+            .add_output( "next", hair_tex_size, hair_tex_size * 64u, vk::Format::eR32Uint )
+            .set_dim( 25u, 1u, 768u )
+            .set_node_name( "generate_hair" )
+        )
+        .set_render_area(
+          vk::Rect2D()
+            .setExtent(
+              vk::Extent2D()
+                .setWidth( hair_tex_size )
+                .setHeight( hair_tex_size )
+            )
+        )
+        .set_push_constant( "straight_factor", 0.7f )
+        .set_push_constant( "ppll_state_id", *ppll_state_desc )
+        .set_push_constant( "gbuffer_format", hair_gbuffer_format )
+      )();
+      
+      const auto mix_hair_desc = builder.call(
+        builder.get_image_io_create_info(
+          std::make_shared< gct::compute >(
+            gct::compute_create_info()
+              .set_allocator_set( res.allocator_set )
+              .set_shader( gct::get_system_shader_path() / "generate_hair" / "straight" / "1.0" / "mix.comp.spv" )
+              .set_scene_graph( sg->get_resource() )
+          ),
+          gct::image_io_plan()
+            .add_input( "gbuffer" )
+            .add_input( "position" )
+            .add_input( "start" )
+            .add_input( "next" )
+            .add_output( "dest", "start", { 1.f, -1.f }, vk::Format::eR16G16Sfloat )
+            .set_dim( "start", { 1.f, -1.f } )
+            .set_node_name( "mix_hair" )
+        )
+        .set_push_constant( "ppll_state_id", *ppll_state_desc )
+        .set_push_constant( "gbuffer_format", hair_gbuffer_format )
+      )(
+        gct::shader_graph::vertex::combined_result_type()
+          .add( "gbuffer",  generate_hair_desc[ "gbuffer" ] )
+          .add( "position",  generate_hair_desc[ "position" ] )
+          .add( "start",  generate_hair_desc[ "start" ] )
+          .add( "next",  generate_hair_desc[ "next" ] )
+      );
+ 
+      builder.output( mix_hair_desc[ "dest" ] );
+      generate_hair = std::make_shared< gct::shader_graph::compiled >( builder() );
+      hair_desc = generate_hair->get_image_descriptor( mix_hair_desc[ "dest" ] ); 
+      std::cout << builder.get_log() << std::endl;
+    }
+
+    {
+      auto command_buffer = res.queue->get_command_pool()->allocate();
+      {
+        auto rec = command_buffer->begin();
+        (*sg)( rec );
+        (*generate_hair)( rec );
+      }
+      command_buffer->execute_and_wait();
+    }
+  }
+
   gct::cubemap_matrix_generator2 shadow_mat2(
     gct::cubemap_matrix_generator2_create_info()
       .set_allocator_set( res.allocator_set )
@@ -206,27 +296,6 @@ int main( int argc, const char *argv[] ) {
 
   gct::cubemap_images2 cubemap_images( shadow_gbuffer.get_image_views() );
  
-  auto linear_repeat_sampler_desc= sg->get_resource()->sampler->allocate(
-    gct::sampler_create_info_t()
-      .set_basic(
-        vk::SamplerCreateInfo()
-          .setMagFilter( vk::Filter::eLinear )
-          .setMinFilter( vk::Filter::eLinear )
-          .setMipmapMode( vk::SamplerMipmapMode::eLinear )
-          .setAddressModeU( vk::SamplerAddressMode::eRepeat )
-          .setAddressModeV( vk::SamplerAddressMode::eRepeat )
-          .setAddressModeW( vk::SamplerAddressMode::eRepeat )
-          .setAnisotropyEnable( false )
-          .setCompareEnable( false )
-          .setMipLodBias( 0.f )
-          .setMinLod( 0.f )
-          .setMaxLod( VK_LOD_CLAMP_NONE )
-          .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
-          .setUnnormalizedCoordinates( false )
-      )
-  );
-
-
   const auto shadow_map_texture_desc = sg->get_resource()->texture->allocate(
      linear_sampler,
      cubemap_images.get_cube_image_views()[ 0 ]
@@ -243,171 +312,6 @@ int main( int argc, const char *argv[] ) {
       .set_format( vk::Format::eR16G16B16A16Sfloat ) 
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
-
-  /*constexpr std::size_t gbuf_count = 0u;
-  gct::gbuffer gbuffer(
-    gct::gbuffer_create_info()
-      .set_allocator( res.allocator )
-      .set_width( res.width )
-      .set_height( res.height )
-      .set_layer( 0u )
-      .set_swapchain_image_count( 1u )
-      .set_color_buffer_count( gbuf_count )
-      .set_format( vk::Format::eR16G16B16A16Sfloat ) 
-      .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
-  );*/
-
-  const auto random_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( 128u, 128u )
-              .setFormat( vk::Format::eR16Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eSampled|
-                vk::ImageUsageFlagBits::eStorage|
-                vk::ImageUsageFlagBits::eTransferSrc|
-                vk::ImageUsageFlagBits::eTransferDst
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  const auto random = sg->get_resource()->image->get( random_desc.linear );
- 
-  const auto depth_desc = sg->get_resource()->image->allocate(
-    depth_gbuffer.get_depth_views()[ 0 ]
-  );
-
-  const auto fur_shell_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( 128u, 128u )
-              .setFormat( vk::Format::eR16Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eSampled|
-                vk::ImageUsageFlagBits::eStorage|
-                vk::ImageUsageFlagBits::eTransferSrc|
-                vk::ImageUsageFlagBits::eTransferDst
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  const auto fur_shell = sg->get_resource()->image->get( fur_shell_desc.linear );
-  const auto fur_shell_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_shell_desc.linear
-  );
-
-  const auto fur_fin_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( 128u, 128u )
-              .setFormat( vk::Format::eR16Sfloat )
-              .setUsage(
-                vk::ImageUsageFlagBits::eSampled|
-                vk::ImageUsageFlagBits::eStorage|
-                vk::ImageUsageFlagBits::eTransferSrc|
-                vk::ImageUsageFlagBits::eTransferDst
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  const auto fur_fin = sg->get_resource()->image->get( fur_fin_desc.linear );
-  const auto fur_fin_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_fin_desc.linear
-  );
-
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto rec = command_buffer->begin();
-      rec.convert_image(
-        random->get_factory(), vk::ImageLayout::eGeneral
-      );
-      rec.convert_image(
-        fur_shell->get_factory(), vk::ImageLayout::eGeneral
-      );
-      rec.convert_image(
-        fur_fin->get_factory(), vk::ImageLayout::eGeneral
-      );
-    }
-    command_buffer->execute_and_wait();
-  }
-
-  auto generate_random = gct::compute(
-    gct::compute_create_info()
-      .set_allocator_set( res.allocator_set )
-      .set_shader( gct::get_system_shader_path() / "generate_random" / "1.0" / "generate.comp.spv" )
-      .set_scene_graph( sg->get_resource() )
-  );
-  generate_random.set_push_constant( "dest", *random_desc.linear );
-
-
-  auto generate_fur_shell = gct::compute(
-    gct::compute_create_info()
-      .set_allocator_set( res.allocator_set )
-      .set_shader( gct::get_system_shader_path() / "box_filter" / "3x3" / "1.0" / "filter.comp.spv" )
-      .set_scene_graph( sg->get_resource() )
-  );
-  generate_fur_shell.set_push_constant( "src", *random_desc.linear );
-  generate_fur_shell.set_push_constant( "dest", *fur_shell_desc.linear );
-  
-  auto generate_fur_fin = gct::compute(
-    gct::compute_create_info()
-      .set_allocator_set( res.allocator_set )
-      .set_shader( gct::get_system_shader_path() / "generate_fur_texture" / "1.0" / "fin.comp.spv" )
-      .set_scene_graph( sg->get_resource() )
-  );
-  generate_fur_fin.set_push_constant( "src", *fur_shell_desc.linear );
-  generate_fur_fin.set_push_constant( "dest", *fur_fin_desc.linear );
-  generate_fur_fin.set_push_constant( "shell_texture_clamp_max", 0.8f );
-  generate_fur_fin.set_push_constant( "shell_texture_clamp_min", 0.7f );
-  
-  {
-    auto command_buffer = res.queue->get_command_pool()->allocate();
-    {
-      auto rec = command_buffer->begin();
-      generate_random( rec, 0u, 128u, 128u, 1u );
-      rec.barrier(
-        gct::syncable()
-          .add( random )
-      );
-      generate_fur_shell( rec, 0u, 128u, 128u, 1u );
-      rec.barrier(
-        gct::syncable()
-          .add( fur_shell )
-      );
-      generate_fur_fin( rec, 0u, 128u, 128u, 1u );
-      rec.barrier(
-        gct::syncable()
-          .add( fur_fin )
-      );
-      rec.dump_image(
-        res.allocator,
-        fur_fin->get_factory(),
-        "fin.png",
-        0u,
-        0u
-      );
-      (*sg)( rec );
-    }
-    command_buffer->execute_and_wait();
-  }
-
-  const auto ppll_state_desc = sg->get_resource()->ppll_state->allocate();
 
   gct::gbuffer aabb_gbuffer(
     gct::gbuffer_create_info()
@@ -432,29 +336,17 @@ int main( int argc, const char *argv[] ) {
 
   std::vector< std::shared_ptr< gct::gltf::gltf2 > > doc;
 
-  if( res.model_filename_list.size() != 2u ) {
+  if( res.model_filename_list.size() != 3u ) {
     std::abort();
   }
 
-  {
+  for( const auto &n: res.model_filename_list ) {
     doc.push_back( std::make_shared< gct::gltf::gltf2 >(
       gct::gltf::gltf2_create_info()
-        .set_filename( res.model_filename_list[ 0 ] )
+        .set_filename( n )
         .set_graph( sg )
         .set_root( sg->get_root_node() )
         .set_aspect_ratio( float( res.width )/float( res.height ) )
-    ) );
-  }
-  {
-    doc.push_back( std::make_shared< gct::gltf::gltf2 >(
-      gct::gltf::gltf2_create_info()
-        .set_filename( res.model_filename_list[ 1 ] )
-        .set_graph( sg )
-        .set_root( sg->get_root_node() )
-        .set_aspect_ratio( float( res.width )/float( res.height ) )
-        .set_enable_vertex_to_primitive( true )
-        .set_enable_same_position( true )
-        .set_enable_adjacency( true )
     ) );
   }
 
@@ -613,13 +505,18 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .set_node_name( "bloom_gauss" )
   );
-  
+
+  const auto hair_texture_desc = sg->get_resource()->texture->allocate(
+     linear_sampler_desc,
+     hair_desc
+  );
+
   const auto bg_gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::normal |
       gct::gbuffer_format::emissive_occlusion |
       gct::gbuffer_format::metallic_roughness_id;
- 
+
   const auto fur_gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::tangent |
@@ -681,12 +578,12 @@ int main( int argc, const char *argv[] ) {
       bg0_desc
     );
   
-    const auto shell_desc = builder.call(
+    const auto hair_desc = builder.call(
       builder.get_image_io_create_info(
         std::make_shared< gct::graphics >(
           gct::graphics_create_info()
             .set_swapchain_image_count( 1u )
-            .add_shader( gct::get_system_shader_path() / "generate_ppll" / "shell" / "1.0" )
+            .add_shader( gct::get_system_shader_path() / "generate_ppll" / "hair_blade" / "1.0" )
             .use_dynamic_rendering(
               vk::Format::eR16G16B16A16Sfloat,
               vk::Format::eD32Sfloat
@@ -697,79 +594,38 @@ int main( int argc, const char *argv[] ) {
         ),
         gct::image_io_plan()
           .add_output(
-            "gbuffer", res.width, res.height * 8u, 1u,
+            "gbuffer", res.width, res.height * 16u, 1u,
             gct::get_ppll_layer_count( fur_gbuffer_format ),
             vk::Format::eR16G16B16A16Sfloat
           )
-          .add_output( "position", res.width, res.height * 8u, 1u, 1u, vk::Format::eR32G32B32A32Sfloat )
+          .add_output( "position", res.width, res.height * 16u, 1u, 1u, vk::Format::eR32G32B32A32Sfloat )
           .add_output( "start", res.width, res.height, 1u, 1u, vk::Format::eR32Uint )
-          .add_output( "next", res.width, res.height * 8u, 1u, 1u, vk::Format::eR32Uint )
+          .add_output( "next", res.width, res.height * 16u, 1u, 1u, vk::Format::eR32Uint )
           .add_inout( "depth" )
-          .set_dim( il[ 1 ]->get_shape() )
+          .set_dim( il[ 2 ]->get_shape() )
           .set_node_name( "shell" )
       )
-      .set_push_constant( "shell_thickness", 0.1f )
-      .set_push_constant( "shell_texture", *fur_shell_texture_desc )
+      .set_push_constant( "hair_texture", *hair_texture_desc )
       .set_push_constant( "gbuffer_format", fur_gbuffer_format )
-      .set_push_constant( "shell_texture_clamp_max", 0.60f )
-      .set_push_constant( "shell_texture_clamp_min", 0.52f )
       .set_push_constant( "ppll_state_id", *ppll_state_desc )
     )(
       gct::shader_graph::vertex::combined_result_type()
         .add( "depth", bg1_desc[ "depth" ] )
     );
 
-    const auto fin_desc = builder.call(
-      builder.get_image_io_create_info(
-        std::make_shared< gct::graphics >(
-          gct::graphics_create_info()
-            .set_swapchain_image_count( 1u )
-            .add_shader( gct::get_system_shader_path() / "generate_ppll" / "fin" / "1.0" )
-            .use_dynamic_rendering(
-              vk::Format::eR16G16B16A16Sfloat,
-              vk::Format::eD32Sfloat
-            )
-            .disable_depth_write()
-            .set_scene_graph( sg->get_resource() )
-            .add_resource( { "global_uniforms", global_uniform } )
-        ),
-        gct::image_io_plan()
-          .add_inout( "gbuffer" )
-          .add_inout( "position" )
-          .add_inout( "start" )
-          .add_inout( "next" )
-          .add_inout( "depth" )
-          .set_dim( il[ 1 ]->get_shape() )
-          .set_node_name( "fin" )
-      )
-      .set_push_constant( "shell_thickness", 0.1f )
-      .set_push_constant( "fin_texture", *fur_fin_texture_desc )
-      .set_push_constant( "gbuffer_format", fur_gbuffer_format )
-      .set_push_constant( "ppll_state_id", *ppll_state_desc )
-    )(
-      gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", shell_desc[ "gbuffer" ] )
-        .add( "position", shell_desc[ "position" ] )
-        .add( "start", shell_desc[ "start" ] )
-        .add( "next", shell_desc[ "next" ] )
-        .add( "depth", shell_desc[ "depth" ] )
-    );
- 
-
-
-    builder.output( fin_desc[ "gbuffer" ] );
-    builder.output( fin_desc[ "position" ] );
-    builder.output( fin_desc[ "start" ] );
-    builder.output( fin_desc[ "next" ] );
+    builder.output( hair_desc[ "gbuffer" ] );
+    builder.output( hair_desc[ "position" ] );
+    builder.output( hair_desc[ "start" ] );
+    builder.output( hair_desc[ "next" ] );
     builder.output( bg1_desc[ "gbuffer" ] );
     builder.output( bg1_desc[ "position" ] );
     generate_gbuffer = std::make_shared< gct::shader_graph::compiled >( builder() );
     bg_gbuffer_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "gbuffer" ] ); 
     bg_depth_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "position" ] ); 
-    fur_gbuffer_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "gbuffer" ] ); 
-    fur_position_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "position" ] ); 
-    fur_start_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "start" ] ); 
-    fur_next_desc = generate_gbuffer->get_image_descriptor( fin_desc[ "next" ] ); 
+    fur_gbuffer_desc = generate_gbuffer->get_image_descriptor( hair_desc[ "gbuffer" ] ); 
+    fur_position_desc = generate_gbuffer->get_image_descriptor( hair_desc[ "position" ] ); 
+    fur_start_desc = generate_gbuffer->get_image_descriptor( hair_desc[ "start" ] ); 
+    fur_next_desc = generate_gbuffer->get_image_descriptor( hair_desc[ "next" ] ); 
     std::cout << builder.get_log() << std::endl;
   }
   const auto bg_gbuffer = sg->get_resource()->image->get( bg_gbuffer_desc );
@@ -866,12 +722,12 @@ int main( int argc, const char *argv[] ) {
         .add( "position", bg_depth_desc )
     );
    
-    const auto fur_lighting_desc = builder.call(
+    const auto hair_lighting_desc = builder.call(
       builder.get_image_io_create_info(
         std::make_shared< gct::compute >(
           gct::compute_create_info()
             .set_allocator_set( res.allocator_set )
-            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "kajiya_kay" / "1.0" / "lighting.comp.spv" )
+            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "marschner_karis" / "1.0" / "lighting.comp.spv" )
             .set_scene_graph( sg->get_resource() )
             .add_resource( { "global_uniforms", global_uniform } )
         ),
@@ -896,38 +752,6 @@ int main( int argc, const char *argv[] ) {
         .add( "next", fur_next_desc )
     );
     
-    const auto probe_fur_desc = builder.call(
-      builder.get_image_io_create_info(
-        std::make_shared< gct::compute >(
-          gct::compute_create_info()
-            .set_allocator_set( res.allocator_set )
-            .set_shader( gct::get_system_shader_path() / "probe_ppll" / "1.0" / "mix.comp.spv" )
-            .set_scene_graph( sg->get_resource() )
-            .add_resource( { "global_uniforms", global_uniform } )
-        ),
-        gct::image_io_plan()
-          .add_input( "gbuffer" )
-          .add_input( "position" )
-          .add_input( "start" )
-          .add_input( "next" )
-          .add_input( "src" )
-          .add_output( "dest", "start", { 1.f, -1.f }, vk::Format::eR16G16B16A16Sfloat )
-          .set_dim( "gbuffer", { 1.f, -1.f } )
-          .set_node_name( "probe_fur" )
-      )
-      .set_push_constant( "light", 0u )
-      .set_push_constant( "ambient", res.ambient_level )
-      .set_push_constant( "gbuffer_format", fur_gbuffer_format )
-      .set_push_constant( "ppll_state_id", *ppll_state_desc )
-    )(
-      gct::shader_graph::vertex::combined_result_type()
-        .add( "gbuffer", fur_gbuffer_desc )
-        .add( "position", fur_position_desc )
-        .add( "start", fur_start_desc ) 
-        .add( "next", fur_next_desc )
-        .add( "src", fur_lighting_desc[ "dest" ] )
-    );
-
     const auto np_desc = builder.call(
       builder.get_image_io_create_info(
         std::make_shared< gct::compute >(
@@ -1002,7 +826,7 @@ int main( int argc, const char *argv[] ) {
         .add( "fur_position", fur_position_desc )    
         .add( "fur_start", fur_start_desc )
         .add( "fur_next", fur_next_desc )
-        .add( "fur_lighting_image", fur_lighting_desc[ "dest" ] )
+        .add( "fur_lighting_image", hair_lighting_desc[ "dest" ] )
     );
  
     const auto filtered_coc = coc_gauss( builder, mix_ao_desc[ "coc_image" ]  );
@@ -1104,14 +928,12 @@ int main( int argc, const char *argv[] ) {
  
     builder.output( flare_desc[ "output_color" ] );
     builder.output( filtered_bloom );
-    builder.output( probe_fur_desc[ "dest" ] );
     compiled = std::make_shared< gct::shader_graph::compiled >( builder() );
     merged_view = compiled->get_view( flare_desc[ "output_color" ] );
     bloom_view = compiled->get_view( filtered_bloom );
-    fur_view = compiled->get_view( probe_fur_desc[ "dest" ] );
     std::cout << builder.get_log() << std::endl;
   }
-
+  
   auto update_af = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -1201,15 +1023,10 @@ int main( int argc, const char *argv[] ) {
         i->setup_resource_pair_buffer( recorder );
         generate_meshlet_info( recorder, 0u, i->get_mesh_count(), i->get_max_primitive_count(), 1u );
       }
-      il[ 1 ]->setup_resource_pair_buffer( recorder );
-      same_position( recorder, 0, il1_prim->unique_vertex_count, il1_prim->unique_vertex_count, 1u );
-      recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
-      recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      generate_adjacency( recorder, 0, il1_prim->count / 3, 1u, 1u );
     }
     command_buffer->execute_and_wait();
   }
+
 
   const auto gamma = gct::image_filter(
     gct::image_filter_create_info()
@@ -1355,6 +1172,11 @@ int main( int argc, const char *argv[] ) {
               rec,
               depth
             );
+            il[ 2 ]->setup_resource_pair_buffer( rec );
+            (*il[ 2 ])(
+              rec,
+              depth
+            );
           }
         }
         // occlusion query
@@ -1378,6 +1200,8 @@ int main( int argc, const char *argv[] ) {
             (*il[ 0 ])( rec, *aabb_csg );
             il[ 1 ]->setup_resource_pair_buffer( rec );
             (*il[ 1 ])( rec, *aabb_csg );
+            il[ 2 ]->setup_resource_pair_buffer( rec );
+            (*il[ 2 ])( rec, *aabb_csg );
           }
           rec.convert_image(
             aabb_gbuffer.get_image( 0 ),
@@ -1425,6 +1249,12 @@ int main( int argc, const char *argv[] ) {
               shadow,
               6u
             );
+            /*il[ 2 ]->setup_resource_pair_buffer( rec );
+            (*il[ 2 ])(
+              rec,
+              shadow,
+              6u
+            );*/
           }
           rec.convert_image(
             shadow_gbuffer.get_image( 0 ),
@@ -1482,16 +1312,6 @@ int main( int argc, const char *argv[] ) {
         );
        
         tone.get( rec, 0 );
-
-        if( frame_counter == 1 ) {
-          rec.dump_image(
-            res.allocator,
-            fur_view->get_factory(),
-            "fur.png",
-            0u
-          );
-        }
-
       }
       command_buffer->execute(
         gct::submit_info_t()

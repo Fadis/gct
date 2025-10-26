@@ -162,7 +162,7 @@ int main( int argc, const char *argv[] ) {
   const auto hair_gbuffer_format =
     gct::gbuffer_format::albedo_alpha;
 
-  const unsigned int hair_tex_size = 256u;
+  const unsigned int hair_tex_size = 512u;
   std::shared_ptr< gct::shader_graph::compiled > generate_hair;
   std::shared_ptr< gct::image_view_t > hair_view;
   {
@@ -216,7 +216,7 @@ int main( int argc, const char *argv[] ) {
           .add_input( "position" )
           .add_input( "start" )
           .add_input( "next" )
-          .add_output( "dest", "start", { 1.f, -1.f }, vk::Format::eR16G16B16A16Sfloat )
+          .add_output( "dest", "start", { 1.f, -1.f }, vk::Format::eR16G16Sfloat )
           .set_dim( "start", { 1.f, -1.f } )
           .set_node_name( "mix_hair" )
       )

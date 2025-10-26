@@ -77,8 +77,8 @@ void main()  {
   //mixed.far_total = vec4( 1, 0, 1, 1 );
   vec4 near_total = mixed.near_total;
   vec4 far_total = mixed.far_total;
-  float near_depth = mixed.near_depth;
-  float far_depth = mixed.far_depth;
+  float near_depth = min( af_state.depth, mixed.near_depth + af_state.visible_range );
+  float far_depth = max( af_state.depth, mixed.far_depth - af_state.visible_range );
 
   const float near_coc = min( max( ( af_state.lens_size * abs( near_depth - af_state.depth )/( near_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );
   const float far_coc = min( max( ( af_state.lens_size * abs( far_depth - af_state.depth )/( far_depth )*( af_state.focal_distance/( af_state.depth - af_state.focal_distance ) ) / af_state.sensor_size * image_size.x - 0.0 ), 0.0 ), 32.0 );

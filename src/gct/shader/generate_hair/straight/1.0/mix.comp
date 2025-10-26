@@ -45,7 +45,6 @@ void main()  {
   const ppll_iter nearest = ppll_nearest( iter );
   const float depth = ppll_get_depth( nearest );
 
-  //imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, alpha, 0.0, 1.0 ) );
-  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, depth, depth, alpha ) );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.dest ) ], screen_pos, vec4( depth, alpha, 0.0, 1.0 ) );
 }
 

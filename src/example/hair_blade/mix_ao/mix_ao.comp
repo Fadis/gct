@@ -109,7 +109,6 @@ void main()  {
     );
   }
   pre_dof_pixel mixed = pdp_mix( bg, fur );
-  //mixed.far_total = vec4( 1, 0, 1, 1 );
   vec4 near_total = mixed.near_total;
   vec4 far_total = mixed.far_total;
   float near_depth = min( af_state.depth, mixed.near_depth + af_state.visible_range );

@@ -12,7 +12,7 @@ float schlick_fresnel( float angle ) {
 }
 
 float schlick_fresnel( vec3 V, vec3 N ) {
-  return schlick_fresnel( dot( V, N ) );
+  return schlick_fresnel( max( dot( V, N ), 0.0 ) );
 }
 
 float schlick_fresnel( float angle, float refractive_index )
@@ -26,7 +26,7 @@ float schlick_fresnel( float angle, float refractive_index )
 }
 
 float schlick_fresnel( vec3 V, vec3 N, float refractive_index ) {
-  return schlick_fresnel( dot( V, N ), refractive_index );
+  return schlick_fresnel( max( dot( V, N ), 0.0 ), refractive_index );
 }
 
 float GGX_D( vec3 N, vec3 H, float roughness ) {
@@ -305,6 +305,13 @@ vec3 diffuse_kajiya_kay(
   );
 }
 
+float roughness_to_blinn_phong_shininess( float roughness ) {
+  //const float eps = 0.01;
+  //return 2.0 / ( eps + roughness * roughness ) - 2.0;
+  //return  2.0 / ( eps + roughness * roughness * roughness * roughness ) - 2.0;
+  return - 2.0 * ( -1.0 + roughness * roughness ) / ( 0.01 + roughness * roughness );
+}
+
 vec3 specular_kajiya_kay(
   vec3 L,
   vec3 V,
@@ -315,10 +322,12 @@ vec3 specular_kajiya_kay(
   vec3 light_energy,
   float masked
 ) {
-  const vec3 H = normalize( ( L + V ) * 0.5 );
-  const float v = max( dot( T, H ), 0.0 );
-  const float iv2 = ( 1.0 - v * v );
-  const float specular = iv2 * iv2;
+  const float cos_tl = dot( T, L );
+  const float cos_tv = dot( T, V );
+  const float sin_tl = sqrt( 1.0 - cos_tl * cos_tl );
+  const float sin_tv = sqrt( 1.0 - cos_tv * cos_tv );
+  const float shininess = roughness_to_blinn_phong_shininess( roughness );
+  const float specular = pow( max( cos_tl * cos_tv + sin_tl * sin_tv, 0.0 ), shininess );
   return 1.0/pi * mix(
     vec3( 0, 0, 0 ),
     mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
@@ -348,12 +357,6 @@ vec3 diffuse_stalling(
   );
 }
 
-float roughness_to_blinn_phong_shininess( float roughness ) {
-  const float eps = 0.01;
-  //return 2.0 / ( eps + roughness * roughness ) - 2.0;
-  return  2.0 / ( eps + roughness * roughness * roughness * roughness ) - 2.0;
-}
-
 vec3 specular_stalling(
   vec3 L,
   vec3 V,
@@ -364,11 +367,10 @@ vec3 specular_stalling(
   vec3 light_energy,
   float masked
 ) {
-  const float LT = max( dot( L, T ), 0.0 );
-  const float VT = max( dot( V, T ), 0.0 );
-  const float VR = max( sqrt( 1.0 - LT * LT ) * sqrt( 1.0 - VT * VT ) - LT * VT, 0.0 );
+  const float cos_lt = dot( L, T );
+  const float cos_vt = dot( V, T );
   const float shininess = roughness_to_blinn_phong_shininess( roughness );
-  const float specular = pow( VR, shininess );
+  const float specular = pow( max( sqrt( 1.0 - cos_lt * cos_lt ) * sqrt( 1.0 - cos_vt * cos_vt ) - cos_lt * cos_vt, 0.0 ), shininess );
   return 1.0/pi * mix(
     vec3( 0, 0, 0 ),
     mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
@@ -376,6 +378,26 @@ vec3 specular_stalling(
   );
 }
 
+vec3 specular_kajiya_kay_blinn_phong(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  const vec3 H = normalize( ( L + V ) * 0.5 );
+  const float v = max( dot( T, H ), 0.0 );
+  const float iv2 = ( 1.0 - v * v );
+  const float specular = iv2 * iv2;
+  return 1.0/pi * mix(
+    vec3( 0, 0, 0 ),
+    mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
+    masked
+  );
+}
 
 float gaussian_lobe( float alpha , float beta, float sin_theta_i, float sin_theta_r ) {
   return exp( -0.5 * pow( sin_theta_i + sin_theta_r - alpha, 2 ) / pow( beta, 2 ) ) * sqrt_two_pi_inv / beta;
@@ -403,16 +425,18 @@ vec3 specular_marschner_karis(
   const vec3 projected_L = normalize( project( L, T ) );
   const vec3 projected_V = normalize( project( V, T ) );
   const float cos_phi_d = dot( projected_L, projected_V );
-  const float cos_half_phi = cos( acos( cos_phi_d ) / 2.0 );
+  const vec3 projected_H = normalize( projected_L + projected_V );
+  const float cos_half_phi = dot( projected_H, projected_V );
   const float cos_theta_d = ( 1 + cos_theta_i * cos_theta_r + sin_theta_i * sin_theta_r ) * 0.5;
 
+  //float mr = gaussian_lobe( shift, roughness, sin_theta_i, sin_theta_r );
   float mr = gaussian_lobe( shift, roughness, sin_theta_i, sin_theta_r );
   float mtt = gaussian_lobe( -shift * 0.5, roughness * 0.5, sin_theta_i, sin_theta_r );
   float mtrt = gaussian_lobe( -3 * shift * 0.5, roughness * 2, sin_theta_i, sin_theta_r );
 
   float nr;
   {
-    const float fresnel = schlick_fresnel( dot( L, V ), refractive_index );
+    const float fresnel = schlick_fresnel( max( dot( L, V ), 0.0 ), refractive_index );
     nr = 0.25 * cos_half_phi * fresnel;
   }
 
@@ -462,8 +486,8 @@ vec3 diffuse_marschner_karis(
   const float cos_theta_i = sqrt( 1 - sin_theta_i * sin_theta_i );
   const vec3 projected_L = normalize( project( L, T ) );
   const vec3 projected_V = normalize( project( V, T ) );
-  const float cos_phi_d = dot( projected_L, projected_V );
-  const float cos_half_phi = cos( acos( cos_phi_d ) / 2.0 );
+  const vec3 projected_H = normalize( projected_L + projected_V );
+  const float cos_half_phi = dot( projected_H, projected_V );
 
   const float cos_l = dot( T, L );
   const float sin_l = clamp( sqrt( 1.0 - cos_l * cos_l ), 0.0, 1.0 );
@@ -476,7 +500,53 @@ vec3 diffuse_marschner_karis(
   );
 }
 
+vec3 specular_marschner_karis(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  return specular_marschner_karis(
+    L, V, T,
+    diffuse_color,
+    roughness,
+    metallicness,
+    light_energy,
+    masked,
+    -5.0f*pi/180.0,
+    1.55f,
+    30.0f*0.005,
+    10.0f*0.005,
+    20.0f*0.005
+  );
+}
 
+vec3 diffuse_marschner_karis(
+  vec3 L,
+  vec3 V,
+  vec3 T,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  return diffuse_marschner_karis(
+    L, V, T,
+    diffuse_color,
+    roughness,
+    metallicness,
+    light_energy,
+    masked,
+    1.0f,
+    0.4f,
+    1.0f
+  );
+}
 
 #endif
 

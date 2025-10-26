@@ -122,8 +122,8 @@ subdirs(
   dump_sp
   ppll
   shell_and_fin
-  shell_and_fin_shadow
   generate_hair
+  hair_blade
 )
 if( DXC_FOUND )
 subdirs(

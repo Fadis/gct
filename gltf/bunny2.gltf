@@ -30,9 +30,9 @@
 			"name":"face",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					1.0,
-					1.0,
-					1.0,
+					0.8,
+					0.3,
+					0.1,
 					1
 				],
 				"metallicFactor":0,

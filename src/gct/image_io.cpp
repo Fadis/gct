@@ -50,7 +50,6 @@ void image_io::operator()(
             )
           }
         );
-        std::cout << "graphics : " << dim.x << " " << dim.y << " " << dim.z << std::endl;
         (*get_props().get_graphic_executable())( rec, 0u, dim.x, dim.y, dim.z );
       }
     }

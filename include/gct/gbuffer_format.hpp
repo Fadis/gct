@@ -21,6 +21,8 @@ namespace gct {
   gbuffer_format operator|( gbuffer_format l, gbuffer_format r );
   gbuffer_format operator&( gbuffer_format l, gbuffer_format r );
   gbuffer_format operator^( gbuffer_format l, gbuffer_format r );
+  std::uint32_t get_kplus_layer_count( gbuffer_format );
+  std::uint32_t get_ppll_layer_count( gbuffer_format );
 }
 
 #endif
