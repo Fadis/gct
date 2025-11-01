@@ -267,119 +267,177 @@ int main( int argc, const char *argv[] ) {
       }
     );
   }
-  
-  gct::shader_graph::builder builder( sg->get_resource() );
  
-  const auto render = std::make_shared< gct::graphics >(
-    gct::graphics_create_info()
-      .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.task.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.mesh.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.frag.spv" )
-      .use_dynamic_rendering(
-        vk::Format::eR16G16B16A16Sfloat,
-        vk::Format::eD32Sfloat,
-        vk::Format::eUndefined
-      )
-      .set_scene_graph( sg->get_resource() )
-      .add_resource( { "global_uniforms", global_uniform } )
-  );
 
-  const auto fin = std::make_shared< gct::graphics >(
-    gct::graphics_create_info()
-      .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.task.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.mesh.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.frag.spv" )
-      .use_dynamic_rendering(
-        vk::Format::eR16G16B16A16Sfloat,
-        vk::Format::eD32Sfloat,
-        vk::Format::eUndefined
-      )
-      .disable_depth_write()
-      .use_color_blend( gct::common_color_blend_mode::rgb )
-      .set_scene_graph( sg->get_resource() )
-      .add_resource( { "global_uniforms", global_uniform } )
-  );
+  std::shared_ptr< gct::shader_graph::compiled > geometry;
+  gct::image_pool::image_descriptor shaded_desc;
+  {
+    gct::shader_graph::builder builder( sg->get_resource() );
   
-  const auto shell = std::make_shared< gct::graphics >(
-    gct::graphics_create_info()
-      .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.task.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.mesh.spv" )
-      .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.frag.spv" )
-      .use_dynamic_rendering(
-        vk::Format::eR16G16B16A16Sfloat,
-        vk::Format::eD32Sfloat,
-        vk::Format::eUndefined
+    const auto render = std::make_shared< gct::graphics >(
+      gct::graphics_create_info()
+        .set_swapchain_image_count( 1u )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.task.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.mesh.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.frag.spv" )
+        .use_dynamic_rendering(
+          vk::Format::eR16G16B16A16Sfloat,
+          vk::Format::eD32Sfloat,
+          vk::Format::eUndefined
+        )
+        .set_scene_graph( sg->get_resource() )
+        .add_resource( { "global_uniforms", global_uniform } )
+    );
+ 
+    const auto fin = std::make_shared< gct::graphics >(
+      gct::graphics_create_info()
+        .set_swapchain_image_count( 1u )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.task.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.mesh.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "fin" / "geometry.frag.spv" )
+        .use_dynamic_rendering(
+          vk::Format::eR16G16B16A16Sfloat,
+          vk::Format::eD32Sfloat,
+          vk::Format::eUndefined
+        )
+        .disable_depth_write()
+        .use_color_blend( gct::common_color_blend_mode::rgb )
+        .set_scene_graph( sg->get_resource() )
+        .add_resource( { "global_uniforms", global_uniform } )
+    );
+    
+    const auto shell = std::make_shared< gct::graphics >(
+      gct::graphics_create_info()
+        .set_swapchain_image_count( 1u )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.task.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.mesh.spv" )
+        .add_shader( gct::get_system_shader_path() / "forward_rendering" / "shell" / "geometry.frag.spv" )
+        .use_dynamic_rendering(
+          vk::Format::eR16G16B16A16Sfloat,
+          vk::Format::eD32Sfloat,
+          vk::Format::eUndefined
+        )
+        .disable_depth_write()
+        .use_color_blend( gct::common_color_blend_mode::rgb )
+        .set_scene_graph( sg->get_resource() )
+        .add_resource( { "global_uniforms", global_uniform } )
+    );
+ 
+    const auto lighting1_desc = builder.call(
+      builder.get_image_io_create_info(
+        render,
+        gct::image_io_plan()
+          .add_output( "output_color", res.width, res.height, vk::Format::eR16G16B16A16Sfloat )
+          .add_output( "depth", res.width, res.height, vk::Format::eD32Sfloat )
+          .set_dim( il[ 0 ]->get_shape() )
+          .set_node_name( "lighting" )
       )
-      .disable_depth_write()
-      .use_color_blend( gct::common_color_blend_mode::rgb )
-      .set_scene_graph( sg->get_resource() )
-      .add_resource( { "global_uniforms", global_uniform } )
-  );
+      .set_push_constant( "light", 0u )
+    )();
+ 
+    const auto lighting2_desc = builder.call(
+      builder.get_image_io_create_info(
+        render,
+        gct::image_io_plan()
+          .add_inout( "output_color" )
+          .add_inout( "depth" )
+          .set_dim( il[ 1 ]->get_shape() )
+          .set_node_name( "bunny" )
+      )
+      .set_push_constant( "light", 0u )
+    )(
+      lighting1_desc
+    );
+ 
+    const auto fin2_desc = builder.call(
+      builder.get_image_io_create_info(
+        fin,
+        gct::image_io_plan()
+          .add_inout( "output_color" )
+          .add_inout( "depth" )
+          .set_dim( il[ 1 ]->get_shape() )
+          .set_node_name( "fin" )
+      )
+      .set_push_constant( "light", 0u )
+      .set_push_constant( "shell_thickness", 0.1f )
+    )(
+      lighting2_desc
+    );
+ 
+    /*const auto shell2_desc = builder.call(
+      builder.get_image_io_create_info(
+        shell,
+        gct::image_io_plan()
+          .add_inout( "output_color" )
+          .add_inout( "depth" )
+          .set_dim( il[ 1 ]->get_shape() )
+          .set_node_name( "shell" )
+          .set_loop( 15u )
+      )
+      .set_push_constant( "light", 0u )
+      .set_push_constant( "shell_thickness", 0.1f )
+    )(
+      fin2_desc
+    );*/
+ 
+    builder.output( fin2_desc[ "output_color" ] );
+    geometry = std::make_shared< gct::shader_graph::compiled >( builder() );
+    shaded_desc = geometry->get_image_descriptor( fin2_desc[ "output_color" ] );
+    std::cout << builder.get_log() << std::endl;
+  }
+  auto shaded_view = sg->get_resource()->image->get( shaded_desc );
 
-  const auto lighting1_desc = builder.call(
-    builder.get_image_io_create_info(
-      render,
+  std::shared_ptr< gct::shader_graph::compiled > post_process;
+  std::shared_ptr< gct::image_view_t > merged_view;
+  std::shared_ptr< gct::image_view_t > bloom_view;
+  {
+    gct::shader_graph::builder builder( sg->get_resource() );
+
+    const auto apply_tone_desc = builder.call(
+      std::make_shared< gct::compute >(
+        gct::compute_create_info()
+          .set_allocator_set( res.allocator_set )
+          .set_shader( gct::get_system_shader_path() / "tone_mapping" / "1.0" / "apply.comp.spv" )
+          .set_scene_graph( sg->get_resource() )
+          .add_resource( { "global_uniforms", global_uniform } )
+          .add_resource( { "tone", tone_buffer->get_buffer() } )
+      ),
       gct::image_io_plan()
-        .add_output( "output_color", res.width, res.height, vk::Format::eR16G16B16A16Sfloat )
-        .add_output( "depth", res.width, res.height, vk::Format::eD32Sfloat )
-        .set_dim( il[ 0 ]->get_shape() )
-        .set_node_name( "lighting" )
-    )
-    .set_push_constant( "light", 0u )
-  )();
+        .add_input( "src" )
+        .add_output( "dest", "src", glm::vec2( 1.f, -1.f ) )
+        .add_output( "bloom", "src", glm::vec2( 1.f, -1.f ) )
+        .set_dim( "src", glm::vec2( 1.f, -1.f ) )
+        .set_node_name( "merge" )
+    )(
+      gct::shader_graph::vertex::combined_result_type()
+        .add( "src", shaded_desc )
+    );
+    builder.output( apply_tone_desc[ "dest" ] );
+    builder.output( apply_tone_desc[ "bloom" ] );
+    post_process = std::make_shared< gct::shader_graph::compiled >( builder() );
+    merged_view = post_process->get_view( apply_tone_desc[ "dest" ] );
+    bloom_view = post_process->get_view( apply_tone_desc[ "bloom" ] );
+    std::cout << builder.get_log() << std::endl;
+  }
+  
+  {
+    auto command_buffer = res.queue->get_command_pool()->allocate();
+    {
+      auto rec = command_buffer->begin();
+      rec.convert_image(
+        merged_view->get_factory(), vk::ImageLayout::eGeneral
+      );
+    }
+    command_buffer->execute_and_wait();
+  }
 
-  const auto lighting2_desc = builder.call(
-    builder.get_image_io_create_info(
-      render,
-      gct::image_io_plan()
-        .add_inout( "output_color" )
-        .add_inout( "depth" )
-        .set_dim( il[ 1 ]->get_shape() )
-        .set_node_name( "bunny" )
-    )
-    .set_push_constant( "light", 0u )
-  )(
-    lighting1_desc
+  const gct::tone_mapping tone(
+    gct::tone_mapping_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "tone_mapping" / "1.0" / "tone.comp.spv" )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ merged_view } )
+      .set_output( tone_buffer )
   );
-
-  const auto fin2_desc = builder.call(
-    builder.get_image_io_create_info(
-      fin,
-      gct::image_io_plan()
-        .add_inout( "output_color" )
-        .add_inout( "depth" )
-        .set_dim( il[ 1 ]->get_shape() )
-        .set_node_name( "fin" )
-    )
-    .set_push_constant( "light", 0u )
-    .set_push_constant( "shell_thickness", 0.1f )
-  )(
-    lighting2_desc
-  );
-
-  const auto shell2_desc = builder.call(
-    builder.get_image_io_create_info(
-      shell,
-      gct::image_io_plan()
-        .add_inout( "output_color" )
-        .add_inout( "depth" )
-        .set_dim( il[ 1 ]->get_shape() )
-        .set_node_name( "shell" )
-        .set_loop( 15u )
-    )
-    .set_push_constant( "light", 0u )
-    .set_push_constant( "shell_thickness", 0.1f )
-  )(
-    fin2_desc
-  );
-
-  builder.output( shell2_desc[ "output_color" ] );
-  const auto compiled = builder();
-  std::cout << builder.get_log() << std::endl;
-  const auto merged_view = compiled.get_view( shell2_desc[ "output_color" ] );
 
   auto generate_meshlet_info = gct::compute(
     gct::compute_create_info()
@@ -439,13 +497,14 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
-
+  
   const auto gamma = gct::image_filter(
     gct::image_filter_create_info()
       .set_allocator_set( res.allocator_set )
-      .set_shader( CMAKE_CURRENT_BINARY_DIR "/gamma/gamma.comp.spv" )
+      .set_shader( gct::get_system_shader_path() / "gamma" / "1.0" / "gamma.comp.spv" )
       .set_input( std::vector< std::shared_ptr< gct::image_view_t > >( res.swapchain_images.size(), merged_view ) )
       .set_output( res.swapchain_image_views )
+      .add_resource( { "bloom_image", bloom_view, vk::ImageLayout::eGeneral } )
   );
 
   const auto scene_aabb = sg->get_root_node()->get_initial_world_aabb();
@@ -499,6 +558,7 @@ int main( int argc, const char *argv[] ) {
     {
       {
         auto rec = command_buffer->begin();
+        tone.set( rec, 0 );
         if( res.force_geometry || walk.camera_moved() || walk.light_moved() ) {
           const auto global_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
@@ -519,13 +579,23 @@ int main( int argc, const char *argv[] ) {
           (*sg)( rec );
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
+        
+          (*geometry)( rec );
+       
+          rec.barrier(
+            gct::syncable()
+              .add( shaded_view )
+          );
         }
 
-        compiled( rec );
+        (*post_process)( rec );
         
+        tone.get( rec, 0 );
+
         rec.compute_barrier(
           gct::syncable()
             .add( merged_view )
+            .add( bloom_view )
         );
       }
       command_buffer->execute(

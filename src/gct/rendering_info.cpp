@@ -38,6 +38,19 @@
 #include <gct/image.hpp>
 
 namespace gct {
+  rendering_info_t &rendering_info_t::make_inout() {
+    for( auto &c: color_attachment ) {
+      c.make_inout();
+    }
+    if( depth_attachment ) {
+      depth_attachment->make_inout();
+    }
+    if( stencil_attachment ) {
+      stencil_attachment->make_inout();
+    }
+    chained = false;
+    return *this;
+  }
   void to_json( nlohmann::json &root, const rendering_info_t &v ) {
     root = nlohmann::json::object();
     root[ "basic" ] = v.get_basic();

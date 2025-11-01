@@ -206,7 +206,7 @@ int main( int argc, const char *argv[] ) {
 
   gct::cubemap_images2 cubemap_images( shadow_gbuffer.get_image_views() );
  
-  auto linear_repeat_sampler_desc= sg->get_resource()->sampler->allocate(
+  auto shell_sampler_desc= sg->get_resource()->sampler->allocate(
     gct::sampler_create_info_t()
       .set_basic(
         vk::SamplerCreateInfo()
@@ -215,6 +215,26 @@ int main( int argc, const char *argv[] ) {
           .setMipmapMode( vk::SamplerMipmapMode::eLinear )
           .setAddressModeU( vk::SamplerAddressMode::eRepeat )
           .setAddressModeV( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeW( vk::SamplerAddressMode::eRepeat )
+          .setAnisotropyEnable( false )
+          .setCompareEnable( false )
+          .setMipLodBias( 0.f )
+          .setMinLod( 0.f )
+          .setMaxLod( VK_LOD_CLAMP_NONE )
+          .setBorderColor( vk::BorderColor::eFloatTransparentBlack )
+          .setUnnormalizedCoordinates( false )
+      )
+  );
+  
+  auto fin_sampler_desc= sg->get_resource()->sampler->allocate(
+    gct::sampler_create_info_t()
+      .set_basic(
+        vk::SamplerCreateInfo()
+          .setMagFilter( vk::Filter::eLinear )
+          .setMinFilter( vk::Filter::eLinear )
+          .setMipmapMode( vk::SamplerMipmapMode::eLinear )
+          .setAddressModeU( vk::SamplerAddressMode::eRepeat )
+          .setAddressModeV( vk::SamplerAddressMode::eClampToEdge )
           .setAddressModeW( vk::SamplerAddressMode::eRepeat )
           .setAnisotropyEnable( false )
           .setCompareEnable( false )
@@ -303,7 +323,7 @@ int main( int argc, const char *argv[] ) {
   );
   const auto fur_shell = sg->get_resource()->image->get( fur_shell_desc.linear );
   const auto fur_shell_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_shell_desc.linear
+    shell_sampler_desc, fur_shell_desc.linear
   );
 
   const auto fur_fin_desc = sg->get_resource()->image->allocate(
@@ -327,7 +347,7 @@ int main( int argc, const char *argv[] ) {
   );
   const auto fur_fin = sg->get_resource()->image->get( fur_fin_desc.linear );
   const auto fur_fin_texture_desc = sg->get_resource()->texture->allocate(
-    linear_repeat_sampler_desc, fur_fin_desc.linear
+    fin_sampler_desc, fur_fin_desc.linear
   );
 
   {
@@ -636,22 +656,21 @@ int main( int argc, const char *argv[] ) {
   {
     gct::shader_graph::builder builder( sg->get_resource() );
         
-    auto standard = std::make_shared< gct::graphics >(
-      gct::graphics_create_info()
-        .set_swapchain_image_count( 1u )
-        .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" )
-        .use_dynamic_rendering(
-          vk::Format::eR16G16B16A16Sfloat,
-          vk::Format::eD32Sfloat
-        )
-        .enable_depth_test()
-        .set_scene_graph( sg->get_resource() )
-        .add_resource( { "global_uniforms", global_uniform } )
-    );
     
     const auto bg0_desc = builder.call(
       builder.get_image_io_create_info(
-        standard,
+        std::make_shared< gct::graphics >(
+          gct::graphics_create_info()
+            .set_swapchain_image_count( 1u )
+            .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" )
+            .use_dynamic_rendering(
+              vk::Format::eR16G16B16A16Sfloat,
+              vk::Format::eD32Sfloat
+            )
+            .enable_depth_test()
+            .set_scene_graph( sg->get_resource() )
+            .add_resource( { "global_uniforms", global_uniform } )
+        ),
         gct::image_io_plan()
           .add_output(
             "gbuffer", res.width, res.height, 1u,
@@ -668,7 +687,18 @@ int main( int argc, const char *argv[] ) {
     )();
     const auto bg1_desc = builder.call(
       builder.get_image_io_create_info(
-        standard,
+        std::make_shared< gct::graphics >(
+          gct::graphics_create_info()
+            .set_swapchain_image_count( 1u )
+            .add_shader( CMAKE_CURRENT_BINARY_DIR "/fur" )
+            .use_dynamic_rendering(
+              vk::Format::eR16G16B16A16Sfloat,
+              vk::Format::eD32Sfloat
+            )
+            .enable_depth_test()
+            .set_scene_graph( sg->get_resource() )
+            .add_resource( { "global_uniforms", global_uniform } )
+        ),
         gct::image_io_plan()
           .add_inout( "gbuffer" )
           .add_inout( "position" )
@@ -871,7 +901,7 @@ int main( int argc, const char *argv[] ) {
         std::make_shared< gct::compute >(
           gct::compute_create_info()
             .set_allocator_set( res.allocator_set )
-            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "kajiya_kay" / "1.0" / "lighting.comp.spv" )
+            .set_shader( gct::get_system_shader_path() / "lighting" / "ppll" / "marschner_karis" / "1.0" / "lighting.comp.spv" )
             .set_scene_graph( sg->get_resource() )
             .add_resource( { "global_uniforms", global_uniform } )
         ),

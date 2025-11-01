@@ -229,7 +229,6 @@ void compiled_aabb_scene_graph::operator()( command_buffer_recorder_t &rec, std:
   if( pipeline->get_props().has_reflection( vk::ShaderStageFlagBits::eFragment ) ) {
     const auto pcmp = pipeline->get_props().get_reflection( vk::ShaderStageFlagBits::eFragment ).get_push_constant_member_pointer( "push_constants" );
     std::vector< std::uint8_t > push_constant( pcmp.get_aligned_size(), 0u );
-    std::cout << "offset " << instance_offset << " " << instance_count << std::endl;
     if( pcmp.has( "offset" ) ) {
       push_constant.data() ->* pcmp[ "offset" ] = instance_offset;
     }

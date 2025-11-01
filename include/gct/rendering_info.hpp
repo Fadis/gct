@@ -85,6 +85,7 @@ namespace gct {
       basic.setRenderArea( area );
       return *this;
     }
+    rendering_info_t &make_inout();
   private:
     std::shared_ptr< rendering_attachment_info_t > depth_attachment;
     std::shared_ptr< rendering_attachment_info_t > stencil_attachment;

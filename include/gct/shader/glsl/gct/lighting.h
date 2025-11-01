@@ -285,6 +285,56 @@ vec3 diffuse_with_mask(
   return linear;
 }
 
+float diffuse_eon_E_FON_approx( float mu, float r ) {
+  const float constant1_FON = 0.5f - 2.0f / ( 3.0f * pi );
+  const float mucomp = 1.0f - mu;
+  const float mucomp2 =mucomp * mucomp;
+  const mat2 Gcoeffs = mat2(
+    0.0571085289f, -0.332181442f,
+    0.491881867f, 0.0714429953f
+  );
+  const float GoverPi = dot( Gcoeffs * vec2( mucomp, mucomp2 ), vec2( 1.0f, mucomp2 ) );
+  return ( 1.0f + r * GoverPi ) / ( 1.0f + constant1_FON * r );
+}
+
+vec3 diffuse_eon(
+  vec3 L,
+  vec3 V,
+  vec3 N,
+  vec3 diffuse_color,
+  float roughness,
+  float metallicness,
+  vec3 light_energy,
+  float masked
+) {
+  const float constant1_FON = 0.5f - 2.0f / ( 3.0f * pi );
+  const float constant2_FON = 2.0f / 3.0f - 28.0f / ( 15.0f * pi );
+  const float mu_i = dot( L, N );
+  if( mu_i <= 0.0 ) return vec3( 0, 0, 0 );
+  const float mu_o = dot( V, N );
+  if( mu_o <= 0.0 ) return vec3( 0, 0, 0 );
+  const float s = dot( L, V ) -  mu_i * mu_o;
+  const float sovertF = s > 0.0f ? s / max( mu_i, mu_o ) : s;
+  const float AF = 1.0f / ( 1.0f + constant1_FON * roughness );
+  const vec3 f_ss = ( diffuse_color / pi ) * AF * ( 1.0f + roughness * sovertF );
+  const float EFo = diffuse_eon_E_FON_approx( mu_o, roughness );
+  const float EFi = diffuse_eon_E_FON_approx( mu_o, roughness );
+  const float avgEF = AF * ( 1.0f + constant2_FON * roughness );
+  const vec3 rho_ms = ( diffuse_color * diffuse_color ) * avgEF / ( vec3( 1.0f ) - diffuse_color * ( 1.0f - avgEF ) );
+  const float eps = 1.0e-7f;
+  const vec3 f_ms =
+    ( rho_ms / pi ) *
+    max( eps, 1.0f - EFo ) *
+    max( eps, 1.0f - EFi ) /
+    max( eps, 1.0f - avgEF );
+  const vec3 diffuse = f_ss + f_ms;
+  return mix(
+    vec3( 0, 0, 0 ),
+    max( dot( L, N ), 0 ) * ( 1 - metallicness ) * diffuse * light_energy,
+    masked
+  );
+}
+
 vec3 diffuse_kajiya_kay(
   vec3 L,
   vec3 V,
@@ -389,6 +439,15 @@ vec3 specular_kajiya_kay_blinn_phong(
   float masked
 ) {
   const vec3 H = normalize( ( L + V ) * 0.5 );
+  const float u = max( dot( H, T ), 0.0 );
+  const float iu2 = ( 1.0 - u * u );
+  const float specular = iu2 * iu2;
+  return 1.0/pi * mix(
+    vec3( 0, 0, 0 ),
+    mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
+    masked
+  );
+  /*const vec3 H = normalize( ( L + V ) * 0.5 );
   const float v = max( dot( T, H ), 0.0 );
   const float iv2 = ( 1.0 - v * v );
   const float specular = iv2 * iv2;
@@ -396,7 +455,7 @@ vec3 specular_kajiya_kay_blinn_phong(
     vec3( 0, 0, 0 ),
     mix( vec3( 1, 1, 1 ), diffuse_color, metallicness ) * specular * light_energy,
     masked
-  );
+  );*/
 }
 
 float gaussian_lobe( float alpha , float beta, float sin_theta_i, float sin_theta_r ) {
@@ -520,8 +579,8 @@ vec3 specular_marschner_karis(
     -5.0f*pi/180.0,
     1.55f,
     30.0f*0.005,
-    10.0f*0.005,
-    20.0f*0.005
+    10.0f*1.0,
+    20.0f*1.0
   );
 }
 
@@ -542,9 +601,9 @@ vec3 diffuse_marschner_karis(
     metallicness,
     light_energy,
     masked,
-    1.0f,
-    0.4f,
-    1.0f
+    1.0f*1.0,
+    0.4f*1.0,
+    1.0f*0.5
   );
 }
 

@@ -124,6 +124,15 @@ subdirs(
   shell_and_fin
   generate_hair
   hair_blade
+  shell_forward0
+  mark_fin
+  mark_shell
+  mark_shell_fur
+  kajiya_kay
+  stalling
+  kajiya_kay_blinn_phong
+  marschner_karis
+  screen_space_fur0
 )
 if( DXC_FOUND )
 subdirs(

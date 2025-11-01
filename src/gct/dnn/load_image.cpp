@@ -40,6 +40,9 @@ namespace gct::dnn {
       const auto order = channel_order.find( spec.channelnames[ c ] );
       if( order != channel_order.end() ) {
         file->read_image(
+#if OIIO_VERSION_MAJOR >= 2 
+          0, 0,
+#endif
           c,
           c + 1u,
           type,
