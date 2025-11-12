@@ -22,6 +22,9 @@ struct numeric_type_match {
   [[nodiscard]] bool operator()( const numeric_type_t& ) const {
     return false;
   };
+  [[nodiscard]] bool convertible( const numeric_type_t& ) const {
+    return false;
+  };
 };
 template< typename T >
 struct numeric_type_match< T, std::enable_if_t< std::is_same_v< std::remove_cvref_t< T >, bool > > > {
@@ -31,6 +34,15 @@ struct numeric_type_match< T, std::enable_if_t< std::is_same_v< std::remove_cvre
       v.composite == numeric_composite_type_t::scalar &&
       sizeof( std::remove_cvref_t< T > ) * 8u == v.depth;
   }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return
+      (
+        v.component == numeric_component_type_t::bool_ ||
+        v.component == numeric_component_type_t::int_ ||
+        v.component == numeric_component_type_t::float_
+      ) &&
+      v.composite == numeric_composite_type_t::scalar;
+  }
 };
 template< typename T >
 struct numeric_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_cvref_t< T > > && !std::is_same_v< std::remove_cvref_t< T >, bool > > > {
@@ -39,7 +51,17 @@ struct numeric_type_match< T, std::enable_if_t< std::is_integral_v< std::remove_
       v.component == numeric_component_type_t::int_ &&
       v.composite == numeric_composite_type_t::scalar &&
       v.sign == std::is_signed_v< std::remove_cvref_t< T > > &&
+      v.composite == numeric_composite_type_t::scalar &&
       sizeof( std::remove_cvref_t< T > ) * 8u == v.depth;
+  }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return
+      (
+        v.component == numeric_component_type_t::bool_ ||
+        v.component == numeric_component_type_t::int_ ||
+        v.component == numeric_component_type_t::float_
+      ) &&
+      v.composite == numeric_composite_type_t::scalar;
   }
 };
 
@@ -52,6 +74,11 @@ struct numeric_type_match< T, std::enable_if_t< std::is_enum_v< std::remove_cvre
       v.sign == std::is_signed_v< std::remove_cvref_t< T > > &&
       sizeof( std::remove_cvref_t< T > ) * 8u == v.depth;
   }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return
+      v.component == numeric_component_type_t::int_ &&
+      v.composite == numeric_composite_type_t::scalar;
+  }
 };
 
 template< typename T >
@@ -62,11 +89,25 @@ struct numeric_type_match< T, std::enable_if_t< std::is_floating_point_v< std::r
       v.composite == numeric_composite_type_t::scalar &&
       sizeof( std::remove_cvref_t< T > ) * 8u == v.depth;
   }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return
+      (
+        v.component == numeric_component_type_t::bool_ ||
+        v.component == numeric_component_type_t::int_ ||
+        v.component == numeric_component_type_t::float_
+      ) &&
+      v.composite == numeric_composite_type_t::scalar;
+  }
 };
 
 template< typename T >
 struct numeric_type_match< T, std::enable_if_t< std::is_void_v< std::remove_cvref_t< T > > > > {
   [[nodiscard]] bool operator()( const numeric_type_t &v ) const {
+    return
+      v.component == numeric_component_type_t::void_ &&
+      v.composite == numeric_composite_type_t::scalar;
+  }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
     return
       v.component == numeric_component_type_t::void_ &&
       v.composite == numeric_composite_type_t::scalar;
@@ -153,6 +194,9 @@ struct numeric_type_match< T, std::enable_if_t< detail::is_glm_vec_v< std::remov
     if( detail::glm_vec_length_v< std::remove_cvref_t< T > > != v.rows ) return false;
     return true;
   }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return operator()( v );
+  }
 };
 
 template< typename T >
@@ -177,6 +221,9 @@ struct numeric_type_match< T, std::enable_if_t< detail::is_glm_mat_v< std::remov
     if( detail::glm_mat_column_length_v< std::remove_cvref_t< T > > != v.cols ) return false;
     if( detail::glm_mat_row_length_v< std::remove_cvref_t< T > > != v.rows ) return false;
     return true;
+  }
+  [[nodiscard]] bool convertible( const numeric_type_t &v ) const {
+    return operator()( v );
   }
 };
 

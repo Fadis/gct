@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <nlohmann/json.hpp>
 #include <gct/spirv_reflect.h>
 #include <gct/alignment.hpp>
@@ -7,10 +6,11 @@
 
 namespace gct {
   spv_member_pointer::spv_member_pointer(
+    const std::shared_ptr< SpvReflectShaderModule > &r,
     std::size_t b,
     const SpvReflectTypeDescription &type,
     memory_layout layout
-  ) : begin_( b ), impl( new spv_member_pointer_impl() ) {
+  ) : reflect( r ), begin_( b ), impl( new spv_member_pointer_impl() ) {
     aligned_size = alignment::get_aligned_size( type, layout );
     if( alignment::is_array( type ) ) {
       if( type.op == SpvOpTypeRuntimeArray ) {
@@ -29,6 +29,7 @@ namespace gct {
       std::size_t cur = begin_;
       for( std::uint32_t i = 0u; i != type.member_count; ++i ) {
         auto c = spv_member_pointer(
+          reflect,
           cur,
           type.members[ i ],
           layout

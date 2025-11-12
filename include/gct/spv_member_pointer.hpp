@@ -2,7 +2,6 @@
 #define GCT_SPV_MEMBER_POINTER_HPP
 #include <cstdint>
 #include <optional>
-#include <variant>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -23,8 +22,10 @@
 #include <gct/alignment.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/numeric_type_match.hpp>
+#include <gct/numeric_type_convert.hpp>
 #include <gct/deep_copy.hpp>
 
+struct SpvReflectShaderModule;
 struct SpvReflectTypeDescription;
 namespace gct {
 class spv_member_pointer_impl;
@@ -36,6 +37,7 @@ public:
   using reference = spv_member_pointer;
   using iterator_category = std::forward_iterator_tag;
   spv_member_pointer(
+    const std::shared_ptr< SpvReflectShaderModule >&,
     std::size_t,
     const SpvReflectTypeDescription&,
     memory_layout layout
@@ -64,6 +66,7 @@ public:
   [[nodiscard]] bool has( const std::string &name ) const;
   [[nodiscard]] std::size_t get_member_count() const;
 private:
+  std::shared_ptr< SpvReflectShaderModule > reflect;
   std::size_t begin_;
   const SpvReflectTypeDescription *type;
   std::size_t aligned_size = 0u;
@@ -89,23 +92,13 @@ public:
   template< typename U >
   spv_reference &operator=( U &&v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeric_type_match< U >()( mp.get_numeric() ) ) {
-      *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = std::move( v );
-    }
-    else {
-      throw exception::invalid_argument( "spv_reference::operator= : Incompatible value.", __FILE__, __LINE__ );
-    }
+    numeric_type_convert< U >()( mp.get_numeric(), cur, v );
     return *this;
   }
   template< typename U >
   spv_reference &operator=( const U &v ) {
     const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
-    if( numeric_type_match< std::remove_cvref_t< U > >()( mp.get_numeric() ) ) {
-      *reinterpret_cast< std::remove_cvref_t< U >* >( cur ) = v;
-    }
-    else {
-      throw exception::invalid_argument( "spv_reference::operator= : Incompatible value.", __FILE__, __LINE__ );
-    }
+    numeric_type_convert< U >()( mp.get_numeric(), cur, v );
     return *this;
   }
   template< typename U >

@@ -164,8 +164,8 @@ int main( int argc, const char *argv[] ) {
       .set_allocator( res.allocator )
       .set_descriptor_pool( res.descriptor_pool )
       .set_pipeline_cache( res.pipeline_cache )
+      .add_master_shader( gct::get_system_shader_path() / "scene_graph" / "dummy" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/shadow" )
-      .add_master_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/aabb" )
       .add_master_shader( CMAKE_CURRENT_BINARY_DIR "/depth" )
       .set_shader( CMAKE_CURRENT_BINARY_DIR )
@@ -469,7 +469,7 @@ int main( int argc, const char *argv[] ) {
   }
   const auto global_descriptor_set_layout = res.device->get_descriptor_set_layout(
     {
-      gct::get_system_shader_path() / "generate_k+buffer" / "standard",
+      gct::get_system_shader_path() / "scene_graph" / "dummy",
       CMAKE_CURRENT_BINARY_DIR "/shadow",
       CMAKE_CURRENT_BINARY_DIR "/aabb",
       CMAKE_CURRENT_BINARY_DIR "/depth"

@@ -1,0 +1,112 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// Subgroup演算拡張を使う ballot系の演算も使う
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+} push_constants;
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// タスクペイロード
+struct task_data {
+  // 見えると判断されたメッシュレットのID
+  // 最大32個だがメッシュレット32個毎にローカルワークグループを分けてあるので問題ない
+  uint meshlet_index[ 32 ];
+  // ローカル座標系からワールド座標系への変換行列
+  mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
+  mat4 l2s;
+  // どのノードの下のどのメッシュを描くかを指定するID
+  uint resource_pair_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  // 描画対象のIDの配列から1要素取り出す
+  // タスクシェーダーのn番目のローカルワークグループはn番目の要素を取り出す
+  const resource_pair_type id = resource_pair[ push_constants.offset + gl_GlobalInvocationID.y ];
+  // メッシュが属すノードの情報を得る
+  const instance_resource_index_type inst = instance_resource_index[ id.inst ];
+  
+  // ローカル座標系からワールド座標系への変換行列 
+  const mat4 l2w = matrix_pool[ inst.world_matrix ];
+  // ワールド座標系からスクリーン座標系への変換行列
+  const mat4 w2s =
+    matrix_pool[ global_uniforms.projection_matrix ] *
+    matrix_pool[ global_uniforms.camera_matrix ];
+  // ローカル座標系からスクリーン座標系への変換行列
+  const mat4 l2s =
+    w2s *
+    l2w;
+  // 変換行列をタスクペイロードに書く
+  td.l2w = l2w;
+  td.l2s = l2s;
+
+  // オクルージョンカリングの結果(メッシュが見える位置にあるかどうか)を得る
+  const uint visibility = 1u;
+  
+  uint visible_invocation_count = 0u;
+  // メッシュが見える位置にある場合
+  if( visibility != 0u ) {
+    // メッシュの情報を取得する
+    const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+    const mesh_type mesh = mesh_pool[ prim.mesh ];
+    
+    // メッシュの頂点数を96で割ってメッシュレットの数を求める
+    const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
+    
+    // このスレッドが処理するメッシュレットのIDを求める
+    const uint task_offset = id.offset;
+    const uint meshlet_id = gl_LocalInvocationID.x + 32u * task_offset;
+ 
+    {
+      // メッシュレットIDがメッシュレットの総数を超えていないか
+      const bool has_meshlet = ( meshlet_id < invocation_count );
+      // 視錐台カリングの結果と背面カリングの結果の両方で見えると判断された場合見える事にする
+      const bool visible = has_meshlet;
+      // 各スレッドがメッシュレットが見えると判断したかどうかを集める    
+      const uvec4 visible_bits = subgroupBallot( visible );
+      // このスレッドよりスレッドIDが小さいスレッドの中でメッシュレットが見えると判断したスレッドの数
+      const uint offset = subgroupBallotExclusiveBitCount( visible_bits );
+      // ローカルワークグループの中でメッシュレットが見えると判断したスレッドの数
+      const uint total = subgroupBallotBitCount( visible_bits );
+      // メッシュレットが見える可能性があったら
+      if( visible ) {
+        // タスクペイロードにメッシュレットのIDを記録
+        td.meshlet_index[ offset ] = meshlet_id;
+      }
+      // 見えると判断されたメッシュレットの数を実行しなければならないメッシュシェーダーのローカルワークグループの数にする
+      visible_invocation_count = total;
+    }
+    // 描画対象のIDをタスクペイロードに書く
+    td.resource_pair_id = gl_GlobalInvocationID.y;
+  }
+  // 見える可能性があるメッシュレットの数だけメッシュシェーダーを実行する
+  EmitMeshTasksEXT( visible_invocation_count, 1, 1 );
+}
+
