@@ -90,7 +90,7 @@ void main() {
       // メッシュレットの情報(法錐と頂点座標の平均)を得る
       const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + ( has_meshlet ? meshlet_id : 0u ) ];
 
-      // メッシュレットの頂点座標の平均
+      /*// メッシュレットの頂点座標の平均
       const vec4 bv0 = vec4( meshlet.center.xyz, 1.0 );
       // メッシュレットの頂点座標の平均を中心とし、メッシュレットの頂点を全て内包する球の表面に位置する点
       const vec4 bv1 = bv0 + vec4( meshlet.center.w, 0, 0, 0 );
@@ -121,7 +121,8 @@ void main() {
         ( ( sbv0.z < 0.0 ) ? ( sbv0.z + radius >= -1.0 ) : ( sbv0.z - radius <= 1.0 ) );
 
       // 視錐台カリングの結果と背面カリングの結果の両方で見えると判断された場合見える事にする
-      const bool visible = ( has_meshlet && inside_of_frustum && ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) ) );
+      const bool visible = ( has_meshlet && inside_of_frustum && ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) ) );*/
+      const bool visible = has_meshlet;
       // 各スレッドがメッシュレットが見えると判断したかどうかを集める    
       const uvec4 visible_bits = subgroupBallot( visible );
       // このスレッドよりスレッドIDが小さいスレッドの中でメッシュレットが見えると判断したスレッドの数

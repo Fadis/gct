@@ -138,6 +138,7 @@ subdirs(
   screen_space_fur1
   screen_space_fur2
   generate_fur_shell_texture
+  rigid0
 )
 if( DXC_FOUND )
 subdirs(

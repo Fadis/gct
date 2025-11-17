@@ -11,7 +11,8 @@ struct instance_resource_index_type {
   float coverage;
   uint prim;
   uint lowest_lod;
-  uint reserved[ 3 ];
+  uint rigid;
+  uint reserved[ 2 ];
 };
 
 #endif

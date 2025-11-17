@@ -47,10 +47,10 @@ struct primitive_descriptor {
   LIBGCT_SETTER( fluid_constraint )
   LIBGCT_SETTER( vertex_to_primitive )
   LIBGCT_SETTER( lambda )
-  LIBGCT_SETTER( rigid )
   LIBGCT_SETTER( rigid_constraint )
   LIBGCT_SETTER( adjacency )
   LIBGCT_SETTER( same_position )
+  LIBGCT_SETTER( inversed_momentum_inertia_tensor )
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
   texture_pool::texture_descriptor normal_texture;
@@ -67,10 +67,10 @@ struct primitive_descriptor {
   buffer_pool::buffer_descriptor fluid_constraint;
   buffer_pool::buffer_descriptor vertex_to_primitive;
   buffer_pool::buffer_descriptor lambda;
-  buffer_pool::buffer_descriptor rigid;
   buffer_pool::buffer_descriptor rigid_constraint;
   buffer_pool::buffer_descriptor adjacency;
   buffer_pool::buffer_descriptor same_position;
+  matrix_pool::matrix_descriptor inversed_momentum_inertia_tensor;
 };
 
 void to_json( nlohmann::json &dest, const primitive_descriptor &src );
@@ -100,6 +100,8 @@ struct primitive {
   LIBGCT_SETTER( occlusion_strength )
   LIBGCT_SETTER( pipeline_create_info )
   LIBGCT_SETTER( mesh )
+  LIBGCT_SETTER( local_center_of_mass )
+  LIBGCT_SETTER( inversed_momentum_inertia_tensor )
   LIBGCT_SETTER( descriptor )
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
@@ -125,6 +127,8 @@ struct primitive {
   float occlusion_strength = 0.f;
   graphics_pipeline_create_info_t pipeline_create_info;
   mesh_t mesh;
+  glm::vec3 local_center_of_mass = glm::vec3( 0.f, 0.f, 0.f );
+  glm::mat4 inversed_momentum_inertia_tensor;
   primitive_descriptor descriptor;
 };
 

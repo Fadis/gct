@@ -92,7 +92,7 @@ void main() {
   // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
   // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
   const bool front = dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0;
-  const bool visible = in_range && ( prim.cull == 0 || front );
+  const bool visible = in_range;// && ( prim.cull == 0 || front );
  
   // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );

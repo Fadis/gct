@@ -4,6 +4,8 @@
 #include <vulkan2json/VertexInputAttributeDescription.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/scene_graph_instance.hpp>
+#include <gct/scene_graph_rigid.hpp>
+#include <gct/matrix.hpp>
 
 namespace gct::scene_graph {
 
@@ -27,12 +29,19 @@ void to_json( nlohmann::json &dest, const instance_descriptor &src ) {
   if( src.meshlet_index ) {
     dest[ "meshlet_index" ] = *src.meshlet_index;
   }
+  if( src.rigid ) {
+    dest[ "rigid" ] = *src.rigid;
+  }
 };
 
 void to_json( nlohmann::json &dest, const instance &src ) {
   dest = nlohmann::json::object();
+  dest[ "initial_world_matrix" ] = src.initial_world_matrix;
   dest[ "descriptor" ] = src.descriptor;
   dest[ "is_highest_lod" ] = src.is_highest_lod;
+  if( src.rigid_state ) {
+    dest[ "rigid_state" ] = *src.rigid_state;
+  }
 }
 
 }

@@ -42,11 +42,11 @@ void main() {
   if( !in_range ) return;
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
-
+  
   const vec3 center_of_mass =
-    ( mesh.rigid == 0xFFFFFFFF ) ?
+    ( inst.rigid == 0xFFFFFFFF ) ?
     vec3( 0, 0, 0 ) :
-    ( l2w * vec4( rigid_pool[ mesh.rigid ].center_of_mass.xyz, 1.0 ) ).xyz;
+    rigid_pool[ inst.rigid ].local_center_of_mass.xyz;
 
   const uint accessor_id = mesh.accessor;
 
@@ -64,7 +64,7 @@ void main() {
     lp0.xyz - center_of_mass;
   particle_pool[ mesh.particle_offset + vertex_id ].normal = wn0;
   particle_pool[ mesh.particle_offset + vertex_id ].w = 1.0/0.01;
-  particle_pool[ mesh.particle_offset + vertex_id ].rigid = mesh.rigid;
-  particle_pool[ mesh.particle_offset + vertex_id ].phase = prim.mesh;
+  particle_pool[ mesh.particle_offset + vertex_id ].rigid = inst.rigid;
+  particle_pool[ mesh.particle_offset + vertex_id ].phase = id.inst;
 }
 

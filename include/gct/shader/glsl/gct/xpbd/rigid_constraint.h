@@ -33,8 +33,8 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
     uvec2( 0u, 0u ) :
     rigid_constraint_get( iter + constraint_index );
   const vec3 p0 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ particle_offset + dc.x ].position;
-  const vec3 center_of_mass0 = is_end ? vec3( 0, 0, 0 ) : rigid_pool[ rigid_id ].center_of_mass;
-  const vec4 q0 = is_end ? vec4( 0, 0, 0, 0 ) : rigid_pool[ rigid_id ].angular_orientation;
+  const vec3 center_of_mass0 = is_end ? vec3( 0, 0, 0 ) : matrix_pool[ rigid_pool[ rigid_id ].trs ][ 0 ].xyz;
+  const vec4 q0 = is_end ? vec4( 0, 0, 0, 0 ) : matrix_pool[ rigid_pool[ rigid_id ].trs ][ 1 ];
   const vec3 r0 = p0 - center_of_mass0;
   const vec3 n0 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ particle_offset + dc.x ].normal;
   const float inv_m0 = is_end ? 0.0 : particle_pool[ particle_offset + dc.x ].w;
@@ -42,7 +42,7 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
 
   const uint rigid1 = is_end ? 0xFFFFFFFF : particle_pool[ dc.y ].rigid;
   const vec3 p1 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.y ].position;
-  const vec3 center_of_mass1 = ( rigid1 == 0xFFFFFFFF ) ? p0 : rigid_pool[ rigid1 ].center_of_mass;
+  const vec3 center_of_mass1 = ( rigid1 == 0xFFFFFFFF ) ? p0 : matrix_pool[ rigid_pool[ rigid1 ].trs ][ 0 ].xyz;
   const vec3 r1 = ( rigid1 == 0xFFFFFFFF ) ? vec3( 0, 0, 0 ) : p0 - center_of_mass1;
   const vec3 n1 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.y ].normal;
   const float inv_m1 = is_end ? 0.0 : particle_pool[ dc.y ].w;
@@ -93,8 +93,8 @@ rigid_collision_dx_dq rigid_border_dx(
   uint unique_vertex_count,
   aabb_type aabb
 ) {
-  const vec3 center_of_mass0 = rigid_pool[ rigid_id ].center_of_mass;
-  const vec4 q0 = rigid_pool[ rigid_id ].angular_orientation;
+  const vec3 center_of_mass0 = matrix_pool[ rigid_pool[ rigid_id ].trs ][ 0 ].xyz;
+  const vec4 q0 = matrix_pool[ rigid_pool[ rigid_id ].trs ][ 1 ];
   const mat3 inv_i0 = mat3( matrix_pool[ rigid_pool[ rigid_id ].inversed_momentum_inertia_tensor ] );
   const float alpha = 100.0;
   const float dt = 1.0/60.0;

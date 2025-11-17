@@ -69,6 +69,9 @@ public:
   get_primitive_descriptor() const {
     return prim_;
   }
+  const gltf2_create_info &get_props() const {
+    return props;
+  }
 private:
   void load_buffer(
     const fx::gltf::Document &doc

@@ -73,11 +73,13 @@ void main() {
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
   
-  if( mesh.rigid == 0xFFFFFFFF ) return;
-
   if( mesh.constraint_offset == 0xFFFFFFFF ) return;
   
+  if( inst.rigid == 0xFFFFFFFF ) return;
+  
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
+
+  rigid_type rigid = rigid_pool[ inst.rigid ];
 
   const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
   const uint t0 = particle_pool[ mesh.particle_offset + particle_id ].phase;

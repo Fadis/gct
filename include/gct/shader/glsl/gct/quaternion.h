@@ -7,25 +7,21 @@ mat3 quaternion_to_matrix( vec4 q ) {
   const float qzz = q.z * q.z;
   const float qxz = q.x * q.z;
   const float qxy = q.x * q.y;
+  const float qyw = q.y * q.w;
+  const float qzw = q.z * q.w;
   const float qyz = q.y * q.z;
-  const float qwx = q.w * q.x;
-  const float qwy = q.w * q.y;
-  const float qwz = q.w * q.z;
+  const float qxw = q.x * q.w;
 
-  mat3 result;
-  result[ 0 ][ 0 ] = 1.0f - 2.0f * ( qyy + qzz );
-	result[ 0 ][ 1 ] = 2.0f * ( qxy + qwz );
-	result[ 0 ][ 2 ] = 2.0f * ( qxz - qwy );
 
-	result[ 1 ][ 0 ] = 2.0f * ( qxy - qwz );
-	result[ 1 ][ 1 ] = 1.0f - 2.0f * ( qxx + qzz );
-	result[ 1 ][ 2 ] = 2.0f * ( qyz + qwx );
-
-	result[ 2 ][ 0 ] = 2.0f * ( qxz + qwy );
-	result[ 2 ][ 1 ] = 2.0f * ( qyz - qwx );
-	result[ 2 ][ 2 ] = 1.0f - 2.0f * ( qxx + qyy );
-  return result;
+  return mat3(
+      vec3(1.0 - 2.0 * (qyy + qzz), 2.0 * (qxy - qzw), 2.0 * (qxz + qyw)),
+      vec3(2.0 * (qxy + qzw), 1.0 - 2.0 * (qxx + qzz), 2.0 * (qyz - qxw)),
+      vec3(2.0 * (qxz - qyw), 2.0 * (qyz + qxw), 1.0 - 2.0 * (qxx + qyy))
+  );
 }
+
+
+
 
 vec4 matrix_to_quaternion( mat3 m ) {
 	const float fourXSquaredMinus1 = m[ 0 ][ 0 ] - m[ 1 ][ 1 ] - m[ 2 ][ 2 ];
