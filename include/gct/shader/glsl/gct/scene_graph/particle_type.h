@@ -11,6 +11,7 @@ struct particle_type {
   uint rigid;
   uint phase;
   uint attached;
+  float radius;
 };
 
 #endif

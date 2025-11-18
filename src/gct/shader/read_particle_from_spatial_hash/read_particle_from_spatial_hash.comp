@@ -77,7 +77,11 @@ void main() {
 
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
 
+  const bool is_rigid = inst.rigid != 0xFFFFFFFFu;
+
   const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
+  float r0 = particle_pool[ mesh.particle_offset + particle_id ].radius;
+  if( r0 == 0.0 ) r0 = spatial_hash_config.config.scale;
   const uint t0 = particle_pool[ mesh.particle_offset + particle_id ].phase;
   
   const ivec3 center = spatial_hash_position_to_voxel(
@@ -105,22 +109,35 @@ void main() {
       }
       if( !is_dc ) {
         const vec3 p1 = particle_pool[ /*mesh.particle_offset + */to_id ].position;
+        float r1 = particle_pool[ /*mesh.particle_offset + */to_id ].radius;
+        if( r1 == 0.0 ) r1 = spatial_hash_config.config.scale;
         const uint t1 = particle_pool[ /*mesh.particle_offset + */to_id ].phase;
         if( t0 == t1 ) {
-          if( distance( p0, p1 ) < spatial_hash_config.config.scale / 2 ) {
+          if( !is_rigid ) {
+            if( distance( p0, p1 ) < min( r0, r1 ) / 2 ) {
+              constraint_insert_unidirectional(
+                particle_id,
+                to_id,
+                mesh.constraint_offset
+              );
+            }
+          }
+        }
+        else if( distance( p0, p1 ) < min( r0, r1 ) ) {
+          if( is_rigid ) {
+            /*rigid_collision_constraint_insert_unidirectional(
+              particle_id,
+              to_id,
+              rigid_pool[ inst.rigid ].collision_constraint_offset
+            );*/
+          }
+          else {
             constraint_insert_unidirectional(
               particle_id,
               to_id,
               mesh.constraint_offset
             );
           }
-        }
-        else if( distance( p0, p1 ) < spatial_hash_config.config.scale ) {
-          constraint_insert_unidirectional(
-            particle_id,
-            to_id,
-            mesh.constraint_offset
-          );
         }
       }
       //constraint_pool[ 0 ].to_id = 0;

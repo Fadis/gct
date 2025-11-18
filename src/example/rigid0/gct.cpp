@@ -537,6 +537,14 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
 
+  auto update_rigid_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_rigid_position" / "update_rigid_position.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+
   auto rigid_to_mesh = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -544,7 +552,22 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
-
+  
+  auto revert_rigid_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_rigid_position" / "revert_rigid_position.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
+  auto update_substep_rigid_position = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_rigid_position" / "update_substep_rigid_position.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
 
   /*auto update_particle_position = gct::compute(
     gct::compute_create_info()
@@ -561,7 +584,6 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
-  
   auto revert_particle_position = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -632,7 +654,7 @@ int main( int argc, const char *argv[] ) {
       .set_shader( CMAKE_CURRENT_BINARY_DIR "/attach_particle/attach_particle.comp.spv" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
-  );
+  );*/
   
   auto write_to_spatial_hash = gct::compute(
     gct::compute_create_info()
@@ -650,7 +672,7 @@ int main( int argc, const char *argv[] ) {
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
       .add_resource( { "spatial_hash_config", spatial_hash_config } )
-  );*/
+  );
 
   const auto &il1_dl = il[ 1 ]->get_draw_list();
   if( il1_dl.size() != 1u ) throw -1;
@@ -1142,9 +1164,26 @@ int main( int argc, const char *argv[] ) {
           il[ 1 ]->setup_resource_pair_buffer( rec );
           //update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
  
- 
+          update_rigid_position( rec, 0, 1u, 1u, 1u ); // full
+          rec.barrier( sg->get_resource()->rigid->get_buffer() );
           rigid_to_mesh( rec, 0, 1u, 1u, 1u );
           rec.barrier( sg->get_resource()->matrix->get_buffer() );
+          mesh_to_particle( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->particle->get_buffer() );
+          write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
+          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          rec.barrier( sg->get_resource()->constraint->get_buffer() );
+          revert_rigid_position( rec, 0, 1u, 1u, 1u );
+          rec.barrier( sg->get_resource()->matrix->get_buffer() );
+          for( std::uint32_t i = 0u; i != 10u; ++i ) {
+            update_substep_rigid_position( rec, 0, 1u, 1u, 1u );
+            rec.barrier( sg->get_resource()->rigid->get_buffer() );
+          }
+          rigid_to_mesh( rec, 0, 1u, 1u, 1u );
+          rec.barrier( sg->get_resource()->matrix->get_buffer() );
+
+
           /*
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );

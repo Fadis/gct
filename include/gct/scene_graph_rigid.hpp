@@ -18,8 +18,10 @@ namespace gct::scene_graph {
 struct rigid_descriptor {
   LIBGCT_SETTER( trs )
   LIBGCT_SETTER( trs_previous )
+  LIBGCT_SETTER( collision_constraint )
   matrix_pool::matrix_descriptor trs;
   matrix_pool::matrix_descriptor trs_previous;
+  buffer_pool::buffer_descriptor collision_constraint;
 };
 
 void to_json( nlohmann::json &dest, const rigid_descriptor &src );

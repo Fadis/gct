@@ -12,6 +12,9 @@ void to_json( nlohmann::json &dest, const rigid_descriptor &src ) {
   if( src.trs_previous ) {
     dest[ "trs_previous" ] = *src.trs_previous;
   }
+  if( src.collision_constraint ) {
+    dest[ "collision_constraint" ] = *src.collision_constraint;
+  }
 };
 
 void to_json( nlohmann::json &dest, const rigid &src ) {

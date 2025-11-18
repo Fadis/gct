@@ -19,9 +19,7 @@
 #include <gct/scene_graph.h>
 #include <gct/scene_graph/accessor.h>
 #include <gct/topology_id.h>
-#include <gct/distance_constraint.h>
-#include <gct/translate.h>
-#include <gct/trs.h>
+#include <gct/recalculate_normal.h>
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
 void main() {
@@ -29,25 +27,16 @@ void main() {
   const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.x ];
   // メッシュが属すノードの情報を得る
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
-  // メッシュの情報を取得する
-  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
-  const mesh_type mesh = mesh_pool[ prim.mesh ];
 
   if( inst.rigid == 0xFFFFFFFF ) return;
-  
-  const vec3 center_of_mass =
-    rigid_pool[ inst.rigid ].local_center_of_mass.xyz;
 
-  mat4 f = translate( -center_of_mass );
- 
-  mat4 trs = matrix_pool[ rigid_pool[ inst.rigid ].trs ];
-
-  //trs[ 1 ] += quaternion_quaternion_mult( vec4( 0.0, 0.1, 0.0, 0.0 ), trs[ 1 ] );
-  //trs[ 1 ] = quaternion_normalize( trs[ 1 ] );
-  
-  matrix_pool[ rigid_pool[ inst.rigid ].trs ] = trs;
-
-  matrix_pool[ inst.world_matrix ] = trs_to_matrix( trs ) * f;
+  rigid_pool[ inst.rigid ].linear_velocity.xyz =
+    rigid_pool[ inst.rigid ].previous_linear_velocity.xyz;
+  rigid_pool[ inst.rigid ].angular_velocity.xyz =
+    rigid_pool[ inst.rigid ].previous_angular_velocity.xyz;
+  matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz =
+    matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz;
+  matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ] =
+    matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 1 ];
 }
-
 

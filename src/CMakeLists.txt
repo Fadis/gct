@@ -683,6 +683,9 @@ add_shader( gct gct/shader/vertex_to_primitive/vertex_to_primitive.comp INSTALL 
 add_shader( gct gct/shader/vertex_to_primitive/same_position.comp INSTALL )
 add_shader( gct gct/shader/recalculate_normal/recalculate_normal.comp INSTALL )
 add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL )
+add_shader( gct gct/shader/update_rigid_position/update_rigid_position.comp INSTALL )
+add_shader( gct gct/shader/update_rigid_position/revert_rigid_position.comp INSTALL )
+add_shader( gct gct/shader/update_rigid_position/update_substep_rigid_position.comp INSTALL )
 
 add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
 add_shader( gct gct/shader/xpbd/distance_constraint.comp INSTALL )

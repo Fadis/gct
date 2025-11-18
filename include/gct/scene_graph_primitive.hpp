@@ -50,6 +50,7 @@ struct primitive_descriptor {
   LIBGCT_SETTER( rigid_constraint )
   LIBGCT_SETTER( adjacency )
   LIBGCT_SETTER( same_position )
+  LIBGCT_SETTER( momentum_inertia_tensor )
   LIBGCT_SETTER( inversed_momentum_inertia_tensor )
   texture_pool::texture_descriptor base_color_texture;
   texture_pool::texture_descriptor metallic_roughness_texture;
@@ -70,6 +71,7 @@ struct primitive_descriptor {
   buffer_pool::buffer_descriptor rigid_constraint;
   buffer_pool::buffer_descriptor adjacency;
   buffer_pool::buffer_descriptor same_position;
+  matrix_pool::matrix_descriptor momentum_inertia_tensor;
   matrix_pool::matrix_descriptor inversed_momentum_inertia_tensor;
 };
 
@@ -101,7 +103,9 @@ struct primitive {
   LIBGCT_SETTER( pipeline_create_info )
   LIBGCT_SETTER( mesh )
   LIBGCT_SETTER( local_center_of_mass )
+  LIBGCT_SETTER( momentum_inertia_tensor )
   LIBGCT_SETTER( inversed_momentum_inertia_tensor )
+  LIBGCT_SETTER( mass )
   LIBGCT_SETTER( descriptor )
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
@@ -128,7 +132,9 @@ struct primitive {
   graphics_pipeline_create_info_t pipeline_create_info;
   mesh_t mesh;
   glm::vec3 local_center_of_mass = glm::vec3( 0.f, 0.f, 0.f );
+  glm::mat4 momentum_inertia_tensor;
   glm::mat4 inversed_momentum_inertia_tensor;
+  float mass = 1.0f;
   primitive_descriptor descriptor;
 };
 

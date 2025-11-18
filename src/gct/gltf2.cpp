@@ -1,4 +1,3 @@
-#include <iostream>
 #include "gct/exception.hpp"
 #include <fx/gltf.h>
 #include <iterator>
@@ -907,10 +906,8 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         m.data()->*mmp[ "distance_constraint_offset" ] = 0xFFFFFFFFu;
       }
       // 衝突制約の情報のオフセット
-      if( props.enable_constraint ) {
+      if( props.enable_constraint && !props.enable_rigid_constraint ) {
         const auto desc = props.graph->get_resource()->constraint->allocate(
-          props.enable_rigid_constraint ?
-          256u * 2u :
           unique_vertex_count * 128u
         );
         p.descriptor.set_constraint( desc );
@@ -987,7 +984,8 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       ( ext.find( "extensions" ) != ext.end() ) &&
       ( ext[ "extensions" ].find( "GCT_rigid" ) != ext[ "extensions" ].end() ) &&
       ( ext[ "extensions" ][ "GCT_rigid" ].find( "local_center_of_mass" ) != ext[ "extensions" ][ "GCT_rigid" ].end() ) &&
-      ( ext[ "extensions" ][ "GCT_rigid" ].find( "inversed_momentum_inertia_tensor" ) != ext[ "extensions" ][ "GCT_rigid" ].end() )
+      ( ext[ "extensions" ][ "GCT_rigid" ].find( "momentum_inertia_tensor" ) != ext[ "extensions" ][ "GCT_rigid" ].end() ) &&
+      ( ext[ "extensions" ][ "GCT_rigid" ].find( "mass" ) != ext[ "extensions" ][ "GCT_rigid" ].end() )
     ) {
       const auto &local_center_of_mass = ext[ "extensions" ][ "GCT_rigid" ][ "local_center_of_mass" ];
       if( local_center_of_mass.size() != 3u ) {
@@ -998,31 +996,36 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
         float( local_center_of_mass[ 1 ] ),
         float( local_center_of_mass[ 2 ] )
       );
-      const auto &inversed_momentum_inertia_tensor = ext[ "extensions" ][ "GCT_rigid" ][ "inversed_momentum_inertia_tensor" ];
-      if( inversed_momentum_inertia_tensor.size() != 9u ) {
-        throw invalid_gltf( "inversed_momentum_inertia_tensorの型が一致しない", __FILE__, __LINE__ );
+      const auto &momentum_inertia_tensor = ext[ "extensions" ][ "GCT_rigid" ][ "momentum_inertia_tensor" ];
+      if( momentum_inertia_tensor.size() != 9u ) {
+        throw invalid_gltf( "momentum_inertia_tensorの型が一致しない", __FILE__, __LINE__ );
       }
-      p.inversed_momentum_inertia_tensor = glm::mat4(
-        glm::vec4(
-          float( inversed_momentum_inertia_tensor[ 0 ] ),
-          float( inversed_momentum_inertia_tensor[ 1 ] ),
-          float( inversed_momentum_inertia_tensor[ 2 ] ),
-          0.0f
-        ),
-        glm::vec4(
-          float( inversed_momentum_inertia_tensor[ 3 ] ),
-          float( inversed_momentum_inertia_tensor[ 4 ] ),
-          float( inversed_momentum_inertia_tensor[ 5 ] ),
-          0.0f
-        ),
-        glm::vec4(
-          float( inversed_momentum_inertia_tensor[ 6 ] ),
-          float( inversed_momentum_inertia_tensor[ 7 ] ),
-          float( inversed_momentum_inertia_tensor[ 8 ] ),
-          0.0f
-        ),
-        glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f )
-      );
+      const glm::mat4 mit =
+        glm::mat4(
+          glm::vec4(
+            float( momentum_inertia_tensor[ 0 ] ),
+            float( momentum_inertia_tensor[ 1 ] ),
+            float( momentum_inertia_tensor[ 2 ] ),
+            0.0f
+          ),
+          glm::vec4(
+            float( momentum_inertia_tensor[ 3 ] ),
+            float( momentum_inertia_tensor[ 4 ] ),
+            float( momentum_inertia_tensor[ 5 ] ),
+            0.0f
+          ),
+          glm::vec4(
+            float( momentum_inertia_tensor[ 6 ] ),
+            float( momentum_inertia_tensor[ 7 ] ),
+            float( momentum_inertia_tensor[ 8 ] ),
+            0.0f
+          ),
+          glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f )
+        );
+      p.momentum_inertia_tensor = mit;
+      p.inversed_momentum_inertia_tensor = glm::inverse( mit );
+      p.mass = float( ext[ "extensions" ][ "GCT_rigid" ][ "mass" ] );
+      p.descriptor.momentum_inertia_tensor = props.graph->get_resource()->matrix->allocate( p.momentum_inertia_tensor );
       p.descriptor.inversed_momentum_inertia_tensor = props.graph->get_resource()->matrix->allocate( p.inversed_momentum_inertia_tensor );
     }
     else {
@@ -1272,7 +1275,6 @@ void gltf2::load_node(
           if( rimp.has( "prim" ) ) {
             ri.data()->*rimp[ "prim" ] = *prim->descriptor.resource_index;
           }
-          props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
           i->descriptor.set_prim( mesh_[ doc_node.mesh ]->prim[ current_lod[ lod_id ].first ] );
 
           // 剛体の情報のオフセット
@@ -1294,22 +1296,50 @@ void gltf2::load_node(
               r.data()->*rmp[ "trs_previous" ] = *i->rigid_state->descriptor.trs_previous;
             }
             if( rmp.has( "linear_velocity" ) ) {
-              r.data()->*rmp[ "linear_velocity" ] = glm::vec4( 0, 0, 0, 0 ); //////
+              r.data()->*rmp[ "linear_velocity" ] = glm::vec4( 0, 0, 0, 0 );
             }
             if( rmp.has( "angular_velocity" ) ) {
-              r.data()->*rmp[ "angular_velocity" ] = glm::vec4( 0, 0, 0, 0 ); //////
+              r.data()->*rmp[ "angular_velocity" ] = glm::vec4( 0, 0, 0, 0 );
+            }
+            if( rmp.has( "previous_linear_velocity" ) ) {
+              r.data()->*rmp[ "previous_linear_velocity" ] = glm::vec4( 0, 0, 0, 0 );
+            }
+            if( rmp.has( "previous_angular_velocity" ) ) {
+              r.data()->*rmp[ "previous_angular_velocity" ] = glm::vec4( 0, 0, 0, 0 );
             }
             if( rmp.has( "local_center_of_mass" ) ) {
               r.data()->*rmp[ "local_center_of_mass" ] = glm::vec4( prim->local_center_of_mass, 1.0 );
             }
+            if( rmp.has( "momentum_inertia_tensor" ) ) {
+              r.data()->*rmp[ "momentum_inertia_tensor" ] = *prim->descriptor.momentum_inertia_tensor;
+            }
             if( rmp.has( "inversed_momentum_inertia_tensor" ) ) {
               r.data()->*rmp[ "inversed_momentum_inertia_tensor" ] = *prim->descriptor.inversed_momentum_inertia_tensor;
             }
+            if( rmp.has( "mass" ) ) {
+              r.data()->*rmp[ "mass" ] = prim->mass;
+            }
+
+            // 衝突制約の情報のオフセット
+            if( props.enable_constraint ) {
+              const auto desc = props.graph->get_resource()->constraint->allocate(
+                256u * 2u
+              );
+              i->rigid_state->descriptor.set_collision_constraint( desc );
+              if( rmp.has( "collision_constraint_offset" ) ) {
+                r.data()->*rmp[ "collision_constraint_offset" ] = std::uint32_t( *desc );
+              }
+            }
+            else if( rmp.has( "collision_constraint_offset" ) ) {
+              r.data()->*rmp[ "collision_constraint_offset" ] = 0xFFFFFFFFu;
+            }
+
             props.graph->get_resource()->rigid->set( i->descriptor.rigid, 0u, r.data(), std::next( r.data(), r.size() ) );
           }
           else if( rimp.has( "rigid" ) ) {
             ri.data()->*rimp[ "rigid" ] = 0xFFFFFFFFu;
           }
+          props.graph->get_resource()->instance_resource_index->set( i->descriptor.resource_index, lod_id, ri.data(), std::next( ri.data(), ri.size() ) );
           const auto desc = props.graph->get_resource()->inst.allocate( i );
           cur->inst.push_back( desc );
           inst.push_back( desc );
