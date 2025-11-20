@@ -686,12 +686,15 @@ add_shader( gct gct/shader/recalculate_tangent/recalculate_tangent.comp INSTALL 
 add_shader( gct gct/shader/update_rigid_position/update_rigid_position.comp INSTALL )
 add_shader( gct gct/shader/update_rigid_position/revert_rigid_position.comp INSTALL )
 add_shader( gct gct/shader/update_rigid_position/update_substep_rigid_position.comp INSTALL )
+add_shader( gct gct/shader/generate_particle_radius/generate_particle_radius.comp INSTALL )
+add_shader( gct gct/shader/update_rigid_velocity/update_substep_rigid_velocity.comp INSTALL )
+add_shader( gct gct/shader/rigid_to_particle/rigid_to_particle.comp INSTALL )
 
 add_shader( gct gct/shader/pbd/distance_constraint.comp INSTALL )
 add_shader( gct gct/shader/xpbd/distance_constraint.comp INSTALL )
 add_shader( gct gct/shader/fluid/fluid_constraint.comp INSTALL )
 add_shader( gct gct/shader/fluid/viscosity.comp INSTALL )
-#add_shader( gct gct/shader/rigid/rigid_constraint.comp INSTALL )
+add_shader( gct gct/shader/rigid/rigid_constraint.comp INSTALL )
 #add_shader( gct gct/shader/rigid/rigid_aabb_constraint.comp INSTALL )
 add_shader( gct gct/shader/substep_xpbd/distance_constraint.comp INSTALL )
 

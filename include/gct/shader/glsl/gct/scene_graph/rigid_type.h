@@ -13,6 +13,7 @@ struct rigid_type {
   uint inversed_momentum_inertia_tensor;
   float mass;
   uint collision_constraint_offset;
+  uint constraint_count;
 };
 
 #endif

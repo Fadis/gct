@@ -35,40 +35,40 @@ void main() {
   const uint constraint_index = gl_SubgroupInvocationID;
   
   const float dt = 1.0/60.0;
-  
-  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
-  
-  if( mesh.lambda_offset == 0xFFFFFFFF ) return;
+  const uint substep_count = 10;
+  const float h = dt/substep_count;
 
-  if( mesh.rigid == 0xFFFFFFFF ) return;
+  //if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  
+  //if( mesh.lambda_offset == 0xFFFFFFFF ) return;
 
-  const rigid_type rigid = rigid_pool[ mesh.rigid ];
+  if( inst.rigid == 0xFFFFFFFF ) return;
+
+  const rigid_type rigid = rigid_pool[ inst.rigid ];
   
   vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
   rigid_collision_dx_dq sum = rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0u, 0u );
   for( uint constraint_block_id = 0u; constraint_block_id != 8u; constraint_block_id++ ) {
     rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
-      mesh.rigid,
-      mesh.particle_offset,
       mesh.constraint_offset,
-      mesh.lambda_offset,
       constraint_block_id * gl_SubgroupSize + constraint_index,
-      dt
+      h
     );
     sum.dx += dx_dq.dx;
-    sum.dq += dx_dq.dq;
+    sum.dq = quaternion_quaternion_mult( dx_dq.dq, sum.dq );
     sum.dx_count += dx_dq.dx_count;
     sum.dq_count += dx_dq.dq_count;
   }
   {
     rigid_collision_dx_dq dx_dq = rigid_border_dx(
-      mesh.rigid,
+      inst.rigid,
       mesh.particle_offset,
       mesh.unique_vertex_count,
       aabb_type(
         vec4( -2.6, -100.0, -2.1, 1.0 ),
         vec4( 2.6, -0.05, 1.5, 1.0 )
-      )
+      ),
+      h
     );
     sum.dx += dx_dq.dx;
     sum.dq += dx_dq.dq;
@@ -82,9 +82,14 @@ void main() {
   if( sum.dq_count != 0u ) {
     sum.dq /= sum.dq_count;
   }
+  //sum.dx = vec3( 0.0, -3.0, 0.0 );
+  //sum.dq = vec4( 0.0, 0.7, 0, 0.7 );
   if( constraint_index == 0u ) {
-    rigid_pool[ mesh.rigid ].center_of_mass += sum.dx;
-    rigid_pool[ mesh.rigid ].angular_orientation += sum.dq;
+    matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz += sum.dx;
+    matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ] += sum.dq;
+    matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ] =
+      quaternion_normalize( matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ] );
+    rigid_pool[ inst.rigid ].constraint_count = sum.dx_count;
   }
 }
 

@@ -42,9 +42,6 @@ void main() {
  
   mat4 trs = matrix_pool[ rigid_pool[ inst.rigid ].trs ];
 
-  //trs[ 1 ] += quaternion_quaternion_mult( vec4( 0.0, 0.1, 0.0, 0.0 ), trs[ 1 ] );
-  //trs[ 1 ] = quaternion_normalize( trs[ 1 ] );
-  
   matrix_pool[ rigid_pool[ inst.rigid ].trs ] = trs;
 
   matrix_pool[ inst.world_matrix ] = trs_to_matrix( trs ) * f;

@@ -125,11 +125,11 @@ void main() {
         }
         else if( distance( p0, p1 ) < min( r0, r1 ) ) {
           if( is_rigid ) {
-            /*rigid_collision_constraint_insert_unidirectional(
-              particle_id,
+            rigid_collision_constraint_insert_unidirectional(
+              mesh.particle_offset + particle_id,
               to_id,
               rigid_pool[ inst.rigid ].collision_constraint_offset
-            );*/
+            );
           }
           else {
             constraint_insert_unidirectional(

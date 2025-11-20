@@ -17,11 +17,7 @@
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #include <gct/constants.h>
 #include <gct/scene_graph.h>
-#include <gct/scene_graph/accessor.h>
-#include <gct/topology_id.h>
-#include <gct/distance_constraint.h>
-#include <gct/translate.h>
-#include <gct/trs.h>
+#include <gct/quaternion.h>
 layout(local_size_x = 1, local_size_y = 1 ) in;
 
 void main() {
@@ -38,30 +34,26 @@ void main() {
   const float g = 9.80665;
 
   vec3 x = matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz;
+  vec3 x_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz;
   vec4 q = matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ];
-  vec3 v = rigid_pool[ inst.rigid ].linear_velocity.xyz;
-  vec3 omega = rigid_pool[ inst.rigid ].angular_velocity.xyz;
-  //const mat3 i = mat3( matrix_pool[ rigid_pool[ inst.rigid ].momentum_inertia_tensor ] );
-  const mat3 inv_i = mat3( matrix_pool[ rigid_pool[ inst.rigid ].inversed_momentum_inertia_tensor ] );
-
-  matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz = x.xyz;
-  rigid_pool[ inst.rigid ].previous_linear_velocity.xyz = v;
-
-  v += h * vec3( 0, g, 0 ) / rigid_pool[ inst.rigid ].mass;
-  x += h * v;
+  vec4 q_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 1 ];
+  vec3 v_prev = rigid_pool[ inst.rigid ].linear_velocity.xyz;
+  vec3 v = ( x - x_prev )/h;
+  v = ( dot( v_prev, v ) >= -0.0 ) ? v : vec3( 0, 0, 0 );
 
   rigid_pool[ inst.rigid ].linear_velocity.xyz = v;
-  matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz = x;
-
-  matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 1 ] = q;
-  rigid_pool[ inst.rigid ].previous_angular_velocity.xyz = omega;
-
-  ////omega += h * ( inv_i * ( text - cross( omega, i * omega ) ) );
-  q += h * 0.5 * quaternion_quaternion_mult( vec4( omega, 0.0 ), q );
-  q = quaternion_normalize( q );
-
-  ////rigid_pool[ inst.rigid ].angular_velocity.xyz = omega;
-  matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ] = q;
+  vec4 delta_q = quaternion_quaternion_mult( q, quaternion_inverse( q_prev ) );
+  vec3 omega_prev = rigid_pool[ inst.rigid ].angular_velocity.xyz;
+  vec3 omega = 2.0 * delta_q.xyz / h;
+  omega = ( delta_q.w >= 0 ) ? omega : -omega;
+  //omega = ( dot( v_prev, v ) >= 0.0 ) ? omega : vec3( 0, 0, 0 );
+  //float ol = length( omega );
+  //omega = ( ol > 50.0 ) ? omega/ol : omega;
+  omega = max( vec3( -4, -4, -4 ), min( vec3( 4, 4, 4 ), omega ) );
+  //omega *= max( 0.0, min( 1.0, 1.0 - (1.0/( 65536.0*256.0 ) )*rigid_pool[ inst.rigid ].constraint_count ) );
+  //omega *= pow( 0.999, min( rigid_pool[ inst.rigid ].constraint_count, 200.0 ) );
+  omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.98 : 1.0;
+  //omega *= 0.99;
+  rigid_pool[ inst.rigid ].angular_velocity.xyz = omega;
 }
-
 

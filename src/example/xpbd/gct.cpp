@@ -561,6 +561,14 @@ int main( int argc, const char *argv[] ) {
   const auto gbuffer_view = sg->get_resource()->image->get( gbuffer_desc );
   const auto depth_view = sg->get_resource()->image->get( depth_desc );
   
+  auto generate_particle_radius = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "generate_particle_radius" / "generate_particle_radius.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+  
   auto mesh_to_particle = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -685,16 +693,20 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       il[ 1 ]->setup_resource_pair_buffer( recorder );
+      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
+      generate_particle_radius( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
       mesh_to_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
       mesh_to_constraint( recorder, 0, il1_prim->count / 3, 1u, 1u );
-      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->particle->get_buffer() );
       attach_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
 
       il[ 2 ]->setup_resource_pair_buffer( recorder );
+      vertex_to_primitive( recorder, 0, il2_prim->count / 3, 1u, 1u );
+      recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
+      generate_particle_radius( recorder, 0, il2_prim->unique_vertex_count, 1u, 1u );
       mesh_to_particle( recorder, 0, il2_prim->unique_vertex_count, 1u, 1u );
       mesh_to_constraint( recorder, 0, il2_prim->count / 3, 1u, 1u );
-      vertex_to_primitive( recorder, 0, il2_prim->count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->particle->get_buffer() );
       attach_particle( recorder, 0, il2_prim->unique_vertex_count, 1u, 1u );
 

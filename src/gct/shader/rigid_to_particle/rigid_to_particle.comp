@@ -20,7 +20,6 @@
 #include <gct/scene_graph/accessor.h>
 #include <gct/topology_id.h>
 #include <gct/distance_constraint.h>
-#include <gct/vertex_to_primitive.h>
 layout(local_size_x = 128, local_size_y = 1 ) in;
 
 void main() {
@@ -44,36 +43,34 @@ void main() {
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
   
-  if( mesh.vertex_to_primitive_offset == 0xFFFFFFFF ) return;
+  const vec3 center_of_mass =
+    ( inst.rigid == 0xFFFFFFFF ) ?
+    vec3( 0, 0, 0 ) :
+    rigid_pool[ inst.rigid ].local_center_of_mass.xyz;
 
   const uint accessor_id = mesh.accessor;
-  const vec4 wp0 = l2w * read_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
 
-  float max_distance = 0.001;
+  const vec4 lp0 = read_vertex( accessor_pool[ accessor_id + 1 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  const vec4 wp0 = l2w * lp0;
+  const vec3 wn0 =
+    ( mesh.topology == GCT_SHADER_TOPOLOGY_ID_POINT ) ?
+    vec3( 0.0, 0.0, 0.0 ) :
+    mat3(l2w) * read_vertex( accessor_pool[ accessor_id + 2 ], vertex_id, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz;
+  
+  const float delta_t = 1.0/60.0;
+  const uint num_substeps = 10;
+  const float h = delta_t / num_substeps;
 
-  uint iter = vertex_to_primitive_begin( vertex_id, mesh.vertex_to_primitive_offset );
-  for( uint i = 0u; i != 32u; ++i ) {
-    if( !vertex_to_primitive_is_end( iter ) ) {
-      const uint pid = vertex_to_primitive_get( iter );
-
-      vec4 wp1 = l2w * read_vertex_position( mesh, pid * 3u + 0u );
-      vec4 wp2 = l2w * read_vertex_position( mesh, pid * 3u + 1u );
-      vec4 wp3 = l2w * read_vertex_position( mesh, pid * 3u + 2u );
-      max_distance = max(
-        max_distance,
-        max(
-          max(
-            distance( wp0.xyz, wp1.xyz ),
-            distance( wp0.xyz, wp2.xyz )
-          ),
-          distance( wp0.xyz, wp3.xyz )
-        )
-      );
-
-      iter = vertex_to_primitive_next( iter );
-    }
-  }
-
-  particle_pool[ mesh.particle_offset + vertex_id ].radius = max_distance; 
+  particle_pool[ mesh.particle_offset + vertex_id ].previous_position =
+    particle_pool[ mesh.particle_offset + vertex_id ].position;
+  particle_pool[ mesh.particle_offset + vertex_id ].position = wp0.xyz / wp0.w;
+  particle_pool[ mesh.particle_offset + vertex_id ].velocity =
+    (
+      particle_pool[ mesh.particle_offset + vertex_id ].position -
+      particle_pool[ mesh.particle_offset + vertex_id ].previous_position
+    ) / h;
+  particle_pool[ mesh.particle_offset + vertex_id ].local_r =
+    mat3( l2w ) * ( lp0.xyz - center_of_mass );
+  particle_pool[ mesh.particle_offset + vertex_id ].normal = wn0;
 }
 

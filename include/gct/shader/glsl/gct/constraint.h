@@ -61,6 +61,69 @@ void constraint_insert(
   constraint_insert_unidirectional( to_id, from_id, id_offset );
 }
 
+uint rigid_collision_constraint_begin(
+  uint id_offset
+) {
+  return id_offset;
+}
+
+uint rigid_collision_constraint_next(
+  uint gcid
+) {
+  return gcid + 2;
+}
+
+uint rigid_collision_constraint_next(
+  uint gcid,
+  uint count
+) {
+  return gcid + count * 2;
+}
+
+
+bool rigid_collision_constraint_is_end(
+  uint gcid
+) {
+  return constraint_pool[ gcid ] == 0;
+}
+
+uint rigid_collision_constraint_get_from(
+  uint gcid
+) {
+  uint v = constraint_pool[ gcid ];
+  v--;
+  return v;
+}
+
+uint rigid_collision_constraint_get_to(
+  uint gcid
+) {
+  uint v = constraint_pool[ gcid + 1 ];
+  v--;
+  return v;
+}
+
+void rigid_collision_constraint_insert_unidirectional(
+  uint from_id,
+  uint to_id,
+  uint id_offset
+) {
+  uint hoge = 0;
+  uint gcid = rigid_collision_constraint_begin( id_offset );
+  for( uint cid = 0; cid < 256; cid++ ) {
+    const uint orig = atomicCompSwap(
+      constraint_pool[ gcid ],
+      0,
+      from_id + 1
+    );
+    if( orig == 0 ) {
+      constraint_pool[ gcid + 1 ] = to_id + 1;
+      break;
+    }
+    gcid = rigid_collision_constraint_next( gcid );
+  }
+}
+
 #endif
 
 

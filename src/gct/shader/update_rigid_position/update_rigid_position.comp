@@ -48,7 +48,7 @@ void main() {
   rigid_pool[ inst.rigid ].previous_linear_velocity.xyz = v;
 
   v += h * vec3( 0, g, 0 ) / rigid_pool[ inst.rigid ].mass;
-  x += v;
+  x += h * v;
 
   rigid_pool[ inst.rigid ].linear_velocity.xyz = v;
   matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz = x;
