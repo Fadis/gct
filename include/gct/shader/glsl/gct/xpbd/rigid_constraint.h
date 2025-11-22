@@ -27,51 +27,56 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
     constraint_index
   );
   const bool is_end = rigid_collision_constraint_is_end( iter );
+  if( is_end ) return rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0, 0 );
+
   const uvec2 dc =
-    is_end ?
-    uvec2( 0u, 0u ) :
     uvec2(
       rigid_collision_constraint_get_from( iter + constraint_index ),
       rigid_collision_constraint_get_to( iter + constraint_index )
     );
   const mat3 ident3 = mat3( 1, 0, 0, 0, 1, 0, 0, 0, 1 );
 
-  const uint rigid0 = is_end ? 0xFFFFFFFF : particle_pool[ dc.x ].rigid;
-  const vec3 p0 = is_end ? vec3( 0, 0, 0 ) : matrix_pool[ rigid_pool[ rigid0 ].trs ][ 0 ].xyz;
-  const vec4 q0 = is_end ? vec4( 0, 0, 0, 0 ) : matrix_pool[ rigid_pool[ rigid0 ].trs ][ 1 ];
-  const vec3 r0 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.x ].local_r;
-  const vec3 n0 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.x ].normal;
-  const float inv_m0 = is_end ? 0.0 : 1.0/rigid_pool[ rigid0 ].mass;
-  const mat3 inv_i0 = is_end ? ident3 : mat3( matrix_pool[ rigid_pool[ rigid0 ].inversed_momentum_inertia_tensor ] );
+  const uint rigid0 = particle_pool[ dc.x ].rigid;
+  const vec3 p0 = particle_pool[ dc.x ].position;
+  const vec3 p_prev0 = particle_pool[ dc.x ].previous_position;
+  const vec3 n0 = particle_pool[ dc.x ].normal;
+  const vec3 r0 = particle_pool[ dc.x ].local_r;
+  const vec4 q0 = matrix_pool[ rigid_pool[ rigid0 ].trs ][ 1 ];
+  const float inv_m0 = 1.0/rigid_pool[ rigid0 ].mass;
+  const mat3 inv_i0 = mat3( matrix_pool[ rigid_pool[ rigid0 ].inversed_momentum_inertia_tensor ] );
 
-  const uint rigid1 = is_end ? 0xFFFFFFFF : particle_pool[ dc.y ].rigid;
-  const vec3 p1 = is_end ? vec3( 0, 0, 0 ) : matrix_pool[ rigid_pool[ rigid1 ].trs ][ 0 ].xyz;
-  const vec3 r1 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.y ].local_r;
-  const vec3 n1 = is_end ? vec3( 0, 0, 0 ) : particle_pool[ dc.y ].normal;
-  const float inv_m1 = is_end ? 0.0 : 1.0/rigid_pool[ rigid1 ].mass;
-  const mat3 inv_i1 = is_end ? ident3 : mat3( matrix_pool[ rigid_pool[ rigid1 ].inversed_momentum_inertia_tensor ] );
-  
+  const uint rigid1 = particle_pool[ dc.y ].rigid;
+  const vec3 p1 = particle_pool[ dc.y ].position;
+  const vec3 p_prev1 = particle_pool[ dc.y ].previous_position;
+  const vec3 n1 = particle_pool[ dc.y ].normal;
+  const vec3 r1 = particle_pool[ dc.y ].local_r;
+  const float inv_m1 = 1.0/rigid_pool[ rigid1 ].mass;
+  const mat3 inv_i1 = mat3( matrix_pool[ rigid_pool[ rigid1 ].inversed_momentum_inertia_tensor ] );
+ 
   const float c = distance( p0, p1 );
-  const vec3 n = ( p1 - p0 )/c;
+  const vec3 n = ( p0 - p1 )/c;
+
+  const bool intersect = dot( n1, n ) > 0.0;
+  if( !intersect ) return rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0, 0 );
 
   const float w0 = inv_m0 + dot( cross( r0, n ), inv_i0 * cross( r0, n ) );
-  
   const float w1 = inv_m1 + dot( cross( r1, n ), inv_i1 * cross( r1, n ) );
   
-  const float alpha = 100.0;
+  const float alpha = 0.00001;
   const float alpha_dt2 = alpha / ( dt * dt );
   
-  /*float lambda =
-    ( is_end || lambda_offset == 0xFFFFFFFF ) ?
-    0.0 :
-    rigid_lambda_get( lambda_iter + constraint_index );
-  */
-
   const float dl = ( -c ) / ( w0 + w1 + alpha_dt2 );
 
-  const vec3 p = n * dl;
-  const vec3 dx = is_end ? vec3( 0, 0, 0 ) : p * inv_m0;
-  const vec4 dq = is_end ? vec4( 0, 0, 0, 0 ) : quaternion_quaternion_mult( 1.0/2.0 * vec4( inv_i0 * cross( r0, p ), 0.0 ), q0 );
+  const float r = abs( dot( n, r0 ) );
+
+  vec3 p = n * dl;
+
+  const vec3 delta_p = ( p0 - p_prev0 ) - ( p1 - p_prev1 );
+  const vec3 delta_pt = delta_p - dot( delta_p, n ) * n;
+
+  const vec3 dx = ( r * p * inv_m0 + delta_pt * dl );
+  const vec4 dq =
+    ( 1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 ) );
 
   vec3 dx_sum = subgroupAdd( dx );
   uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 1u );
@@ -112,16 +117,12 @@ rigid_collision_dx_dq rigid_border_solve(
 
   vec3 p = n * dl;
 
-  const float w0f = inv_m0 + dot( cross( r0, n ), inv_i0 * cross( r0, n ) );
-  const float dlf = ( -c ) / ( w0f );
-  
   const vec3 delta_p = ( p0 - p_prev0 );
   const vec3 delta_pt = delta_p - dot( delta_p, n ) * n;
 
-  const vec3 dx = r * p * inv_m0  -delta_pt * dlf * inv_m0;
+  const vec3 dx = r * p * inv_m0 - delta_pt * dl;
   const vec4 dq =
-    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, ( 1.0 - r ) * p ), 0.0 ), q0 )/* +
-    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, -delta_pt * dlf ), 0.0 ), q0 )*/;
+    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 );
 
   vec3 dx_sum = subgroupAdd( dx );
   uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 1u );

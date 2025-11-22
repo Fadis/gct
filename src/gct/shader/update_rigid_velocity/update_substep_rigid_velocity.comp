@@ -52,7 +52,7 @@ void main() {
   omega = max( vec3( -4, -4, -4 ), min( vec3( 4, 4, 4 ), omega ) );
   //omega *= max( 0.0, min( 1.0, 1.0 - (1.0/( 65536.0*256.0 ) )*rigid_pool[ inst.rigid ].constraint_count ) );
   //omega *= pow( 0.999, min( rigid_pool[ inst.rigid ].constraint_count, 200.0 ) );
-  omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.98 : 1.0;
+  omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.95 : 1.0;
   //omega *= 0.99;
   rigid_pool[ inst.rigid ].angular_velocity.xyz = omega;
 }

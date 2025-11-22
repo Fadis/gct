@@ -316,6 +316,14 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   simplify_buffer_copy( write_region );
   simplify_buffer_copy( read_region );
   rec.barrier( { buffer }, {} );
+  if( !read_region.empty() ) {
+    rec->copyBuffer(
+      **buffer,
+      **staging_buffer,
+      read_region
+    );
+  }
+  rec.barrier( { buffer }, {} );
   if( !fill_requests.get().empty() ) {
     for( const auto &i: fill_requests.get() ) {
       rec->fillBuffer( **buffer, i.first, i.second, 0u );
@@ -329,13 +337,6 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       write_region
     );
     rec.transfer_barrier( { buffer }, {} );
-  }
-  if( !read_region.empty() ) {
-    rec->copyBuffer(
-      **buffer,
-      **staging_buffer,
-      read_region
-    );
   }
   rec.barrier( { buffer }, {} );
   rec.on_executed(

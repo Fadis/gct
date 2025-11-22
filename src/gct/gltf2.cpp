@@ -1,3 +1,4 @@
+#include <iostream>
 #include "gct/exception.hpp"
 #include <fx/gltf.h>
 #include <iterator>
@@ -1328,6 +1329,7 @@ void gltf2::load_node(
               i->rigid_state->descriptor.set_collision_constraint( desc );
               if( rmp.has( "collision_constraint_offset" ) ) {
                 r.data()->*rmp[ "collision_constraint_offset" ] = std::uint32_t( *desc );
+                std::cout << "collision_constraint_offset : " << *desc << std::endl;
               }
             }
             else if( rmp.has( "collision_constraint_offset" ) ) {
