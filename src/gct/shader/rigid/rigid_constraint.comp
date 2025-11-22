@@ -49,15 +49,15 @@ void main() {
   vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
   rigid_collision_dx_dq sum = rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0u, 0u );
   for( uint constraint_block_id = 0u; constraint_block_id != 8u; constraint_block_id++ ) {
-    /*rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
+    rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
       mesh.constraint_offset,
       constraint_block_id * gl_SubgroupSize + constraint_index,
       h
-    );*/
-    //sum.dx += dx_dq.dx;
-    //sum.dq += quaternion_quaternion_mult( dx_dq.dq, sum.dq );
-    //sum.dx_count += dx_dq.dx_count;
-    //sum.dq_count += dx_dq.dq_count;
+    );
+    sum.dx += dx_dq.dx;
+    sum.dq += dx_dq.dq;
+    sum.dx_count += dx_dq.dx_count;
+    sum.dq_count += dx_dq.dq_count;
   }
   {
     rigid_collision_dx_dq dx_dq = rigid_border_dx(
@@ -75,13 +75,13 @@ void main() {
     sum.dx_count += dx_dq.dx_count;
     sum.dq_count += dx_dq.dq_count;
   }
+
   if( sum.dx_count != 0u ) {
     sum.dx /= sum.dx_count;
   }
   if( sum.dq_count != 0u ) {
     sum.dq /= sum.dq_count;
   }
-
   //sum.dx = vec3( 0.0, -3.0, 0.0 );
   //sum.dq = vec4( 0.0, 0.7, 0, 0.7 );
   if( constraint_index == 0u ) {
