@@ -29,21 +29,21 @@ void main() {
   if( inst.rigid == 0xFFFFFFFF ) return;
  
   const float delta_t = 1.0/60.0;
-  const uint num_substeps = 20;
+  const uint num_substeps = 1;
   const float h = delta_t / num_substeps;
   const float g = 9.80665;
 
   vec3 x = matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz;
-  vec3 x_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz;
+  vec3 x_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous_coarse ][ 0 ].xyz;
   vec4 q = matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 1 ];
-  vec4 q_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 1 ];
+  vec4 q_prev = matrix_pool[ rigid_pool[ inst.rigid ].trs_previous_coarse ][ 1 ];
   vec3 v_prev = rigid_pool[ inst.rigid ].linear_velocity.xyz;
   vec3 v = ( x - x_prev ) / h;
   v = ( dot( v_prev, v ) > 0.0 ) ? v : vec3( 0, 0, 0 );
-  float vl = length( v );
+  /*float vl = length( v );
   if( vl > 10.0 ) {
     v/= vl * 10.0;
-  }
+  }*/
   //v = max( vec3( -10, -10, -10 ), min( vec3( 4, 4, 4 ), v ) );
   //v *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.97 : 1.0;
 
@@ -56,14 +56,14 @@ void main() {
   //omega = ( dot( v_prev, v ) >= 0.0 ) ? omega : vec3( 0, 0, 0 );
   //float ol = length( omega );
   //omega = ( ol > 50.0 ) ? omega/ol : omega;
-  float omega_l = length( omega );
+  /*float omega_l = length( omega );
   if( omega_l > 7.0 ) {
     omega /= omega_l * 7.0;
-  }
+  }*/
   //omega = max( vec3( -6, -6, -6 ), min( vec3( 6, 6, 6 ), omega ) );
   //omega *= max( 0.0, min( 1.0, 1.0 - (1.0/( 65536.0*256.0 ) )*rigid_pool[ inst.rigid ].constraint_count ) );
   //omega *= pow( 0.999, min( rigid_pool[ inst.rigid ].constraint_count, 200.0 ) );
-  omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.98 : 1.0;
+  //omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.98 : 1.0;
   //omega *= 0.99;
   rigid_pool[ inst.rigid ].angular_velocity.xyz = omega;
 }

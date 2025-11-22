@@ -1,3 +1,4 @@
+#include <iostream>
 #include "gct/exception.hpp"
 #include <fx/gltf.h>
 #include <iterator>
@@ -954,7 +955,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( props.enable_lambda ) {
         const auto desc = props.graph->get_resource()->lambda->allocate(
           props.enable_rigid_constraint ?
-          256u * 2u :
+          512u * 2u :
           vertex_count * 128u
         );
         p.descriptor.set_lambda( desc );
@@ -1287,6 +1288,7 @@ void gltf2::load_node(
             i->rigid_state = scene_graph::rigid{};
             i->rigid_state->descriptor.trs = props.graph->get_resource()->matrix->allocate();
             i->rigid_state->descriptor.trs_previous = props.graph->get_resource()->matrix->allocate();
+            i->rigid_state->descriptor.trs_previous_coarse = props.graph->get_resource()->matrix->allocate();
             auto rmp = props.graph->get_resource()->rigid->get_member_pointer();
             std::vector< std::uint8_t > r( rmp.get_aligned_size() );
             if( rmp.has( "trs" ) ) {
@@ -1294,6 +1296,9 @@ void gltf2::load_node(
             }
             if( rmp.has( "trs_previous" ) ) {
               r.data()->*rmp[ "trs_previous" ] = *i->rigid_state->descriptor.trs_previous;
+            }
+            if( rmp.has( "trs_previous_coarse" ) ) {
+              r.data()->*rmp[ "trs_previous_coarse" ] = *i->rigid_state->descriptor.trs_previous_coarse;
             }
             if( rmp.has( "linear_velocity" ) ) {
               r.data()->*rmp[ "linear_velocity" ] = glm::vec4( 0, 0, 0, 0 );
@@ -1323,11 +1328,12 @@ void gltf2::load_node(
             // 衝突制約の情報のオフセット
             if( props.enable_constraint ) {
               const auto desc = props.graph->get_resource()->constraint->allocate(
-                256u * 2u
+                512u * 2u
               );
               i->rigid_state->descriptor.set_collision_constraint( desc );
               if( rmp.has( "collision_constraint_offset" ) ) {
                 r.data()->*rmp[ "collision_constraint_offset" ] = std::uint32_t( *desc );
+                std::cout << "collision_constraint_offset : " << *desc << std::endl;
               }
             }
             else if( rmp.has( "collision_constraint_offset" ) ) {

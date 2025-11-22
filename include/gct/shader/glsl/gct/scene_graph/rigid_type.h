@@ -9,6 +9,7 @@ struct rigid_type {
   vec4 local_center_of_mass;
   uint trs;
   uint trs_previous;
+  uint trs_previous_coarse;
   uint momentum_inertia_tensor;
   uint inversed_momentum_inertia_tensor;
   float mass;

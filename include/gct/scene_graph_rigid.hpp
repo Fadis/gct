@@ -21,6 +21,7 @@ struct rigid_descriptor {
   LIBGCT_SETTER( collision_constraint )
   matrix_pool::matrix_descriptor trs;
   matrix_pool::matrix_descriptor trs_previous;
+  matrix_pool::matrix_descriptor trs_previous_coarse;
   buffer_pool::buffer_descriptor collision_constraint;
 };
 

@@ -687,6 +687,7 @@ add_shader( gct gct/shader/update_rigid_position/update_rigid_position.comp INST
 add_shader( gct gct/shader/update_rigid_position/revert_rigid_position.comp INSTALL )
 add_shader( gct gct/shader/update_rigid_position/update_substep_rigid_position.comp INSTALL )
 add_shader( gct gct/shader/generate_particle_radius/generate_particle_radius.comp INSTALL )
+add_shader( gct gct/shader/update_rigid_velocity/update_rigid_velocity.comp INSTALL )
 add_shader( gct gct/shader/update_rigid_velocity/update_substep_rigid_velocity.comp INSTALL )
 add_shader( gct gct/shader/rigid_to_particle/rigid_to_particle.comp INSTALL )
 

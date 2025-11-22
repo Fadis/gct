@@ -69,15 +69,18 @@ void main() {
   const uint offset_id = gl_GlobalInvocationID.x % 27u;
   const bool in_range = mesh.unique_vertex_count > particle_id;
 
+  const bool is_rigid = inst.rigid != 0xFFFFFFFFu;
+
   if( !in_range ) return;
 
   if( mesh.particle_offset == 0xFFFFFFFF ) return;
   
-  if( mesh.constraint_offset == 0xFFFFFFFF ) return;
+  if(
+    ( is_rigid && rigid_pool[ inst.rigid ].collision_constraint_offset == 0xFFFFFFFF ) ||
+    ( !is_rigid && mesh.constraint_offset == 0xFFFFFFFF )
+  ) return;
 
   if( particle_pool[ mesh.particle_offset + particle_id ].attached != 0 ) return;
-
-  const bool is_rigid = inst.rigid != 0xFFFFFFFFu;
 
   const vec3 p0 = particle_pool[ mesh.particle_offset + particle_id ].position;
   float r0 = particle_pool[ mesh.particle_offset + particle_id ].radius;
@@ -123,8 +126,10 @@ void main() {
             }
           }
         }
-        else if( distance( p0, p1 ) < min( r0, r1 ) ) {
+        else if( distance( p0, p1 ) < min( r0, r1 ) / 8 ) {
           if( is_rigid ) {
+            //constraint_pool[ rigid_pool[ inst.rigid ].collision_constraint_offset ] =  12345;
+
             rigid_collision_constraint_insert_unidirectional(
               mesh.particle_offset + particle_id,
               to_id,

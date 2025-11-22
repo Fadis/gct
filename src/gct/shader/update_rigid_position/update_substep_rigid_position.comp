@@ -33,7 +33,7 @@ void main() {
   if( inst.rigid == 0xFFFFFFFF ) return;
  
   const float delta_t = 1.0/60.0;
-  const uint num_substeps = 10;
+  const uint num_substeps = 20;
   const float h = delta_t / num_substeps;
   const float g = 9.80665;
 
@@ -47,7 +47,7 @@ void main() {
   matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz = x.xyz;
   rigid_pool[ inst.rigid ].previous_linear_velocity.xyz = v;
 
-  v += h * vec3( 0, g, 0 ) / rigid_pool[ inst.rigid ].mass;
+  v += h * vec3( 0, g, 0 );// / rigid_pool[ inst.rigid ].mass;
   x += h * v;
 
   rigid_pool[ inst.rigid ].linear_velocity.xyz = v;

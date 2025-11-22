@@ -45,15 +45,17 @@ void main() {
   const mat3 inv_i = mat3( matrix_pool[ rigid_pool[ inst.rigid ].inversed_momentum_inertia_tensor ] );
 
   matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 0 ].xyz = x.xyz;
+  matrix_pool[ rigid_pool[ inst.rigid ].trs_previous_coarse ][ 0 ].xyz = x.xyz;
   rigid_pool[ inst.rigid ].previous_linear_velocity.xyz = v;
 
-  v += h * vec3( 0, g, 0 ) / rigid_pool[ inst.rigid ].mass;
+  v += h * vec3( 0, g, 0 );// / rigid_pool[ inst.rigid ].mass;
   x += h * v;
 
   rigid_pool[ inst.rigid ].linear_velocity.xyz = v;
   matrix_pool[ rigid_pool[ inst.rigid ].trs ][ 0 ].xyz = x;
 
   matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ][ 1 ] = q;
+  matrix_pool[ rigid_pool[ inst.rigid ].trs_previous_coarse ][ 1 ] = q;
   rigid_pool[ inst.rigid ].previous_angular_velocity.xyz = omega;
 
   //omega += h * ( inv_i * ( text - cross( omega, i * omega ) ) );
