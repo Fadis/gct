@@ -50,7 +50,7 @@ void main() {
   rigid_collision_dx_dq sum = rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0u, 0u );
   for( uint constraint_block_id = 0u; constraint_block_id != 8u; constraint_block_id++ ) {
     rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
-      mesh.constraint_offset,
+      rigid.collision_constraint_offset,
       constraint_block_id * gl_SubgroupSize + constraint_index,
       h
     );

@@ -46,13 +46,14 @@ void main() {
   vec3 omega_prev = rigid_pool[ inst.rigid ].angular_velocity.xyz;
   vec3 omega = 2.0 * delta_q.xyz / h;
   omega = ( delta_q.w >= 0 ) ? omega : -omega;
+  omega = vec3( 0, 0, 0 );
   //omega = ( dot( v_prev, v ) >= 0.0 ) ? omega : vec3( 0, 0, 0 );
   //float ol = length( omega );
   //omega = ( ol > 50.0 ) ? omega/ol : omega;
   //omega = max( vec3( -4, -4, -4 ), min( vec3( 4, 4, 4 ), omega ) );
   //omega *= max( 0.0, min( 1.0, 1.0 - (1.0/( 65536.0*256.0 ) )*rigid_pool[ inst.rigid ].constraint_count ) );
   //omega *= pow( 0.999, min( rigid_pool[ inst.rigid ].constraint_count, 200.0 ) );
-  //omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.95 : 1.0;
+  //omega *= ( rigid_pool[ inst.rigid ].constraint_count > 0 ) ? 0.97 : 1.0;
   //omega *= 0.99;
   rigid_pool[ inst.rigid ].angular_velocity.xyz = omega;
 }
