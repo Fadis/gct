@@ -249,9 +249,10 @@ int main( int argc, const char *argv[] ) {
         .set_root( sg->get_root_node() )
         .set_aspect_ratio( float( res.width )/float( res.height ) )
     ) );
+  for( unsigned int i = 1u; i < res.model_filename_list.size(); ++i ) {
     doc.push_back( std::make_shared< gct::gltf::gltf2 >(
       gct::gltf::gltf2_create_info()
-        .set_filename( res.model_filename_list[ 1 ] )
+        .set_filename( res.model_filename_list[ i ] )
         .set_graph( sg )
         .set_root( sg->get_root_node() )
         .set_aspect_ratio( float( res.width )/float( res.height ) )
@@ -262,8 +263,7 @@ int main( int argc, const char *argv[] ) {
         //.set_enable_lambda( true )
         .set_enable_rigid_constraint( true )
     ) );
-
-  std::cout << "doc1 " << nlohmann::json( *doc[ 1 ] ).dump( 2 ) << std::endl;
+  }
 
   const auto aabb_csg = std::make_shared< gct::scene_graph::compiled_aabb_scene_graph >(
     gct::scene_graph::compiled_aabb_scene_graph_create_info()
@@ -274,20 +274,12 @@ int main( int argc, const char *argv[] ) {
   );
 
   std::vector< std::shared_ptr< gct::scene_graph::instance_list > > il;
-  {
+  for( auto &d: doc ) {
     il.push_back( std::make_shared< gct::scene_graph::instance_list >(
       gct::scene_graph::instance_list_create_info()
         .set_parallel_mode3( true ),
       *sg,
-      doc[ 0 ]->get_descriptor()
-    ) );
-  }
-  {
-    il.push_back( std::make_shared< gct::scene_graph::instance_list >(
-      gct::scene_graph::instance_list_create_info()
-        .set_parallel_mode3( true ),
-      *sg,
-      doc[ 1 ]->get_descriptor()
+      d->get_descriptor()
     ) );
   }
 
@@ -460,7 +452,7 @@ int main( int argc, const char *argv[] ) {
     gct::shader_graph::builder builder( sg->get_resource() );
         
     
-    const auto bg0_desc = builder.call(
+    auto bg0_desc = builder.call(
       builder.get_image_io_create_info(
         std::make_shared< gct::graphics >(
           gct::graphics_create_info()
@@ -486,36 +478,38 @@ int main( int argc, const char *argv[] ) {
       )
       .set_push_constant( "gbuffer_format", gbuffer_format )
     )();
-    const auto bg1_desc = builder.call(
-      builder.get_image_io_create_info(
-        std::make_shared< gct::graphics >(
-          gct::graphics_create_info()
-            .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "no_culling" / "2.0" )
-            .use_dynamic_rendering(
-              vk::Format::eR16G16B16A16Sfloat,
-              vk::Format::eD32Sfloat
-            )
-            .enable_depth_test()
-            .set_scene_graph( sg->get_resource() )
-            .add_resource( { "global_uniforms", global_uniform } )
-        ),
-        gct::image_io_plan()
-          .add_inout( "gbuffer" )
-          .add_inout( "position" )
-          .add_inout( "depth" )
-          .set_dim( il[ 1 ]->get_shape() )
-          .set_node_name( "bg1" )
-      )
-      .set_push_constant( "gbuffer_format", gbuffer_format )
-    )(
-      bg0_desc
-    );
+    for( unsigned int i = 1u; i < il.size(); ++i ) {
+      bg0_desc = builder.call(
+        builder.get_image_io_create_info(
+          std::make_shared< gct::graphics >(
+            gct::graphics_create_info()
+              .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "no_culling" / "2.0" )
+              .use_dynamic_rendering(
+                vk::Format::eR16G16B16A16Sfloat,
+                vk::Format::eD32Sfloat
+              )
+              .enable_depth_test()
+              .set_scene_graph( sg->get_resource() )
+              .add_resource( { "global_uniforms", global_uniform } )
+          ),
+          gct::image_io_plan()
+            .add_inout( "gbuffer" )
+            .add_inout( "position" )
+            .add_inout( "depth" )
+            .set_dim( il[ i ]->get_shape() )
+            .set_node_name( "bg" + std::to_string( i ) )
+        )
+        .set_push_constant( "gbuffer_format", gbuffer_format )
+      )(
+        bg0_desc
+      );
+    }
 
-    builder.output( bg1_desc[ "gbuffer" ] );
-    builder.output( bg1_desc[ "position" ] );
+    builder.output( bg0_desc[ "gbuffer" ] );
+    builder.output( bg0_desc[ "position" ] );
     generate_gbuffer = std::make_shared< gct::shader_graph::compiled >( builder() );
-    gbuffer_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "gbuffer" ] ); 
-    depth_desc = generate_gbuffer->get_image_descriptor( bg1_desc[ "position" ] ); 
+    gbuffer_desc = generate_gbuffer->get_image_descriptor( bg0_desc[ "gbuffer" ] ); 
+    depth_desc = generate_gbuffer->get_image_descriptor( bg0_desc[ "position" ] ); 
     std::cout << builder.get_log() << std::endl;
   }
   const auto gbuffer_view = sg->get_resource()->image->get( gbuffer_desc );
@@ -714,30 +708,33 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "spatial_hash_config", spatial_hash_config } )
   );
 
-  const auto &il1_dl = il[ 1 ]->get_draw_list();
-  if( il1_dl.size() != 1u ) throw -1;
-  const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
-  const auto il1_inst = sg->get_resource()->inst.get( il1_dl[ 0 ].inst );
-  std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
-  std::cout << "vertex count : " << il1_prim->count << std::endl;
-  gct::syncable il1_buffers;
-  for( const auto &v: il1_prim->vertex_buffer ) {
-    const auto b = sg->get_resource()->vertex->get( v.second.buffer );
-    if( b ) il1_buffers.add( b );
+  std::vector< std::shared_ptr< gct::scene_graph::primitive > > il_prim;
+  std::vector< std::shared_ptr< gct::scene_graph::instance > > il_inst;
+
+  il_inst.push_back( std::shared_ptr< gct::scene_graph::instance >() );
+  il_prim.push_back( std::shared_ptr< gct::scene_graph::primitive >() );
+
+  for( unsigned int i = 1u ; i < il.size(); ++i ) {
+    const auto &dl = il[ i ]->get_draw_list();
+    if( dl.size() != 1u ) throw -1;
+    il_prim.push_back( sg->get_resource()->prim.get( dl[ 0 ].prim ) );
+    il_inst.push_back( sg->get_resource()->inst.get( dl[ 0 ].inst ) );
   }
-  
+
   {
     {
       auto recorder = command_buffer->begin();
-      il[ 1 ]->setup_resource_pair_buffer( recorder );
-      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      for( unsigned int i = 1u; i != il.size(); ++i ) {
+        il[ i ]->setup_resource_pair_buffer( recorder );
+        vertex_to_primitive( recorder, 0, il_prim[ i ]->count / 3, 1u, 1u );
+      }
       recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      generate_particle_radius( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
-      mesh_to_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
-      mesh_to_rigid( recorder, 0, 1u, 1u, 1u );
-      //mesh_to_constraint( recorder, 0, il1_prim->count / 3, 1u, 1u );
-      //recorder.barrier( sg->get_resource()->particle->get_buffer() );
-      //attach_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
+      for( unsigned int i = 1u; i != il.size(); ++i ) {
+        il[ i ]->setup_resource_pair_buffer( recorder );
+        generate_particle_radius( recorder, 0, il_prim[ i ]->unique_vertex_count, 1u, 1u );
+        mesh_to_particle( recorder, 0, il_prim[ i ]->unique_vertex_count, 1u, 1u );
+        mesh_to_rigid( recorder, 0, 1u, 1u, 1u );
+      }
     }
     command_buffer->execute_and_wait();
   }
@@ -1197,11 +1194,8 @@ int main( int argc, const char *argv[] ) {
           rec.transfer_to_graphics_barrier( global_uniform );
         }
         {
-          sg->get_resource()->constraint->clear();
-          sg->get_resource()->spatial_hash->clear();
-          sg->get_resource()->lambda->clear();
           sg->get_resource()->particle->get(
-            il1_prim->descriptor.particle,
+            il_prim[ 1 ]->descriptor.particle,
             [&]( vk::Result, std::vector< std::uint8_t > &&v ) {
               auto mp = sg->get_resource()->particle->get_member_pointer();
               auto &position = static_cast< glm::vec3& >( v.data()->*mp[ "position" ] );
@@ -1209,80 +1203,81 @@ int main( int argc, const char *argv[] ) {
             }
           );
           sg->get_resource()->rigid->get(
-            il1_inst->descriptor.rigid,
+            il_inst[ 1 ]->descriptor.rigid,
             [&]( vk::Result, std::vector< std::uint8_t > &&v ) {
               auto mp = sg->get_resource()->rigid->get_member_pointer();
               auto &position = static_cast< glm::vec4& >( v.data()->*mp[ "linear_velocity" ] );
               std::cout << "v " << position.x << " " << position.y << " " << position.z << std::endl;
             }
           );
+          sg->get_resource()->constraint->clear();
+          sg->get_resource()->spatial_hash->clear();
           (*sg)( rec );
         }
         if( frame_counter > 60 ) {
           rec.barrier( sg->get_resource()->lambda->get_buffer() );
-          il[ 1 ]->setup_resource_pair_buffer( rec );
-          //update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
- 
-          update_rigid_position( rec, 0, 1u, 1u, 1u ); // full
+
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            update_rigid_position( rec, 0, 1u, 1u, 1u ); // full
+          }
           rec.barrier( sg->get_resource()->rigid->get_buffer() );
-          rigid_to_mesh( rec, 0, 1u, 1u, 1u );
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            rigid_to_mesh( rec, 0, 1u, 1u, 1u );
+          }
           rec.barrier( sg->get_resource()->matrix->get_buffer() );
-          mesh_to_particle( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            mesh_to_particle( rec, 0, il_prim[ i ]->unique_vertex_count, 1u, 1u );
+          }
           rec.barrier( sg->get_resource()->particle->get_buffer() );
-          write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            write_to_spatial_hash( rec, 0, il_prim[ i ]->unique_vertex_count, 1u, 1u );
+          }
           rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
-          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            read_from_spatial_hash( rec, 0, il_prim[ i ]->unique_vertex_count * 27u, 1u, 1u );
+          }
           rec.barrier( sg->get_resource()->constraint->get_buffer() );
-          revert_rigid_position( rec, 0, 1u, 1u, 1u );
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            revert_rigid_position( rec, 0, 1u, 1u, 1u );
+          }
           rec.barrier( sg->get_resource()->rigid->get_buffer() );
           rec.barrier( sg->get_resource()->matrix->get_buffer() );
           for( std::uint32_t i = 0u; i != 20u; ++i ) {
-            update_substep_rigid_position( rec, 0, 1u, 1u, 1u );
+            for( unsigned int i = 1u; i < il.size(); ++i ) {
+              il[ i ]->setup_resource_pair_buffer( rec );
+              update_substep_rigid_position( rec, 0, 1u, 1u, 1u );
+            }
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
             rec.barrier( sg->get_resource()->matrix->get_buffer() );
-            rigid_to_particle( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+            for( unsigned int i = 1u; i < il.size(); ++i ) {
+              il[ i ]->setup_resource_pair_buffer( rec );
+              rigid_to_particle( rec, 0, il_prim[ i ]->unique_vertex_count, 1u, 1u );
+            }
             rec.barrier( sg->get_resource()->particle->get_buffer() );
-            rigid_constraint( rec, 0, 32u, 1u, 1u );
+            for( unsigned int i = 1u; i < il.size(); ++i ) {
+              il[ i ]->setup_resource_pair_buffer( rec );
+              rigid_constraint( rec, 0, 32u, 1u, 1u );
+            }
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
             rec.barrier( sg->get_resource()->matrix->get_buffer() );
-            update_substep_rigid_velocity( rec, 0, 1u, 1u, 1u );
+            for( unsigned int i = 1u; i < il.size(); ++i ) {
+              il[ i ]->setup_resource_pair_buffer( rec );
+              update_substep_rigid_velocity( rec, 0, 1u, 1u, 1u );
+            }
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
-            rigid_to_mesh( rec, 0, 1u, 1u, 1u );
+            for( unsigned int i = 1u; i < il.size(); ++i ) {
+              il[ i ]->setup_resource_pair_buffer( rec );
+              rigid_to_mesh( rec, 0, 1u, 1u, 1u );
+            }
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
             rec.barrier( sg->get_resource()->matrix->get_buffer() );
           }
-
-          /*
-          rec.barrier( sg->get_resource()->particle->get_buffer() );
-          write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-          
-          il[ 1 ]->setup_resource_pair_buffer( rec );
-          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
-
-          revert_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-          rec.barrier( sg->get_resource()->particle->get_buffer() );
-
-          for( std::uint32_t i = 0u; i != 10u; ++i ) {
-            update_substep_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-            rec.barrier( sg->get_resource()->particle->get_buffer() );
-            il[ 1 ]->setup_resource_pair_buffer( rec );
-            distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
-            rec.barrier( sg->get_resource()->particle->get_buffer() );
-            rec.barrier( sg->get_resource()->lambda->get_buffer() );
-            update_particle_velocity( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-            rec.barrier( sg->get_resource()->particle->get_buffer() );
-          }
-          
-          il[ 1 ]->setup_resource_pair_buffer( rec );
-          particle_to_mesh( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-          rec.barrier( il1_buffers );
-          recalculate_normal( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
-          rec.barrier( il1_buffers );
-          recalculate_tangent( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
-          rec.barrier( il1_buffers );
-          rec.barrier( sg->get_resource()->particle->get_buffer() );
-          */
-          
         }
         if( res.force_geometry || walk.camera_moved() ) {
           auto render_pass_token = rec.begin_render_pass(

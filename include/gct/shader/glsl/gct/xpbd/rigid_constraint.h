@@ -22,24 +22,24 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
   uint constraint_index,
   float dt
 ) {
-
   const uint iter = rigid_collision_constraint_next(
     rigid_collision_constraint_begin( constraint_offset ),
     constraint_index
   );
-  const bool is_end = rigid_collision_constraint_is_end( iter );
+  bool is_end = rigid_collision_constraint_is_end( iter );
 
-  if( is_end ) {
+  /*if( is_end ) {
     return rigid_collision_dx_dq(
       vec3( 0, 0, 0 ),
       vec4( 0, 0, 0, 0 ),
       0,
       0
     );
-  }
+  }*/
 
 
   const uvec2 dc =
+    is_end ? uvec2( 0, 0 ) :
     uvec2(
       rigid_collision_constraint_get_from( iter + constraint_index ),
       rigid_collision_constraint_get_to( iter + constraint_index )
@@ -48,7 +48,8 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
   const uint rigid0 = particle_pool[ dc.x ].rigid;
   const vec3 p0 = particle_pool[ dc.x ].position;
   const vec3 p_prev0 = particle_pool[ dc.x ].previous_position;
-  const vec3 n0 = normalize( particle_pool[ dc.x ].normal );
+  const vec3 dir0 = p0 - p_prev0;
+  const vec3 n0 = particle_pool[ dc.x ].normal;
   const vec3 r0 = particle_pool[ dc.x ].local_r;
   const vec4 q0 = matrix_pool[ rigid_pool[ rigid0 ].trs ][ 1 ];
   const float inv_m0 = 1.0/rigid_pool[ rigid0 ].mass;
@@ -57,10 +58,21 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
   const uint rigid1 = particle_pool[ dc.y ].rigid;
   const vec3 p1 = particle_pool[ dc.y ].position;
   const vec3 p_prev1 = particle_pool[ dc.y ].previous_position;
-  const vec3 n1 = normalize( particle_pool[ dc.y ].normal );
+  const vec3 dir1 = p1 - p_prev1;
+  const vec3 n1 = particle_pool[ dc.y ].normal;
   const vec3 r1 = particle_pool[ dc.y ].local_r;
   const float inv_m1 = 1.0/rigid_pool[ rigid1 ].mass;
   const mat3 inv_i1 = mat3( matrix_pool[ rigid_pool[ rigid1 ].inversed_momentum_inertia_tensor ] );
+
+  if( dot( n0, n1 ) >= 0.0 ) {
+    is_end == true;
+  }
+  /*if( dot( dir0 - dir1, n1 ) >= 0.0 ) {
+    is_end == true;
+  }
+  if( dot( dir1 - dir0, n0 ) >= 0.0 ) {
+    is_end == true;
+  }*/
 /*  
   const float c = distance( p0, p1 );
   const vec3 n = ( p1 - p0 )/c;
@@ -85,31 +97,36 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
 */
 
   const float c = distance( p0, p1 );
-  if( abs( c ) < 0.00001 ) {
+
+  if( c < 0.0001 )  {
+    is_end = true;
+  }
+
+  /*if( abs( c ) < 0.0001 ) {
     return rigid_collision_dx_dq(
       vec3( 0, 0, 0 ),
       vec4( 0, 0, 0, 0 ),
       0,
       0
     );
-  }
+  }*/
 
-  const vec3 n = ( p0 - p1 )/c;
+  const vec3 n = n1;// normalize( p0 - p1 );
 
-  if( dot( n, n0 ) <= 0.0 ) {
+  /*if( dot( n, n0 ) <= 0.0 ) {
     return rigid_collision_dx_dq(
       vec3( 0, 0, 0 ),
       vec4( 0, 0, 0, 0 ),
       0,
       0
     );
-  }
+  }*/
 
   const float w0 = inv_m0 + dot( cross( r0, n ), inv_i0 * cross( r0, n ) );
   
   const float w1 = inv_m1 + dot( cross( r1, n ), inv_i1 * cross( r1, n ) );
   
-  const float alpha = 0.001;//0.00005;
+  const float alpha = 0.000005;
   const float alpha_dt2 = alpha / ( dt * dt );
   
   const float dl = ( -c ) / ( w0 + w1 + alpha_dt2 );
@@ -118,19 +135,24 @@ rigid_collision_dx_dq rigid_collision_constraint_dx(
 
   vec3 p = n * dl;
   
-  const float dlf = -0.5;//( -c ) / ( w0 + w1 );
+  const float dlf = -0.02;//( -c ) / ( w0 + w1 );
   const vec3 delta_p = ( p0 - p_prev0 ) - ( p1 - p_prev1 );
   const vec3 delta_pt = delta_p - dot( delta_p, n ) * n;
 
-  const vec3 dx = r * p * inv_m0 +delta_pt * dlf;
-  const vec4 dq =
-    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 );
+  vec3 dx = r * p * inv_m0 +delta_pt * dlf;
+  vec4 dq =
+    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 ) +
+    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, delta_pt * dlf ), 0.0 ), q0 );
+
+  //dx *= 0.01;
+  //dq *= 0.01;
+  dx = is_end ? vec3( 0, 0, 0 ) : dx;
+  dq = is_end ? vec4( 0, 0, 0, 0 ) : dq;
 
   vec3 dx_sum = subgroupAdd( dx );
-  uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 1u );
+  uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 2u );
   vec4 dq_sum = subgroupAdd( dq );
-  uint dq_count = subgroupAdd( dq == vec4( 0, 0, 0, 0 ) ? 0u : 1u );
-
+  uint dq_count = subgroupAdd( dq == vec4( 0, 0, 0, 0 ) ? 0u : 2u );
 
   return rigid_collision_dx_dq(
     dx_sum,
@@ -152,12 +174,39 @@ rigid_collision_dx_dq rigid_border_solve(
   vec3 p1,
   float dt
 ) {
+  
+  const vec3 dir0 = p0 - p_prev0;
+
+  if( dot( n0, p0 - p1 ) >= 0.0 ) {
+    return rigid_collision_dx_dq(
+      vec3( 0, 0, 0 ),
+      vec4( 0, 0, 0, 0 ),
+      0,
+      0
+    );
+  }
+  if( dot( dir0, p1 - p0 ) >= 0.0 ) {
+    return rigid_collision_dx_dq(
+      vec3( 0, 0, 0 ),
+      vec4( 0, 0, 0, 0 ),
+      0,
+      0
+    );
+  }
+  if( dot( -dir0, p0 - p1 ) >= 0.0 ) {
+    return rigid_collision_dx_dq(
+      vec3( 0, 0, 0 ),
+      vec4( 0, 0, 0, 0 ),
+      0,
+      0
+    );
+  }
   const float c = distance( p0, p1 );
   const vec3 n = ( p0 - p1 )/c;
 
   const float w0 = inv_m0 + dot( cross( r0, n ), inv_i0 * cross( r0, n ) );
-  
-  const float alpha = 0.00005;
+ 
+  const float alpha = 0.0;//0.000005;
   const float alpha_dt2 = alpha / ( dt * dt );
   
   const float dl = ( -c ) / ( w0 + alpha_dt2 );
@@ -166,19 +215,23 @@ rigid_collision_dx_dq rigid_border_solve(
 
   vec3 p = n * dl;
 
-  const float dlf = -0.5;//( -c ) / ( w0 );
+  const float dlf = -0.02;//( -c ) / ( w0 );
   
   const vec3 delta_p = ( p0 - p_prev0 );
-  const vec3 delta_pt = delta_p - dot( delta_p, n ) * n;
+  const vec3 delta_pt = ( delta_p - dot( delta_p, n ) * n );
 
-  const vec3 dx = r * p * inv_m0 +delta_pt * dlf /* * inv_m0*/;
-  const vec4 dq =
-    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 );
+  vec3 dx = r * p * inv_m0 +delta_pt * dlf /* * inv_m0*/;
+  vec4 dq =
+    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, sqrt( 1.0 - r * r ) * p ), 0.0 ), q0 ) +
+    1.0/2.0 * quaternion_quaternion_mult( vec4( inv_i0 * cross( r0, delta_pt * dlf ), 0.0 ), q0 );
+
+  //dx *= 0.01;
+  //dq *= 0.01;
 
   vec3 dx_sum = subgroupAdd( dx );
-  uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 1u );
+  uint dx_count = subgroupAdd( dx == vec3( 0, 0, 0 ) ? 0u : 2u );
   vec4 dq_sum = subgroupAdd( dq );
-  uint dq_count = subgroupAdd( dq == vec4( 0, 0, 0, 0 ) ? 0u : 1u );
+  uint dq_count = subgroupAdd( dq == vec4( 0, 0, 0, 0 ) ? 0u : 2u );
 
   return rigid_collision_dx_dq(
     dx_sum,

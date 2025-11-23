@@ -955,7 +955,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( props.enable_lambda ) {
         const auto desc = props.graph->get_resource()->lambda->allocate(
           props.enable_rigid_constraint ?
-          256u * 2u :
+          512u * 2u :
           vertex_count * 128u
         );
         p.descriptor.set_lambda( desc );
@@ -1324,7 +1324,7 @@ void gltf2::load_node(
             // 衝突制約の情報のオフセット
             if( props.enable_constraint ) {
               const auto desc = props.graph->get_resource()->constraint->allocate(
-                256u * 2u
+                512u * 2u
               );
               i->rigid_state->descriptor.set_collision_constraint( desc );
               if( rmp.has( "collision_constraint_offset" ) ) {

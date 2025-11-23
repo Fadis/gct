@@ -35,7 +35,7 @@ void main() {
   const uint constraint_index = gl_SubgroupInvocationID;
   
   const float dt = 1.0/60.0;
-  const uint substep_count = 10;
+  const uint substep_count = 20;
   const float h = dt/substep_count;
 
   //if( mesh.constraint_offset == 0xFFFFFFFF ) return;
@@ -48,7 +48,7 @@ void main() {
   
   vec4 dx = vec4( 0.0, 0.0, 0.0, 0.0 );
   rigid_collision_dx_dq sum = rigid_collision_dx_dq( vec3( 0, 0, 0 ), vec4( 0, 0, 0, 0 ), 0u, 0u );
-  for( uint constraint_block_id = 0u; constraint_block_id != 8u; constraint_block_id++ ) {
+  for( uint constraint_block_id = 0u; constraint_block_id != 16u; constraint_block_id++ ) {
     rigid_collision_dx_dq dx_dq = rigid_collision_constraint_dx(
       rigid.collision_constraint_offset,
       constraint_block_id * gl_SubgroupSize + constraint_index,

@@ -126,7 +126,7 @@ void main() {
             }
           }
         }
-        else if( distance( p0, p1 ) < min( r0, r1 ) ) {
+        else if( distance( p0, p1 ) < min( r0, r1 ) / 8 ) {
           if( is_rigid ) {
             //constraint_pool[ rigid_pool[ inst.rigid ].collision_constraint_offset ] =  12345;
 

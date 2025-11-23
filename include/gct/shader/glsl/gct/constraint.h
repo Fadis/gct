@@ -110,7 +110,7 @@ void rigid_collision_constraint_insert_unidirectional(
 ) {
   uint hoge = 0;
   uint gcid = rigid_collision_constraint_begin( id_offset );
-  for( uint cid = 0; cid < 256; cid++ ) {
+  for( uint cid = 0; cid < 512; cid++ ) {
     const uint orig = atomicCompSwap(
       constraint_pool[ gcid ],
       0,
