@@ -48,6 +48,7 @@ void main() {
 
   matrix_pool[ rigid_pool[ inst.rigid ].trs ] = trs;
   matrix_pool[ rigid_pool[ inst.rigid ].trs_previous ] = trs;
+  matrix_pool[ rigid_pool[ inst.rigid ].trs_previous_coarse ] = trs;
   rigid_pool[ inst.rigid ].linear_velocity = vec4( 0, 0, 0, 0 );
   rigid_pool[ inst.rigid ].angular_velocity = vec4( 0, 0, 0, 1 );
 }

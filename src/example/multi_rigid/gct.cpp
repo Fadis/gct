@@ -603,6 +603,15 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", global_uniform } )
   );
 
+  auto update_rigid_velocity = gct::compute(
+    gct::compute_create_info()
+      .set_allocator_set( res.allocator_set )
+      .set_shader( gct::get_system_shader_path() / "update_rigid_velocity" / "update_rigid_velocity.comp.spv" )
+      .set_scene_graph( sg->get_resource() )
+      .add_resource( { "global_uniforms", global_uniform } )
+  );
+
+
   /*auto update_particle_position = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -1194,7 +1203,7 @@ int main( int argc, const char *argv[] ) {
           rec.transfer_to_graphics_barrier( global_uniform );
         }
         {
-          sg->get_resource()->particle->get(
+          /*sg->get_resource()->particle->get(
             il_prim[ 1 ]->descriptor.particle,
             [&]( vk::Result, std::vector< std::uint8_t > &&v ) {
               auto mp = sg->get_resource()->particle->get_member_pointer();
@@ -1209,7 +1218,7 @@ int main( int argc, const char *argv[] ) {
               auto &position = static_cast< glm::vec4& >( v.data()->*mp[ "linear_velocity" ] );
               std::cout << "v " << position.x << " " << position.y << " " << position.z << std::endl;
             }
-          );
+          );*/
           sg->get_resource()->constraint->clear();
           sg->get_resource()->spatial_hash->clear();
           (*sg)( rec );
@@ -1278,6 +1287,11 @@ int main( int argc, const char *argv[] ) {
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
             rec.barrier( sg->get_resource()->matrix->get_buffer() );
           }
+          for( unsigned int i = 1u; i < il.size(); ++i ) {
+            il[ i ]->setup_resource_pair_buffer( rec );
+            update_rigid_velocity( rec, 0, 1u, 1u, 1u );
+          }
+          rec.barrier( sg->get_resource()->rigid->get_buffer() );
         }
         if( res.force_geometry || walk.camera_moved() ) {
           auto render_pass_token = rec.begin_render_pass(

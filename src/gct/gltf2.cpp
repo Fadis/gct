@@ -1288,6 +1288,7 @@ void gltf2::load_node(
             i->rigid_state = scene_graph::rigid{};
             i->rigid_state->descriptor.trs = props.graph->get_resource()->matrix->allocate();
             i->rigid_state->descriptor.trs_previous = props.graph->get_resource()->matrix->allocate();
+            i->rigid_state->descriptor.trs_previous_coarse = props.graph->get_resource()->matrix->allocate();
             auto rmp = props.graph->get_resource()->rigid->get_member_pointer();
             std::vector< std::uint8_t > r( rmp.get_aligned_size() );
             if( rmp.has( "trs" ) ) {
@@ -1295,6 +1296,9 @@ void gltf2::load_node(
             }
             if( rmp.has( "trs_previous" ) ) {
               r.data()->*rmp[ "trs_previous" ] = *i->rigid_state->descriptor.trs_previous;
+            }
+            if( rmp.has( "trs_previous_coarse" ) ) {
+              r.data()->*rmp[ "trs_previous_coarse" ] = *i->rigid_state->descriptor.trs_previous_coarse;
             }
             if( rmp.has( "linear_velocity" ) ) {
               r.data()->*rmp[ "linear_velocity" ] = glm::vec4( 0, 0, 0, 0 );
