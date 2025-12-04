@@ -610,9 +610,21 @@ namespace gct {
     std::uint32_t array_count,
     vk::ImageLayout to
   ) {
+    constexpr auto all_device_image_access =
+      std::uint32_t(
+      vk::AccessFlagBits::eInputAttachmentRead |
+      vk::AccessFlagBits::eShaderRead |
+      vk::AccessFlagBits::eShaderWrite |
+      vk::AccessFlagBits::eColorAttachmentRead |
+      vk::AccessFlagBits::eColorAttachmentWrite |
+      vk::AccessFlagBits::eDepthStencilAttachmentRead |
+      vk::AccessFlagBits::eDepthStencilAttachmentWrite |
+      vk::AccessFlagBits::eTransferRead |
+      vk::AccessFlagBits::eTransferWrite
+    );
     return convert_image(
-      vk::AccessFlagBits( 0x1FFFF ),
-      vk::AccessFlagBits( 0x1FFFF ),
+      vk::AccessFlagBits( all_device_image_access ),
+      vk::AccessFlagBits( all_device_image_access ),
       vk::PipelineStageFlagBits::eAllCommands,
       vk::PipelineStageFlagBits::eAllCommands,
       image,
@@ -627,9 +639,21 @@ namespace gct {
     const std::shared_ptr< image_t > &image,
     vk::ImageLayout to
   ) {
+    constexpr auto all_device_image_access =
+      std::uint32_t(
+      vk::AccessFlagBits::eInputAttachmentRead |
+      vk::AccessFlagBits::eShaderRead |
+      vk::AccessFlagBits::eShaderWrite |
+      vk::AccessFlagBits::eColorAttachmentRead |
+      vk::AccessFlagBits::eColorAttachmentWrite |
+      vk::AccessFlagBits::eDepthStencilAttachmentRead |
+      vk::AccessFlagBits::eDepthStencilAttachmentWrite |
+      vk::AccessFlagBits::eTransferRead |
+      vk::AccessFlagBits::eTransferWrite
+    );
     return convert_image(
-      vk::AccessFlagBits( 0x1FFFF ),
-      vk::AccessFlagBits( 0x1FFFF ),
+      vk::AccessFlagBits( all_device_image_access ),
+      vk::AccessFlagBits( all_device_image_access ),
       vk::PipelineStageFlagBits::eAllCommands,
       vk::PipelineStageFlagBits::eAllCommands,
       image,
