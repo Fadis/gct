@@ -1030,6 +1030,38 @@ int main( int argc, const char *argv[] ) {
       .set_output( res.swapchain_image_views )
       .add_resource( { "bloom_image", bloom_view, vk::ImageLayout::eGeneral } )
   );
+  
+  const auto record_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( res.width, res.height )
+              .setFormat( vk::Format::eR32G32B32A32Sfloat )
+              .setUsage(
+                vk::ImageUsageFlagBits::eStorage |
+                vk::ImageUsageFlagBits::eTransferDst |
+                vk::ImageUsageFlagBits::eTransferSrc
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  const auto record = sg->get_resource()->image->get( record_desc.linear );
+  
+  const auto record_gamma = gct::image_filter(
+    gct::image_filter_create_info()
+      .set_allocator( res.allocator )
+      .set_descriptor_pool( res.descriptor_pool )
+      .set_pipeline_cache( res.pipeline_cache )
+      .set_shader( gct::get_system_shader_path() / "gamma" / "1.0" / "gamma.comp.spv" )
+      .set_input( std::vector< std::shared_ptr< gct::image_view_t > >{ merged_view } )
+      .set_output( std::vector< std::shared_ptr< gct::image_view_t > >{ record } )
+      .add_resource( { "bloom_image", bloom_view, vk::ImageLayout::eGeneral } )
+  );
+  
 
   const auto scene_aabb = sg->get_root_node()->get_initial_world_aabb();
   if( !scene_aabb ) throw -1;
@@ -1347,11 +1379,29 @@ int main( int argc, const char *argv[] ) {
         );
         
         tone.get( rec, 0 );
+        if( res.record ) {
+          record_gamma( rec, 0u );
+          rec.compute_to_transfer_barrier(
+            gct::syncable()
+              .add( record )
+          );
+          rec.dump_image(
+            res.allocator,
+            record->get_factory(),
+            "video/" + std::to_string( frame_counter ) + ".png",
+            0
+          );
+        }
       }
       command_buffer->execute(
         gct::submit_info_t()
           .add_signal_to( sync.render_complete )
       );
+    }
+    if( res.record ) {
+      if( frame_counter == 600 ) {
+        std::exit( 0 ); 
+      }
     }
     auto image_index = res.swapchain->acquire_next_image( sync.image_acquired );
     auto &fb = framebuffers[ image_index ];

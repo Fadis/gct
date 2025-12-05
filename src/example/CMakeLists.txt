@@ -111,6 +111,7 @@ subdirs(
   single_xpbd
   single_fluid
   substep_xpbd
+  substep_xpbd2
   cloth
   xpbd
   fluid
