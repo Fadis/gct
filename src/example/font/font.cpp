@@ -1,5 +1,5 @@
+#include <array>
 #include <iostream>
-#include <unordered_set>
 #include <utility>
 #include <nlohmann/json.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -64,7 +64,7 @@ struct uniform_t {
   LIBGCT_SETTER( world_matrix )
   glm::mat4 world_matrix;
   LIBGCT_SETTER( char_matrix )
-  glm::mat2 char_matrix[ 1024 ];
+  std::array< glm::mat2, 1024 > char_matrix;
 };
 
 int main() {

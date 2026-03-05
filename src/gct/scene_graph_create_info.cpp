@@ -52,6 +52,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   matrix.set_shader( dir / "matrix_pool" );
   aabb.set_shader( dir / "aabb_pool" );
   image.set_shader( dir / "image_pool" );
+  texture.set_shader( dir / "texture_pool" );
   primitive_resource_index.set_shader( dir / "primitive_resource_index_pool" );
   instance_resource_index.set_shader( dir / "instance_resource_index_pool" );
   visibility.set_shader( dir / "visibility_pool" );

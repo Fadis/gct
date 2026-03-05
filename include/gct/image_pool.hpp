@@ -20,6 +20,7 @@
 #include <gct/image_create_info.hpp>
 #include <gct/subview_range.hpp>
 #include <gct/image_allocate_info.hpp>
+#include <gct/spv_member_pointer.hpp>
 
 namespace gct {
 class image_t;
@@ -117,6 +118,9 @@ public:
   [[nodiscard]] image_descriptor allocate( const std::shared_ptr< image_view_t >& );
   [[nodiscard]] const image_pool_create_info &get_props() const { return state->props; }
   [[nodiscard]] std::shared_ptr< image_view_t > get( const image_descriptor& ) const;
+  [[nodiscard]] std::shared_ptr< buffer_t > get_metadata_buffer() const {
+    return state->metadata_buffer;
+  }
   void dump( const image_descriptor&, const image_dump_info& );
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
@@ -136,6 +140,7 @@ private:
     void flush( command_buffer_recorder_t& );
     image_pool_create_info props;
     std::vector< image_state_type > image_state;
+    reduced_linear_allocator staging_index_allocator;
     linear_allocator index_allocator;
     std::vector< write_request > write_request_list;
     std::vector< std::pair< std::shared_ptr< image_t >, image_dump_info > > dump_request_list;
@@ -149,6 +154,11 @@ private:
     std::shared_ptr< compute > rgba16;
     std::shared_ptr< compute > rgba16f;
     std::shared_ptr< compute > rgba32f;
+    std::shared_ptr< shader_module_reflection_t > reflection;
+    std::shared_ptr< buffer_t > staging_metadata_buffer;
+    std::shared_ptr< buffer_t > metadata_buffer;
+    std::vector< vk::BufferCopy > metadata_write_region;
+    std::optional< spv_member_pointer > metadata_member_pointer;
   };
   std::shared_ptr< state_type > state;
 };

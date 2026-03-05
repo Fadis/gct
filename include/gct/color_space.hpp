@@ -32,24 +32,26 @@
 namespace gct {
   
 enum class color_space {
-  cie_xyz,
-  ntsc,
-  bt709, // aka srgb
-  apple_rgb,
-  adobe_rgb,
-  display_p3,
-  bt2020,
-  aces_cg
+  unknown = 0,
+  cie_xyz = 1,
+  ntsc = 2,
+  bt709 = 3, // aka srgb
+  apple_rgb = 4,
+  adobe_rgb = 5,
+  display_p3 = 6,
+  bt2020 = 7,
+  aces_cg = 8
 };
 
 enum class color_gamma {
-  linear,
-  apple_rgb, // 1.8
-  srgb, // 2.2
-  bt709, // 2.4
-  dci_p3, // 2.6
-  hlg, // ARIB STD-B67
-  pq // SMPTE ST-2084
+  unknown = 0,
+  linear = 1,
+  apple_rgb = 2, // 1.8
+  srgb = 3, // 2.2
+  bt709 = 4, // 2.4
+  dci_p3 = 5, // 2.6
+  hlg = 6, // ARIB STD-B67
+  pq = 7 // SMPTE ST-2084
 };
 
 struct color_profile {

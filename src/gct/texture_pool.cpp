@@ -13,6 +13,8 @@
 #include <gct/exception.hpp>
 #include <gct/texture_pool.hpp>
 #include <gct/sampler_pool.hpp>
+#include <gct/shader_module_reflection.hpp>
+#include <gct/simplify_buffer_copy.hpp>
 
 namespace gct {
 
@@ -52,8 +54,12 @@ texture_pool::views texture_pool::state_type::allocate(
   texture_descriptor normalized_desc;
   texture_descriptor srgb_desc;
   texture_descriptor linear_desc;
+
+  std::shared_ptr< image_view_t > normalized;
+  std::shared_ptr< image_view_t > srgb;
+  std::shared_ptr< image_view_t > linear;
   if( iid.normalized ) {
-    const auto normalized = props.image->get( iid.normalized );
+    normalized = props.image->get( iid.normalized );
     write_request_list.push_back(
       write_request()
         .set_index( normalized_index )
@@ -79,7 +85,7 @@ texture_pool::views texture_pool::state_type::allocate(
   }
 
   if( iid.srgb ) {
-    const auto srgb = props.image->get( iid.srgb ); 
+    srgb = props.image->get( iid.srgb ); 
     write_request_list.push_back(
       write_request()
         .set_index( srgb_index )
@@ -106,7 +112,7 @@ texture_pool::views texture_pool::state_type::allocate(
   }
   
   if( iid.linear ) {
-    const auto linear = props.image->get( iid.linear );
+    linear = props.image->get( iid.linear );
     write_request_list.push_back(
       write_request()
         .set_index( linear_index )
@@ -131,6 +137,77 @@ texture_pool::views texture_pool::state_type::allocate(
     );
     used_on_gpu.push_back( linear_desc );
   }
+
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    if( normalized ) {
+      const auto &color_prof = normalized->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( srgb_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+    if( srgb ) {
+      const auto &color_prof = srgb->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( srgb_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+    if( linear )  {
+      const auto &color_prof = linear->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( linear_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+  }
+
 
   return views()
     .set_normalized( normalized_desc )
@@ -175,6 +252,30 @@ texture_pool::texture_descriptor texture_pool::state_type::allocate(
   );
   used_on_gpu.push_back( desc );
 
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    const auto &color_prof = linear->get_factory()->get_props().get_profile();
+    const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+    const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+    std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+    const auto staging_index = staging_index_allocator.allocate( 1u );
+    {
+      auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+      std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+    }
+    metadata_write_region.push_back(
+      vk::BufferCopy()
+        .setSrcOffset( staging_index * metadata_aligned_size )
+        .setDstOffset( index * metadata_aligned_size )
+        .setSize( metadata_aligned_size )
+    );
+  }
+
   return desc;
 }
 
@@ -211,6 +312,30 @@ texture_pool::texture_descriptor texture_pool::state_type::allocate(
     }
   );
   used_on_gpu.push_back( desc );
+
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    const auto &color_prof = linear->get_factory()->get_props().get_profile();
+    const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+    const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+    std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+    const auto staging_index = staging_index_allocator.allocate( 1u );
+    {
+      auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+      std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+    }
+    metadata_write_region.push_back(
+      vk::BufferCopy()
+        .setSrcOffset( staging_index * metadata_aligned_size )
+        .setDstOffset( index * metadata_aligned_size )
+        .setSize( metadata_aligned_size )
+    );
+  }
 
   return desc;
 }
@@ -258,14 +383,52 @@ void texture_pool::state_type::release( texture_index_t index ) {
 
 texture_pool::state_type::state_type( const texture_pool_create_info &ci ) :
   props( ci ),
+  staging_index_allocator( linear_allocator_create_info().set_max( ci.max_request_count ) ),
   index_allocator( linear_allocator_create_info().set_max( ci.max_texture_count ) ) {
   allocate_index();
+  if( std::filesystem::exists( props.dummy_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.dummy_shader )
+    );
+  }
+  if( reflection ) {
+    metadata_member_pointer = reflection->get_member_pointer_maybe( props.metadata_buffer_name, props.metadata_layout );
+    if( metadata_member_pointer ) {
+      const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+      metadata_buffer = props.allocator_set.allocator->create_buffer(
+        metadata_aligned_size * props.max_texture_count,
+        vk::BufferUsageFlagBits::eStorageBuffer|
+        vk::BufferUsageFlagBits::eTransferSrc|
+        vk::BufferUsageFlagBits::eTransferDst,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      );
+      staging_metadata_buffer = props.allocator_set.allocator->create_buffer(
+        metadata_aligned_size * props.max_request_count,
+        vk::BufferUsageFlagBits::eTransferSrc|
+        vk::BufferUsageFlagBits::eTransferDst,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+      );
+    }
+  }
 }
 
 void texture_pool::state_type::flush( command_buffer_recorder_t &rec ) {
-  std::vector< texture_descriptor > used_on_gpu_;
+  if( execution_pending ) {
+    return;
+  }
   {
     std::lock_guard< std::mutex > lock( guard );
+    if( metadata_member_pointer ) {
+      simplify_buffer_copy( metadata_write_region );
+      if( !metadata_write_region.empty() ) {
+        rec->copyBuffer(
+          **staging_metadata_buffer,
+          **metadata_buffer,
+          metadata_write_region
+        );
+        rec.transfer_barrier( { metadata_buffer }, {} );
+      }
+    }
     std::vector< write_descriptor_set_t > updates;
     const auto target = (*props.descriptor_set)[ props.descriptor_name ];
     for( const auto &req: write_request_list ) {
@@ -290,16 +453,28 @@ void texture_pool::state_type::flush( command_buffer_recorder_t &rec ) {
       //  std::move( updates )
       //);
     }
-    for( const auto &desc: used_on_gpu ) {
-      if( texture_state.size() > *desc && texture_state[ *desc ].valid ) {
-        auto &s = texture_state[ *desc ];
-        s.write_request_index = std::nullopt;
+  }
+  rec.on_executed(
+    [self=shared_from_this()]( vk::Result result ) {
+      std::vector< texture_descriptor > used_on_gpu;
+      {
+        std::lock_guard< std::mutex > lock( self->guard );
+        for( const auto &desc: self->used_on_gpu ) {
+          if( self->texture_state.size() > *desc && self->texture_state[ *desc ].valid ) {
+            auto &s = self->texture_state[ *desc ];
+            s.write_request_index = std::nullopt;
+          }
+        }
+        self->staging_index_allocator.reset();
+        self->metadata_write_region.clear();
+        self->write_request_list.clear();
+        used_on_gpu = std::move( self->used_on_gpu );
+        self->used_on_gpu.clear();
+        self->execution_pending = false;
       }
     }
-    write_request_list.clear();
-    used_on_gpu_ = std::move( used_on_gpu );
-    used_on_gpu.clear();
-  }
+  );
+  execution_pending = true;
 }
 
 texture_pool::texture_pool( const texture_pool_create_info &ci ) :

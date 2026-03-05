@@ -201,6 +201,10 @@ scene_graph::scene_graph(
     std::cout << "Using system image_pool" << std::endl;
     props->image.set_shader( shader_path / "image_pool" );
   }
+  if( !props->texture.shader_exists() ) {
+    std::cout << "Using system texture_pool" << std::endl;
+    props->texture.set_shader( shader_path / "dummy" );
+  }
   if( !props->primitive_resource_index.shader_exists() ) {
     std::cout << "Using system primitive_resource_index_pool" << std::endl;
     props->primitive_resource_index.set_shader( shader_path / "dummy" );
@@ -316,10 +320,11 @@ scene_graph::scene_graph(
   resource->image.reset( new image_pool( ipci ) );
   resource->texture.reset( new texture_pool(
     texture_pool_create_info( props->texture )
-      .set_allocator( props->allocator_set.allocator )
+      .set_allocator_set( props->allocator_set )
       .set_descriptor_set( resource->texture_descriptor_set )
       .set_sampler( resource->sampler )
       .set_image( resource->image )
+      .set_csmat( resource->csmat )
   ) );
   resource->primitive_resource_index.reset( new buffer_pool(
     buffer_pool_create_info( props->primitive_resource_index )
@@ -435,6 +440,14 @@ scene_graph::scene_graph(
   }
   if( resource->aabb && resource->descriptor_set->has( "aabb_pool" ) ) {
     u.push_back( { "aabb_pool", resource->aabb->get_buffer() } );
+  }
+  if( resource->image && resource->descriptor_set->has( "image_metadata_pool" ) ) {
+    u.push_back( { "image_metadata_pool", resource->image->get_metadata_buffer() } );
+  }
+  std::cout << __FILE__ << " " << __LINE__ << " " << resource->descriptor_set->has( "texture_metadata_pool" ) << std::endl;
+  if( resource->texture && resource->descriptor_set->has( "texture_metadata_pool" ) ) {
+    std::cout << __FILE__ << " " << __LINE__ << " " << resource->texture->get_metadata_buffer().get() << std::endl;
+    u.push_back( { "texture_metadata_pool", resource->texture->get_metadata_buffer() } );
   }
   if( resource->resource_pair && resource->descriptor_set->has( "resource_pair" ) ) {
     u.push_back( { "resource_pair", resource->resource_pair->get_buffer() } );

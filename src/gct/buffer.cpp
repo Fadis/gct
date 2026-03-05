@@ -168,7 +168,11 @@ namespace gct {
   void pixel_buffer_t::dump_image(
     const std::string &filename
   ) {
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
     using namespace OIIO_NAMESPACE;
+#endif
     auto out = ImageOutput::create( filename );
     if( !out )
       throw exception::runtime_error( "Unable to open output file", __FILE__, __LINE__ );

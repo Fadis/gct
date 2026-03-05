@@ -31,11 +31,17 @@ primitive_value read_primitive(
   const vec3 pos = vert_position.xyz;
   const vec4 albedo =
     ( prim.base_color_texture != 0 ) ?
-    texture( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord ) :
+    from_color_profile(
+      texture_metadata_pool[ prim.base_color_texture ],
+      texture( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord )
+    ) :
     prim.base_color;
   const vec3 emissive =
     ( prim.emissive_texture != 0 ) ?
-    texture( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord ).rgb :
+    from_color_profile(
+      texture_metadata_pool[ prim.emissive_texture ],
+      texture( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord ).rgb
+    ) :
     prim.emissive.rgb;
   float metallic;
   float roughness;

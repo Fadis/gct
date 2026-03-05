@@ -1,0 +1,15 @@
+include(FindPackageHandleStandardArgs)
+
+if(NOT GLM_ROOT)
+  find_path(GLM_INCLUDE_DIRS NAMES glm/glm.hpp PATHS ${CMAKE_SYSTEM_INCLUDE_PATH})
+else()
+  find_path(GLM_INCLUDE_DIRS NAMES glm/glm.hpp NO_DEFAULT_PATH PATHS ${GLM_ROOT})
+endif()
+if(GLM_INCLUDE_DIRS)
+  set(GLM_FOUND TRUE)
+else()
+  set(GLM_FOUND FALSE)
+  set(GLM_INCLUDE_DIRS)
+endif()
+mark_as_advanced(GLM_INCLUDE_DIRS)
+

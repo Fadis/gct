@@ -243,7 +243,11 @@ namespace gct {
     const std::string &filename,
     bool srgb
   ) {
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
     using namespace OIIO_NAMESPACE;
+#endif
 #if OIIO_VERSION_MAJOR >= 2 
     auto texture_file = ImageInput::open( filename );
 #else

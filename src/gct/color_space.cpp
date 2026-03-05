@@ -136,6 +136,7 @@ glm::mat4 get_xyz_to_rgb( color_space cs ) {
 color_space_matrix allocate_color_space_matrix( matrix_pool &pool ) {
   return color_space_matrix()
     .emplace_from( color_space_matrix_map{
+      { color_space::cie_xyz, pool.allocate( get_rgb_to_xyz( color_space::cie_xyz ) ) },
       { color_space::ntsc, pool.allocate( get_rgb_to_xyz( color_space::ntsc ) ) },
       { color_space::bt709, pool.allocate( get_rgb_to_xyz( color_space::bt709 ) ) },
       { color_space::apple_rgb, pool.allocate( get_rgb_to_xyz( color_space::apple_rgb ) ) },
@@ -145,6 +146,7 @@ color_space_matrix allocate_color_space_matrix( matrix_pool &pool ) {
       { color_space::aces_cg, pool.allocate( get_rgb_to_xyz( color_space::aces_cg ) ) }
     } )
     .emplace_to( color_space_matrix_map{
+      { color_space::cie_xyz, pool.allocate( get_xyz_to_rgb( color_space::cie_xyz ) ) },
       { color_space::ntsc, pool.allocate( get_xyz_to_rgb( color_space::ntsc ) ) },
       { color_space::bt709, pool.allocate( get_xyz_to_rgb( color_space::bt709 ) ) },
       { color_space::apple_rgb, pool.allocate( get_xyz_to_rgb( color_space::apple_rgb ) ) },

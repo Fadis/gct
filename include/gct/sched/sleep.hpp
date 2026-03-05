@@ -11,7 +11,11 @@
 namespace gct::sched {
 
 template< typename C, typename D >
+#ifdef _LIBCPP_VERSION
+future< void > sleep_until( const std::shared_ptr< sched::epoll_notifier_t > &epoll, const std::chrono::time_point< C, D > &until ) {
+#else
 future< void > sleep_until( const std::shared_ptr< sched::epoll_notifier_t > &epoll, const std::chrono::time_point< C, D > &until ) requires Clock< C > {
+#endif
   const auto now = C::now();
   if( until <= now ) {
     promise< void > p;

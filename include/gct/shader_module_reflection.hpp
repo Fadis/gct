@@ -28,6 +28,7 @@ namespace gct {
     [[nodiscard]] const SpvReflectShaderModule &operator*() const { return *reflect; }
     [[nodiscard]] const SpvReflectShaderModule *operator->() const { return &*reflect; }
     [[nodiscard]] spv_member_pointer get_member_pointer( const std::string &name, memory_layout layout ) const;
+    [[nodiscard]] std::optional< spv_member_pointer > get_member_pointer_maybe( const std::string &name, memory_layout layout ) const;
     [[nodiscard]] spv_member_pointer get_push_constant_member_pointer( const std::string &name ) const;
     [[nodiscard]] std::optional< spv_member_pointer > get_push_constant_member_pointer_maybe( const std::string &name ) const;
     [[nodiscard]] std::vector< std::uint32_t > get_descriptor_set_id() const;

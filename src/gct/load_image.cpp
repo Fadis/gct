@@ -137,7 +137,11 @@ namespace gct {
       vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_TO_CPU
     );
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
     using namespace OIIO_NAMESPACE;
+#endif
     auto oiio_type = TypeDesc::UINT8;
     if( component_type == numeric_component_type_t::int_ && component_size == 1u ) {
       oiio_type = TypeDesc::UINT8;
@@ -231,7 +235,11 @@ namespace gct {
       vk::BufferUsageFlagBits::eTransferDst,
       VMA_MEMORY_USAGE_GPU_TO_CPU
     );
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
     using namespace OIIO_NAMESPACE;
+#endif
 
     copy(
       image,

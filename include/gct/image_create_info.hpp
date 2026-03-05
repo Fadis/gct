@@ -101,7 +101,7 @@ namespace gct {
       const image_shrink_info&
     );
   private:
-    color_profile profile;
+    color_profile profile = color_profile{ color_space::unknown, color_gamma::unknown, 100.f };
   };
   [[nodiscard]] vk::ImageCreateInfo basic_2d_image( std::uint32_t width, std::uint32_t height );
   [[nodiscard]] vk::ImageCreateInfo basic_3d_image( std::uint32_t width, std::uint32_t height, std::uint32_t depth );

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <gct/spirv_reflect.h>
 #include <gct/alignment.hpp>
@@ -60,9 +61,11 @@ namespace gct {
   }
   const spv_member_pointer &spv_member_pointer::operator[]( const std::string &name ) const {
     if( stride != 0u ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     if( !child || child->empty() ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     const auto iter = child->find( name );
@@ -206,9 +209,11 @@ namespace gct {
   }
   bool spv_member_pointer::has( const std::string &name ) const {
     if( stride != 0u ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     if( !child || child->empty() ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     const auto iter = child->find( name );
@@ -219,9 +224,11 @@ namespace gct {
   }
   std::size_t spv_member_pointer::get_member_count() const {
     if( stride != 0u ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     if( !child || child->empty() ) {
+      std::cout << __FILE__ << " " << __LINE__ << " " << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     return child->size();

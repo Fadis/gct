@@ -12,6 +12,7 @@
 #include <gct/named_resource.hpp>
 #include <gct/color_space.hpp>
 #include <gct/allocator_set.hpp>
+#include <gct/alignment.hpp>
 
 namespace gct {
 
@@ -19,6 +20,7 @@ struct image_pool_create_info {
   LIBGCT_SETTER( allocator_set )
   LIBGCT_ALLOCATOR_SET_LEGACY_SETTER( allocator_set )
   LIBGCT_SETTER( max_image_count )
+  LIBGCT_SETTER( max_request_count )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( external_descriptor_set )
   LIBGCT_SETTER( external_pipeline_layout )
@@ -32,6 +34,8 @@ struct image_pool_create_info {
   LIBGCT_SETTER( rgba16_shader )
   LIBGCT_SETTER( rgba16f_shader )
   LIBGCT_SETTER( rgba32f_shader )
+  LIBGCT_SETTER( metadata_buffer_name )
+  LIBGCT_SETTER( metadata_layout )
   LIBGCT_SETTER( resources )
   LIBGCT_NAMED_RESOURCE_SETTER( resources )
   LIBGCT_SETTER( image_descriptor_set_id )
@@ -54,6 +58,7 @@ struct image_pool_create_info {
   }
   allocator_set_t allocator_set;
   std::uint32_t max_image_count = 1024u;
+  std::uint32_t max_request_count = 1024u;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_layout_t > > descriptor_set_layout;
   std::unordered_map< unsigned int, std::shared_ptr< descriptor_set_t > > external_descriptor_set;
   std::shared_ptr< pipeline_layout_t > external_pipeline_layout;
@@ -68,6 +73,8 @@ struct image_pool_create_info {
   std::filesystem::path rgba16_shader;
   std::filesystem::path rgba16f_shader;
   std::filesystem::path rgba32f_shader;
+  std::string metadata_buffer_name = "image_metadata_pool";
+  memory_layout metadata_layout = memory_layout::std430;
   std::vector< named_resource > resources;
 };
 void to_json( nlohmann::json &dest, const image_pool_create_info &src );

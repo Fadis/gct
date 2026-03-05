@@ -1,0 +1,36 @@
+#ifndef GCT_SHADER_COLOR_SPACE_H
+#define GCT_SHADER_COLOR_SPACE_H
+
+#define GCT_SHADER_COLOR_SPACE_UNKNOWN 0
+#define GCT_SHADER_COLOR_SPACE_CIE_XYZ 1
+#define GCT_SHADER_COLOR_SPACE_NTSC 2
+#define GCT_SHADER_COLOR_SPACE_BT709 3
+#define GCT_SHADER_COLOR_SPACE_APPLE_RGB 4
+#define GCT_SHADER_COLOR_SPACE_ADOBE_RGB 5
+#define GCT_SHADER_COLOR_SPACE_DISPLAY_P3 6
+#define GCT_SHADER_COLOR_SPACE_BT2020 7
+#define GCT_SHADER_COLOR_SPACE_ACES_CG 8
+
+#define GCT_SHADER_COLOR_GAMMA_UNKNOWN 0
+#define GCT_SHADER_COLOR_GAMMA_LINEAR 1
+#define GCT_SHADER_COLOR_GAMMA_APPLE_RGB 2
+#define GCT_SHADER_COLOR_GAMMA_SRGB 3
+#define GCT_SHADER_COLOR_GAMMA_BT709 4
+#define GCT_SHADER_COLOR_GAMMA_DCI_P3 5
+#define GCT_SHADER_COLOR_GAMMA_HLG 6
+#define GCT_SHADER_COLOR_GAMMA_PQ 7
+
+struct color_profile_type {
+  uint space;
+  uint gamma;
+  float max_intensity;
+  uint reserved; 
+};
+
+struct color_space_matrix_type {
+  uint from;
+  uint to;
+};
+
+#endif
+

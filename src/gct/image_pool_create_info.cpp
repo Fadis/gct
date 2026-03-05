@@ -1,5 +1,6 @@
 #include <nlohmann/json.hpp>
 #include <gct/allocator.hpp>
+#include <gct/alignment.hpp>
 #include <gct/matrix_pool.hpp>
 #include <gct/buffer.hpp>
 #include <gct/color_space.hpp>
@@ -30,6 +31,7 @@ void to_json( nlohmann::json &dest, const image_pool_create_info &src ) {
   dest = nlohmann::json::object();
   dest[ "allocator_set" ] = src.allocator_set;
   dest[ "max_image_count" ] = src.max_image_count;
+  dest[ "max_request_count" ] = src.max_request_count;
   dest[ "descriptor_set_layout" ] = nlohmann::json::object();
   for( const auto &v: src.descriptor_set_layout ) {
     if( v.second ) {
@@ -61,6 +63,10 @@ void to_json( nlohmann::json &dest, const image_pool_create_info &src ) {
   dest[ "rgba16_shader" ] = src.rgba16_shader;
   dest[ "rgba16f_shader" ] = src.rgba16f_shader;
   dest[ "rgba32f_shader" ] = src.rgba32f_shader;
+
+  dest[ "metadata_buffer_name" ] = src.metadata_buffer_name;
+  dest[ "metadata_layout" ] = src.metadata_layout;
+
   dest[ "resources" ] = src.resources;
 }
 

@@ -4,19 +4,10 @@
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <vulkan/vulkan.hpp>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wreorder"
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-#include <gct/vk_mem_alloc.h>
-#pragma GCC diagnostic pop
+#include <gct/vma.hpp>
 #include <gct/created_from.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/buffer_create_info.hpp>
-#include <gct/vk_mem_alloc.h>
 #include <gct/property.hpp>
 
 namespace gct {

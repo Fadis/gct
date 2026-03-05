@@ -22,9 +22,9 @@ layout(std430, binding = 3) buffer d {
   float16_t data_d[];
 };
 
-layout(constant_id = 1) const uint m = 32;
-layout(constant_id = 2) const uint n = 32;
-layout(constant_id = 3) const uint k = 32;
+layout(constant_id = 1) const uint m = 16;
+layout(constant_id = 2) const uint n = 8;
+layout(constant_id = 3) const uint k = 8;
 
 uint coord_to_offset(uint i, uint j, uint stride, bool col_major) {
   return col_major ? ( stride * j + i ) : ( stride * i + j );
@@ -36,21 +36,21 @@ void main() {
   const uint width = gl_WorkGroupSize.x * gl_NumWorkGroups.x;
   const uint index = x + y * width;
   fcoopmatNV<16, gl_ScopeSubgroup, 16, 8> mat_a;
-  fcoopmatNV<16, gl_ScopeSubgroup, 8, 16> mat_b;
-  fcoopmatNV<16, gl_ScopeSubgroup, 8, 8> mat_c;
+  fcoopmatNV<16, gl_ScopeSubgroup, 8, 8> mat_b;
+  fcoopmatNV<16, gl_ScopeSubgroup, 16, 8> mat_c;
   for( uint i = 0; i != mat_c.length(); i++ ) {
     mat_c[ i ] = float16_t( 0.0 );
   }
 
   const uint stride_a = m;
   const uint stride_b = k;
-  const uint stride_c = k;
+  const uint stride_c = m;
 
   for( uint i = 0; i != k/8; i++ ) {
     coopMatLoadNV( mat_a, data_a, coord_to_offset( 0/*x * 8*/, i * 8, stride_a, false ), stride_a, false );
     coopMatLoadNV( mat_b, data_b, coord_to_offset( i * 8, 0/*y * 8*/, stride_b, false ), stride_b, false );
     mat_c = coopMatMulAddNV( mat_a, mat_b, mat_c );
   }
-  coopMatStoreNV( mat_c, data_d, coord_to_offset( x * 8, y * 8, stride_c, false ), stride_c, false );
+  coopMatStoreNV( mat_c, data_d, coord_to_offset( x * 16, y * 8, stride_c, false ), stride_c, false );
 }
 

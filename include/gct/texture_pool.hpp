@@ -87,6 +87,9 @@ public:
     const texture_descriptor&
   ) const;
   [[nodiscard]] const texture_pool_create_info &get_props() const { return state->props; }
+  [[nodiscard]] std::shared_ptr< buffer_t > get_metadata_buffer() const {
+    return state->metadata_buffer;
+  }
   void operator()( command_buffer_recorder_t& );
   void to_json( nlohmann::json& ) const;
 private:
@@ -113,9 +116,15 @@ private:
     void flush( command_buffer_recorder_t& );
     texture_pool_create_info props;
     std::vector< texture_state_type > texture_state;
+    reduced_linear_allocator staging_index_allocator;
     linear_allocator index_allocator;
     std::vector< write_request > write_request_list;
     std::vector< texture_descriptor > used_on_gpu;
+    std::shared_ptr< shader_module_reflection_t > reflection;
+    std::shared_ptr< buffer_t > staging_metadata_buffer;
+    std::shared_ptr< buffer_t > metadata_buffer;
+    std::vector< vk::BufferCopy > metadata_write_region;
+    std::optional< spv_member_pointer > metadata_member_pointer;
     bool execution_pending = false;
     std::mutex guard;
   };

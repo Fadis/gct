@@ -14,7 +14,11 @@ namespace gct::dnn {
     const nnef_data_t &dest,
     command_buffer_recorder_t &rec
   ) {
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
     using namespace OIIO_NAMESPACE;
+#endif
 #if OIIO_VERSION_MAJOR >= 2 
     auto file = ImageInput::open( filename.string() );
 #else

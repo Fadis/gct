@@ -19,7 +19,11 @@ create_image_from_file(
   unsigned int max_channels_per_layer,
   bool enable_srgb
 ) {
-  using namespace OIIO_NAMESPACE;
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+    using namespace OIIO_CURRENT_NAMESPACE;
+#else
+    using namespace OIIO_NAMESPACE;
+#endif
 #if OIIO_VERSION_MAJOR >= 2 
   auto texture_file = ImageInput::open( filename );
 #else

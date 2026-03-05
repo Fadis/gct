@@ -5,11 +5,14 @@
 #include <gct/numeric_types.hpp>
 #include <gct/get_extensions.hpp>
 #include <vulkan/vulkan_enums.hpp>
+#if OIIO_VERSION_MAJOR <= 2 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR == 0 )
+#define OIIO_CURRENT_NAMESPACE OIIO_NAMESPACE
+#endif
 namespace gct {
   [[nodiscard]] vk::Flags<vk::ImageAspectFlagBits> format_to_aspect( vk::Format format );
   [[nodiscard]] unsigned int format_to_channels( vk::Format format );
   [[nodiscard]] unsigned int format_to_size( vk::Format format );
-  [[nodiscard]] OIIO_NAMESPACE::TypeDesc format_to_type( vk::Format format );
+  [[nodiscard]] OIIO_CURRENT_NAMESPACE::TypeDesc format_to_type( vk::Format format );
   [[nodiscard]] bool is_rgba( vk::Format format );
   [[nodiscard]] bool is_bgra( vk::Format format );
   [[nodiscard]] unsigned int pixel_per_element_x( vk::Format format );
@@ -18,7 +21,7 @@ namespace gct {
     std::uint32_t api_version,
     const extension_map_t &available_extensions
   );
-  [[nodiscard]] OIIO_NAMESPACE::TypeDesc get_component_type( vk::Format format );
+  [[nodiscard]] OIIO_CURRENT_NAMESPACE::TypeDesc get_component_type( vk::Format format );
   [[nodiscard]] numeric_type_t format2numeric_type( vk::Format format );
   [[nodiscard]] bool is_signed( vk::Format format );
   [[nodiscard]] bool is_normalized( vk::Format format );

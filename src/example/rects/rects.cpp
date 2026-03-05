@@ -215,7 +215,7 @@ int main() {
     auto c = cdist( rng );
     auto d = ddist( rng );
     window.add_rectangle(
-      vk::Rect2D{ vk::Offset2D{ x0, y0 }, vk::Extent2D{ x1 - x0, y1 - y0 } },
+      vk::Rect2D{ vk::Offset2D{ x0, y0 }, vk::Extent2D{ static_cast< unsigned int >( x1 - x0 ), static_cast< unsigned int >( y1 - y0 ) } },
       gct::srgb_oetf( gct::html_color( c ) ),
       d, true, 0u, 0u, 0u
     );

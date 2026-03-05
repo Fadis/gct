@@ -1,11 +1,14 @@
 #include <gct/numeric_type_to_oiio_type.hpp>
 #include <OpenImageIO/imageio.h>
 
+#if OIIO_VERSION_MAJOR <= 2 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR == 0 )
+#define OIIO_CURRENT_NAMESPACE OIIO_NAMESPACE
+#endif
 namespace gct {
-  OIIO_NAMESPACE :: TypeDesc numeric_type_to_oiio_type(
+  OIIO_CURRENT_NAMESPACE :: TypeDesc numeric_type_to_oiio_type(
     const numeric_type_t &nt
   ) {
-    using namespace OIIO_NAMESPACE;
+    using namespace OIIO_CURRENT_NAMESPACE;
     TypeDesc desc;
     desc.vecsemantics = TypeDesc::NOSEMANTICS;
     desc.arraylen = 0;

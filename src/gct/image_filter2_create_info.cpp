@@ -5,6 +5,8 @@
 #include <gct/aabb_pool.hpp>
 #include <gct/buffer_pool.hpp>
 #include <gct/light_pool.hpp>
+#include <gct/image_pool.hpp>
+#include <gct/texture_pool.hpp>
 #include <gct/image_filter2_create_info.hpp>
 #include <gct/descriptor_set_layout.hpp>
 #include <gct/descriptor_set.hpp>

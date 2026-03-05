@@ -1,6 +1,8 @@
 #ifndef GCT_SHADER_SCENE_GRAPH_IMAGE_POOL_H
 #define GCT_SHADER_SCENE_GRAPH_IMAGE_POOL_H
 
+#include <gct/scene_graph/image_metadata_type.h>
+
 #ifndef GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID
 #define GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID 3
 #endif
@@ -32,6 +34,10 @@ layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage3D image_pool_3dua[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage1DArray image_pool_1dua_array[];
 layout (set = GCT_SHADER_SCENE_GRAPH_IMAGE_SET_ID, binding = 0, r32ui) GCT_IMAGE_COHERENT_QUALIFIER uniform uimage2DArray image_pool_2dua_array[];
+
+layout(set = GCT_SHADER_SCENE_GRAPH_BUFFER_SET_ID, binding = 23, std430) buffer ImageMetadataPool {
+  image_metadata_type image_metadata_pool[];
+};
 
 #endif
 

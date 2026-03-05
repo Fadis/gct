@@ -20,7 +20,7 @@
 # IN THE SOFTWARE.
 
 if(NOT JSON_ROOT)
-  find_path(JSON_INCLUDE_DIRS nlohmann/json.hpp)
+  find_path(JSON_INCLUDE_DIRS nlohmann/json.hpp PATHS ${CMAKE_SYSTEM_INCLUDE_PATH})
 else()
   find_path(JSON_INCLUDE_DIRS nlohmann/json.hpp NO_DEFAULT_PATH PATHS ${JSON_ROOT})
 endif()
@@ -28,7 +28,7 @@ if(JSON_INCLUDE_DIRS)
   set(JSON_FOUND TRUE)
 else()
   set(JSON_FOUND FALSE)
-  set(JSON_INCLUDE_DIR)
+  set(JSON_INCLUDE_DIRS)
 endif()
 mark_as_advanced(JSON_INCLUDE_DIRS)
 

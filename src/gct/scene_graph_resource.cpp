@@ -42,12 +42,6 @@ scene_graph_resource::operator std::vector< named_resource > () {
   if( aabb ) {
     n.emplace_back( "aabb_pool", aabb->get_buffer() );
   }
-  /*if( texture ) {
-    n.emplace_back( "texture_pool", sampler-> );
-  }
-  if( image ) {
-    n.emplace_back( "image_pool8", visibility->get_buffer() );
-  }*/
   if( light ) {
     n.emplace_back( "light_pool", light->get_buffer() );
   }

@@ -160,6 +160,22 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
       } \
       add_resource( { "aabb_pool", ( r ) ->aabb->get_buffer() } ); \
     } \
+    if( ( r ) ->image && ( r ) ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->image->get_props().allocator_set ); \
+      } \
+      if( ( r ) ->image->get_metadata_buffer() ) { \
+        add_resource( { "image_metadata_pool", ( r ) ->image->get_metadata_buffer() } ); \
+      } \
+    } \
+    if( ( r ) ->texture && ( r ) ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->texture->get_props().allocator_set ); \
+      } \
+      if( ( r ) ->texture->get_metadata_buffer() ) { \
+        add_resource( { "texture_metadata_pool", ( r ) ->texture->get_metadata_buffer() } ); \
+      } \
+    } \
     if( ( r ) ->primitive_resource_index ) { \
       if( !allocator_set.allocator ) { \
         set_allocator_set( ( r ) ->primitive_resource_index->get_props().allocator_set ); \

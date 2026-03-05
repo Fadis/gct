@@ -1,6 +1,9 @@
 #include <nlohmann/json.hpp>
 #include <gct/image_shrink_info.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/format.hpp>
+#include <gct/color_space.hpp>
+#include <gct/numeric_types.hpp>
 #include <vulkan2json/ImageCreateInfo.hpp>
 #ifdef VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME
 #include <vulkan2json/BufferCollectionImageCreateInfoFUCHSIA.hpp>
@@ -216,6 +219,22 @@ namespace gct {
     if( basic.mipLevels == 0u ) basic.setMipLevels( 1u );
     if( basic.arrayLayers == 0u ) basic.setArrayLayers( 1u );
     if( basic.extent.depth == 0u ) basic.extent.setDepth( 1u );
+    const auto nt = format2numeric_type( basic.format );
+    if( profile.space == color_space::unknown ) {
+      if(
+        nt.component == numeric_component_type_t::int_ &&
+        nt.composite == numeric_composite_type_t::vector &&
+        nt.attr == integer_attribute_t::srgb
+      ) {
+        profile.space = color_space::bt709;
+      }
+      else {
+        profile.space = color_space::cie_xyz;
+      }
+    }
+    if( profile.gamma == color_gamma::unknown ) {
+      profile.gamma = color_gamma::linear;
+    }
     LIBGCT_EXTENSION_BEGIN_REBUILD_CHAIN
     LIBGCT_ARRAY_OF_REBUILD_CHAIN( basic, QueueFamilyIndexCount, PQueueFamilyIndices, queue_family_index )
 #ifdef VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME

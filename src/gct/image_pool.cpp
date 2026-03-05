@@ -22,6 +22,7 @@
 #include <gct/image_pool.hpp>
 #include <gct/image.hpp>
 #include <gct/image_create_info.hpp>
+#include <gct/simplify_buffer_copy.hpp>
 
 namespace gct {
 
@@ -190,6 +191,55 @@ image_pool::views image_pool::state_type::allocate(
     );
     used_on_gpu.push_back( srgb_desc );
   }
+
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    if( normalized ) {
+      const auto &color_prof = normalized->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( normalized_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+    if( srgb )  {
+      const auto &color_prof = srgb->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( srgb_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+  }
+
   return views()
     .set_normalized( normalized_desc )
     .set_srgb( srgb_desc );
@@ -367,6 +417,54 @@ image_pool::views image_pool::state_type::allocate(
     used_on_gpu.push_back( linear_desc );
   }
 
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    if( srgb ) {
+      const auto &color_prof = srgb->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( srgb_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+    if( linear )  {
+      const auto &color_prof = linear->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( linear_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+  }
+
   return views()
     .set_normalized( normalized_desc )
     .set_srgb( srgb_desc )
@@ -419,6 +517,32 @@ image_pool::views image_pool::state_type::allocate(
     );
   used_on_gpu.push_back( linear_desc );
 
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    if( linear )  {
+      const auto &color_prof = linear->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( linear_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+  }
+
   return views()
     .set_linear( linear_desc );
 }
@@ -446,6 +570,34 @@ image_pool::image_descriptor image_pool::state_type::allocate(
     }
   );
   used_on_gpu.push_back( linear_desc );
+
+
+  if( metadata_member_pointer ) {
+    const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+    if( view )  {
+      const auto &color_prof = view->get_factory()->get_props().get_profile();
+      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
+      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      const auto staging_index = staging_index_allocator.allocate( 1u );
+      {
+        auto mapped = staging_metadata_buffer->map< std::uint8_t >();
+        std::copy( temp.begin(), temp.end(), std::next( mapped.begin(), staging_index * metadata_aligned_size ) );
+      }
+      metadata_write_region.push_back(
+        vk::BufferCopy()
+          .setSrcOffset( staging_index * metadata_aligned_size )
+          .setDstOffset( linear_index * metadata_aligned_size )
+          .setSize( metadata_aligned_size )
+      );
+    }
+  }
+
   return linear_desc;
 }
 
@@ -481,6 +633,17 @@ void image_pool::state_type::release( image_index_t index ) {
 void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   if( execution_pending ) {
     return;
+  }
+  if( metadata_member_pointer ) {
+    simplify_buffer_copy( metadata_write_region );
+    if( !metadata_write_region.empty() ) {
+      rec->copyBuffer(
+        **staging_metadata_buffer,
+        **metadata_buffer,
+        metadata_write_region
+      );
+      rec.transfer_barrier( { metadata_buffer }, {} );
+    }
   }
   for( const auto &req: write_request_list ) {
     rec.buffer_to_image( req.mipmap, req.staging_buffer, req.final_image->get_factory() );
@@ -651,6 +814,8 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
             s.write_request_index = std::nullopt;
           }
         }
+        self->staging_index_allocator.reset();
+        self->metadata_write_region.clear();
         self->write_request_list.clear();
         self->rgb_to_xyz_request_list.clear();
         self->convert_request_list.clear();
@@ -681,6 +846,7 @@ void image_pool::state_type::dump( const image_descriptor &desc, const image_dum
 
 image_pool::state_type::state_type( const image_pool_create_info &ci ) :
   props( ci ),
+  staging_index_allocator( linear_allocator_create_info().set_max( ci.max_request_count ) ),
   index_allocator( linear_allocator_create_info().set_max( ci.max_image_count ) ) {
   if( props.enable_linear ) {
     rgba8.reset( new gct::compute(
@@ -727,6 +893,45 @@ image_pool::state_type::state_type( const image_pool_create_info &ci ) :
         .add_resource( { props.matrix_buffer_name, props.matrix_pool } )
         .set_ignore_unused_descriptor( true )
     ) );
+  }
+  if( std::filesystem::exists( props.rgba8_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.rgba8_shader )
+    );
+  }
+  else if( std::filesystem::exists( props.rgba16_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.rgba16_shader )
+    );
+  }
+  else if( std::filesystem::exists( props.rgba16f_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.rgba16f_shader )
+    );
+  }
+  else if( std::filesystem::exists( props.rgba32f_shader ) ) {
+    reflection.reset(
+      new shader_module_reflection_t( props.rgba32f_shader )
+    );
+  }
+  if( reflection ) {
+    metadata_member_pointer = reflection->get_member_pointer_maybe( props.metadata_buffer_name, props.metadata_layout );
+    if( metadata_member_pointer ) {
+      const auto metadata_aligned_size = metadata_member_pointer->get_stride();
+      metadata_buffer = props.allocator_set.allocator->create_buffer(
+        metadata_aligned_size * props.max_image_count,
+        vk::BufferUsageFlagBits::eStorageBuffer|
+        vk::BufferUsageFlagBits::eTransferSrc|
+        vk::BufferUsageFlagBits::eTransferDst,
+        VMA_MEMORY_USAGE_GPU_ONLY
+      );
+      staging_metadata_buffer = props.allocator_set.allocator->create_buffer(
+        metadata_aligned_size * props.max_request_count,
+        vk::BufferUsageFlagBits::eTransferSrc|
+        vk::BufferUsageFlagBits::eTransferDst,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+      );
+    }
   }
 }
 

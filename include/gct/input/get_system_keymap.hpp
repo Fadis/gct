@@ -1,4 +1,4 @@
-#ifndef GCT_INPUT_GET_SSYTEM_KEYMAP_HPP
+#ifndef GCT_INPUT_GET_SYSTEM_KEYMAP_HPP
 #define GCT_INPUT_GET_SYSTEM_KEYMAP_HPP
 
 #include <xkbcommon/xkbcommon.h>
