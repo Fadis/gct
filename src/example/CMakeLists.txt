@@ -141,6 +141,7 @@ subdirs(
   generate_fur_shell_texture
   rigid0
   multi_rigid
+  dump_texture
 )
 if( DXC_FOUND )
 subdirs(

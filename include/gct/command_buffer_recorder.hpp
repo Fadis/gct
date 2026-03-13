@@ -187,6 +187,12 @@ namespace gct {
       const std::shared_ptr< buffer_t > &temporary,
       const std::shared_ptr< image_t > &destination
     );
+    void buffer_to_image(
+      bool mipmap,
+      const std::shared_ptr< buffer_t > &temporary,
+      const std::shared_ptr< image_t > &destination,
+      const std::vector< vk::BufferImageCopy > &range
+    );
     void create_mipmap(
       const std::shared_ptr< image_t > &image,
       vk::ImageLayout from,

@@ -15,7 +15,7 @@
 #include <gct/sampler_pool.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/simplify_buffer_copy.hpp>
-
+#include <vulkan2json/BufferCopy.hpp>
 namespace gct {
 
 texture_pool::texture_index_t texture_pool::state_type::allocate_index() {
@@ -142,14 +142,15 @@ texture_pool::views texture_pool::state_type::allocate(
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     if( normalized ) {
       const auto &color_prof = normalized->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      std::cout << "from_mat1 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -164,14 +165,15 @@ texture_pool::views texture_pool::state_type::allocate(
     }
     if( srgb ) {
       const auto &color_prof = srgb->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      std::cout << "from_mat2 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -186,14 +188,15 @@ texture_pool::views texture_pool::state_type::allocate(
     }
     if( linear )  {
       const auto &color_prof = linear->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      std::cout << "from_mat3 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -255,14 +258,14 @@ texture_pool::texture_descriptor texture_pool::state_type::allocate(
   if( metadata_member_pointer ) {
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     const auto &color_prof = linear->get_factory()->get_props().get_profile();
-    const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-    const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+    const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+    const auto to_mat = props.csmat.to.find( color_prof.space )->second;
     std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
     const auto staging_index = staging_index_allocator.allocate( 1u );
     {
       auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -316,14 +319,14 @@ texture_pool::texture_descriptor texture_pool::state_type::allocate(
   if( metadata_member_pointer ) {
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     const auto &color_prof = linear->get_factory()->get_props().get_profile();
-    const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-    const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+    const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+    const auto to_mat = props.csmat.to.find( color_prof.space )->second;
     std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
     temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+    temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
     const auto staging_index = staging_index_allocator.allocate( 1u );
     {
       auto mapped = staging_metadata_buffer->map< std::uint8_t >();

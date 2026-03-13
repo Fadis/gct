@@ -1,5 +1,6 @@
 #ifndef GCT_FORMAT_HPP
 #define GCT_FORMAT_HPP
+#include <vector>
 #include <vulkan/vulkan.hpp>
 #include <OpenImageIO/imageio.h>
 #include <gct/numeric_types.hpp>
@@ -12,6 +13,14 @@ namespace gct {
   [[nodiscard]] vk::Flags<vk::ImageAspectFlagBits> format_to_aspect( vk::Format format );
   [[nodiscard]] unsigned int format_to_channels( vk::Format format );
   [[nodiscard]] unsigned int format_to_size( vk::Format format );
+  [[nodiscard]] unsigned int format_to_block_width( vk::Format format );
+  [[nodiscard]] unsigned int format_to_block_height( vk::Format format );
+  [[nodiscard]] std::uint32_t get_subimage_bytes(
+    vk::Format format,
+    std::uint32_t width,
+    std::uint32_t height,
+    std::uint32_t mip
+  );
   [[nodiscard]] OIIO_CURRENT_NAMESPACE::TypeDesc format_to_type( vk::Format format );
   [[nodiscard]] bool is_rgba( vk::Format format );
   [[nodiscard]] bool is_bgra( vk::Format format );
@@ -30,6 +39,10 @@ namespace gct {
   [[nodiscard]] unsigned int format_to_component_size( vk::Format format );
   [[nodiscard]] numeric_component_type_t format_to_component_type( vk::Format format );
   [[nodiscard]] bool is_available_for( vk::ImageUsageFlags, vk::FormatFeatureFlags );
+  [[nodiscard]] std::vector< vk::Format > get_compatible_format( vk::Format f );
+  [[nodiscard]] vk::Format add_srgb( vk::Format f );
+  [[nodiscard]] vk::Format remove_srgb( vk::Format f );
+  [[nodiscard]] bool is_hdr( vk::Format );
 }
 
 #endif

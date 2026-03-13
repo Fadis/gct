@@ -106,6 +106,27 @@ namespace gct {
       );
     }
   }
+  void command_buffer_recorder_t::buffer_to_image(
+    bool mipmap,
+    const std::shared_ptr< buffer_t > &temporary,
+    const std::shared_ptr< image_t > &destination,
+    const std::vector< vk::BufferImageCopy > &range
+  ) {
+    uint32_t mipmap_count = 1u;
+    bool mipable = destination->get_props().get_basic().extent.width == destination->get_props().get_basic().extent.height && is_pot( destination->get_props().get_basic().extent.width );
+    bool gen_mip = mipmap && mipable; 
+    if( gen_mip ) {
+      mipmap_count = get_pot( destination->get_props().get_basic().extent.width );
+    }
+    copy( temporary, destination, range, gen_mip ? vk::ImageLayout::eTransferDstOptimal : vk::ImageLayout::eShaderReadOnlyOptimal );
+    if( gen_mip ) {
+      create_mipmap(
+        destination,
+        vk::ImageLayout::eTransferDstOptimal,
+        vk::ImageLayout::eShaderReadOnlyOptimal
+      );
+    }
+  }
   std::shared_ptr< image_t > command_buffer_recorder_t::load_image(
     const std::shared_ptr< allocator_t > &allocator,
     const std::string &filename,
@@ -114,9 +135,9 @@ namespace gct {
     integer_attribute_t attr,
     unsigned int max_channels_per_layer
   ) {
-    const auto [temporary_buffer,nonlinear_image,linear_image] = create_image_from_file( allocator, filename, usage, mipmap, attr, max_channels_per_layer );
-    buffer_to_image( mipmap, temporary_buffer, nonlinear_image );
-    return nonlinear_image;
+    const auto cis = create_image_from_file( allocator, filename, usage, mipmap, attr, max_channels_per_layer );
+    buffer_to_image( cis.generate_mipmap, cis.staging_buffer, cis.nonlinear_image, cis.copy_range );
+    return cis.nonlinear_image;
   }
 
   void command_buffer_recorder_t::dump_image(

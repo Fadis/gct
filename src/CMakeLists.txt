@@ -152,6 +152,12 @@ add_library( gct SHARED
   gct/bind.cpp
   gct/format_to_aspect.cpp
   gct/format_to_size.cpp
+  gct/format_to_block_size.cpp
+  gct/add_srgb.cpp
+  gct/remove_srgb.cpp
+  gct/is_hdr.cpp
+  gct/compatible_formats.cpp
+  gct/get_subimage_bytes.cpp
   gct/format_to_type.cpp
   gct/format_to_channels.cpp
   gct/is_available_for.cpp
@@ -366,6 +372,7 @@ add_library( gct SHARED
   gct/gltf2.cpp
   gct/af_state.cpp
   gct/get_library_path.cpp
+  gct/dds.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -572,6 +579,33 @@ add_executable( test_quaternion test_quaternion.cpp )
 #  Boost::context
 #  Boost::system
 #)
+
+add_executable( dump_dds dump_dds.cpp )
+target_link_libraries( dump_dds
+  gct
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( dump_ktx1 dump_ktx1.cpp )
+target_link_libraries( dump_ktx1
+  gct
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( dump_ktx2 dump_ktx2.cpp )
+target_link_libraries( dump_ktx2
+  gct
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
 
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )

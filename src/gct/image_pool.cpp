@@ -23,6 +23,7 @@
 #include <gct/image.hpp>
 #include <gct/image_create_info.hpp>
 #include <gct/simplify_buffer_copy.hpp>
+#include <gct/format.hpp>
 
 namespace gct {
 
@@ -196,14 +197,14 @@ image_pool::views image_pool::state_type::allocate(
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     if( normalized ) {
       const auto &color_prof = normalized->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -218,14 +219,14 @@ image_pool::views image_pool::state_type::allocate(
     }
     if( srgb )  {
       const auto &color_prof = srgb->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -257,7 +258,7 @@ image_pool::views image_pool::state_type::allocate(
 
   auto &device = get_device( *props.allocator_set.allocator );
 
-  const auto [b,i,l] = create_image_from_file(
+  const auto cis = create_image_from_file(
     props.allocator_set.allocator,
     ci.filename,
     ci.usage,
@@ -271,16 +272,20 @@ image_pool::views image_pool::state_type::allocate(
   std::shared_ptr< image_view_t > normalized;
   std::shared_ptr< image_view_t > srgb;
 
-  for( auto f: i->get_props().get_format() ) {
-    const auto fp = device.get_format_properties( f );
+  const auto normalized_format = remove_srgb( cis.nonlinear_image->get_props().get_basic().format );
+  const auto srgb_format = add_srgb( cis.nonlinear_image->get_props().get_basic().format );
+  const auto formats = cis.nonlinear_image->get_props().get_format();
+
+  if( std::find( formats.begin(), formats.end(), normalized_format ) != formats.end() ) {
+    const auto fp = device.get_format_properties( normalized_format );
     const bool compatible = is_available_for(
-      i->get_props().get_basic().usage,
-      i->get_props().get_basic().tiling == vk::ImageTiling::eOptimal ?
+      cis.nonlinear_image->get_props().get_basic().usage,
+      cis.nonlinear_image->get_props().get_basic().tiling == vk::ImageTiling::eOptimal ?
       fp.get_basic().optimalTilingFeatures :
       fp.get_basic().linearTilingFeatures
     );
     if( compatible ) {
-      auto view = i->get_view(
+      normalized = cis.nonlinear_image->get_view(
         image_view_create_info_t()
           .set_basic(
             vk::ImageViewCreateInfo()
@@ -288,26 +293,43 @@ image_pool::views image_pool::state_type::allocate(
                 vk::ImageSubresourceRange()
                   .setAspectMask( vk::ImageAspectFlagBits::eColor )
                   .setBaseMipLevel( 0 )
-                  .setLevelCount( i->get_props().get_basic().mipLevels )
+                  .setLevelCount( cis.nonlinear_image->get_props().get_basic().mipLevels )
                   .setBaseArrayLayer( 0 )
-                  .setLayerCount( i->get_props().get_basic().arrayLayers )
+                  .setLayerCount( cis.nonlinear_image->get_props().get_basic().arrayLayers )
               )
-              .setViewType( to_image_view_type( i->get_props().get_basic().imageType, i->get_props().get_basic().arrayLayers, false ) )
-              .setFormat( f )
+              .setViewType( to_image_view_type( cis.nonlinear_image->get_props().get_basic().imageType, cis.nonlinear_image->get_props().get_basic().arrayLayers, false ) )
+              .setFormat( normalized_format )
           )
           .rebuild_chain()
       );
-      if( i->get_props().get_profile().gamma == color_gamma::srgb ) {
-        if( is_normalized( f ) ) {
-          normalized = view;
-        }
-        else if( is_srgb( f ) ) {
-          srgb = view;
-        }
-      }
-      else {
-        normalized = view;
-      }
+    }
+  }
+  if( normalized_format != srgb_format && std::find( formats.begin(), formats.end(), srgb_format ) != formats.end() ) {
+    const auto fp = device.get_format_properties( srgb_format );
+    const bool compatible = is_available_for(
+      cis.nonlinear_image->get_props().get_basic().usage,
+      cis.nonlinear_image->get_props().get_basic().tiling == vk::ImageTiling::eOptimal ?
+      fp.get_basic().optimalTilingFeatures :
+      fp.get_basic().linearTilingFeatures
+    );
+    if( compatible ) {
+      srgb = cis.nonlinear_image->get_view(
+        image_view_create_info_t()
+          .set_basic(
+            vk::ImageViewCreateInfo()
+              .setSubresourceRange(
+                vk::ImageSubresourceRange()
+                  .setAspectMask( vk::ImageAspectFlagBits::eColor )
+                  .setBaseMipLevel( 0 )
+                  .setLevelCount( cis.nonlinear_image->get_props().get_basic().mipLevels )
+                  .setBaseArrayLayer( 0 )
+                  .setLayerCount( cis.nonlinear_image->get_props().get_basic().arrayLayers )
+              )
+              .setViewType( to_image_view_type( cis.nonlinear_image->get_props().get_basic().imageType, cis.nonlinear_image->get_props().get_basic().arrayLayers, false ) )
+              .setFormat( srgb_format )
+          )
+          .rebuild_chain()
+      );
     }
   }
 
@@ -315,17 +337,17 @@ image_pool::views image_pool::state_type::allocate(
     throw exception::runtime_error( "image_pool::state_type::allocate : Specified usage is not compatible to the format", __FILE__, __LINE__ );
   }
 
-  const unsigned int channels = format_to_channels( i->get_props().get_basic().format );
+  const unsigned int channels = format_to_channels( cis.nonlinear_image->get_props().get_basic().format );
   const bool enable_linear =
     props.enable_linear &&
     ci.enable_linear &&
-    i->get_props().get_basic().arrayLayers == 1 &&
+    cis.nonlinear_image->get_props().get_basic().arrayLayers == 1 &&
     ( channels == 3u || channels == 4u );
 
-  if( enable_linear ) {
+  if( enable_linear && cis.linear_image ) {
     linear_index = allocate_index();
     linear =
-      l->get_view(
+      cis.linear_image->get_view(
         image_view_create_info_t()
           .set_basic(
             vk::ImageViewCreateInfo()
@@ -333,12 +355,12 @@ image_pool::views image_pool::state_type::allocate(
                 vk::ImageSubresourceRange()
                   .setAspectMask( vk::ImageAspectFlagBits::eColor )
                   .setBaseMipLevel( 0 )
-                  .setLevelCount( l->get_props().get_basic().mipLevels )
+                  .setLevelCount( cis.linear_image->get_props().get_basic().mipLevels )
                   .setBaseArrayLayer( 0 )
-                  .setLayerCount( l->get_props().get_basic().arrayLayers )
+                  .setLayerCount( cis.linear_image->get_props().get_basic().arrayLayers )
               )
-              .setViewType( to_image_view_type( l->get_props().get_basic().imageType, l->get_props().get_basic().arrayLayers, false ) )
-              .setFormat( l->get_props().get_basic().format )
+              .setViewType( to_image_view_type( cis.linear_image->get_props().get_basic().imageType, cis.linear_image->get_props().get_basic().arrayLayers, false ) )
+              .setFormat( cis.linear_image->get_props().get_basic().format )
           )
           .rebuild_chain()
       );
@@ -347,9 +369,10 @@ image_pool::views image_pool::state_type::allocate(
   write_request_list.push_back(
     write_request()
       .set_index( normalized_index )
-      .set_mipmap( ci.mipmap )
-      .set_staging_buffer( b )
+      .set_mipmap( ci.mipmap && cis.generate_mipmap )
+      .set_staging_buffer( cis.staging_buffer )
       .set_final_image( normalized )
+      .set_range( cis.copy_range )
       .set_layout( ci.layout ? *ci.layout : props.layout )
   );
   image_state[ normalized_index ] =
@@ -390,7 +413,7 @@ image_pool::views image_pool::state_type::allocate(
     used_on_gpu.push_back( srgb_desc );
   }
   image_descriptor linear_desc;
-  if( enable_linear ) {
+  if( enable_linear && cis.linear_image ) {
     rgb_to_xyz_request_list.push_back(
       rgb_to_xyz_request()
         .set_rgb( normalized_index )
@@ -416,19 +439,25 @@ image_pool::views image_pool::state_type::allocate(
     );
     used_on_gpu.push_back( linear_desc );
   }
+  else if(
+    cis.nonlinear_image->get_props().get_profile().gamma == gct::color_gamma::linear &&
+    cis.nonlinear_image->get_props().get_profile().space == gct::color_space::cie_xyz
+  ) {
+    linear_desc = normalized_desc;
+  }
 
   if( metadata_member_pointer ) {
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     if( srgb ) {
       const auto &color_prof = srgb->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -443,14 +472,14 @@ image_pool::views image_pool::state_type::allocate(
     }
     if( linear )  {
       const auto &color_prof = linear->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -521,14 +550,14 @@ image_pool::views image_pool::state_type::allocate(
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     if( linear )  {
       const auto &color_prof = linear->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -576,14 +605,14 @@ image_pool::image_descriptor image_pool::state_type::allocate(
     const auto metadata_aligned_size = metadata_member_pointer->get_stride();
     if( view )  {
       const auto &color_prof = view->get_factory()->get_props().get_profile();
-      const std::uint32_t from_mat = props.csmat.from.find( color_prof.space )->second;
-      const std::uint32_t to_mat = props.csmat.to.find( color_prof.space )->second;
+      const auto from_mat = props.csmat.from.find( color_prof.space )->second;
+      const auto to_mat = props.csmat.to.find( color_prof.space )->second;
       std::vector< std::uint8_t > temp( metadata_aligned_size, 0u );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "space" ] = std::uint32_t( color_prof.space );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = from_mat;
-      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = to_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
+      temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
         auto mapped = staging_metadata_buffer->map< std::uint8_t >();
@@ -646,7 +675,12 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     }
   }
   for( const auto &req: write_request_list ) {
-    rec.buffer_to_image( req.mipmap, req.staging_buffer, req.final_image->get_factory() );
+    if( req.range.empty() ) {
+      rec.buffer_to_image( req.mipmap, req.staging_buffer, req.final_image->get_factory() );
+    }
+    else {
+      rec.buffer_to_image( req.mipmap, req.staging_buffer, req.final_image->get_factory(), req.range );
+    }
   }
   for( const auto &req: write_request_list ) {
     rec.convert_image( req.final_image->get_factory(), vk::ImageLayout::eGeneral );

@@ -263,8 +263,19 @@ void gltf2::load_texture(
     auto sampler_ = ( e.sampler >= 0u && e.sampler <= sampler.size() ) ?
       sampler[ e.sampler ] :
       default_sampler;
-    auto image_ = ( e.source >= 0u && e.source <= image.size() ) ?
-      image[ e.source ] :
+    const bool has_basis =
+      e.extensionsAndExtras.find( "extensions" ) != e.extensionsAndExtras.end() &&
+        e.extensionsAndExtras[ "extensions" ].find( "KHR_texture_basisu" ) != e.extensionsAndExtras[ "extensions" ].end() &&
+        e.extensionsAndExtras[ "extensions" ][ "KHR_texture_basisu" ].find( "source" ) != e.extensionsAndExtras[ "extensions" ][ "KHR_texture_basisu" ].end() &&
+        std::uint32_t( e.extensionsAndExtras[ "extensions" ][ "KHR_texture_basisu" ][ "source" ] ) < image.size();
+    const bool source_is_valid = e.source >= 0u && e.source <= image.size();
+    auto image_ =
+      ( has_basis || source_is_valid ) ?
+      image[
+        has_basis ?
+        std::uint32_t( e.extensionsAndExtras[ "extensions" ][ "KHR_texture_basisu" ][ "source" ] ) :
+        e.source
+      ] :
       default_image;
     texture.push_back(
       props.graph->get_resource()->texture->allocate(
@@ -572,7 +583,9 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     std::pow( material.emissiveFactor[ 2 ], 2.2 ),
     material.emissiveFactor[ 3 ]
   );
-  if( props.graph->get_image()->get_props().enable_linear ) {
+
+  const auto enable_linear = props.graph->get_image()->get_props().enable_linear;
+  if( enable_linear ) {
     p.emissive = get_rgb_to_xyz( color_space::bt709 ) * p.emissive;
   }
   ri.data()->*rimp[ "emissive" ] = p.emissive;
@@ -582,7 +595,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     std::pow( material.pbrMetallicRoughness.baseColorFactor[ 2 ], 2.2 ),
     material.pbrMetallicRoughness.baseColorFactor[ 3 ]
   );
-  if( props.graph->get_image()->get_props().enable_linear ) {
+  if( enable_linear ) {
     p.base_color = get_rgb_to_xyz( color_space::bt709 ) * p.base_color;
   }
   ri.data()->*rimp[ "base_color" ] = p.base_color;
@@ -596,13 +609,13 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     if( texture.size() <= size_t( bct ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
     auto view = props.graph->get_resource()->texture->get( texture[ bct ].normalized ).first;
     const auto &profile = view->get_factory()->get_props().get_profile();
-    if( profile.gamma == color_gamma::srgb && texture[ bct ].srgb ) {
-      p.descriptor.set_base_color_texture( texture[ bct ].srgb );
-      ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].srgb;
-    }
-    else if( texture[ bct ].linear ) {
+    if( enable_linear && texture[ bct ].linear ) {
       p.descriptor.set_base_color_texture( texture[ bct ].linear );
       ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].linear;
+    }
+    else if( texture[ bct ].srgb ) {
+      p.descriptor.set_base_color_texture( texture[ bct ].srgb );
+      ri.data()->*rimp[ "base_color_texture" ] = *texture[ bct ].srgb;
     }
     else {
       p.descriptor.set_base_color_texture( texture[ bct ].normalized );
@@ -670,13 +683,13 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     if( texture.size() <= size_t( emt ) ) throw invalid_gltf( "参照されたtextureが存在しない", __FILE__, __LINE__ );
     auto view = props.graph->get_resource()->texture->get( texture[ emt ].normalized ).first;
     const auto &profile = view->get_factory()->get_props().get_profile();
-    if( profile.gamma == color_gamma::srgb && texture[ emt ].srgb ) {
-      p.descriptor.set_emissive_texture( texture[ emt ].srgb );
-      ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].srgb;
-    }
-    else if( texture[ emt ].linear ) {
+    if( enable_linear && texture[ emt ].linear ) {
       p.descriptor.set_emissive_texture( texture[ emt ].linear );
       ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].linear;
+    }
+    else if( texture[ emt ].srgb ) {
+      p.descriptor.set_emissive_texture( texture[ emt ].srgb );
+      ri.data()->*rimp[ "emissive_texture" ] = *texture[ emt ].srgb;
     }
     else {
       p.descriptor.set_emissive_texture( texture[ emt ].normalized );

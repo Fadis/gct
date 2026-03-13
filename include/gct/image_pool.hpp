@@ -81,11 +81,13 @@ private:
     LIBGCT_SETTER( mipmap )
     LIBGCT_SETTER( staging_buffer )
     LIBGCT_SETTER( final_image )
+    LIBGCT_SETTER( range )
     LIBGCT_SETTER( layout )
     image_index_t index;
     bool mipmap = true;
     std::shared_ptr< buffer_t > staging_buffer;
     std::shared_ptr< image_view_t > final_image;
+    std::vector< vk::BufferImageCopy > range;
     vk::ImageLayout layout;
   };
   struct convert_request {
