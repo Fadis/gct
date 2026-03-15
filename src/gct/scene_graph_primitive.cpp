@@ -3,6 +3,7 @@
 #include <vulkan2json/VertexInputBindingDescription.hpp>
 #include <vulkan2json/VertexInputAttributeDescription.hpp>
 #include <gct/scene_graph_primitive.hpp>
+#include <gct/glm_to_json.hpp>
 
 namespace gct::scene_graph {
 void to_json( nlohmann::json &dest, const buffer_offset &src ) {
@@ -121,6 +122,10 @@ void to_json( nlohmann::json &dest, const primitive &src ) {
   dest[ "normal_scale" ] = src.normal_scale;
   dest[ "occlusion_strength" ] = src.occlusion_strength;
   dest[ "pipeline_create_info" ] = src.pipeline_create_info;
+  dest[ "mesh" ] = src.mesh;
+  dest[ "local_center_of_mass" ] = glm_to_json( src.local_center_of_mass );
+  dest[ "momentum_inertia_tensor" ] = glm_to_json( src.momentum_inertia_tensor );
+  dest[ "inversed_momentum_inertia_tensor" ] = glm_to_json( src.inversed_momentum_inertia_tensor );
   dest[ "descriptor" ] = src.descriptor;
 }
 

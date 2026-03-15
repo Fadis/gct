@@ -14,8 +14,13 @@
 #extension GL_EXT_shader_16bit_storage : enable
 #extension GL_EXT_shader_8bit_storage : enable
 
-// Subgroup演算拡張を使う
+// Subgroup演算を使う
+#extension GL_KHR_shader_subgroup : enable
 #extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+// 64bit整数を使う
+#extension GL_ARB_gpu_shader_int64 : enable
 
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #define GCT_ENABLE_8BIT_16BIT_STORAGE

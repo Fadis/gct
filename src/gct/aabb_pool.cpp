@@ -15,6 +15,7 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/generate_random_matrix.hpp>
 #include <gct/aabb_pool.hpp>
+#include <gct/glm_to_json.hpp>
 namespace gct {
 
 aabb_pool::aabb_index_t aabb_pool::state_type::allocate_index() {
@@ -463,16 +464,8 @@ void aabb_pool::to_json( nlohmann::json &dest ) const {
     for( std::uint32_t i = 0u; i != state->staging_index_allocator.get_tail(); ++i ) {
       auto e = m[ i ];
       auto temp = nlohmann::json::object();
-      temp[ "min" ] = nlohmann::json::array();
-      temp[ "min" ].push_back( e.min[ 0 ] );
-      temp[ "min" ].push_back( e.min[ 1 ] );
-      temp[ "min" ].push_back( e.min[ 2 ] );
-      temp[ "min" ].push_back( e.min[ 3 ] );
-      temp[ "max" ] = nlohmann::json::array();
-      temp[ "max" ].push_back( e.min[ 0 ] );
-      temp[ "max" ].push_back( e.min[ 1 ] );
-      temp[ "max" ].push_back( e.min[ 2 ] );
-      temp[ "max" ].push_back( e.min[ 3 ] );
+      temp[ "min" ] = glm_to_json( m[ i ].min );
+      temp[ "max" ] = glm_to_json( m[ i ].max );
       dest[ "staging_aabb" ].push_back( temp );
     }
   }

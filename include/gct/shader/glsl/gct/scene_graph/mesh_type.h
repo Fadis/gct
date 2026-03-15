@@ -16,7 +16,8 @@ struct mesh_type {
   float stiffness;
   uint adjacency_offset;
   uint same_position_offset;
-  uint reserved[2];
+  uint compression_method;
+  uint reserved;
 };
 
 #endif

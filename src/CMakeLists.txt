@@ -23,6 +23,7 @@ add_library( gct SHARED
   gct/get_device_extensions.cpp
   gct/to_json.cpp
   gct/to_matrix.cpp
+  gct/glm_to_json.cpp
   gct/queue_family_properties.cpp
   gct/physical_device_properties.cpp
   gct/physical_device_memory_properties.cpp

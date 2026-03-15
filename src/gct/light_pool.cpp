@@ -16,35 +16,16 @@
 #include <gct/command_buffer_recorder.hpp>
 #include <gct/generate_random_matrix.hpp>
 #include <gct/light_pool.hpp>
+#include <gct/glm_to_json.hpp>
 namespace gct {
 
 void to_json( nlohmann::json &dest, const punctual_light_parameter &src ) {
   dest = nlohmann::json::object();
-  dest[ "local_position" ] = nlohmann::json::array();
-  dest[ "local_position" ].push_back( src.local_position.x );
-  dest[ "local_position" ].push_back( src.local_position.y );
-  dest[ "local_position" ].push_back( src.local_position.z );
-  dest[ "local_position" ].push_back( src.local_position.w );
-  dest[ "world_position" ] = nlohmann::json::array();
-  dest[ "world_position" ].push_back( src.world_position.x );
-  dest[ "world_position" ].push_back( src.world_position.y );
-  dest[ "world_position" ].push_back( src.world_position.z );
-  dest[ "world_position" ].push_back( src.world_position.w );
-  dest[ "local_direction" ] = nlohmann::json::array();
-  dest[ "local_direction" ].push_back( src.local_direction.x );
-  dest[ "local_direction" ].push_back( src.local_direction.y );
-  dest[ "local_direction" ].push_back( src.local_direction.z );
-  dest[ "local_direction" ].push_back( src.local_direction.w );
-  dest[ "world_direction" ] = nlohmann::json::array();
-  dest[ "world_direction" ].push_back( src.world_direction.x );
-  dest[ "world_direction" ].push_back( src.world_direction.y );
-  dest[ "world_direction" ].push_back( src.world_direction.z );
-  dest[ "world_direction" ].push_back( src.world_direction.w );
-  dest[ "energy" ] = nlohmann::json::array();
-  dest[ "energy" ].push_back( src.energy.x );
-  dest[ "energy" ].push_back( src.energy.y );
-  dest[ "energy" ].push_back( src.energy.z );
-  dest[ "energy" ].push_back( src.energy.w );
+  dest[ "local_position" ] = glm_to_json( src.local_position );
+  dest[ "world_position" ] = glm_to_json( src.world_position );
+  dest[ "local_direction" ] = glm_to_json( src.local_direction );
+  dest[ "world_direction" ] = glm_to_json( src.world_direction );
+  dest[ "energy" ] = glm_to_json( src.energy );
   dest[ "type" ] = src.type;
   dest[ "light_size" ] = src.light_size;
   dest[ "theta" ] = src.theta;

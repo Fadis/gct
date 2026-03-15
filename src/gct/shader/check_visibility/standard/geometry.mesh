@@ -14,6 +14,10 @@
 
 // Subgroup演算拡張を使う
 #extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+// 64bit整数を使う
+#extension GL_ARB_gpu_shader_int64 : enable
 
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
 #include <gct/scene_graph.h>

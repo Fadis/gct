@@ -17,7 +17,7 @@
 #include <gct/matrix_pool.hpp>
 #include <gct/similar_matrix.hpp>
 #include <gct/generate_random_matrix.hpp>
-#include <random>
+#include <gct/glm_to_json.hpp>
 
 namespace gct {
 
@@ -966,27 +966,7 @@ void matrix_pool::to_json( nlohmann::json &dest ) const {
   {
     auto m = state->staging_matrix->map< glm::mat4 >();
     for( std::uint32_t i = 0u; i != state->staging_index_allocator.get_tail(); ++i ) {
-      auto e = m[ i ];
-      auto temp = nlohmann::json::array();
-      {
-        temp.push_back( e[ 0 ][ 0 ] );
-        temp.push_back( e[ 0 ][ 1 ] );
-        temp.push_back( e[ 0 ][ 2 ] );
-        temp.push_back( e[ 0 ][ 3 ] );
-        temp.push_back( e[ 1 ][ 0 ] );
-        temp.push_back( e[ 1 ][ 1 ] );
-        temp.push_back( e[ 1 ][ 2 ] );
-        temp.push_back( e[ 1 ][ 3 ] );
-        temp.push_back( e[ 2 ][ 0 ] );
-        temp.push_back( e[ 2 ][ 1 ] );
-        temp.push_back( e[ 2 ][ 2 ] );
-        temp.push_back( e[ 2 ][ 3 ] );
-        temp.push_back( e[ 3 ][ 0 ] );
-        temp.push_back( e[ 3 ][ 1 ] );
-        temp.push_back( e[ 3 ][ 2 ] );
-        temp.push_back( e[ 3 ][ 3 ] );
-      }
-      dest[ "staging_matrix" ].push_back( temp );
+      dest[ "staging_matrix" ].push_back( glm_to_json( m[ i ] ) );
     }
   }
   dest[ "matrix" ] = *state->matrix;

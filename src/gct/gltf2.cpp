@@ -882,6 +882,10 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( mmp.has( "topology" ) ) {
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
       }
+      // 圧縮方式
+      if( mmp.has( "compression_method" ) ) {
+        m.data()->*mmp[ "compression_method" ] = std::uint32_t( mesh.compression_method );
+      }
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
       if( props.graph->get_resource()->meshlet ) {
         const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );

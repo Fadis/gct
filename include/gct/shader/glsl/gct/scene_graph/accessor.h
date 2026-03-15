@@ -1,15 +1,17 @@
 #ifndef GCT_SHADER_SCENE_GRAPH_ACCESSOR_H
 #define GCT_SHADER_SCENE_GRAPH_ACCESSOR_H
 #include <gct/scene_graph/vertex_buffer_pool.h>
+#include <gct/scene_graph/byte_address_buffer.h>
 #include <gct/scene_graph/mesh_type.h>
 #include <gct/scene_graph/accessor_type.h>
 #include <gct/scene_graph/accessor_pool.h>
 #include <gct/type_id.h>
+#include <gct/dgf.h>
 
 uint read_index( accessor_type a, uint i ) {
   if( a.enabled == 0 ) return i;
   else if( a.type == GCT_SHADER_TYPE_ID_U32 ) {
-    return vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride ];
+    return vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride ) << 2 );
   }
   else if( a.type == GCT_SHADER_TYPE_ID_U16 ) {
     uint index = uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
@@ -20,7 +22,6 @@ uint read_index( accessor_type a, uint i ) {
   }
   return i;
 }
-
 
 // ストレージバッファから頂点の情報を1つ読む
 vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
