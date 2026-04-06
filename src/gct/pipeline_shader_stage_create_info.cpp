@@ -80,6 +80,12 @@ namespace gct {
         basic.setStage( spv2vk( reflection->shader_stage ) );
         basic.setPName( reflection->entry_point_name );
       }
+      if( !required_subgroup_size ) {
+        set_required_subgroup_size(
+          vk::PipelineShaderStageRequiredSubgroupSizeCreateInfo()
+            .setRequiredSubgroupSize( 32u )
+        );
+      }
     }
     if( spec ) {
       spec->rebuild_chain();

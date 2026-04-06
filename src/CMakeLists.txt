@@ -608,6 +608,15 @@ target_link_libraries( dump_ktx2
   Boost::system
 )
 
+add_executable( image_diff image_diff.cpp )
+target_link_libraries( image_diff
+  gct
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/read.comp INSTALL )
 add_shader( gct gct/shader/scene_graph/matrix_pool/update.comp INSTALL )

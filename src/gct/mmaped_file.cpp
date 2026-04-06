@@ -1,3 +1,4 @@
+#include <cstring>
 #include <gct/mmaped_file.hpp>
 #include <stdexcept>
 #include <system_error>
@@ -18,10 +19,10 @@ namespace gct {
     unsigned int map_flags = MAP_PRIVATE|MAP_POPULATE;
     constexpr unsigned int kilo_in_binary = 1024u;
     constexpr unsigned int huge_tlb_threshold = 2u * kilo_in_binary * kilo_in_binary;
-    if( file_size >= huge_tlb_threshold ) map_flags |= MAP_HUGETLB;
+    //if( file_size >= huge_tlb_threshold ) map_flags |= MAP_HUGETLB;
     void *addr = mmap( nullptr, file_size, PROT_READ, map_flags, fd, 0 );
-    if( !addr ) {
-      throw std::system_error( errno, std::generic_category(), filename.string() );
+    if( addr == MAP_FAILED ) {
+      throw std::system_error( errno, std::generic_category(), std::string( strerror( errno ) ) + " : " + filename.string() );
     }
     head.reset(
       reinterpret_cast<uint8_t *>(addr),

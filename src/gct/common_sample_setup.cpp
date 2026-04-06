@@ -110,7 +110,23 @@ common_sample_setup::common_sample_setup(
   }
 
   auto groups = instance->get_physical_devices( {} );
-  auto selected = groups[ 0 ].with_extensions( device_extensions );
+
+  auto device_extensions_ = device_extensions;
+  device_extensions_.push_back(
+    VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME
+  );
+
+  auto selected = groups[ 0 ].with_extensions( device_extensions_ );
+
+  if(
+    selected.devices[ 0 ]->get_props().get_subgroup_size_control().minSubgroupSize > 32u ||
+    selected.devices[ 0 ]->get_props().get_subgroup_size_control().maxSubgroupSize < 32u
+  ) {
+    std::cerr << "Selected GPU doesn't support setting subgroup to 32 : " <<
+      selected.devices[ 0 ]->get_props().get_subgroup_size_control().minSubgroupSize << " <= SubgroupSize <= " <<
+      selected.devices[ 0 ]->get_props().get_subgroup_size_control().maxSubgroupSize << std::endl;
+    exit( 1 );
+  }
 
   if( enable_glfw ) {
     const bool fullscreen = vm[ "fullscreen" ].as< bool >();
