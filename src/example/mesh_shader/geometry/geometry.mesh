@@ -35,7 +35,7 @@ layout(triangles, max_vertices = 96, max_primitives = 32) out;
 // 頂点属性
 layout (location = 0) out vec4 output_position[]; // 頂点座標
 layout (location = 1) out vec3 output_normal[]; // 法線
-layout (location = 2) out vec3 output_tangent[]; // 接線
+layout (location = 2) out vec4 output_tangent[]; // 接線
 layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
 layout (location = 4) out vec4 output_optflow[];
 layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
@@ -83,33 +83,32 @@ void main() {
   // スレッドのIDがメッシュレットの頂点数以上の場合、そのスレッドは何もしないで終了する
   if( vertex_count <= output_vertex_id ) return; 
   
-  // 頂点配列から三角形を構成する3つの頂点の情報を読む
-  const vertex_attribute v0 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 0u );
-  const vertex_attribute v1 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 1u );
-  const vertex_attribute v2 = read_vertex_attribute( mesh, gl_GlobalInvocationID.x * 3u + 2u );
+  // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
+  const meshlet_reader reader = init_meshlet_reader( prim.mesh, meshlet_id );
+  const face_attribute f = read_face_attribute( reader );
 
   // 頂点のスクリーン座標系での座標を出力先に書く
-  gl_MeshVerticesEXT[ output_vertex_id ].gl_Position = l2s * v0.position;
-  gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = l2s * v1.position;
-  gl_MeshVerticesEXT[ output_vertex_id + 2u ].gl_Position = l2s * v2.position;
+  gl_MeshVerticesEXT[ output_vertex_id + 0u ].gl_Position = l2s * f.vertex[ 0 ].position;
+  gl_MeshVerticesEXT[ output_vertex_id + 1u ].gl_Position = l2s * f.vertex[ 1 ].position;
+  gl_MeshVerticesEXT[ output_vertex_id + 2u ].gl_Position = l2s * f.vertex[ 2 ].position;
   // 頂点のワールド座標系での座標を出力先に書く
-  output_position[ output_vertex_id ] = l2w * v0.position;
-  output_position[ output_vertex_id + 1u ] = l2w * v1.position;
-  output_position[ output_vertex_id + 2u ] = l2w * v2.position;
+  output_position[ output_vertex_id + 0u ] = l2w * f.vertex[ 0 ].position;
+  output_position[ output_vertex_id + 1u ] = l2w * f.vertex[ 1 ].position;
+  output_position[ output_vertex_id + 2u ] = l2w * f.vertex[ 2 ].position;
   // 頂点のワールド座標系での法線を出力先に書く
-  output_normal[ output_vertex_id ] = ( mat3(l2w) * v0.normal.xyz );
-  output_normal[ output_vertex_id + 1u ] = ( mat3(l2w) * v1.normal.xyz );
-  output_normal[ output_vertex_id + 2u ] = ( mat3(l2w) * v2.normal.xyz );
+  output_normal[ output_vertex_id + 0u ] = ( mat3(l2w) * f.vertex[ 0 ].normal.xyz );
+  output_normal[ output_vertex_id + 1u ] = ( mat3(l2w) * f.vertex[ 1 ].normal.xyz );
+  output_normal[ output_vertex_id + 2u ] = ( mat3(l2w) * f.vertex[ 2 ].normal.xyz );
   // 頂点のワールド座標系での接線を出力先に書く
-  output_tangent[ output_vertex_id ] = ( mat3(l2w) * v0.tangent.xyz );
-  output_tangent[ output_vertex_id + 1u ] = ( mat3(l2w) * v1.tangent.xyz );
-  output_tangent[ output_vertex_id + 2u ] = ( mat3(l2w) * v2.tangent.xyz );
+  output_tangent[ output_vertex_id + 0u ] = vec4( mat3(l2w) * f.vertex[ 0 ].tangent.xyz, f.vertex[ 0 ].tangent.w );
+  output_tangent[ output_vertex_id + 1u ] = vec4( mat3(l2w) * f.vertex[ 1 ].tangent.xyz, f.vertex[ 1 ].tangent.w );
+  output_tangent[ output_vertex_id + 2u ] = vec4( mat3(l2w) * f.vertex[ 2 ].tangent.xyz, f.vertex[ 2 ].tangent.w );
   // 頂点のテクスチャ座標を出力先に書く
-  output_tex_coord[ output_vertex_id ] = v0.tex_coord0.xy;
-  output_tex_coord[ output_vertex_id + 1u ] = v1.tex_coord0.xy;
-  output_tex_coord[ output_vertex_id + 2u ] = v2.tex_coord0.xy;
+  output_tex_coord[ output_vertex_id + 0u ] = f.vertex[ 0 ].tex_coord0.xy;
+  output_tex_coord[ output_vertex_id + 1u ] = f.vertex[ 1 ].tex_coord0.xy;
+  output_tex_coord[ output_vertex_id + 2u ] = f.vertex[ 2 ].tex_coord0.xy;
   // 頂点のIDにノードのIDとメッシュのIDを書いておく
-  output_id[ output_vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+  output_id[ output_vertex_id + 0u ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ output_vertex_id + 1u ] = vec4( id.inst, id.prim, 0, 0 );
   output_id[ output_vertex_id + 2u ] = vec4( id.inst, id.prim, 0, 0 );
   // 上の3頂点で1つの三角形プリミティブになる事を書く

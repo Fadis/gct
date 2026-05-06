@@ -9,7 +9,7 @@ primitive_value read_primitive(
   uint primitive_id,
   vec4 vert_position,
   vec3 vert_normal,
-  vec3 vert_tangent,
+  vec4 vert_tangent,
   vec2 vert_texcoord,
   vec4 vert_optflow,
   vec4 vert_previous_position
@@ -20,9 +20,9 @@ primitive_value read_primitive(
   const vec3 tangent_ = normalize( vert_tangent.xyz );
   vec3 normal;
   if( prim.normal_texture != 0 ) {
-    const vec3 binormal = cross( tangent_, normal_ );
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
     const mat3 its = mat3( tangent_, binormal, normal_ );
-    normal = its * normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 );
+    normal = its * ( normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 ) );
   }
   else {
     normal = normal_;
@@ -136,7 +136,7 @@ primitive_value read_primitive_reduced(
   uint primitive_id,
   vec4 vert_position,
   vec3 vert_normal,
-  vec3 vert_tangent,
+  vec4 vert_tangent,
   vec2 vert_texcoord
 ) {
   const primitive_resource_index_type prim =
@@ -145,7 +145,7 @@ primitive_value read_primitive_reduced(
   const vec3 tangent_ = normalize( vert_tangent.xyz );
   vec3 normal;
   if( prim.normal_texture != 0 ) {
-    const vec3 binormal = cross( tangent_, normal_ );
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
     const mat3 its = mat3( tangent_, binormal, normal_ );
     normal = its * normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 );
   }

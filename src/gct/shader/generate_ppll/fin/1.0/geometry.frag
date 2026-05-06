@@ -33,7 +33,7 @@ layout(push_constant) uniform PushConstants {
 primitive_value read_primitive_hair(
   uint primitive_id,
   vec4 vert_position,
-  vec3 vert_tangent,
+  vec4 vert_tangent,
   vec2 vert_texcoord0,
   vec2 vert_texcoord1,
   uint fin_texture

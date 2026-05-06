@@ -34,7 +34,7 @@ primitive_value read_hair_primitive(
   uint primitive_id,
   vec4 vert_position,
   vec3 vert_normal,
-  vec3 vert_tangent,
+  vec4 vert_tangent,
   vec2 vert_texcoord,
   vec2 vert_hair_texcoord,
   vec4 vert_optflow,

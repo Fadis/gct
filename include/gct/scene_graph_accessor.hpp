@@ -14,7 +14,12 @@ enum class accessor_type_id {
   u8 = 2,
   i16 = 3,
   u16 = 4,
-  u32 = 5
+  u32 = 5,
+  half = 128,
+  fixed = 129,
+  dgf = 130,
+  n21t11 = 131,
+  n31 = 132
 };
 
 void to_json( nlohmann::json &dest, const accessor_type_id &src );
@@ -30,7 +35,7 @@ void to_json( nlohmann::json &dest, const mesh_topology_id &src );
 
 enum class mesh_compression_method_id {
   uncompressed = 0,
-  dgf = 1
+  dgf = 1 ///////////////
 };
 
 void to_json( nlohmann::json &dest, const mesh_compression_method_id &src );

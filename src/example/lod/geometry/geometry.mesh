@@ -35,7 +35,7 @@ layout(triangles, max_vertices = 96, max_primitives = 32) out;
 // 頂点属性
 layout (location = 0) out vec4 output_position[]; // 頂点座標
 layout (location = 1) out vec3 output_normal[]; // 法線
-layout (location = 2) out vec3 output_tangent[]; // 接線
+layout (location = 2) out vec4 output_tangent[]; // 接線
 layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
 layout (location = 4) out vec4 output_optflow[];
 layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
@@ -59,46 +59,29 @@ taskPayloadSharedEXT task_data td;
 void main() {
   // メッシュの情報を取得する
   const primitive_resource_index_type prim = primitive_resource_index[ td.primitive_id ];
-  const mesh_type mesh = mesh_pool[ prim.mesh ];
 
   // 変換行列をタスクペイロードから取り出す
   const mat4 l2w = td.l2w;
   const mat4 l2s = td.l2s;
   
-  // メッシュレットの最大頂点数(32*3=96)
-  const uint max_vertex_count = gl_WorkGroupSize.x * 3u;
-
   // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
   const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
-  // メッシュの頂点数からこのメッシュレットの頂点数を求める
-  // 端数の頂点を扱う最後のメッシュレット以外では96頂点になる
-  const uint vertex_count = min( mesh.vertex_count - meshlet_id * max_vertex_count, max_vertex_count );
-  
-  // スレッドが担当するプリミティブが存在するかを調べる
-  // 端数の頂点を扱う最後のメッシュレットではスレッド数より少ない数のプリミティブしかない可能性がある
-  const uint primitive_id = gl_LocalInvocationID.x;
-  const uint vertex_id = primitive_id * 3u;
-  const bool in_range = vertex_count > vertex_id;
-  
-  // このスレッドが処理すべき3つの頂点の最初の要素までのオフセットを求める
-  const uint input_primitive_id = meshlet_id * 32u + primitive_id;
-  
+
   // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
-  const vertex_attribute v0 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 0u ) : null_attr;
-  const vertex_attribute v1 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 1u ) : null_attr;
-  const vertex_attribute v2 = in_range ? read_vertex_attribute( mesh, input_primitive_id * 3u + 2u ) : null_attr;
+  const meshlet_reader reader = init_meshlet_reader( prim.mesh, meshlet_id );
+  const face_attribute f = read_face_attribute( reader );
 
   // 頂点の座標をローカル座標系からワールド座標系に変換する
-  const vec4 wp0 = l2w * v0.position;
-  const vec4 wp1 = l2w * v1.position;
-  const vec4 wp2 = l2w * v2.position;
+  const vec4 wp0 = l2w * f.vertex[ 0 ].position;
+  const vec4 wp1 = l2w * f.vertex[ 1 ].position;
+  const vec4 wp2 = l2w * f.vertex[ 2 ].position;
  
   // 頂点座標からワールド座標系での面の法線を求める
   const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
 
   // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
   // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
-  const bool visible = in_range && ( prim.cull == 0 || ( dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0 ) );
+  const bool visible = f.valid && ( prim.cull == 0 || ( dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0 ) );
  
   // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
@@ -113,27 +96,27 @@ void main() {
   if( !visible ) return;
 
   // 頂点のスクリーン座標系での座標を出力先に書く
-  gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = l2s * v0.position;
-  gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = l2s * v1.position;
-  gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = l2s * v2.position;
+  gl_MeshVerticesEXT[ filtered_vertex_offset + 0u ].gl_Position = l2s * f.vertex[ 0 ].position;
+  gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = l2s * f.vertex[ 1 ].position;
+  gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = l2s * f.vertex[ 2 ].position;
   // 頂点のワールド座標系での座標を出力先に書く
-  output_position[ filtered_vertex_offset ] = wp0;
+  output_position[ filtered_vertex_offset + 0u ] = wp0;
   output_position[ filtered_vertex_offset + 1u ] = wp1;
   output_position[ filtered_vertex_offset + 2u ] = wp2;
   // 頂点のワールド座標系での法線を出力先に書く
-  output_normal[ filtered_vertex_offset ] = ( mat3(l2w) * (( v0.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v0.normal.xyz ) );
-  output_normal[ filtered_vertex_offset + 1u ] = ( mat3(l2w) * (( v1.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v1.normal.xyz ) );
-  output_normal[ filtered_vertex_offset + 2u ] = ( mat3(l2w) * (( v2.normal == vec4( 0, 0, 0, 1 ) ) ? fn : v2.normal.xyz ) );
+  output_normal[ filtered_vertex_offset + 0u ] = ( mat3(l2w) * (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : f.vertex[ 0 ].normal.xyz ) );
+  output_normal[ filtered_vertex_offset + 1u ] = ( mat3(l2w) * (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : f.vertex[ 1 ].normal.xyz ) );
+  output_normal[ filtered_vertex_offset + 2u ] = ( mat3(l2w) * (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : f.vertex[ 2 ].normal.xyz ) );
   // 頂点のワールド座標系での接線を出力先に書く
-  output_tangent[ filtered_vertex_offset ] = ( mat3(l2w) * v0.tangent.xyz );
-  output_tangent[ filtered_vertex_offset + 1u ] = ( mat3(l2w) * v1.tangent.xyz );
-  output_tangent[ filtered_vertex_offset + 2u ] = ( mat3(l2w) * v2.tangent.xyz );
+  output_tangent[ filtered_vertex_offset + 0u ] = vec4( mat3(l2w) * f.vertex[ 0 ].tangent.xyz, f.vertex[ 0 ].tangent.w );
+  output_tangent[ filtered_vertex_offset + 1u ] = vec4( mat3(l2w) * f.vertex[ 1 ].tangent.xyz, f.vertex[ 1 ].tangent.w );
+  output_tangent[ filtered_vertex_offset + 2u ] = vec4( mat3(l2w) * f.vertex[ 2 ].tangent.xyz, f.vertex[ 2 ].tangent.w );
   // 頂点のテクスチャ座標を出力先に書く
-  output_tex_coord[ filtered_vertex_offset ] = v0.tex_coord0.xy;
-  output_tex_coord[ filtered_vertex_offset + 1u ] = v1.tex_coord0.xy;
-  output_tex_coord[ filtered_vertex_offset + 2u ] = v2.tex_coord0.xy;
+  output_tex_coord[ filtered_vertex_offset + 0u ] = f.vertex[ 0 ].tex_coord0.xy;
+  output_tex_coord[ filtered_vertex_offset + 1u ] = f.vertex[ 1 ].tex_coord0.xy;
+  output_tex_coord[ filtered_vertex_offset + 2u ] = f.vertex[ 2 ].tex_coord0.xy;
   // 頂点のIDにノードのIDとメッシュのIDを書いておく
-  output_id[ filtered_vertex_offset ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
+  output_id[ filtered_vertex_offset + 0u ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
   output_id[ filtered_vertex_offset + 1u ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
   output_id[ filtered_vertex_offset + 2u ] = vec4( td.instance_id, td.primitive_id, 0, 0 );
   // 上の3頂点で1つの三角形プリミティブになる事を書く

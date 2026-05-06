@@ -8,6 +8,24 @@
 #include <gct/vertex_to_primitive.h>
 
 vec3 mikktspace(
+  vec3 p0,
+  vec3 p1,
+  vec3 p2,
+  vec2 t0,
+  vec2 t1,
+  vec2 t2
+) {
+  const vec3 p10 = p1 - p0;
+  const vec3 p20 = p2 - p0;
+  const vec2 t10 = t1 - t0;
+  const vec2 t20 = t2 - t0;
+
+  const float det = 1.0 / ( t10.x * t20.y - t10.y * t20.x );
+	const vec3 t = det * ( p10 * t20.y - p20 * t10.y );
+  return normalize( t );
+}
+
+vec3 mikktspace(
   uint accessor_id,
   uint primitive_id
 ) {
@@ -23,14 +41,9 @@ vec3 mikktspace(
   const vec2 t1 = read_vertex( accessor_pool[ accessor_id + 4 ], i1, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xy;
   const vec2 t2 = read_vertex( accessor_pool[ accessor_id + 4 ], i2, vec4( 0.0, 0.0, 0.0, 1.0 ) ).xy;
 
-  const vec3 p10 = p1 - p0;
-  const vec3 p20 = p2 - p0;
-  const vec2 t10 = t1 - t0;
-  const vec2 t20 = t2 - t0;
-
-  const float det = 1.0 / ( t10.x * t20.y - t10.y * t20.x );
-	const vec3 t = det * ( p10 * t20.y - p20 * t10.y );
-  return normalize( t );
+  return mikktspace(
+    p0, p1, p2, t0, t1, t2
+  );
 }
 
 vec3 mikktspace(
@@ -42,6 +55,7 @@ vec3 mikktspace(
   const uint primitive_id = vertex_to_primitive_get( iter );
   return mikktspace( accessor_id, primitive_id );
 }
+
 
 #endif
 

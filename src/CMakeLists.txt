@@ -374,6 +374,14 @@ add_library( gct SHARED
   gct/af_state.cpp
   gct/get_library_path.cpp
   gct/dds.cpp
+  gct/simeq.cpp
+  gct/signed_octahedron.cpp
+  gct/project.cpp
+  gct/n21t11.cpp
+  gct/n31.cpp
+  gct/glsl_bit.cpp
+  gct/dummy_byte_address_buffer.cpp
+  gct/mikktspace.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -570,6 +578,90 @@ target_link_libraries( list_triangle
   Boost::system
 )
 
+add_executable( test_n21t11 test_n21t11.cpp )
+target_link_libraries( test_n21t11
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n21t11_glsl test_n21t11_glsl.cpp )
+target_link_libraries( test_n21t11_glsl
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n21t11_cross test_n21t11_cross.cpp )
+target_link_libraries( test_n21t11_cross
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n31 test_n31.cpp )
+target_link_libraries( test_n31
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n31_glsl test_n31_glsl.cpp )
+target_link_libraries( test_n31_glsl
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n31_cross test_n31_cross.cpp )
+target_link_libraries( test_n31_cross
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+if( DGFSDK_FOUND )
+add_executable( gen_dgf gen_dgf.cpp )
+target_link_libraries( gen_dgf
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+  ${DGFSDK_LIBRARIES}
+)
+
+add_executable( test_dgf test_dgf.cpp )
+target_link_libraries( test_dgf
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+
+endif()
 
 add_executable( test_quaternion test_quaternion.cpp )
 #target_link_libraries( list_vertex

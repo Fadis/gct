@@ -14,7 +14,7 @@ layout (location = 3) in vec2 input_texcoord0;
 
 layout (location = 0) out vec4 output_position;
 layout (location = 1) out vec3 output_normal;
-layout (location = 2) out vec3 output_tangent;
+layout (location = 2) out vec4 output_tangent;
 layout (location = 3) out vec2 output_tex_coord;
 layout (location = 4) out vec4 output_optflow;
 layout (location = 5) flat out vec4 output_id;
@@ -57,7 +57,7 @@ void main() {
   vec3 normal = normalize( ( mat3(world_matrix) * input_normal ) );
   vec3 tangent = normalize( ( mat3(world_matrix) * input_tangent.xyz ) );
   output_normal = normal;
-  output_tangent = tangent;
+  output_tangent = vec4( tangent, input_tangent.w );
   output_tex_coord = input_texcoord0;
   gl_Position =
     matrix_pool[ global_uniforms.projection_matrix ] *

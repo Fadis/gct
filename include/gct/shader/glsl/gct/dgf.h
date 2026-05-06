@@ -5,8 +5,23 @@
 #ifndef GCT_SHADER_DGF_H
 #define GCT_SHADER_DGF_H
 
+#ifdef __cplusplus
+#include <cfloat>
+#include <cstdint>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/geometric.hpp>
+#include <gct/glsl_bit.hpp>
+#include <gct/dummy_byte_address_buffer.hpp>
+using namespace std;
+using namespace glm;
+using namespace gct;
+using uint = std::uint32_t;
+#else
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
 #include <gct/scene_graph/byte_address_buffer.h>
+#endif
 
 #define DGF_CTRL_RESTART   0
 #define DGF_CTRL_EDGE1     1
@@ -16,17 +31,17 @@
 #define DGF_HEADER_SIZE    20
 
 struct DGFHeader {
-    uvec3 bitsPerComponent;
-    uint numTriangles;
-    uint numVerts;
-    uint bitsPerIndex;
-    ivec3 anchor;
-    float scale;
-    uint primIDBase;
-    uint userData;
-    uint bitSize;
-    uint geomIDMeta; 
-    bool haveGeomIDPalette;
+  uvec3 bitsPerComponent;
+  uint numTriangles;
+  uint numVerts;
+  uint bitsPerIndex;
+  ivec3 anchor;
+  float scale;
+  uint primIDBase;
+  uint userData;
+  uint bitSize;
+  uint geomIDMeta; 
+  bool haveGeomIDPalette;
 };
 
 struct DGFBlockInfo {
@@ -84,7 +99,14 @@ uint ComputeGeomIDPaletteSize( DGFHeader header ) {
   return (header.haveGeomIDPalette) ? paletteSize : 0;
 }
 
-DGFBlockInfo DGFLoadBlockInfo(uint dgfBuffer, in uint dgfBlockIndex) {
+DGFBlockInfo DGFLoadBlockInfo(
+  uint dgfBuffer,
+#ifdef __cplusplus
+  uint dgfBlockIndex
+#else
+  in uint dgfBlockIndex
+#endif
+) {
   DGFBlockInfo result;
   result.blockStartOffset = dgfBlockIndex * 128;
   result.dgfBuffer = dgfBuffer;
@@ -126,16 +148,31 @@ struct IsFirstScanState {
 
 IsFirstScanState InitIsFirstScanState(const uvec3 ibAddress) {
   IsFirstScanState state;
-  state.prefixCount.x = min(ibAddress.x, 3); // first 3 'isFirst' bits are implicit ones
-  state.prefixCount.y = min(ibAddress.y, 3); // first 3 'isFirst' bits are implicit ones
-  state.prefixCount.z = min(ibAddress.z, 3); // first 3 'isFirst' bits are implicit ones
+#ifdef __cplusplus
+  state.prefixCount.x = std::min(ibAddress.x, 3u); // first 3 'isFirst' bits are implicit ones
+  state.prefixCount.y = std::min(ibAddress.y, 3u); // first 3 'isFirst' bits are implicit ones
+  state.prefixCount.z = std::min(ibAddress.z, 3u); // first 3 'isFirst' bits are implicit ones
+#else
+  state.prefixCount.x = min(ibAddress.x, 3u); // first 3 'isFirst' bits are implicit ones
+  state.prefixCount.y = min(ibAddress.y, 3u); // first 3 'isFirst' bits are implicit ones
+  state.prefixCount.z = min(ibAddress.z, 3u); // first 3 'isFirst' bits are implicit ones
+#endif
   state.isFirst.x = ibAddress.x < 3;
   state.isFirst.y = ibAddress.y < 3;
   state.isFirst.z = ibAddress.z < 3;
   return state;
 }
 
-void IsFirstScan(inout IsFirstScanState state, uint indexStart, const uvec3 ibAddress, uint bits) {
+void IsFirstScan(
+#ifdef __cplusplus
+  IsFirstScanState &state,
+#else
+  inout IsFirstScanState state,
+#endif
+  uint indexStart,
+  const uvec3 ibAddress,
+  uint bits
+) {
   uint bitsX = (ibAddress.x < indexStart) ? 0 : bits; // don't count bits beyond the query position
   uint bitsY = (ibAddress.y < indexStart) ? 0 : bits;
   uint bitsZ = (ibAddress.z < indexStart) ? 0 : bits;
@@ -227,7 +264,16 @@ uint64_t Pack64(uint a, uint b, uint c, uint d) {
     return (q1 << 32ul) | q0;
 }
 
-void ExtractBits(DGFBlockInfo s, out uint64_t evenBits, out uint64_t oddBits) {
+void ExtractBits(
+  DGFBlockInfo s,
+#ifdef __cplusplus
+  uint64_t &evenBits,
+  uint64_t &oddBits
+#else
+  out uint64_t evenBits,
+  out uint64_t oddBits
+#endif
+) {
   uvec4 Ctrl = vertex_buffer_load4( s.dgfBuffer, s.blockStartOffset + 28u * 4u);
   uint ctrl0 = bitfieldReverse(Ctrl.w);
   uint ctrl1 = bitfieldReverse(Ctrl.z);
@@ -238,7 +284,7 @@ void ExtractBits(DGFBlockInfo s, out uint64_t evenBits, out uint64_t oddBits) {
   evenBits <<= 1;
   oddBits <<= 1;
 }
-
+////////////
 uint LoadTriangleControlValues(DGFBlockInfo s, uint triangleId) {
   if (triangleId == 0) {
     return DGF_CTRL_RESTART;
@@ -290,8 +336,8 @@ ivec3 InitAccu(bool prevIsCopy, bool currentIsRestart) {
 uint ComputeNRestarts(uint triIdx, bits_t isRestart) {
   const bits_t m = (isRestart << 1) & SelectMask(triIdx);
 
-  uint bitCount = bitCount(uint(m)) + bitCount(uint(m>>32));
-  return bitCount;
+  uint bit_count = bitCount(uint(m)) + bitCount(uint(m>>32));
+  return bit_count;
 }
 
 ivec3 ComputeDSum(uint triIdx, bool prevIsCopy, bits_t isRestart) {
@@ -347,7 +393,14 @@ uvec3 ControlScan(uint triIdx, const bits_t isRestart, const bits_t isEdge2, con
   return result;
 }
 
-DGFBlockInfo DGFInit(uint dgfBuffer, in uint dgfBlockIndex) {
+DGFBlockInfo DGFInit(
+  uint dgfBuffer,
+#ifdef __cplusplus
+  uint dgfBlockIndex
+#else
+  in uint dgfBlockIndex
+#endif
+) {
     return DGFLoadBlockInfo(dgfBuffer, dgfBlockIndex);
 }
 
@@ -357,6 +410,8 @@ struct TriangleBits {
   bits_t isEdge2;
 };
 
+
+#ifndef __cplusplus
 uint64_t Wave64ActiveBallot(bool expr) {
   uvec4 b = subgroupBallot(expr);
   uint64_t r = b.y;
@@ -387,6 +442,7 @@ TriangleBits GetTriangleBitsWaveBallot(DGFBlockInfo s) {
   result.isBacktrack &= mask;
   return result;
 }
+#endif
 
 // Decode a triangle using a single lane
 TriangleBits GetTriangleBitsSingleLane(DGFBlockInfo s) {
@@ -402,11 +458,13 @@ TriangleBits GetTriangleBitsSingleLane(DGFBlockInfo s) {
 
 // Decode a triangle using the full wave.
 //  Must be called within wave-uniform control flow with a wave-uniform DGF block
+#ifndef __cplusplus
 uvec3 DGFGetTriangle_BitScan_Wave(DGFBlockInfo s, uint triangleIndexInBlock) {
   TriangleBits triangleBits = GetTriangleBitsWaveBallot(s);
   uvec3 indices = ControlScan(triangleIndexInBlock, triangleBits.isRestart, triangleBits.isEdge2, triangleBits.isBacktrack);
   return DemuxIndices(indices, s);
 }
+#endif
 
 // Decode a triangle using a single lane
 uvec3 DGFGetTriangle_BitScan_Lane(DGFBlockInfo s, uint triangleIndexInBlock) {
@@ -430,11 +488,19 @@ vec3 DGFGetVertex(DGFBlockInfo s, uint vertexIndex) {
   // x and y are guaranteed to be in the lower dword.  Z may be straddling the boundary
   uint64_t vert = (uint64_t(dw1) << 32) | dw0;
   ivec3 v = ivec3(dw0, dw0 >> s.header.bitsPerComponent.x, uint(vert >> (s.header.bitsPerComponent.x + s.header.bitsPerComponent.y)));
-  
+ 
+#ifdef __cplusplus
+  const ivec3 mask = ivec3(
+    ( 1 << s.header.bitsPerComponent.x ) - 1,
+    ( 1 << s.header.bitsPerComponent.y ) - 1,
+    ( 1 << s.header.bitsPerComponent.z ) - 1
+  );
+#else
   const ivec3 mask = (ivec3(1, 1, 1) << s.header.bitsPerComponent) - ivec3(1, 1, 1);
+#endif
   v &= mask;
   v += s.header.anchor;
-  return vec3(v * s.header.scale);
+  return vec3(v) * s.header.scale;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -461,9 +527,26 @@ ControlScanState InitControlScanState() {
   return state;
 }
 
-void ControlScan(inout ControlScanState s, uint triStart, uint triIndex, uint bits) {
+void ControlScan(
+#ifdef __cplusplus
+  ControlScanState &s,
+#else
+  inout ControlScanState s,
+#endif
+  uint triStart,
+  uint triIndex,
+  uint bits
+) {
   uint i = 30; // control bit pairs are stored back to front
-  for (uint tri = triStart; tri <= min(triIndex, triStart + 15); tri++) {
+  for (
+    uint tri = triStart;
+#ifdef __cplusplus
+    tri <= std::min(triIndex, triStart + 15);
+#else
+    tri <= min(triIndex, triStart + 15);
+#endif
+    tri++
+  ) {
     uint ctrl = (bits >> i) & 3;
     i -= 2;
     uvec3 prevPrev = s.prev;
@@ -493,7 +576,14 @@ void ControlScan(inout ControlScanState s, uint triStart, uint triIndex, uint bi
   }
 }
 
-uvec3 DGFGetTriangle_Serial(inout DGFBlockInfo s, uint triIndex) {
+uvec3 DGFGetTriangle_Serial(
+#ifdef __cplusplus
+  DGFBlockInfo &s,
+#else
+  inout DGFBlockInfo s,
+#endif
+  uint triIndex
+) {
   ControlScanState cscan = InitControlScanState();
 
   // at most four control-bit dwords

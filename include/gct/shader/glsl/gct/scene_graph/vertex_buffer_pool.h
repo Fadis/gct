@@ -18,6 +18,9 @@ layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) 
 layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferU16 {
   uint16_t data[];
 } vertex_buffer_u16[];
+layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferF16 {
+  float16_t data[];
+} vertex_buffer_f16[];
 #endif
 layout (set = GCT_SHADER_SCENE_GRAPH_VERTEX_BUFFER_SET_ID, binding = 0, std430) buffer VertexBufferI32 {
   int data[];
