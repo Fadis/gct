@@ -1,6 +1,7 @@
 add_executable( glsl_include glsl_include.cpp )
 target_link_libraries( glsl_include
-  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+  Boost::program_options
+  Boost::system
 )
 
 add_executable(
@@ -9,10 +10,12 @@ add_executable(
   ../external/ttf2mesh/ttf2mesh.c
 )
 target_link_libraries( ttf_to_gltf
-  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+  Boost::program_options
+  Boost::system
 )
 target_link_libraries( ttf_to_gltf
-  ${Boost_PROGRAM_OPTIONS_LIBRARIES}
+  Boost::program_options
+  Boost::system
 )
 
 add_library( gct SHARED
@@ -378,6 +381,7 @@ add_library( gct SHARED
   gct/signed_octahedron.cpp
   gct/project.cpp
   gct/n21t11.cpp
+  gct/n20t11b1.cpp
   gct/n31.cpp
   gct/glsl_bit.cpp
   gct/dummy_byte_address_buffer.cpp
@@ -600,6 +604,36 @@ target_link_libraries( test_n21t11_glsl
 
 add_executable( test_n21t11_cross test_n21t11_cross.cpp )
 target_link_libraries( test_n21t11_cross
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n20t11b1 test_n20t11b1.cpp )
+target_link_libraries( test_n20t11b1
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n20t11b1_glsl test_n20t11b1_glsl.cpp )
+target_link_libraries( test_n20t11b1_glsl
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_n20t11b1_cross test_n20t11b1_cross.cpp )
+target_link_libraries( test_n20t11b1_cross
   gct
   gct_glfw
   Threads::Threads

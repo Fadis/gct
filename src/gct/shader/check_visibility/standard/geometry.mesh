@@ -15,6 +15,7 @@
 // Subgroup演算拡張を使う
 #extension GL_KHR_shader_subgroup_arithmetic : enable
 #extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_vote : enable
 
 // 64bit整数を使う
 #extension GL_ARB_gpu_shader_int64 : enable

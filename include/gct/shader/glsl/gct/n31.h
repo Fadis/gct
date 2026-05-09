@@ -24,23 +24,24 @@ uint n31_pack( signed_octahedron normal ) {
 }
 
 signed_octahedron n31_unpack( uint packed ) {
-  return signed_octahedron{
+  return signed_octahedron(
     vec2(
       float( ( packed >> 15 ) & 0x7FFF ) / 0x7FFF,
       float( ( packed ) & 0x7FFF ) / 0x7FFF
     ),
-    ( packed >> 30 ) & 0x1u
-  };
+    ( packed >> 30 ) & 0x1u,
+    0u
+  );
 }
 
 uint n31_encode( vec3 normal ) {
-  const auto encoded_normal = encode_signed_octahedron( normal );
-  const auto packed = n31_pack( encoded_normal );
+  const signed_octahedron encoded_normal = encode_signed_octahedron( normal );
+  const uint packed = n31_pack( encoded_normal );
   return packed;
 }
 
 vec3 n31_decode( uint packed ) {
-  const auto encoded_normal = n31_unpack( packed );
+  const signed_octahedron encoded_normal = n31_unpack( packed );
   return decode_signed_octahedron( encoded_normal );
 }
 

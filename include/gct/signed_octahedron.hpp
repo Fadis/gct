@@ -16,6 +16,7 @@ struct signed_octahedron {
 struct signed_diamond {
   float v;
   std::uint32_t sign;
+  std::uint32_t flip;
 };
 
 signed_octahedron encode_signed_octahedron( const glm::vec3 &decoded );

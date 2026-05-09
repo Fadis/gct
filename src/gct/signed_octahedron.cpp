@@ -31,6 +31,7 @@ signed_diamond encode_signed_diamond( const glm::vec2 &decoded ) {
   signed_diamond encoded;
   encoded.sign = ( decoded.y >= 0.0f ) ? 1u : 0u;
   encoded.v = x * 0.5f + 0.5f;
+  encoded.flip = 0u;
   return encoded;
 }
 

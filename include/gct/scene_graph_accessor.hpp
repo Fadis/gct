@@ -19,7 +19,8 @@ enum class accessor_type_id {
   fixed = 129,
   dgf = 130,
   n21t11 = 131,
-  n31 = 132
+  n20t11b1 = 132,
+  n31 = 133
 };
 
 void to_json( nlohmann::json &dest, const accessor_type_id &src );
