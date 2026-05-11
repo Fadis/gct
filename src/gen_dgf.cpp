@@ -123,8 +123,7 @@ std::size_t decode_dgf(
   std::size_t index,
   const std::vector< DGFBaker::TriangleRemapInfo > &remap_info,
   vk::Format remap_format,
-  const std::vector< std::uint8_t > &remap,
-  const std::vector< std::uint8_t > &n21t11
+  const std::vector< std::uint8_t > &remap
 ) {
   const std::uint8_t *head = block.data() + index * 128u;
   DGF::MetaData meta;
@@ -145,22 +144,22 @@ std::size_t decode_dgf(
   std::uint32_t offset = 0u;
   DGF::ReadUserData( head, &offset, 0, sizeof( std::uint32_t ) );
 
-  const auto n21t11_head = reinterpret_cast< const std::uint32_t* >( n21t11.data() );
+  //const auto n21t11_head = reinterpret_cast< const std::uint32_t* >( n21t11.data() );
 
   for( std::size_t i = 0u; i != meta.numTris; ++i ) {
     const auto &r = remap_info[ offset + i ];
     for( unsigned int j = 0u; j != 3u; ++j ) {
       const auto attr_index = read_remap( remap_format, remap, ( offset + i ) * 3 + j );
       const auto &position = floatVerts[ triangleList[ i * 3 + j ] ];
-      const auto normal = gct::n21t11_decode_normal( n21t11_head[ attr_index ] );
-      const auto tangent = gct::n21t11_decode_tangent( n21t11_head[ attr_index ], normal );
+      //const auto normal = gct::n21t11_decode_normal( n21t11_head[ attr_index ] );
+      //const auto tangent = gct::n21t11_decode_tangent( n21t11_head[ attr_index ], normal );
       std::cout << "t " << index << " ( " << position.xyz[ 0 ] << ", " <<
       position.xyz[ 1 ] << ", " <<
       position.xyz[ 2 ] << " ) " <<
       r.InputPrimIndex * 3 + r.IndexRotation[ j ] << " " <<
       attr_index << " " <<
-      "( " << normal.x << ", " << normal.y << ", " << normal.z << " ) " <<
-      "( " << tangent.x << ", " << tangent.y << ", " << tangent.z << " ) " <<
+      //"( " << normal.x << ", " << normal.y << ", " << normal.z << " ) " <<
+      //"( " << tangent.x << ", " << tangent.y << ", " << tangent.z << " ) " <<
       std::endl;
     }
   }
@@ -326,8 +325,6 @@ void inspect_primitive(
     }
   }
 
-
-
   if( vertex_buffer.size() != normal_buffer.size() || vertex_buffer.size() != tangent_buffer.size() ) {
     throw gct::exception::invalid_argument( "POSITION NORMAL TANGENTの頂点数が一致しない", __FILE__, __LINE__ );
   }
@@ -335,7 +332,7 @@ void inspect_primitive(
   std::cout << "p " << vertex_buffer.size() << " " << normal_buffer.size() << " " << index_buffer.size() << std::endl;
   auto [dgf,remap_info,remap_format,remap] = bake_dgf( vertex_buffer, index_buffer );
 
-  std::vector< std::uint8_t > n21t11;
+  /*std::vector< std::uint8_t > n21t11;
   {
     n21t11.resize( normal_buffer.size()/3u * sizeof( std::uint32_t ) );
     auto cur = reinterpret_cast< std::uint32_t* >( n21t11.data() );
@@ -354,11 +351,11 @@ void inspect_primitive(
       );
       ++cur;
     }
-  }
+  }*/
 
   std::cout << "d " << dgf.size() << " " << remap.size() << " " << int( remap_format ) << std::endl;
   for( std::size_t i = 0u; i < dgf.size() / 128u; ++i ) {
-    decode_dgf( dgf, i, remap_info, remap_format, remap, n21t11 );
+    decode_dgf( dgf, i, remap_info, remap_format, remap );
   }
 }
 

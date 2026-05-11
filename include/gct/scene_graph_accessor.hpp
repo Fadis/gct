@@ -5,6 +5,7 @@
 #include <gct/buffer_pool.hpp>
 #include <gct/numeric_types.hpp>
 #include <gct/setter.hpp>
+#include <gct/vertex_attribute_id.hpp>
 #include <vulkan/vulkan_enums.hpp>
 namespace gct::scene_graph {
 
@@ -25,6 +26,12 @@ enum class accessor_type_id {
 
 void to_json( nlohmann::json &dest, const accessor_type_id &src );
 accessor_type_id to_type_id( const numeric_type_t &type );
+accessor_type_id to_accessor_type_id( const std::string &src );
+bool check_accessor_type(
+  vertex_attribute_id attr_id,
+  accessor_type_id type,
+  std::uint32_t component_count
+);
 
 enum class mesh_topology_id {
   point = 0,
@@ -60,7 +67,7 @@ struct mesh_t {
   LIBGCT_SETTER( unique_vertex_count )
   LIBGCT_SETTER( topology )
   LIBGCT_SETTER( compression_method )
-  std::unordered_map< std::uint32_t, accessor_t > attribute;
+  std::unordered_map< vertex_attribute_id, accessor_t > attribute;
   std::uint32_t vertex_count = 0u;
   std::uint32_t unique_vertex_count = 0u;
   vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;

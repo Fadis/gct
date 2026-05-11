@@ -47,6 +47,12 @@ namespace gct {
     [[nodiscard]] reference operator[]( size_type i ) const {
       return head.get()[ i ];
     }
+    [[nodiscard]] std::uint8_t *data() {
+      return head.get();
+    }
+    [[nodiscard]] const std::uint8_t *data() const {
+      return head.get();
+    }
   private:
     std::size_t file_size = 0u;
     std::shared_ptr< std::uint8_t > head;

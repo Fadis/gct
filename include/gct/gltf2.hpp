@@ -148,6 +148,16 @@ private:
 
 void to_json( nlohmann::json&, const gltf2& );
 
+vk::PrimitiveTopology gltf_topology_to_vulkan_topology(
+  fx::gltf::Primitive::Mode t
+);
+
+numeric_type_t to_numeric_type(
+  fx::gltf::Accessor::ComponentType componentType,
+  fx::gltf::Accessor::Type type,
+  bool normalize
+);
+
 }
 
 #endif

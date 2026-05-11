@@ -386,6 +386,9 @@ add_library( gct SHARED
   gct/glsl_bit.cpp
   gct/dummy_byte_address_buffer.cpp
   gct/mikktspace.cpp
+  gct/vertex_attribute_id.cpp
+  gct/compress_mesh.cpp
+  gct/fixed.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -399,6 +402,7 @@ target_link_libraries(
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_VULKAN2JSON_vulkan2json}
+  ${DGFSDK_LIBRARIES}
 )
 
 install( TARGETS gct )
@@ -564,6 +568,16 @@ target_link_libraries( dump_gpuinfo
 
 add_executable( list_vertex list_vertex.cpp )
 target_link_libraries( list_vertex
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( list_vertex2 list_vertex2.cpp )
+target_link_libraries( list_vertex2
   gct
   gct_glfw
   Threads::Threads

@@ -58,6 +58,143 @@ accessor_type_id to_type_id(
   return accessor_type_id::float_;
 }
 
+accessor_type_id to_accessor_type_id( const std::string &src ) {
+  std::string simplified;
+  for( const auto &c: src ) {
+    if( std::isalnum( c ) ) {
+      simplified.push_back( std::tolower( c ) );
+    }
+  }
+  if( simplified == "float" )
+    return accessor_type_id::float_;
+  else if( simplified == "byte" )
+    return accessor_type_id::i8;
+  else if( simplified == "unsignedbyte" )
+    return accessor_type_id::u8;
+  else if( simplified == "short" )
+    return accessor_type_id::i16;
+  else if( simplified == "unsignedshot" )
+    return accessor_type_id::u16;
+  else if( simplified == "unsignedint" )
+    return accessor_type_id::u32;
+  else if( simplified == "half" )
+    return accessor_type_id::half;
+  else if( simplified == "fixed" )
+    return accessor_type_id::fixed;
+  else if( simplified == "dgf" )
+    return accessor_type_id::dgf;
+  else if( simplified == "n21t11" )
+    return accessor_type_id::n21t11;
+  else if( simplified == "n20t11b1" )
+    return accessor_type_id::n20t11b1;
+  else if( simplified == "n31" )
+    return accessor_type_id::n31;
+  else {
+    throw exception::invalid_argument( "to_acessor_type_id : Unknown type id" );
+  }
+}
+
+bool check_accessor_type(
+  vertex_attribute_id attr_id,
+  accessor_type_id type,
+  std::uint32_t component_count
+) {
+  if( attr_id == vertex_attribute_id::index ) {
+    if( !(
+      type == accessor_type_id::u8 ||
+      type == accessor_type_id::i8 ||
+      type == accessor_type_id::u16 ||
+      type == accessor_type_id::i16 ||
+      type == accessor_type_id::u32 ||
+      type == accessor_type_id::float_
+    ) ) {
+      return false;
+    }
+    if( component_count != 1u ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::position ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 3u ) ||
+      ( type == accessor_type_id::half && component_count == 3u ) ||
+      ( type == accessor_type_id::fixed && component_count == 3u ) ||
+      ( type == accessor_type_id::dgf && component_count == 1u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::normal ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 3u ) ||
+      ( type == accessor_type_id::half && component_count == 3u ) ||
+      ( type == accessor_type_id::fixed && component_count == 3u ) ||
+      ( type == accessor_type_id::n21t11 && component_count == 1u ) ||
+      ( type == accessor_type_id::n20t11b1 && component_count == 1u ) ||
+      ( type == accessor_type_id::n31 && component_count == 1u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::tangent ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 4u ) ||
+      ( type == accessor_type_id::half && component_count == 4u ) ||
+      ( type == accessor_type_id::fixed && component_count == 4u ) ||
+      ( type == accessor_type_id::n31 && component_count == 1u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::texcoord_0 ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 2u ) ||
+      ( type == accessor_type_id::half && component_count == 2u ) ||
+      ( type == accessor_type_id::fixed && component_count == 2u ) ||
+      ( type == accessor_type_id::u8 && component_count == 2u ) ||
+      ( type == accessor_type_id::u16 && component_count == 2u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::color_0 ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 3u ) ||
+      ( type == accessor_type_id::half && component_count == 3u ) ||
+      ( type == accessor_type_id::fixed && component_count == 3u ) ||
+      ( type == accessor_type_id::u8 && component_count == 3u ) ||
+      ( type == accessor_type_id::u16 && component_count == 3u ) ||
+      ( type == accessor_type_id::float_ && component_count == 4u ) ||
+      ( type == accessor_type_id::half && component_count == 4u ) ||
+      ( type == accessor_type_id::fixed && component_count == 4u ) ||
+      ( type == accessor_type_id::u8 && component_count == 4u ) ||
+      ( type == accessor_type_id::u16 && component_count == 4u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::joint_0 ) {
+    if( !(
+      ( type == accessor_type_id::u8 && component_count == 4u ) ||
+      ( type == accessor_type_id::u16 && component_count == 4u )
+    ) ) {
+      return false;
+    }
+  }
+  else if( attr_id == vertex_attribute_id::weight_0 ) {
+    if( !(
+      ( type == accessor_type_id::float_ && component_count == 4u ) ||
+      ( type == accessor_type_id::half && component_count == 4u ) ||
+      ( type == accessor_type_id::fixed && component_count == 4u ) ||
+      ( type == accessor_type_id::u8 && component_count == 4u ) ||
+      ( type == accessor_type_id::u16 && component_count == 4u )
+    ) ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void to_json( nlohmann::json &dest, const mesh_topology_id &src ) {
   if( src == mesh_topology_id::point ) {
     dest = "point";
@@ -96,7 +233,7 @@ void to_json( nlohmann::json &dest, const mesh_t &src ) {
   dest = nlohmann::json::object();
   dest[ "attribute" ] = nlohmann::json::object();
   for( const auto &v: src.attribute ) {
-    dest[ "attribute" ][ std::to_string( v.first ) ] = v.second;
+    dest[ "attribute" ][ nlohmann::json( v.first ) ] = v.second;
   }
   dest[ "vertex_count" ] = src.vertex_count;
   dest[ "unique_vertex_count" ] = src.unique_vertex_count;

@@ -22,6 +22,7 @@
 #include <gct/to_matrix.hpp>
 #include <gct/image.hpp>
 #include <gct/scene_graph_accessor.hpp>
+#include <gct/vertex_attribute_id.hpp>
 #include <gct/numeric_types.hpp>
 #include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_structs.hpp>
@@ -111,6 +112,7 @@ numeric_type_t to_numeric_type(
 
   if( type == fx::gltf::Accessor::Type::Scalar ) {
     n.composite = numeric_composite_type_t::scalar;
+    n.rows = 1u;
   }
   else if( type == fx::gltf::Accessor::Type::Vec2 ) {
     n.composite = numeric_composite_type_t::vector;
@@ -133,19 +135,20 @@ numeric_type_t to_numeric_type(
   return n;
 }
 
+
 gltf2::gltf2(
   const gltf2_create_info &ci
 ) : props( ci ) {
   if( ci.vertex_attribute_map.empty() ) {
-    props.vertex_attribute_map[ "INDEX" ] = 0;
-    props.vertex_attribute_map[ "POSITION" ] = 1;
-    props.vertex_attribute_map[ "NORMAL" ] = 2;
-    props.vertex_attribute_map[ "TANGENT" ] = 3;
-    props.vertex_attribute_map[ "TEXCOORD_0" ] = 4;
-    props.vertex_attribute_map[ "COLOR_0" ] = 5;
-    props.vertex_attribute_map[ "JOINT_0" ] = 6;
-    props.vertex_attribute_map[ "WEIGHT_0" ] = 7;
-    props.vertex_attribute_map[ "_LOD_MORPH" ] = 8;
+    props.vertex_attribute_map[ "INDEX" ] = int( vertex_attribute_id::index );
+    props.vertex_attribute_map[ "POSITION" ] = int( vertex_attribute_id::position );
+    props.vertex_attribute_map[ "NORMAL" ] = int( vertex_attribute_id::normal );
+    props.vertex_attribute_map[ "TANGENT" ] = int( vertex_attribute_id::tangent );
+    props.vertex_attribute_map[ "TEXCOORD_0" ] = int( vertex_attribute_id::texcoord_0 );
+    props.vertex_attribute_map[ "COLOR_0" ] = int( vertex_attribute_id::color_0 );
+    props.vertex_attribute_map[ "JOINT_0" ] = int( vertex_attribute_id::joint_0 );
+    props.vertex_attribute_map[ "WEIGHT_0" ] = int( vertex_attribute_id::weight_0 );
+    props.vertex_attribute_map[ "_LOD_MORPH" ] = int( vertex_attribute_id::lod_morph );
   }
   for( const auto &v: props.vertex_attribute_map ) {
     accessor_count = std::max( accessor_count, std::uint32_t( v.second + 1 ) );
@@ -472,7 +475,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     if( attribute_index != props.vertex_attribute_map.end() ) {
       mesh.attribute.insert(
         std::make_pair(
-          attribute_index->second,
+          vertex_attribute_id( attribute_index->second ),
           scene_graph::accessor_t()
             .set_buffer( buffer[ view.buffer ] )
             .set_type(
@@ -553,7 +556,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       mesh.set_vertex_count( accessor.count );
       mesh.attribute.insert(
         std::make_pair(
-          accessor_index->second,
+          vertex_attribute_id( accessor_index->second ),
           scene_graph::accessor_t()
             .set_buffer( buffer[ view.buffer ] )
             .set_type(
@@ -760,7 +763,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       p.descriptor.accessor.push_back( accessor_desc );
       {
         for( std::uint32_t attr_id = 0u; attr_id != accessor_count; ++attr_id ) {
-          const auto attr = mesh.attribute.find( attr_id );
+          const auto attr = mesh.attribute.find( vertex_attribute_id( attr_id ) );
           if( attr != mesh.attribute.end() ) {
             if( amp.has( "enabled" ) ) {
               accessor.data()->*amp[ "enabled" ] = 1u;
@@ -799,7 +802,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
           else if( attr_id == 8u ) { // LOD_MORPH
             const auto mvc = morph_vertex_count.find( ( std::uint64_t( mesh_id ) << 32 ) | std::uint64_t( prim_id ) );
             if( mvc == morph_vertex_count.end() ) {
-              const auto attr = mesh.attribute.find( 0u );
+              const auto attr = mesh.attribute.find( vertex_attribute_id( 0u ) );
               if( attr != mesh.attribute.end() ) {
                 if( amp.has( "enabled" ) ) {
                   accessor.data()->*amp[ "enabled" ] = 1u;

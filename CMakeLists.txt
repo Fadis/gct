@@ -227,6 +227,9 @@ link_directories(
 )
 
 add_definitions( -DVK_ENABLE_BETA_EXTENSIONS -DVULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 )
+if( DGFSDK_FOUND )
+add_definitions( -DGCT_ENABLE_DGF )
+endif()
 
 configure_file(libgct.pc.in libgct.pc @ONLY)
 install(
