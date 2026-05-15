@@ -94,14 +94,6 @@ struct loaded_vertex_buffer {
 
 using loaded_mesh = std::unordered_map< primitive_key, loaded_vertex_buffer >;
 
-scene_graph::accessor_type_id to_accessor_type_id(
-  const fx::gltf::Accessor &accessor
-);
-
-std::uint32_t to_accessor_component_count(
-  const fx::gltf::Accessor &accessor
-);
-
 loaded_vertex_buffer load_vertex_on_cpu(
   const std::filesystem::path &base_dir,
   const fx::gltf::Document &doc,

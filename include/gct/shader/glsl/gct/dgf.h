@@ -73,7 +73,7 @@ DGFHeader DGFLoadHeader( uint dgfBuffer, uint offset ) {
   result.anchor.x = int(h1) >> 8;
   result.anchor.y = int(h2) >> 8;
   result.anchor.z = int(h3) >> 8;
-  result.scale = intBitsToFloat((h1 & 0xff) << 23);
+  result.scale = uintBitsToFloat((h1 & 0xff) << 23);
   result.primIDBase = h4 & ((1 << 29) - 1);
   
   uint haveUserData = ((h4 >> 29) & 1);

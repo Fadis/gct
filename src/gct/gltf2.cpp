@@ -418,25 +418,23 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   std::vector< vk::VertexInputBindingDescription > vertex_input_binding;
   std::vector< vk::VertexInputAttributeDescription > vertex_input_attribute;
   uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
-  uint32_t unique_vertex_count = std::numeric_limits< uint32_t >::max();
   bool rigged = false;
   bool has_tangent = false;
   glm::vec3 min( -1, -1, -1 );
   glm::vec3 max( 1, 1, 1 );
   scene_graph::mesh_t mesh;
+
+  check_primitive( doc, primitive_ );
+  const auto [position_type_id,meshlet_count,unique_vertex_count] = get_meshlet_count( doc, primitive_ );
+  vertex_count = unique_vertex_count;
+
   for( const auto &[target,index]: primitive_.attributes ) {
     if( target == "WEIGHTS_0" ) rigged = true;
     if( target == "TANGENT" ) has_tangent = true;
-    if( doc.accessors.size() <= size_t( index ) ) throw invalid_gltf( "参照されたaccessorsが存在しない", __FILE__, __LINE__ );
     const auto &accessor = doc.accessors[ index ];
-    if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw invalid_gltf( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
     const auto &view = doc.bufferViews[ accessor.bufferView ];
-    const uint32_t default_stride = to_size( accessor.componentType, accessor.type );
+    const std::uint32_t default_stride = to_size( accessor );
     const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
-    const uint32_t max_count = ( view.byteLength - ( accessor.byteOffset ) ) / stride;
-    if( view.buffer < 0 || doc.buffers.size() <= size_t( view.buffer ) ) throw invalid_gltf( "参照されたbufferが存在しない", __FILE__, __LINE__ );
-    if( accessor.count > max_count ) throw invalid_gltf( "指定された要素数に対してbufferViewが小さすぎる" );
-    vertex_count = std::min( vertex_count, accessor.count );
     const uint32_t offset = accessor.byteOffset + view.byteOffset;
     const vk::Format vertex_format = to_vulkan_format( accessor.componentType, accessor.type, accessor.normalized );
     if( target == "POSITION" ) {
@@ -472,6 +470,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     mesh.set_topology( gltf_topology_to_vulkan_topology( primitive_.mode ) );
     mesh.set_vertex_count( vertex_count );
     mesh.set_unique_vertex_count( vertex_count );
+    mesh.set_meshlet_count( meshlet_count );
     if( attribute_index != props.vertex_attribute_map.end() ) {
       mesh.attribute.insert(
         std::make_pair(
@@ -479,15 +478,16 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
           scene_graph::accessor_t()
             .set_buffer( buffer[ view.buffer ] )
             .set_type(
-              to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
+              scene_graph::to_accessor_type_id( accessor )
             )
             .set_stride( stride )
             .set_offset( offset )
+            .set_component_count( scene_graph::to_accessor_component_count( accessor ) )
+            .set_normalized( accessor.normalized )
         )
       );
     }
   }
-  unique_vertex_count = vertex_count;
   constexpr static const float eps = 0.01f;
   if( min[ 0 ] == max[ 0 ] ) {
     max[ 0 ] += eps;
@@ -544,6 +544,8 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw invalid_gltf( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
     const auto &view = doc.bufferViews[ accessor.bufferView ];
     if( view.buffer < 0 || doc.buffers.size() <= size_t( view.buffer ) ) throw invalid_gltf( "参照されたbufferが存在しない", __FILE__, __LINE__ );
+    const std::uint32_t default_stride = to_size( accessor );
+    const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
     const uint32_t offset = accessor.byteOffset + view.byteOffset;
     p.set_indexed( true );
     p.set_index_buffer( scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) );
@@ -560,9 +562,12 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
           scene_graph::accessor_t()
             .set_buffer( buffer[ view.buffer ] )
             .set_type(
-              to_numeric_type( accessor.componentType, accessor.type, accessor.normalized )
+              scene_graph::to_accessor_type_id( accessor )
             )
+            .set_stride( stride )
             .set_offset( offset )
+            .set_component_count( scene_graph::to_accessor_component_count( accessor ) )
+            .set_normalized( accessor.normalized )
         )
       );
     }
@@ -572,6 +577,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     p.set_count( vertex_count );
     p.set_unique_vertex_count( unique_vertex_count );
   }
+  std::cout << "vertex_count=" << p.count << " unique_vertex_count=" << p.unique_vertex_count << std::endl;
  
   auto rimp = props.graph->get_resource()->primitive_resource_index->get_member_pointer();
   std::vector< std::uint8_t > ri( rimp.get_aligned_size() );
@@ -773,27 +779,27 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
             }
             else throw -1;
             if( amp.has( "type" ) ) {
-              accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::to_type_id( attr->second.type ) );
+              accessor.data()->*amp[ "type" ] = std::uint32_t( attr->second.type );
             }
             else throw -1;
             if( amp.has( "normalized" ) ) {
-              accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1u : 0u;
+              accessor.data()->*amp[ "normalized" ] = std::uint32_t( attr->second.normalized );
             }
             else throw -1;
             if( amp.has( "component_count" ) ) {
-              accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.type.rows );
+              accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.component_count );
             }
             else throw -1;
             if( amp.has( "offset" ) ) {
-              accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / ( attr->second.type.depth / 8u ) );
+              accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / get_component_size( attr->second.type ) );
             }
             else throw -1;
             if( amp.has( "stride" ) ) {
               if( attr->second.stride == 0u ) {
-                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.type.rows );
+                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.component_count );
               }
               else {
-                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / ( attr->second.type.depth / 8u ) );
+                accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / get_component_size( attr->second.type ) );
               }
             }
             else throw -1;
@@ -812,27 +818,27 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
                 }
                 else throw -1;
                 if( amp.has( "type" ) ) {
-                  accessor.data()->*amp[ "type" ] = std::uint32_t( scene_graph::to_type_id( attr->second.type ) );
+                  accessor.data()->*amp[ "type" ] = std::uint32_t( attr->second.type );
                 }
                 else throw -1;
                 if( amp.has( "normalized" ) ) {
-                  accessor.data()->*amp[ "normalized" ] = ( attr->second.type.attr == integer_attribute_t::scaled ) ? 1u : 0u;
+                  accessor.data()->*amp[ "normalized" ] = std::uint32_t( attr->second.normalized );
                 }
                 else throw -1;
                 if( amp.has( "component_count" ) ) {
-                  accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.type.rows );
+                  accessor.data()->*amp[ "component_count" ] = std::uint32_t( attr->second.component_count );
                 }
                 else throw -1;
                 if( amp.has( "offset" ) ) {
-                  accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / ( attr->second.type.depth / 8u ) );
+                  accessor.data()->*amp[ "offset" ] = std::uint32_t( attr->second.offset / get_component_size( attr->second.type ) );
                 }
                 else throw -1;
                 if( amp.has( "stride" ) ) {
                   if( attr->second.stride == 0u ) {
-                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.type.rows );
+                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.component_count );
                   }
                   else {
-                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / ( attr->second.type.depth / 8u ) );
+                    accessor.data()->*amp[ "stride" ] = std::uint32_t( attr->second.stride / get_component_size( attr->second.type ) );
                   }
                 }
                 else throw -1;

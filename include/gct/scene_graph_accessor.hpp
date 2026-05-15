@@ -37,6 +37,7 @@ std::uint32_t to_accessor_component_count(
 accessor_type_id to_accessor_type_id(
   const fx::gltf::Accessor &accessor
 );
+
 bool check_accessor_type(
   vertex_attribute_id attr_id,
   accessor_type_id type,
@@ -66,10 +67,14 @@ struct accessor_t {
   LIBGCT_SETTER( type )
   LIBGCT_SETTER( offset )
   LIBGCT_SETTER( stride )
+  LIBGCT_SETTER( component_count )
+  LIBGCT_SETTER( normalized )
   vertex_buffer_pool::vertex_buffer_descriptor buffer;
-  numeric_type_t type; 
-  std::uint32_t offset;
-  std::uint32_t stride;
+  accessor_type_id type = accessor_type_id::float_; 
+  std::uint32_t offset = 0u;
+  std::uint32_t stride = 0u;
+  std::uint32_t component_count = 0u;
+  bool normalized = false;
 };
 
 void to_json( nlohmann::json &dest, const accessor_t &src );
@@ -78,11 +83,13 @@ struct mesh_t {
   LIBGCT_SETTER( attribute )
   LIBGCT_SETTER( vertex_count )
   LIBGCT_SETTER( unique_vertex_count )
+  LIBGCT_SETTER( meshlet_count )
   LIBGCT_SETTER( topology )
   LIBGCT_SETTER( compression_method )
   std::unordered_map< vertex_attribute_id, accessor_t > attribute;
   std::uint32_t vertex_count = 0u;
   std::uint32_t unique_vertex_count = 0u;
+  std::uint32_t meshlet_count = 0u;
   vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
   mesh_compression_method_id compression_method = mesh_compression_method_id::uncompressed;
 };
