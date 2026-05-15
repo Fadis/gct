@@ -94,6 +94,82 @@ namespace gct::gltf {
   ) {
     return to_size( componentType ) * to_size( type );
   }
+  std::uint32_t to_size(
+    const fx::gltf::Accessor &accessor
+  ) {
+    const bool has_extended_type =
+      accessor.extensionsAndExtras.find( "extensions" ) != accessor.extensionsAndExtras.end() &&
+      accessor.extensionsAndExtras[ "extensions" ].find( "GCT_EXTENDED_TYPE" ) != accessor.extensionsAndExtras[ "extensions" ].end() &&
+      accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].find( "type" ) != accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].end();
+    if( has_extended_type ) {
+      const std::string typestr = accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ][ "type" ];
+      const auto type_id = scene_graph::to_accessor_type_id( typestr );
+      const auto component_size = get_component_size( type_id );
+      const auto component_count = scene_graph::to_accessor_component_count( accessor );
+      return component_size * component_count;
+    }
+    return to_size( accessor.componentType, accessor.type );
+  }
+  std::uint32_t get_block_count(
+    const fx::gltf::Accessor &accessor
+  ) {
+    const bool has_extended_type =
+      accessor.extensionsAndExtras.find( "extensions" ) != accessor.extensionsAndExtras.end() &&
+      accessor.extensionsAndExtras[ "extensions" ].find( "GCT_EXTENDED_TYPE" ) != accessor.extensionsAndExtras[ "extensions" ].end() &&
+      accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].find( "block_count" ) != accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].end();
+    if( has_extended_type ) {
+      return accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ][ "block_count" ];
+    }
+    return accessor.count;
+  }
+  void check_primitive(
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
+  ) {
+    for( const auto &[target,index]: primitive_.attributes ) {
+      if( doc.accessors.size() <= size_t( index ) ) throw invalid_gltf( "参照されたaccessorsが存在しない", __FILE__, __LINE__ );
+      const auto &accessor = doc.accessors[ index ];
+      if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw invalid_gltf( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
+      const auto &view = doc.bufferViews[ accessor.bufferView ];
+      const uint32_t default_stride = gct::gltf::to_size( accessor );
+      const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
+      const uint32_t max_count = ( view.byteLength - ( accessor.byteOffset ) ) / stride;
+      if( view.buffer < 0 || doc.buffers.size() <= size_t( view.buffer ) ) throw invalid_gltf( "参照されたbufferが存在しない", __FILE__, __LINE__ );
+      const uint32_t block_count = gltf::get_block_count( accessor );
+      if( block_count > max_count ) throw invalid_gltf( "指定された要素数に対してbufferViewが小さすぎる" );
+    }
+  }
+  std::tuple<
+    scene_graph::accessor_type_id,   
+    std::uint32_t,
+    std::uint32_t
+  > get_meshlet_count(
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
+  ) {
+    scene_graph::accessor_type_id position_type_id = scene_graph::accessor_type_id::float_;
+    std::uint32_t meshlet_count = 0u;
+    std::uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
+    for( const auto &[target,index]: primitive_.attributes ) {
+      if( target == "POSITION" ) {
+        const auto &accessor = doc.accessors[ index ];
+        position_type_id = scene_graph::to_accessor_type_id( accessor );
+        if( position_type_id == scene_graph::accessor_type_id::dgf ) {
+          meshlet_count = gltf::get_block_count( accessor );
+          break;
+        }
+      }
+    }
+    for( const auto &[target,index]: primitive_.attributes ) {
+      const auto &accessor = doc.accessors[ index ];
+      vertex_count = std::min( vertex_count, accessor.count );
+    }
+    if( position_type_id != scene_graph::accessor_type_id::dgf ) {
+      meshlet_count = vertex_count;
+    }
+    return std::make_tuple( position_type_id, meshlet_count, vertex_count );
+  }
+
   vk::Format to_vulkan_format(
     fx::gltf::Accessor::ComponentType componentType,
     fx::gltf::Accessor::Type type,

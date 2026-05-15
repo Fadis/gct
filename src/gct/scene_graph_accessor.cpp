@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdint>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -73,7 +74,7 @@ accessor_type_id to_accessor_type_id( const std::string &src ) {
     return accessor_type_id::u8;
   else if( simplified == "short" )
     return accessor_type_id::i16;
-  else if( simplified == "unsignedshot" )
+  else if( simplified == "unsignedshort" )
     return accessor_type_id::u16;
   else if( simplified == "unsignedint" )
     return accessor_type_id::u32;
@@ -93,6 +94,81 @@ accessor_type_id to_accessor_type_id( const std::string &src ) {
     throw exception::invalid_argument( "to_acessor_type_id : Unknown type id" );
   }
 }
+
+std::size_t get_component_size(
+  const scene_graph::accessor_type_id &type
+) {
+  if( type == scene_graph::accessor_type_id::i8 ) return 1u;
+  else if( type == scene_graph::accessor_type_id::u8 ) return 1u;
+  else if( type == scene_graph::accessor_type_id::i16 ) return 2u;
+  else if( type == scene_graph::accessor_type_id::u16 ) return 2u;
+  else if( type == scene_graph::accessor_type_id::u32 ) return 4u;
+  else if( type == scene_graph::accessor_type_id::float_ ) return 4u;
+  else if( type == scene_graph::accessor_type_id::dgf ) return 128u;
+  else if( type == scene_graph::accessor_type_id::half ) return 2u;
+  else if( type == scene_graph::accessor_type_id::fixed ) return 2u;
+  else if( type == scene_graph::accessor_type_id::n21t11 ) return 4u;
+  else if( type == scene_graph::accessor_type_id::n20t11b1 ) return 4u;
+  else if( type == scene_graph::accessor_type_id::n31 ) return 4u;
+  else {
+    throw exception::invalid_argument( "get_component_size : 使用できないアクセサの型", __FILE__, __LINE__ );
+  }
+}
+
+scene_graph::accessor_type_id to_accessor_type_id(
+  const fx::gltf::Accessor &accessor
+) {
+  const bool has_extended_type =
+    accessor.extensionsAndExtras.find( "extensions" ) != accessor.extensionsAndExtras.end() &&
+    accessor.extensionsAndExtras[ "extensions" ].find( "GCT_EXTENDED_TYPE" ) != accessor.extensionsAndExtras[ "extensions" ].end() &&
+    accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].find( "type" ) != accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ].end();
+
+  if( has_extended_type ) {
+    const std::string typestr = accessor.extensionsAndExtras[ "extensions" ][ "GCT_EXTENDED_TYPE" ][ "type" ];
+    return scene_graph::to_accessor_type_id( typestr );
+  }
+  else {
+    if( accessor.componentType == fx::gltf::Accessor::ComponentType::Byte ) {
+      return scene_graph::accessor_type_id::i8;
+    }
+    else if( accessor.componentType == fx::gltf::Accessor::ComponentType::UnsignedByte ) {
+      return scene_graph::accessor_type_id::u8;
+    }
+    else if( accessor.componentType == fx::gltf::Accessor::ComponentType::Short ) {
+      return scene_graph::accessor_type_id::i16;
+    }
+    else if( accessor.componentType == fx::gltf::Accessor::ComponentType::UnsignedShort ) {
+      return scene_graph::accessor_type_id::u16;
+    }
+    else if( accessor.componentType == fx::gltf::Accessor::ComponentType::UnsignedInt ) {
+      return scene_graph::accessor_type_id::u32;
+    }
+    else if( accessor.componentType == fx::gltf::Accessor::ComponentType::Float ) {
+      return scene_graph::accessor_type_id::float_;
+    }
+    else {
+      throw exception::invalid_argument( "to_numeric_type : 使用できないアクセサの型", __FILE__, __LINE__ );
+    }
+  }
+}
+
+std::uint32_t to_accessor_component_count(
+  const fx::gltf::Accessor &accessor
+) {
+  const auto type = to_accessor_type_id( accessor );
+  if( type == scene_graph::accessor_type_id::dgf )  return 1u;
+  else if( type == scene_graph::accessor_type_id::n21t11 )  return 1u;
+  else if( type == scene_graph::accessor_type_id::n20t11b1 )  return 1u;
+  else if( type == scene_graph::accessor_type_id::n31 )  return 1u;
+  else if( accessor.type == fx::gltf::Accessor::Type::Scalar ) return 1u;
+  else if( accessor.type == fx::gltf::Accessor::Type::Vec2 ) return 2u;
+  else if( accessor.type == fx::gltf::Accessor::Type::Vec3 ) return 3u;
+  else if( accessor.type == fx::gltf::Accessor::Type::Vec4 ) return 4u;
+  else {
+    throw exception::invalid_argument( "to_accessor_component_count : 使用できないアクセサの型", __FILE__, __LINE__ );
+  }
+}
+
 
 bool check_accessor_type(
   vertex_attribute_id attr_id,
@@ -194,7 +270,6 @@ bool check_accessor_type(
   }
   return true;
 }
-
 void to_json( nlohmann::json &dest, const mesh_topology_id &src ) {
   if( src == mesh_topology_id::point ) {
     dest = "point";

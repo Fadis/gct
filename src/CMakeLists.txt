@@ -586,6 +586,26 @@ target_link_libraries( list_vertex2
   Boost::system
 )
 
+add_executable( meshconv meshconv.cpp )
+target_link_libraries( meshconv
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
+add_executable( test_dgf_cross test_dgf_cross.cpp )
+target_link_libraries( test_dgf_cross
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+  Boost::system
+)
+
 add_executable( list_triangle list_triangle.cpp )
 target_link_libraries( list_triangle
   gct

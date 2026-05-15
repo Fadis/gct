@@ -18,6 +18,7 @@
 #include <gct/shader_flag.hpp>
 #include <gct/descriptor_image_info.hpp>
 #include <gct/buffer_window.hpp>
+#include <gct/scene_graph_accessor.hpp>
 namespace gct {
   class image_t;
   class image_view_t;
@@ -46,6 +47,24 @@ namespace gct::gltf {
   [[nodiscard]] std::uint32_t to_size(
     fx::gltf::Accessor::ComponentType componentType,
     fx::gltf::Accessor::Type type
+  );
+  std::uint32_t to_size(
+    const fx::gltf::Accessor &accessor
+  );
+  std::uint32_t get_block_count(
+    const fx::gltf::Accessor &accessor
+  );
+  void check_primitive(
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
+  );
+  std::tuple<
+    scene_graph::accessor_type_id,   
+    std::uint32_t,
+    std::uint32_t
+  > get_meshlet_count(
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
   );
   [[nodiscard]] vk::Format to_vulkan_format(
     fx::gltf::Accessor::ComponentType componentType,
