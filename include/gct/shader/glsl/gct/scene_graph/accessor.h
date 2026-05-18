@@ -4,11 +4,26 @@
 #define GCT_ENABLE_8BIT_16BIT_STORAGE
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 
-#include <gct/scene_graph/vertex_buffer_pool.h>
+#ifdef __cplusplus
+#include <gct/dummy_byte_address_buffer.hpp>
+#include <gct/shader/glsl/gct/scene_graph/mesh_type.h>
+#include <gct/shader/glsl/gct/scene_graph/accessor_type.h>
+#include <gct/shader/glsl/gct/type_id.h>
+#include <gct/shader/glsl/gct/fixed.h>
+#include <gct/shader/glsl/gct/dgf.h>
+#include <gct/shader/glsl/gct/n31.h>
+#include <gct/shader/glsl/gct/n21t11.h>
+#include <gct/shader/glsl/gct/n20t11b1.h>
+#include <gct/shader/glsl/gct/generate_normal.h>
+#include <gct/shader/glsl/gct/mikktspace.h>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+using namespace glm;
+#else
 #include <gct/scene_graph/byte_address_buffer.h>
 #include <gct/scene_graph/mesh_type.h>
-#include <gct/scene_graph/mesh_pool.h>
 #include <gct/scene_graph/accessor_type.h>
+#include <gct/scene_graph/mesh_pool.h>
 #include <gct/scene_graph/accessor_pool.h>
 #include <gct/type_id.h>
 #include <gct/fixed.h>
@@ -18,6 +33,7 @@
 #include <gct/n20t11b1.h>
 #include <gct/generate_normal.h>
 #include <gct/mikktspace.h>
+#endif
 
 uint read_index( accessor_type a, uint i ) {
   if( a.enabled == 0 ) return i;
@@ -25,11 +41,10 @@ uint read_index( accessor_type a, uint i ) {
     return vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride ) << 2 );
   }
   else if( a.type == GCT_SHADER_TYPE_ID_U16 ) {
-    uint index = uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
-    return index;
+    return uint( vertex_buffer_load_u16( a.vertex_buffer, ( a.offset + i * a.stride ) << 1 ) );
   }
   else if( a.type == GCT_SHADER_TYPE_ID_U8 ) {
-    return uint( vertex_buffer_u8[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
+    return uint( vertex_buffer_load_u8( a.vertex_buffer, ( a.offset + i * a.stride ) ) );
   }
   return i;
 }
@@ -41,46 +56,46 @@ vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
   // float型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_FLOAT ) {
     vec4 v = vec4(
-      vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride ],
-      ( a.component_count >= 2u ) ? vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] : d.y,
-      ( a.component_count >= 3u ) ? vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] : d.z,
-      ( a.component_count >= 4u ) ? vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] : d.w
+      vertex_buffer_load_f32( a.vertex_buffer, ( a.offset + i * a.stride + 0u ) << 2 ),
+      ( a.component_count >= 2u ) ? vertex_buffer_load_f32( a.vertex_buffer, ( a.offset + i * a.stride + 1u ) << 2 ) : d.y,
+      ( a.component_count >= 3u ) ? vertex_buffer_load_f32( a.vertex_buffer, ( a.offset + i * a.stride + 2u ) << 2 ) : d.z,
+      ( a.component_count >= 4u ) ? vertex_buffer_load_f32( a.vertex_buffer, ( a.offset + i * a.stride + 3u ) << 2 ) : d.w
     );
     return v;
   }
   // half型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_HALF ) {
     vec4 v = vec4(
-      float( vertex_buffer_f16[ a.vertex_buffer ].data[ a.offset + i * a.stride ] ),
-      ( a.component_count >= 2u ) ? float( vertex_buffer_f16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] ) : d.y,
-      ( a.component_count >= 3u ) ? float( vertex_buffer_f16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] ) : d.z,
-      ( a.component_count >= 4u ) ? float( vertex_buffer_f16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] ) : d.w
+      float( vertex_buffer_load_f16( a.vertex_buffer, ( a.offset + i * a.stride + 0u ) << 1 ) ),
+      ( a.component_count >= 2u ) ? float( vertex_buffer_load_f16( a.vertex_buffer, ( a.offset + i * a.stride + 1u ) << 1 ) ) : d.y,
+      ( a.component_count >= 3u ) ? float( vertex_buffer_load_f16( a.vertex_buffer, ( a.offset + i * a.stride + 2u ) << 1 ) ) : d.z,
+      ( a.component_count >= 4u ) ? float( vertex_buffer_load_f16( a.vertex_buffer, ( a.offset + i * a.stride + 3u ) << 1 ) ) : d.w
     );
     return v;
   }
   // fixed型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_FIXED ) {
     vec4 v = vec4(
-      decode_fixed( int( vertex_buffer_i16[ a.vertex_buffer ].data[ a.offset + i * a.stride ] ) ),
-      ( a.component_count >= 2u ) ? decode_fixed( int( vertex_buffer_i16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] ) ) : d.y,
-      ( a.component_count >= 3u ) ? decode_fixed( int( vertex_buffer_i16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] ) ) : d.z,
-      ( a.component_count >= 4u ) ? decode_fixed( int( vertex_buffer_i16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] ) ) : d.w
+      decode_fixed( int( vertex_buffer_load_i16( a.vertex_buffer, ( a.offset + i * a.stride ) << 1 ) ) ),
+      ( a.component_count >= 2u ) ? decode_fixed( int( vertex_buffer_load_i16( a.vertex_buffer, ( a.offset + i * a.stride + 1u ) << 1 ) ) ) : d.y,
+      ( a.component_count >= 3u ) ? decode_fixed( int( vertex_buffer_load_i16( a.vertex_buffer, ( a.offset + i * a.stride + 2u ) << 1 ) ) ) : d.z,
+      ( a.component_count >= 4u ) ? decode_fixed( int( vertex_buffer_load_i16( a.vertex_buffer, ( a.offset + i * a.stride + 3u ) << 1 ) ) ) : d.w
     );
     return v;
   }
   // n31型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_N31 ) {
-    const vec3 decoded = n31_decode( vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
+    const vec3 decoded = n31_decode( vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride ) << 2 ) );
     vec4 v = vec4( decoded, d.w );
     return v;
   }
   else if( a.type == GCT_SHADER_TYPE_ID_N21T11 ) {
-    const vec3 decoded = n21t11_decode_normal( vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
+    const vec3 decoded = n21t11_decode_normal( vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride ) << 2 ) );
     vec4 v = vec4( decoded, d.w );
     return v;
   }
   else if( a.type == GCT_SHADER_TYPE_ID_N20T11B1 ) {
-    const vec3 decoded = n20t11b1_decode_normal( vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride ] );
+    const vec3 decoded = n20t11b1_decode_normal( vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride ) << 2 ) );
     vec4 v = vec4( decoded, d.w );
     return v;
   }
@@ -88,34 +103,36 @@ vec4 read_vertex( accessor_type a, uint i, vec4 d ) {
   else if( a.type == GCT_SHADER_TYPE_ID_U32 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFFFFFFFu);
     return vec4(
-      vertex_buffer_f32[ a.vertex_buffer ].data[ a.offset + i * a.stride ] * scale,
-      ( a.component_count >= 2u ) ? vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] * scale : d.y,
-      ( a.component_count >= 3u ) ? vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] * scale : d.z,
-      ( a.component_count >= 4u ) ? vertex_buffer_u32[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] * scale : d.w
+      vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride + 0u ) << 2 ) * scale,
+      ( a.component_count >= 2u ) ? vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride + 1u ) << 2 ) * scale : d.y,
+      ( a.component_count >= 3u ) ? vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride + 2u ) << 2 ) * scale : d.z,
+      ( a.component_count >= 4u ) ? vertex_buffer_load( a.vertex_buffer, ( a.offset + i * a.stride + 3u ) << 2 ) * scale : d.w
     );
   }
   // 16bit整数型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_U16 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFFFu);
     return vec4(
-      uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride ] ) * scale,
-      ( a.component_count >= 2u ) ? uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] ) * scale : d.y,
-      ( a.component_count >= 3u ) ? uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] ) * scale : d.z,
-      ( a.component_count >= 4u ) ? uint( vertex_buffer_u16[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] ) * scale : d.w
+      uint( vertex_buffer_load_u16( a.vertex_buffer, ( a.offset + i * a.stride + 0u ) << 1 ) ) * scale,
+      ( a.component_count >= 2u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, ( a.offset + i * a.stride + 1u ) << 1 ) ) * scale : d.y,
+      ( a.component_count >= 3u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, ( a.offset + i * a.stride + 2u ) << 1 ) ) * scale : d.z,
+      ( a.component_count >= 4u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, ( a.offset + i * a.stride + 3u ) << 1 ) ) * scale : d.w
     );
   }
   // 8bit整数型の場合
   else if( a.type == GCT_SHADER_TYPE_ID_U8 ) {
     const float scale = ( a.normalized == 0 ) ? 1.0 : 1.0/float(0xFFu);
     return vec4(
-      uint( vertex_buffer_u8[ a.vertex_buffer ].data[ a.offset + i * a.stride ] ) * scale,
-      ( a.component_count >= 2u ) ? uint( vertex_buffer_u8[ a.vertex_buffer ].data[ a.offset + i * a.stride + 1u ] ) * scale : d.y,
-      ( a.component_count >= 3u ) ? uint( vertex_buffer_u8[ a.vertex_buffer ].data[ a.offset + i * a.stride + 2u ] ) * scale : d.z,
-      ( a.component_count >= 4u ) ? uint( vertex_buffer_u8[ a.vertex_buffer ].data[ a.offset + i * a.stride + 3u ] ) * scale : d.w
+      uint( vertex_buffer_load_u8( a.vertex_buffer, a.offset + i * a.stride ) ) * scale,
+      ( a.component_count >= 2u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, a.offset + i * a.stride + 1u ) ) * scale : d.y,
+      ( a.component_count >= 3u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, a.offset + i * a.stride + 2u ) ) * scale : d.z,
+      ( a.component_count >= 4u ) ? uint( vertex_buffer_load_u16( a.vertex_buffer, a.offset + i * a.stride + 3u ) ) * scale : d.w
     );
   }
   return d;
 }
+
+#ifndef __cplusplus
 
 void write_vertex( accessor_type a, uint i, vec4 v ) {
   if( a.enabled == 0 ) return;
@@ -181,6 +198,7 @@ struct vertex_attribute {
   vec4 joint0;
   vec4 weight0;
   vec4 lod_morph;
+  uint index;
 };
 
 struct face_attribute {
@@ -205,7 +223,8 @@ const vertex_attribute null_attr = vertex_attribute(
   vec4( 0, 0, 0, 1 ),
   vec4( 0, 0, 0, 0 ),
   vec4( 0, 0, 0, 0 ),
-  vec4( 0, 0, 0, 1 )
+  vec4( 0, 0, 0, 1 ),
+  0
 );
 
 const face_attribute null_face_attr = face_attribute(
@@ -244,9 +263,10 @@ meshlet_reader init_meshlet_reader( uint mesh_id, uint meshlet_id, bool wave_mod
   reader.mesh_id = mesh_id;
   reader.meshlet_id = meshlet_id;
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
+    const accessor_type a = accessor_pool[ mesh.accessor + 1 ];
     reader.dgf_info = DGFInit(
       accessor_pool[ mesh.accessor + 1 ].vertex_buffer,
-      meshlet_id
+      meshlet_id + a.offset
     );
     reader.face_count = reader.dgf_info.header.numTriangles;
     reader.wave_mode = wave_mode;
@@ -273,6 +293,7 @@ vertex_attribute read_vertex_attribute( mesh_type mesh, uint i ) {
   const uint vertex_index = read_index( accessor_pool[ mesh.accessor + 0 ], i );
   vertex_attribute v;
   // 頂点の情報を読む
+  v.index = vertex_index;
   v.position = read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index, vec4( 0.0, 0.0, 0.0, 1.0 ) );
 
   const accessor_type normal_accessor = accessor_pool[ mesh.accessor + 2 ];
@@ -307,16 +328,20 @@ face_attribute read_face_attribute( meshlet_reader reader, uint face_id ) {
   face_attribute f;
   uvec3 vertex_index;
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
+    if( reader.dgf_info.header.numTriangles <= face_id ) return null_face_attr;
     uvec3 index;
-    if( reader.wave_mode ) {
+    /*if( reader.wave_mode ) {
       index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
     }
-    else {
+    else {*/
       index = DGFGetTriangle_BitScan_Lane( reader.dgf_info, face_id );
-    }
+    /*}*/
     for( uint i = 0u; i != 3u; ++i ) {
-      f.vertex[ i ].position = vec4( DGFGetVertex( reader.dgf_info, index[ 0 ] ), 1.0f );
+      f.vertex[ i ].position = vec4( DGFGetVertex( reader.dgf_info, index[ i ] ), 1.0f );
     }
+    //f.vertex[ 0 ].position = vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+    //f.vertex[ 1 ].position = vec4( 0.0f, 10.0f, 0.0f, 1.0f );
+    //f.vertex[ 2 ].position = vec4( 10.0f, 0.0f, 0.0f, 1.0f );
     f.primitive_id = reader.dgf_info.header.userData + face_id;
     const uint global_vertex_id = f.primitive_id * 3u;
     vertex_index = uvec3(
@@ -337,6 +362,9 @@ face_attribute read_face_attribute( meshlet_reader reader, uint face_id ) {
     for( uint i = 0u; i != 3u; ++i ) {
       f.vertex[ i ].position = read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index[ i ], vec4( 0.0, 0.0, 0.0, 1.0 ) );
     }
+  }
+  for( uint i = 0u; i != 3u; ++i ) {
+    f.vertex[ i ].index = vertex_index[ i ];
   }
  
   bool gen_normal = false;
@@ -438,20 +466,50 @@ face_attribute read_face_attribute( meshlet_reader reader ) {
 }
 
 face_position read_face_position( meshlet_reader reader, uint face_id ) {
+  if( !reader.valid ) return null_face_pos;
   const mesh_type mesh = mesh_pool[ reader.mesh_id ];
-  if( !reader.valid || face_id >= reader.face_count ) return null_face_pos;
+  const accessor_type normal_accessor = accessor_pool[ mesh.accessor + 2 ];
+  const accessor_type tangent_accessor = accessor_pool[ mesh.accessor + 3 ];
+
   face_position f;
-  f.primitive_id = ( reader.meshlet_id * 32u + face_id );
-  const uint global_vertex_id = f.primitive_id * 3u;
-  const uint i0 = read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 0u );
-  f.position[ 0 ] = read_vertex( accessor_pool[ mesh.accessor + 1 ], i0, vec4( 0.0, 0.0, 0.0, 1.0 ) );
-  const uint i1 = read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 1u );
-  f.position[ 1 ] = read_vertex( accessor_pool[ mesh.accessor + 1 ], i1, vec4( 0.0, 0.0, 0.0, 1.0 ) );
-  const uint i2 = read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 2u );
-  f.position[ 2 ] = read_vertex( accessor_pool[ mesh.accessor + 1 ], i2, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+  uvec3 vertex_index;
+  if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
+    if( reader.dgf_info.header.numTriangles <= face_id ) return null_face_pos;
+    uvec3 index;
+    /*if( reader.wave_mode ) {
+      index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
+    }
+    else {*/
+      index = DGFGetTriangle_BitScan_Lane( reader.dgf_info, face_id );
+    /*}*/
+    for( uint i = 0u; i != 3u; ++i ) {
+      f.position[ i ] = vec4( DGFGetVertex( reader.dgf_info, index[ i ] ), 1.0f );
+    }
+    f.primitive_id = reader.dgf_info.header.userData + face_id;
+    const uint global_vertex_id = f.primitive_id * 3u;
+    vertex_index = uvec3(
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 0u ),
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 1u ),
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 2u )
+    );
+  }
+  else {
+    if( face_id >= reader.face_count ) return null_face_pos;
+    f.primitive_id = ( reader.meshlet_id * 32u + face_id );
+    const uint global_vertex_id = f.primitive_id * 3u;
+    vertex_index = uvec3(
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 0u ),
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 1u ),
+      read_index( accessor_pool[ mesh.accessor + 0 ], global_vertex_id + 2u )
+    );
+    for( uint i = 0u; i != 3u; ++i ) {
+      f.position[ i ] = read_vertex( accessor_pool[ mesh.accessor + 1 ], vertex_index[ i ], vec4( 0.0, 0.0, 0.0, 1.0 ) );
+    }
+  }
   f.valid = true;
   return f; 
 }
+
 face_position read_face_position( meshlet_reader reader ) {
   return read_face_position( reader, gl_SubgroupInvocationID );
 }
@@ -475,6 +533,8 @@ vec3 read_primitive_center( mesh_type mesh, uint primitive_id ) {
       read_vertex_position( mesh, primitive_id * 3u + 2u ).xyz
     ) / 3.0;
 }
+
+#endif
 
 #endif
 

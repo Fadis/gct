@@ -51,7 +51,8 @@ common_sample_setup::common_sample_setup(
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
       ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
-      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" );
+      ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" )
+      ( "primfilter,p", po::value< std::vector< std::uint32_t > >()->multitoken(), "primitive_filter" );
   }
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
@@ -151,6 +152,10 @@ common_sample_setup::common_sample_setup(
     }
     light_count = vm[ "light" ].as< unsigned int >();
     force_geometry = vm[ "geometry" ].as< bool >();
+    if( vm.count( "primfilter" ) ) {
+      auto pf = vm[ "primfilter" ].as< std::vector< std::uint32_t > >();
+      std::copy( pf.begin(), pf.end(), std::inserter( primitive_filter, primitive_filter.begin() ) );
+    }
     window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
     gct::glfw::get().poll();
     surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );

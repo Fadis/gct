@@ -437,8 +437,8 @@ int main( int argc, const char *argv[] ) {
   const auto &il1_dl = il[ 1 ]->get_draw_list();
   if( il1_dl.size() != 1u ) throw -1;
   const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
-  std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
-  std::cout << "vertex count : " << il1_prim->count << std::endl;
+  std::cout << "unique vertex count : " << il1_prim->mesh.unique_vertex_count << std::endl;
+  std::cout << "vertex count : " << il1_prim->mesh.vertex_count << std::endl;
 
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -449,11 +449,11 @@ int main( int argc, const char *argv[] ) {
         generate_meshlet_info( recorder, 0u, i->get_mesh_count(), i->get_max_primitive_count(), 1u );
       }
       il[ 1 ]->setup_resource_pair_buffer( recorder );
-      same_position( recorder, 0, il1_prim->unique_vertex_count, il1_prim->unique_vertex_count, 1u );
+      same_position( recorder, 0, il1_prim->mesh.unique_vertex_count, il1_prim->mesh.unique_vertex_count, 1u );
       recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      vertex_to_primitive( recorder, 0, il1_prim->mesh.vertex_count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      generate_adjacency( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      generate_adjacency( recorder, 0, il1_prim->mesh.vertex_count / 3, 1u, 1u );
     }
     command_buffer->execute_and_wait();
   }

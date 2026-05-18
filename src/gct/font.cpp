@@ -25,7 +25,7 @@
 #include <utility>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
-#include <fx/gltf.h>
+#include <gct/fx/gltf.h>
 #pragma GCC diagnostic pop
 #include <gct/device.hpp>
 #include <gct/allocator.hpp>

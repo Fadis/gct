@@ -25,6 +25,24 @@ void to_json( nlohmann::json &dest, const accessor_type_id &src ) {
   else if( src == accessor_type_id::u32 ) {
     dest = "u32";
   }
+  else if( src == accessor_type_id::dgf ) {
+    dest = "dgf";
+  }
+  else if( src == accessor_type_id::half ) {
+    dest = "half";
+  }
+  else if( src == accessor_type_id::fixed ) {
+    dest = "fixed";
+  }
+  else if( src == accessor_type_id::n31 ) {
+    dest = "n31";
+  }
+  else if( src == accessor_type_id::n21t11 ) {
+    dest = "n21t11";
+  }
+  else if( src == accessor_type_id::n20t11b1 ) {
+    dest = "n21t11b1";
+  }
   else {
     dest = "unknown";
   }
@@ -57,6 +75,202 @@ accessor_type_id to_type_id(
     }
   }
   return accessor_type_id::float_;
+}
+
+std::optional< vk::Format > to_vulkan_format(
+  const accessor_type_id &type_id,
+  std::uint32_t component_count,
+  bool normalized
+) {
+  if( type_id == accessor_type_id::i8 ) {
+    if( component_count == 1u ) {
+      if( normalized ) {
+        return vk::Format::eR8Snorm;
+      }
+      else {
+        return vk::Format::eR8Sint;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8Snorm;
+      }
+      else {
+        return vk::Format::eR8G8Sint;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8B8Snorm;
+      }
+      else {
+        return vk::Format::eR8G8B8Sint;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8B8A8Snorm;
+      }
+      else {
+        return vk::Format::eR8G8B8A8Sint;
+      }
+    }
+  }
+  else if( type_id == accessor_type_id::u8 ) {
+    if( component_count == 1u ) {
+      if( normalized ) {
+        return vk::Format::eR8Unorm;
+      }
+      else {
+        return vk::Format::eR8Uint;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8Unorm;
+      }
+      else {
+        return vk::Format::eR8G8Uint;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8B8Unorm;
+      }
+      else {
+        return vk::Format::eR8G8B8Uint;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) {
+        return vk::Format::eR8G8B8A8Unorm;
+      }
+      else {
+        return vk::Format::eR8G8B8A8Uint;
+      }
+    }
+  }
+  else if( type_id == accessor_type_id::i16 ) {
+    if( component_count == 1u ) {
+      if( normalized ) {
+        return vk::Format::eR16Snorm;
+      }
+      else {
+        return vk::Format::eR16Sint;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16Snorm;
+      }
+      else {
+        return vk::Format::eR16G16Sint;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16B16Snorm;
+      }
+      else {
+        return vk::Format::eR16G16B16Sint;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16B16A16Snorm;
+      }
+      else {
+        return vk::Format::eR16G16B16A16Sint;
+      }
+    }
+  }
+  else if( type_id == accessor_type_id::u16 ) {
+    if( component_count == 1u ) {
+      if( normalized ) {
+        return vk::Format::eR16Unorm;
+      }
+      else {
+        return vk::Format::eR16Uint;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16Unorm;
+      }
+      else {
+        return vk::Format::eR16G16Uint;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16B16Unorm;
+      }
+      else {
+        return vk::Format::eR16G16B16Uint;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) {
+        return vk::Format::eR16G16B16A16Unorm;
+      }
+      else {
+        return vk::Format::eR16G16B16A16Uint;
+      }
+    }
+  }
+  else if( type_id == accessor_type_id::u32 ) {
+    if( component_count == 1u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32Uint;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32Uint;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32B32Uint;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32B32A32Uint;
+      }
+    }
+  }
+  else if( type_id == accessor_type_id::float_ ) {
+    if( component_count == 1u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32Sfloat;
+      }
+    }
+    else if( component_count == 2u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32Sfloat;
+      }
+    }
+    else if( component_count == 3u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32B32Sfloat;
+      }
+    }
+    else if( component_count == 4u ) {
+      if( normalized ) return std::nullopt;
+      else {
+        return vk::Format::eR32G32B32A32Sfloat;
+      }
+    }
+  }
+  return std::nullopt;
 }
 
 accessor_type_id to_accessor_type_id( const std::string &src ) {

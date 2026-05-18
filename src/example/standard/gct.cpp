@@ -340,7 +340,8 @@ int main( int argc, const char *argv[] ) {
     gct::scene_graph::instance_list_create_info()
       .set_parallel_mode3( true ),
     *sg,
-    doc.get_descriptor()
+    doc.get_descriptor(),
+    res.primitive_filter
   );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -824,7 +825,7 @@ int main( int argc, const char *argv[] ) {
   if( !scene_aabb ) throw -1;
 
   const auto center = ( scene_aabb->min + scene_aabb->max ) / 2.f;
-  const auto scale = std::abs( glm::length( scene_aabb->max - scene_aabb->min ) );
+  const auto scale = std::abs( glm::length( scene_aabb->max - scene_aabb->min ) ) * 2.0f;
 
   const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(res.width)/float(res.height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;

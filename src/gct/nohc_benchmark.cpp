@@ -137,7 +137,9 @@ nohc_benchmark::nohc_benchmark(
   p.descriptor.resource_index = sg->get_resource()->primitive_resource_index->allocate( p_ri.data(), std::next( p_ri.data(), p_ri.size() ) );
   p.descriptor.aabb = sg->get_resource()->aabb->allocate( p.aabb );
   p.set_pipeline_create_info( pci );
-    
+  
+  auto m = p.mesh;
+
   auto high_p = std::make_shared< scene_graph::primitive >(
     scene_graph::primitive( p )
       .set_vertex_buffer(
@@ -149,7 +151,11 @@ nohc_benchmark::nohc_benchmark(
           }
         }
       )
-      .set_count( high_vertex_count )
+      .set_mesh(
+        scene_graph::mesh_t( m )
+          .set_vertex_count( high_vertex_count )
+          .set_unique_vertex_count( high_vertex_count )
+      )
   );
   auto low_p = std::make_shared< scene_graph::primitive >(
     scene_graph::primitive( p )
@@ -162,7 +168,11 @@ nohc_benchmark::nohc_benchmark(
           }
         }
       )
-      .set_count( low_vertex_count )
+      .set_mesh(
+        scene_graph::mesh_t( m )
+          .set_vertex_count( low_vertex_count )
+          .set_unique_vertex_count( low_vertex_count )
+      )
   );
 
   auto high_p_desc = sg->get_resource()->prim.allocate( high_p );

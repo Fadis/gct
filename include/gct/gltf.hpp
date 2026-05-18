@@ -12,7 +12,7 @@
 #include <gct/setter.hpp>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
-#include <fx/gltf.h>
+#include <gct/fx/gltf.h>
 #pragma GCC diagnostic pop
 #include <vulkan/vulkan.hpp>
 #include <gct/shader_flag.hpp>
@@ -55,6 +55,11 @@ namespace gct::gltf {
     const fx::gltf::Accessor &accessor
   );
   void check_primitive(
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
+  );
+  bool is_compatible_to_traditional_vertex_input(
+    const device_t &device,
     const fx::gltf::Document &doc,
     const fx::gltf::Primitive &primitive_
   );

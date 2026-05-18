@@ -66,6 +66,12 @@ public:
     const scene_graph &graph,
     const std::vector< pool< std::shared_ptr< instance > >::descriptor >&
   );
+  instance_list(
+    const instance_list_create_info &ci,
+    const scene_graph &graph,
+    const std::vector< pool< std::shared_ptr< instance > >::descriptor >&,
+    const std::unordered_set< std::uint32_t > &primitive_filter
+  );
   void update_device_side_list();
   void setup_resource_pair_buffer(
     command_buffer_recorder_t &rec

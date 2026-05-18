@@ -718,8 +718,8 @@ int main( int argc, const char *argv[] ) {
   if( il1_dl.size() != 1u ) throw -1;
   const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
   const auto il1_inst = sg->get_resource()->inst.get( il1_dl[ 0 ].inst );
-  std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
-  std::cout << "vertex count : " << il1_prim->count << std::endl;
+  std::cout << "unique vertex count : " << il1_prim->mesh.unique_vertex_count << std::endl;
+  std::cout << "vertex count : " << il1_prim->mesh.vertex_count << std::endl;
   gct::syncable il1_buffers;
   for( const auto &v: il1_prim->vertex_buffer ) {
     const auto b = sg->get_resource()->vertex->get( v.second.buffer );
@@ -730,14 +730,14 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       il[ 1 ]->setup_resource_pair_buffer( recorder );
-      vertex_to_primitive( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      vertex_to_primitive( recorder, 0, il1_prim->mesh.vertex_count / 3, 1u, 1u );
       recorder.barrier( sg->get_resource()->vertex_to_primitive->get_buffer() );
-      generate_particle_radius( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
-      mesh_to_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
+      generate_particle_radius( recorder, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
+      mesh_to_particle( recorder, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
       mesh_to_rigid( recorder, 0, 1u, 1u, 1u );
-      //mesh_to_constraint( recorder, 0, il1_prim->count / 3, 1u, 1u );
+      //mesh_to_constraint( recorder, 0, il1_prim->mesh.vertex_count / 3, 1u, 1u );
       //recorder.barrier( sg->get_resource()->particle->get_buffer() );
-      //attach_particle( recorder, 0, il1_prim->unique_vertex_count, 1u, 1u );
+      //attach_particle( recorder, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
     }
     command_buffer->execute_and_wait();
   }
@@ -1221,17 +1221,17 @@ int main( int argc, const char *argv[] ) {
         if( frame_counter > 60 ) {
           rec.barrier( sg->get_resource()->lambda->get_buffer() );
           il[ 1 ]->setup_resource_pair_buffer( rec );
-          //update_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          //update_particle_position( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
  
           update_rigid_position( rec, 0, 1u, 1u, 1u ); // full
           rec.barrier( sg->get_resource()->rigid->get_buffer() );
           rigid_to_mesh( rec, 0, 1u, 1u, 1u );
           rec.barrier( sg->get_resource()->matrix->get_buffer() );
-          mesh_to_particle( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          mesh_to_particle( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
-          write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          write_to_spatial_hash( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->spatial_hash->get_buffer() );
-          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          read_from_spatial_hash( rec, 0, il1_prim->mesh.unique_vertex_count * 27u, 1u, 1u );
           rec.barrier( sg->get_resource()->constraint->get_buffer() );
           revert_rigid_position( rec, 0, 1u, 1u, 1u );
           rec.barrier( sg->get_resource()->rigid->get_buffer() );
@@ -1240,7 +1240,7 @@ int main( int argc, const char *argv[] ) {
             update_substep_rigid_position( rec, 0, 1u, 1u, 1u );
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
             rec.barrier( sg->get_resource()->matrix->get_buffer() );
-            rigid_to_particle( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+            rigid_to_particle( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );
             rigid_constraint( rec, 0, 32u, 1u, 1u );
             rec.barrier( sg->get_resource()->rigid->get_buffer() );
@@ -1254,31 +1254,31 @@ int main( int argc, const char *argv[] ) {
 
           /*
           rec.barrier( sg->get_resource()->particle->get_buffer() );
-          write_to_spatial_hash( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          write_to_spatial_hash( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           
           il[ 1 ]->setup_resource_pair_buffer( rec );
-          read_from_spatial_hash( rec, 0, il1_prim->unique_vertex_count * 27u, 1u, 1u );
+          read_from_spatial_hash( rec, 0, il1_prim->mesh.unique_vertex_count * 27u, 1u, 1u );
 
-          revert_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          revert_particle_position( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
 
           for( std::uint32_t i = 0u; i != 10u; ++i ) {
-            update_substep_particle_position( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+            update_substep_particle_position( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );
             il[ 1 ]->setup_resource_pair_buffer( rec );
-            distance_constraint_dx( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
+            distance_constraint_dx( rec, 0, il1_prim->mesh.unique_vertex_count * 32u, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );
             rec.barrier( sg->get_resource()->lambda->get_buffer() );
-            update_particle_velocity( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+            update_particle_velocity( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
             rec.barrier( sg->get_resource()->particle->get_buffer() );
           }
           
           il[ 1 ]->setup_resource_pair_buffer( rec );
-          particle_to_mesh( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          particle_to_mesh( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           rec.barrier( il1_buffers );
-          recalculate_normal( rec, 0, il1_prim->unique_vertex_count * 32u, 1u, 1u );
+          recalculate_normal( rec, 0, il1_prim->mesh.unique_vertex_count * 32u, 1u, 1u );
           rec.barrier( il1_buffers );
-          recalculate_tangent( rec, 0, il1_prim->unique_vertex_count, 1u, 1u );
+          recalculate_tangent( rec, 0, il1_prim->mesh.unique_vertex_count, 1u, 1u );
           rec.barrier( il1_buffers );
           rec.barrier( sg->get_resource()->particle->get_buffer() );
           */

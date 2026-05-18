@@ -7,7 +7,7 @@
 #include <gct/pre_dof_pixel.h>
 #include <gct/depth.h>
 #include <gct/gbuffer_format.h>
-
+#include <gct/color.h>
 
 const uint kplus_buffer_array_layer_count = 8;
 
@@ -80,7 +80,7 @@ bool update_kplus_buffer(
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
     //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 0.0 ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
@@ -149,7 +149,7 @@ bool update_kplus_buffer16(
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
     //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
-    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 0.0 ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 3 ), vec4( p.emissive, p.occlusion ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 5 ), vec4( p.optflow, 0.0 ) );
@@ -217,7 +217,7 @@ bool update_kplus_buffer_reduced(
   if( new_sample_pos < 4 ) {
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
     //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 0.0 ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     if( ( ( image_pos.x & 0x1 ) == 0 ) && ( ( image_pos.y & 0x1 ) == 0 ) ) {
       imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
@@ -288,7 +288,7 @@ bool update_kplus_buffer16_reduced(
   if( new_sample_pos < 4 ) {
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_R32F[ nonuniformEXT( depth_id ) ], ivec3( image_pos, new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
     //imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 0 ), vec4( p.pos, depth ) );
-    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 1.0 ) );
+    imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 2 ), vec4( p.normal.x, p.normal.y, p.normal.z, 0.0 ) );
     imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 4 ), vec4( p.metallic, p.roughness, input_id.x, input_id.y ) );
     if( ( ( image_pos.x & 0x1 ) == 0 ) && ( ( image_pos.y & 0x1 ) == 0 ) ) {
       imageStore( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( image_pos, ( new_sample_index - 1 ) * kplus_buffer_array_layer_count + 1 ), p.albedo );
@@ -311,7 +311,7 @@ gbuffer_value read_kplus_buffer(
 ) {
   const vec4 pos = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
   const vec4 albedo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
-  const vec3 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
+  const vec4 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
   const vec4 eo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
   const vec4 mrid = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
   const vec3 optflow = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
@@ -319,10 +319,10 @@ gbuffer_value read_kplus_buffer(
   gbuffer_value p;
   p.pos = pos.xyz;
   p.depth = pos.w;
-  p.normal = normal;
+  p.normal = normal.xyz;
   p.metallic = mrid.x;
   p.roughness = mrid.y;
-  p.input_id = ivec2( mrid.zw );
+  p.input_id = ivec4( mrid.zw, normal.w, 0 );
   p.albedo = albedo;
   p.emissive = eo.xyz;
   p.occlusion = eo.w;
@@ -338,7 +338,7 @@ gbuffer_value read_kplus_buffer16(
 ) {
   const vec4 pos = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 0 ) );
   const vec4 albedo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 1 ) ).rgba;
-  const vec3 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz;
+  const vec4 normal = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
   const vec4 eo = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 3 ) );
   const vec4 mrid = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 4 ) );
   const vec3 optflow = imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 5 ) ).rgb;
@@ -346,10 +346,10 @@ gbuffer_value read_kplus_buffer16(
   gbuffer_value p;
   p.pos = pos.xyz;
   p.depth = pos.w;
-  p.normal = normal;
+  p.normal = normal.xyz;
   p.metallic = mrid.x;
   p.roughness = mrid.y;
-  p.input_id = ivec2( mrid.zw );
+  p.input_id = ivec4( mrid.zw, normal.w, 0 );
   p.albedo = albedo;
   p.emissive = eo.xyz;
   p.occlusion = eo.w;
@@ -387,7 +387,7 @@ vec4 read_kplus_buffer_normal(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
+  return vec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_32F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz, 1.0 );
 }
 
 vec4 read_kplus_buffer_eo(
@@ -443,7 +443,7 @@ vec4 read_kplus_buffer_normal16(
   ivec2 screen_pos,
   uint layer
 ) {
-  return imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) );
+  return vec4( imageLoad( GCT_KPLUS_BUFFER_IMAGE_POOL_16F[ nonuniformEXT( gbuffer_id ) ], ivec3( screen_pos, layer * kplus_buffer_array_layer_count + 2 ) ).xyz, 1.0 );
 }
 
 vec4 read_kplus_buffer_eo16(
@@ -715,7 +715,7 @@ void kplus_insert(
   kplus_iter iter,
   primitive_value p,
   float depth,
-  vec2 input_id
+  vec4 input_id
 ) {
   const uint layer_count = gbuffer_get_layer_count( iter.active_layer );
   ivec4 sample_index = ivec4( imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, layer_count * 4u ) ) );
@@ -796,7 +796,7 @@ void kplus_insert(
           ( new_sample_index - 1 ) * layer_count +
           gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL )
         ),
-        vec4( p.normal, 1.0 )
+        vec4( p.normal, input_id.z )
       );
     }
     if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_EMISSIVE_OCCLUSION ) ) {
@@ -842,7 +842,7 @@ void kplus_insert(
           ( new_sample_index - 1 ) * layer_count +
           gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TANGENT )
         ),
-        vec4( p.tangent, 0.0 )
+        vec4( p.tangent, input_id.w )
       );
     }
     if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 ) ) {
@@ -917,10 +917,22 @@ vec3 kplus_get_normal(
   return kplus_get_component( iter, GCT_GBUFFER_NORMAL, vec4( 0, 0, 0, 0 ) ).xyz;
 }
 
+vec4 kplus_get_normal_meshlet_id(
+  kplus_iter iter
+) {
+  return kplus_get_component( iter, GCT_GBUFFER_NORMAL, vec4( 0, 0, 0, 0 ) );
+}
+
 vec3 kplus_get_tangent(
   kplus_iter iter
 ) {
   return kplus_get_component( iter, GCT_GBUFFER_TANGENT, vec4( 0, 0, 0, 0 ) ).xyz;
+}
+
+vec4 kplus_get_tangent_face_id(
+  kplus_iter iter
+) {
+  return kplus_get_component( iter, GCT_GBUFFER_TANGENT, vec4( 0, 0, 0, 0 ) );
 }
 
 vec4 kplus_get_eo(
@@ -971,11 +983,11 @@ gbuffer_value kplus_get(
   const float depth = imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.depth ) ], kplus_get_pixel_pos( iter ) ).x;
   const vec3 pos = kplus_get_pos_depth( iter ).xyz;
   const vec4 albedo = kplus_get_albedo( iter );
-  const vec3 normal = kplus_get_normal( iter );
+  const vec4 normal = kplus_get_normal_meshlet_id( iter );
   const vec4 eo = kplus_get_eo( iter );
   const vec4 mrid = kplus_get_mrid( iter );
   const vec3 optflow = kplus_get_optflow( iter );
-  const vec3 tangent = kplus_get_tangent( iter );
+  const vec4 tangent = kplus_get_tangent_face_id( iter );
   const vec4 texcoord01 = kplus_get_texcoord01( iter );
   const vec4 texcoord23 = kplus_get_texcoord23( iter );
   const vec4 color0 = kplus_get_color0( iter );
@@ -983,15 +995,15 @@ gbuffer_value kplus_get(
   gbuffer_value p;
   p.pos = pos;
   p.depth = depth;
-  p.normal = normal;
+  p.normal = normal.xyz;
   p.metallic = mrid.x;
   p.roughness = mrid.y;
-  p.input_id = ivec2( mrid.zw );
+  p.input_id = ivec4( mrid.zw, normal.w, tangent.w );
   p.albedo = albedo;
   p.emissive = eo.xyz;
   p.occlusion = eo.w;
   p.optflow = optflow;
-  p.tangent = tangent;
+  p.tangent = tangent.xyz;
   p.texcoord[ 0 ] = texcoord01.xy;
   p.texcoord[ 1 ] = texcoord01.zw;
   p.texcoord[ 2 ] = texcoord23.xy;
@@ -1184,6 +1196,104 @@ vec4 kplus_mix(
     }
   }
   return total;
+}
+
+pre_dof_pixel kplus_mix_meshlet_id(
+  kplus_iter iter,
+  uint lighting_image,
+  uint scattering_image,
+  float focus,
+  float znear,
+  float zfar,
+  float visible_range,
+  vec3 ambient_factor,
+  float ao
+) {
+  vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  float near_depth = focus;
+  float far_depth = zfar;
+  for( uint i = 0u; i != 4u; i++ ) {
+    const vec4 albedo = kplus_get_albedo( iter );
+    const bool has_layer = !kplus_is_end( iter );
+    const bool is_nearest = kplus_is_nearest( iter );
+    const uint id = uint( kplus_get_normal_meshlet_id( iter ).w );
+    const float depth = has_layer ? 
+      decode_depth( kplus_get_depth( iter ), znear, zfar ) :
+      zfar;
+    const vec3 ambient =
+      ( has_layer ) ?
+      distinguishable_color( id ):
+      vec3( 0.0, 0.0, 0.0 );
+    const vec4 radiance = 
+      vec4( ( ambient ), albedo.a );
+    near_depth = min( depth, near_depth );
+    far_depth = min( depth, far_depth );
+    if( has_layer ) { 
+      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+      if( depth < focus ) {
+        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+      }
+      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
+      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
+      iter = kplus_next( iter );
+    }
+  }
+  return pre_dof_pixel(
+    near_total,
+    far_total,
+    near_depth,
+    far_depth
+  );
+}
+
+pre_dof_pixel kplus_mix_face_id(
+  kplus_iter iter,
+  uint lighting_image,
+  uint scattering_image,
+  float focus,
+  float znear,
+  float zfar,
+  float visible_range,
+  vec3 ambient_factor,
+  float ao
+) {
+  vec4 near_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  vec4 far_total = vec4( 0.0, 0.0, 0.0, 0.0 );
+  float near_depth = focus;
+  float far_depth = zfar;
+  for( uint i = 0u; i != 4u; i++ ) {
+    const vec4 albedo = kplus_get_albedo( iter );
+    const bool has_layer = !kplus_is_end( iter );
+    const bool is_nearest = kplus_is_nearest( iter );
+    const uint id = uint( kplus_get_tangent_face_id( iter ).w );
+    const float depth = has_layer ? 
+      decode_depth( kplus_get_depth( iter ), znear, zfar ) :
+      zfar;
+    const vec3 ambient =
+      ( has_layer ) ?
+      distinguishable_color( id ):
+      vec3( 0.0, 0.0, 0.0 );
+    const vec4 radiance = 
+      vec4( ( ambient ), albedo.a );
+    near_depth = min( depth, near_depth );
+    far_depth = min( depth, far_depth );
+    if( has_layer ) { 
+      near_total.xyz = mix( near_total.xyz, radiance.xyz, albedo.a );
+      if( depth < focus ) {
+        near_total.a = ( 1.0 - ( 1.0 - near_total.a ) * ( 1.0 - albedo.a ) );
+      }
+      far_total.xyz = mix( far_total.xyz, radiance.xyz, albedo.a );
+      far_total.a = ( 1.0 - ( 1.0 - far_total.a ) * ( 1.0 - albedo.a ) );
+      iter = kplus_next( iter );
+    }
+  }
+  return pre_dof_pixel(
+    near_total,
+    far_total,
+    near_depth,
+    far_depth
+  );
 }
 
 

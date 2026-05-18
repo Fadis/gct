@@ -920,8 +920,8 @@ int main( int argc, const char *argv[] ) {
   const auto &il1_dl = il[ 1 ]->get_draw_list();
   if( il1_dl.size() != 1u ) throw -1;
   const auto il1_prim = sg->get_resource()->prim.get( il1_dl[ 0 ].prim );
-  std::cout << "unique vertex count : " << il1_prim->unique_vertex_count << std::endl;
-  std::cout << "vertex count : " << il1_prim->count << std::endl;
+  std::cout << "unique vertex count : " << il1_prim->mesh.unique_vertex_count << std::endl;
+  std::cout << "vertex count : " << il1_prim->mesh.vertex_count << std::endl;
 
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();

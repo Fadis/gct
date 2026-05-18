@@ -11,6 +11,12 @@
 namespace gct {
 
 std::unordered_map< std::uint32_t, std::vector< std::uint8_t > > &get_vertex_buffer();
+std::uint16_t vertex_buffer_load_u16( std::uint32_t vertex_buffer, std::uint32_t offset );
+std::int16_t vertex_buffer_load_i16( std::uint32_t vertex_buffer, std::uint32_t offset );
+std::uint8_t vertex_buffer_load_u8( std::uint8_t vertex_buffer, std::uint32_t offset );
+std::int8_t vertex_buffer_load_i8( std::uint8_t vertex_buffer, std::uint32_t offset );
+float vertex_buffer_load_f32( std::uint32_t vertex_buffer, std::uint32_t offset );
+float vertex_buffer_load_f16( std::uint32_t vertex_buffer, std::uint32_t offset );
 std::uint32_t vertex_buffer_load( std::uint32_t vertex_buffer, std::uint32_t offset );
 glm::uvec2 vertex_buffer_load2( std::uint32_t vertex_buffer, std::uint32_t offset );
 glm::uvec3 vertex_buffer_load3( std::uint32_t vertex_buffer, std::uint32_t offset );

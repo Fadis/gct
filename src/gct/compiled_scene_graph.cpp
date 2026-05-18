@@ -1,5 +1,4 @@
 #include <nlohmann/json.hpp>
-#include "gct/exception.hpp"
 #include <gct/format.hpp>
 #include <gct/shader_flag.hpp>
 #include <gct/get_shader.hpp>
@@ -25,12 +24,12 @@ void compiled_primitive::operator()(
     rec->bindVertexBuffers( bind_point, raw_b, view.offset );
   }
   if( !prim->indexed ) {
-    rec.draw( prim->count, 1, 0, 0 );
+    rec.draw( prim->mesh.vertex_count, 1, 0, 0 );
   }
   else {
     auto b = vertex->get( prim->index_buffer.buffer );
     rec->bindIndexBuffer( **b, prim->index_buffer.offset, prim->index_buffer_type );
-    rec.draw_indexed( prim->count, 1, 0, 0, 0 );
+    rec.draw_indexed( prim->mesh.vertex_count, 1, 0, 0, 0 );
   }
 }
 

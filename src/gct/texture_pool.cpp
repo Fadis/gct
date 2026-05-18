@@ -149,7 +149,6 @@ texture_pool::views texture_pool::state_type::allocate(
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
-      std::cout << "from_mat1 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
@@ -172,7 +171,6 @@ texture_pool::views texture_pool::state_type::allocate(
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
-      std::cout << "from_mat2 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {
@@ -195,7 +193,6 @@ texture_pool::views texture_pool::state_type::allocate(
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "gamma" ] = std::uint32_t( color_prof.gamma );
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_profile" ][ "max_intensity" ] = 1.0f;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "from" ] = *from_mat;
-      std::cout << "from_mat3 : " << *from_mat << " " << int( color_prof.space ) << std::endl;
       temp.data()->*(*metadata_member_pointer)[ 0 ][ "color_space_matrix" ][ "to" ] = *to_mat;
       const auto staging_index = staging_index_allocator.allocate( 1u );
       {

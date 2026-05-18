@@ -92,7 +92,6 @@ void to_json( nlohmann::json &dest, const primitive &src ) {
   }
   dest[ "indexed" ] = src.indexed;
   dest[ "index_buffer" ] = src.index_buffer;
-  dest[ "count" ] = src.count;
   dest[ "index_buffer_type" ] = src.index_buffer_type;
   dest[ "aabb" ] = src.aabb;
   dest[ "vertex_input_binding" ] = nlohmann::json::array();

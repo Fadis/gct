@@ -77,16 +77,13 @@ void main() {
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];
     
-    // メッシュの頂点数を96で割ってメッシュレットの数を求める
-    const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
-    
     // このスレッドが処理するメッシュレットのIDを求める
     const uint task_offset = id.offset;
     const uint meshlet_id = gl_LocalInvocationID.x + 32u * task_offset;
  
     {
       // メッシュレットIDがメッシュレットの総数を超えていないか
-      const bool has_meshlet = ( meshlet_id < invocation_count );
+      const bool has_meshlet = ( meshlet_id < mesh.meshlet_count );
       // メッシュレットの情報(法錐と頂点座標の平均)を得る
       const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + ( has_meshlet ? meshlet_id : 0u ) ];
 

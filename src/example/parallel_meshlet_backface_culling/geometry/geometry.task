@@ -64,10 +64,8 @@ void main() {
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];
  
-    // メッシュの頂点数を96で割ってメッシュレットの数を求める
-    const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
     // メッシュレットの数を下回らない最小の32の倍数を求める
-    uint aligned_invocation_count = ( invocation_count / 32 + ( ( ( invocation_count % 32 ) == 0u ) ? 0u : 1u ) )*32;
+    uint aligned_invocation_count = ( mesh.meshlet_count / 32 + ( ( ( mesh.meshlet_count % 32 ) == 0u ) ? 0u : 1u ) )*32;
  
  
     // 1回ループが回る度にメッシュレットIDを32づつ増やす
@@ -75,7 +73,7 @@ void main() {
     const uint meshlet_block_id = gl_LocalInvocationID.x;
     for( uint i = meshlet_block_id; i < aligned_invocation_count; i += 32 ) {
       // メッシュレットIDがメッシュレットの総数を超えていないか
-      const bool has_meshlet = ( i < invocation_count );
+      const bool has_meshlet = ( i < mesh.meshlet_count );
       // メッシュレットの情報(法錐と頂点座標の平均)を得る
       const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + ( has_meshlet ? i : 0u ) ];
       // 頂点座標の平均から視点へのベクトルと法錐の軸の内積が事前に求めた閾値を下回る場合、メッシュレットに含まれる全てのプリミティブは視点に対して背面を向けている

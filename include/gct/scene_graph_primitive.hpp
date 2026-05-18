@@ -81,8 +81,6 @@ struct primitive {
   LIBGCT_SETTER( vertex_buffer )
   LIBGCT_SETTER( indexed )
   LIBGCT_SETTER( index_buffer )
-  LIBGCT_SETTER( count )
-  LIBGCT_SETTER( unique_vertex_count )
   LIBGCT_SETTER( index_buffer_type )
   LIBGCT_SETTER( aabb )
   LIBGCT_SETTER( vertex_input_binding )
@@ -106,12 +104,11 @@ struct primitive {
   LIBGCT_SETTER( momentum_inertia_tensor )
   LIBGCT_SETTER( inversed_momentum_inertia_tensor )
   LIBGCT_SETTER( mass )
+  LIBGCT_SETTER( gltf_index )
   LIBGCT_SETTER( descriptor )
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
   buffer_offset index_buffer;
-  uint32_t count = 0u;
-  uint32_t unique_vertex_count = 0u;
   vk::IndexType index_buffer_type;
   aabb4 aabb;
   std::vector< vk::VertexInputBindingDescription > vertex_input_binding;
@@ -135,6 +132,7 @@ struct primitive {
   glm::mat4 momentum_inertia_tensor;
   glm::mat4 inversed_momentum_inertia_tensor;
   float mass = 1.0f;
+  std::uint32_t gltf_index = 0u;
   primitive_descriptor descriptor;
 };
 

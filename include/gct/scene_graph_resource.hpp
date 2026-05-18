@@ -14,6 +14,7 @@
 
 namespace gct {
 
+class device_t;
 class pipeline_layout_t;
 class matrix_pool;
 class aabb_pool;
@@ -79,6 +80,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( prim )
   LIBGCT_SETTER( inst )
   LIBGCT_SETTER( csmat )
+  device_t &get_device() const;
   std::shared_ptr< matrix_pool > matrix;
   std::shared_ptr< aabb_pool > aabb;
   std::shared_ptr< image_pool > image;

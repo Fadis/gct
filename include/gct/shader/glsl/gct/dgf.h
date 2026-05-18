@@ -42,6 +42,7 @@ struct DGFHeader {
   uint bitSize;
   uint geomIDMeta; 
   bool haveGeomIDPalette;
+  uvec4 debug;
 };
 
 struct DGFBlockInfo {
@@ -57,6 +58,9 @@ struct DGFBlockInfo {
 DGFHeader DGFLoadHeader( uint dgfBuffer, uint offset ) {
   DGFHeader result;
   const uvec4 H = vertex_buffer_load4( dgfBuffer, offset );
+  //result.debug = H;
+  //result.debug.x = dgfBuffer;
+  //result.debug.y = offset;
   const uint h0 = H.x;
   const uint h1 = H.y;
   const uint h2 = H.z;
@@ -316,7 +320,8 @@ uint LoadTriangleControlValues(DGFBlockInfo s, uint triangleId) {
 }
 
 bits_t SelectMask(const uint i) {
-  return (bits_t(-1)) >> (~i);
+  return ( bits_t( 2u ) << i ) - 1u;
+  //return (bits_t(-1)) >> (~i);
 }
 
 bits_t ComputeVirtualCodeChanges(bits_t isRestart, bits_t isEdge2, bits_t isBacktrack) {
@@ -392,6 +397,41 @@ uvec3 ControlScan(uint triIdx, const bits_t isRestart, const bits_t isEdge2, con
 
   return result;
 }
+
+uvec3 ControlScan_inspect(uint triIdx, const bits_t isRestart, const bits_t isEdge2, const bits_t isBacktrack) {
+  const bits_t isEdge2Ear = (isBacktrack & (~(isEdge2 << 1u))) | ((~isBacktrack) & isEdge2);
+  const bits_t isCodeChange = ComputeVirtualCodeChanges(isRestart, isEdge2Ear, isBacktrack);
+  
+  const bool copy = bool( uint(isBacktrack >> (triIdx + 1)) & 1u );
+  const uint i = triIdx - ( copy ? 1 : 0 );
+	
+  const bool restart = bool( uint(isRestart >> i) & 1u );
+  const bool edge2 = bool( uint(isEdge2Ear >> i) & 1 );
+  const bool prevIsCopy = bool( uint(isBacktrack >> i) & 1u );
+  const bool nextIsEdge2 = bool( uint(isEdge2Ear >> (triIdx + 1)) & 1u );
+/*
+  uint flags = 0;
+  if( copy ) flags |= 0x1;
+  if( restart ) flags |= 0x2;
+  if( prevIsCopy ) flags |= 0x4;
+  if( nextIsEdge2 ) flags |= 0x8;
+  return uvec3( flags, i, 0u );
+*/
+
+  ivec3 result = InitAccu(prevIsCopy, restart);
+  const ivec3 dSum = ComputeDSum(i, prevIsCopy, isRestart);
+  const int nRestarts = int( ComputeNRestarts(i, isRestart) );
+
+
+  const bits_t m = (isRestart << 1) & SelectMask(i);
+
+  uint bit_count = bitCount(uint(m)) + bitCount(uint(m>>32));
+  uint b = bitCount(uint(m));
+  uint c = bitCount(uint(m>>32));
+
+  return uvec3( uint( m ), isRestart, SelectMask( i ) );
+}
+
 
 DGFBlockInfo DGFInit(
   uint dgfBuffer,

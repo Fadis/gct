@@ -1,7 +1,15 @@
 #ifndef GCT_SHADER_SCENE_GRAPH_ACCESSOR_TYPE_H
 #define GCT_SHADER_SCENE_GRAPH_ACCESSOR_TYPE_H
 
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+using namespace glm;
+#include <gct/shader/glsl/gct/type_id.h>
+#else
 #include <gct/type_id.h>
+#endif
+
 
 struct accessor_type {
   uint enabled; // この頂点の情報が存在するかどうか

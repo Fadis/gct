@@ -31,7 +31,6 @@ void main() {
   // メッシュが属すノードの情報を得る
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
   
-  uint invocation_count = 0u;
   // ローカル座標系からワールド座標系への変換行列 
   const mat4 l2w = matrix_pool[ inst.world_matrix ];
   // ワールド座標系からスクリーン座標系への変換行列
@@ -50,12 +49,10 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  // メッシュの頂点数を96で割ってメッシュレットの数を求める
-  invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
   // 描画対象のIDをタスクペイロードに書く
   td.resource_pair_id = gl_GlobalInvocationID.x;
 
   // メッシュレットの数だけメッシュシェーダーを実行する
-  EmitMeshTasksEXT( invocation_count, 1, 1 );
+  EmitMeshTasksEXT( mesh.meshlet_count, 1, 1 );
 }
 

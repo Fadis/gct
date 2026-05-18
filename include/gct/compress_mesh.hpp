@@ -4,7 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include <glm/vec4.hpp>
-#include <fx/gltf.h>
+#include <gct/fx/gltf.h>
 #include <gct/setter.hpp>
 #include <gct/scene_graph_accessor.hpp>
 #include <gct/vertex_attribute.hpp>
@@ -102,7 +102,8 @@ loaded_vertex_buffer load_vertex_on_cpu(
 
 loaded_mesh load_mesh_on_cpu(
   const std::filesystem::path &base_dir,
-  const fx::gltf::Document &doc
+  const fx::gltf::Document &doc,
+  const std::unordered_set< std::uint32_t > &primitive_filter = std::unordered_set< std::uint32_t >{}
 );
 
 void store_mesh_on_cpu(

@@ -156,9 +156,9 @@ void main() {
   output_tex_coord1[ filtered_vertex_offset + 1u ] = texcoord1;
   output_tex_coord1[ filtered_vertex_offset + 2u ] = texcoord2;
   // 頂点のIDにノードのIDとメッシュのIDを書いておく
-  output_id[ filtered_vertex_offset + 0u ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ filtered_vertex_offset + 1u ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ filtered_vertex_offset + 2u ] = vec4( id.inst, id.prim, 0, 0 );
+  output_id[ filtered_vertex_offset + 0u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+  output_id[ filtered_vertex_offset + 1u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+  output_id[ filtered_vertex_offset + 2u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
   output_relative_height[ filtered_vertex_offset + 0u ] = relative_height;
   output_relative_height[ filtered_vertex_offset + 1u ] = relative_height;
   output_relative_height[ filtered_vertex_offset + 2u ] = relative_height;

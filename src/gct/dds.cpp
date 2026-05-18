@@ -27,20 +27,20 @@ vk::Format ddsformat_to_vk_format( const pixel_format &f ) {
   else if( int( f.flags ) & int( pixel_format_flag::DDPF_RGB ) ) {
     if( int( f.flags ) & int( pixel_format_flag::DDPF_ALPHAPIXELS ) ) {
       if( f.rgb_bit_count == 32 ) {
-        if( f.r_bit_mask == 0xFF000000u && f.g_bit_mask == 0x00FF0000u && f.b_bit_mask == 0x0000FF00u && f.a_bit_mask == 0x000000FFu ) {
+        if( f.r_bit_mask == 0x000000FFu && f.g_bit_mask == 0x0000FF00u && f.b_bit_mask == 0x00FF0000u && f.a_bit_mask == 0xFF000000u ) {
           return vk::Format::eR8G8B8A8Srgb;
         }
-        else if( f.r_bit_mask == 0x0000FF00u && f.g_bit_mask == 0x00FF0000u && f.b_bit_mask == 0xFF000000u && f.a_bit_mask == 0x000000FFu ) {
+        else if( f.r_bit_mask == 0x00FF0000u && f.g_bit_mask == 0x0000FF00u && f.b_bit_mask == 0x000000FFu && f.a_bit_mask == 0xFF000000u ) {
           return vk::Format::eB8G8R8A8Srgb;
         }
       }
     }
     else {
       if( f.rgb_bit_count == 24 ) {
-        if( f.r_bit_mask == 0xFF0000u && f.g_bit_mask == 0x00FF00u && f.b_bit_mask == 0x0000FFu ) {
+        if( f.r_bit_mask == 0x0000FFu && f.g_bit_mask == 0x00FF00u && f.b_bit_mask == 0xFF0000u ) {
           return vk::Format::eR8G8B8Srgb;
         }
-        else if( f.r_bit_mask == 0x0000FFu && f.g_bit_mask == 0x00FF00u && f.b_bit_mask == 0xFF0000u ) {
+        else if( f.r_bit_mask == 0xFF0000u && f.g_bit_mask == 0x00FF00u && f.b_bit_mask == 0x0000FFu ) {
           return vk::Format::eB8G8R8Srgb;
         }
       }

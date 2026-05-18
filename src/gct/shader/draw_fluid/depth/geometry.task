@@ -31,7 +31,6 @@ void main() {
   // メッシュが属すノードの情報を得る
   const instance_resource_index_type inst = instance_resource_index[ id.inst ];
   
-  uint invocation_count = 0u;
   // ローカル座標系からワールド座標系への変換行列 
   const mat4 l2w = matrix_pool[ inst.world_matrix ];
   // ワールド座標系からスクリーン座標系への変換行列

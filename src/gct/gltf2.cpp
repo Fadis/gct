@@ -1,11 +1,11 @@
 #include <iostream>
 #include "gct/exception.hpp"
-#include <fx/gltf.h>
 #include <iterator>
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <gct/fx/gltf.h>
 #include <gct/device.hpp>
 #include <gct/shader_module_reflection.hpp>
 #include <gct/descriptor_pool_create_info.hpp>
@@ -428,6 +428,8 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   const auto [position_type_id,meshlet_count,unique_vertex_count] = get_meshlet_count( doc, primitive_ );
   vertex_count = unique_vertex_count;
 
+  const bool compat = is_compatible_to_traditional_vertex_input( props.graph->get_resource()->get_device(), doc, primitive_ );
+
   for( const auto &[target,index]: primitive_.attributes ) {
     if( target == "WEIGHTS_0" ) rigged = true;
     if( target == "TANGENT" ) has_tangent = true;
@@ -436,7 +438,6 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     const std::uint32_t default_stride = to_size( accessor );
     const uint32_t stride = view.byteStride ? view.byteStride : default_stride;
     const uint32_t offset = accessor.byteOffset + view.byteOffset;
-    const vk::Format vertex_format = to_vulkan_format( accessor.componentType, accessor.type, accessor.normalized );
     if( target == "POSITION" ) {
       if( accessor.min.size() >= 3 ) {
         min[ 0 ] = accessor.min[ 0 ];
@@ -451,20 +452,23 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     }
 
     auto binding = props.graph->get_resource()->attr2index.find( target );
-    if( binding != props.graph->get_resource()->attr2index.end() ) {
-      vertex_input_binding.push_back(
-        vk::VertexInputBindingDescription()
-          .setBinding( binding->second )
-          .setStride( stride )
-          .setInputRate( vk::VertexInputRate::eVertex )
-      );
-      vertex_input_attribute.push_back(
-        vk::VertexInputAttributeDescription()
-          .setLocation( binding->second )
-          .setBinding( binding->second )
-          .setFormat( vertex_format )
-      );
-      vertex_buffer.insert( std::make_pair( binding->second, scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) ) );
+    if( compat ) {
+      const vk::Format vertex_format = to_vulkan_format( accessor.componentType, accessor.type, accessor.normalized );
+      if( binding != props.graph->get_resource()->attr2index.end() ) {
+        vertex_input_binding.push_back(
+          vk::VertexInputBindingDescription()
+            .setBinding( binding->second )
+            .setStride( stride )
+            .setInputRate( vk::VertexInputRate::eVertex )
+        );
+        vertex_input_attribute.push_back(
+          vk::VertexInputAttributeDescription()
+            .setLocation( binding->second )
+            .setBinding( binding->second )
+            .setFormat( vertex_format )
+        );
+        vertex_buffer.insert( std::make_pair( binding->second, scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) ) );
+      }
     }
     const auto attribute_index = props.vertex_attribute_map.find( target );
     mesh.set_topology( gltf_topology_to_vulkan_topology( primitive_.mode ) );
@@ -549,9 +553,9 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
     const uint32_t offset = accessor.byteOffset + view.byteOffset;
     p.set_indexed( true );
     p.set_index_buffer( scene_graph::buffer_offset().set_buffer( buffer[ view.buffer ] ).set_offset( offset ) );
-    p.set_index_buffer_type( to_vulkan_index_type( accessor.componentType ) );
-    p.set_count( accessor.count );
-    p.set_unique_vertex_count( unique_vertex_count );
+    if( compat ) {
+      p.set_index_buffer_type( to_vulkan_index_type( accessor.componentType ) );
+    }
     const auto accessor_index = props.vertex_attribute_map.find( "INDEX" );
     if( accessor_index != props.vertex_attribute_map.end() ) {
       vertex_count = accessor.count;
@@ -574,10 +578,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   }
   else {
     p.set_indexed( false );
-    p.set_count( vertex_count );
-    p.set_unique_vertex_count( unique_vertex_count );
   }
-  std::cout << "vertex_count=" << p.count << " unique_vertex_count=" << p.unique_vertex_count << std::endl;
  
   auto rimp = props.graph->get_resource()->primitive_resource_index->get_member_pointer();
   std::vector< std::uint8_t > ri( rimp.get_aligned_size() );
@@ -887,6 +888,10 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       if( mmp.has( "vertex_count" ) ) {
         m.data()->*mmp[ "vertex_count" ] = std::uint32_t( vertex_count );
       }
+      // メッシュレットの数を記録
+      if( mmp.has( "meshlet_count" ) ) {
+        m.data()->*mmp[ "meshlet_count" ] = std::uint32_t( mesh.meshlet_count );
+      }
       // トポロジを記録
       if( mmp.has( "topology" ) ) {
         m.data()->*mmp[ "topology" ] = std::uint32_t( vulkan_topology_to_topology_id( mesh.topology ) );
@@ -1080,6 +1085,7 @@ std::shared_ptr< mesh > gltf2::create_mesh(
         mesh_id,
         i
       );
+    p.set_gltf_index( i );
     const auto desc =
       props.graph->get_resource()->prim.allocate(
         std::make_shared< scene_graph::primitive >( std::move( p ) )
@@ -1287,7 +1293,7 @@ void gltf2::load_node(
           ri.data()->*rimp[ "visibility" ] = *i->descriptor.visibility;
           if( props.graph->get_resource()->meshlet_index ) {
             i->descriptor.set_meshlet_index( props.graph->get_resource()->meshlet_index->allocate(
-              prim->count / ( props.meshlet_size * 3u ) + ( ( prim->count % ( props.meshlet_size * 3u ) ) ? 1u : 0u )
+              prim->mesh.meshlet_count
             ) );
             if( rimp.has( "meshlet_index" ) ) {
               ri.data()->*rimp[ "meshlet_index" ] = *i->descriptor.meshlet_index;
@@ -1359,7 +1365,6 @@ void gltf2::load_node(
               i->rigid_state->descriptor.set_collision_constraint( desc );
               if( rmp.has( "collision_constraint_offset" ) ) {
                 r.data()->*rmp[ "collision_constraint_offset" ] = std::uint32_t( *desc );
-                std::cout << "collision_constraint_offset : " << *desc << std::endl;
               }
             }
             else if( rmp.has( "collision_constraint_offset" ) ) {

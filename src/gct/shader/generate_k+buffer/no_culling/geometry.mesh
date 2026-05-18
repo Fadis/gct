@@ -121,9 +121,9 @@ void main() {
   output_tex_coord[ output_vertex_id + 1u ] = f.vertex[ 1 ].tex_coord0.xy;
   output_tex_coord[ output_vertex_id + 2u ] = f.vertex[ 2 ].tex_coord0.xy;
   // 頂点のIDにノードのIDとメッシュのIDを書いておく
-  output_id[ output_vertex_id + 0u ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ output_vertex_id + 1u ] = vec4( id.inst, id.prim, 0, 0 );
-  output_id[ output_vertex_id + 2u ] = vec4( id.inst, id.prim, 0, 0 );
+  output_id[ output_vertex_id + 0u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+  output_id[ output_vertex_id + 1u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+  output_id[ output_vertex_id + 2u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
   // 上の3頂点で1つの三角形プリミティブになる事を書く
   gl_PrimitiveTriangleIndicesEXT[ output_primitive_id ] = uvec3( output_vertex_id, output_vertex_id + 1, output_vertex_id + 2 );
 }

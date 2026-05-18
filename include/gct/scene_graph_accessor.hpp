@@ -1,7 +1,8 @@
 #ifndef GCT_SCENE_GRAPH_ACCESSOR_HPP
 #define GCT_SCENE_GRAPH_ACCESSOR_HPP
+#include <optional>
 #include <nlohmann/json.hpp>
-#include <fx/gltf.h>
+#include <gct/fx/gltf.h>
 #include <gct/vertex_buffer_pool.hpp>
 #include <gct/buffer_pool.hpp>
 #include <gct/numeric_types.hpp>
@@ -36,6 +37,11 @@ std::uint32_t to_accessor_component_count(
 );
 accessor_type_id to_accessor_type_id(
   const fx::gltf::Accessor &accessor
+);
+std::optional< vk::Format > to_vulkan_format(
+  const accessor_type_id &type_id,
+  std::uint32_t component_count,
+  bool normalized
 );
 
 bool check_accessor_type(

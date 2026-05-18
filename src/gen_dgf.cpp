@@ -3,11 +3,11 @@
 #include <charconv>
 #include <filesystem>
 #include <cstdlib>
-#include <fx/gltf.h>
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 #include <DGF.h>
 #include <DGFBaker.h>
+#include <gct/fx/gltf.h>
 #include <gct/exception.hpp>
 #include <gct/gltf.hpp>
 #include <gct/mmaped_file.hpp>

@@ -1064,6 +1064,8 @@ add_shader( gct gct/shader/gamma/1.0/gamma.comp INSTALL )
 
 add_shader( gct gct/shader/generate_adjacency/1.0/generate_adjacency.comp INSTALL )
 
+add_shader( gct gct/shader/dump_dgf/1.0/dump_dgf.comp INSTALL )
+
 if( ENABLE_EXAMPLES )
 
 add_executable( graphics

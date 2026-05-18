@@ -1016,7 +1016,7 @@ int main( int argc, const char *argv[] ) {
     }
     for( auto iter = generate_morph.begin(); iter != generate_morph.end(); ++iter ) {
       const auto prim = sg->get_resource()->prim.get( iter->first->prim );
-      std::cout << "uvc : " << " " << *iter->first->prim << " " << prim->unique_vertex_count << std::endl;
+      std::cout << "uvc : " << " " << *iter->first->prim << " " << prim->mesh.unique_vertex_count << std::endl;
     }
   }
 

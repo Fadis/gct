@@ -39,10 +39,8 @@ void main() {
   const primitive_resource_index_type prim = primitive_resource_index[ inst.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
   
-  // メッシュの頂点数を96で割ってメッシュレットの数を求める
-  const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
   // このローカルワークグループから実行する必要があるメッシュシェーダーのローカルワークグループの数を求める
-  const uint local_invocation_count = min( invocation_count - id.offset * 32u, 32u );
+  const uint local_invocation_count = mesh.meshlet_count;
   // タスクペイロードにどのメッシュのどの部分を描くべきかを書く
   td.instance_id = id.inst;
   td.primitive_id = inst.prim;

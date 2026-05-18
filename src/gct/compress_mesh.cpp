@@ -1,8 +1,8 @@
-#include <fx/gltf.h>
 #ifdef GCT_ENABLE_DGF
 #include <DGF.h>
 #include <DGFBaker.h>
 #endif
+#include <gct/fx/gltf.h>
 #include <gct/scene_graph_accessor.hpp>
 #include <gct/gltf.hpp>
 #include <gct/gltf2.hpp>
@@ -290,7 +290,8 @@ loaded_vertex_buffer load_vertex_on_cpu(
 
 loaded_mesh load_mesh_on_cpu(
   const std::filesystem::path &base_dir,
-  const fx::gltf::Document &doc
+  const fx::gltf::Document &doc,
+  const std::unordered_set< std::uint32_t > &primitive_filter
 ) {
   std::unordered_map< std::uint32_t, accessor_link > accessor_reuse;
   std::unordered_map< buffer_view_key, accessor_link > buffer_view_reuse;
@@ -300,8 +301,10 @@ loaded_mesh load_mesh_on_cpu(
   for( const auto &m: doc.meshes ) {
     std::uint32_t primitive_id = 0u;
     for( const auto &p: m.primitives ) {
-      const auto key = primitive_key{}.set_mesh_id( mesh_id ).set_primitive_id( primitive_id );
-      mesh[ key ] = gct::gltf::load_vertex_on_cpu( base_dir, doc, p, key, accessor_reuse, buffer_view_reuse );
+      if( primitive_filter.empty() || primitive_filter.find( primitive_id ) != primitive_filter.end() ) {
+        const auto key = primitive_key{}.set_mesh_id( mesh_id ).set_primitive_id( primitive_id );
+        mesh[ key ] = gct::gltf::load_vertex_on_cpu( base_dir, doc, p, key, accessor_reuse, buffer_view_reuse );
+      }
       ++primitive_id;
     }
     ++mesh_id;
@@ -478,7 +481,9 @@ void store_mesh_on_cpu(
     prim_object.attributes.clear();
     for( auto &[attr_id,attr]: primitive.attribute ) {
       if( !attr.reuse ) {
+        std::cout << nlohmann::json( attr_id ) << " " << pos << " " << bin.size() << std::endl;
         insert_padding( bin, pos, get_block_size( attr ) );
+        std::cout << nlohmann::json( attr_id ) << " " << pos << " " << bin.size() << std::endl;
         {
           fx::gltf::BufferView v;
           v.buffer = 0u;
@@ -509,6 +514,8 @@ void store_mesh_on_cpu(
             a.min[ j ] = attr.min[ j ];
             a.max[ j ] = attr.max[ j ];
           }
+          //std::cout << "min (" << a.min[ 0 ] << "," << a.min[ 1 ] << "," << a.min[ 2 ] << ")" << std::endl;
+          //std::cout << "max (" << a.max[ 0 ] << "," << a.max[ 1 ] << "," << a.max[ 2 ] << ")" << std::endl;
           a.normalized = attr.normalized;
           doc.accessors.push_back( a );
           attr.output_accessor_index = doc.accessors.size() - 1u;
@@ -749,6 +756,7 @@ face_attribute meshlet_reader::get_position(
   face_attribute f;
   const std::uint32_t fvc = get_face_vertex_count( buffer.topology );
   f.vertex.resize( fvc );
+  f.primitive_id = vertex_offset / fvc + local_face_id;
   if(
     buffer.topology == vk::PrimitiveTopology::eTriangleList &&
     buffer.attribute.find( vertex_attribute_id::position ) != buffer.attribute.end() &&
@@ -1049,7 +1057,7 @@ void convert_to_float(
     }
     buffer.attribute[ attr_id ].block_size = sizeof( float ) * component_count;
     buffer.attribute[ attr_id ].component_count = component_count;
-    buffer.attribute[ attr_id ].type = scene_graph::accessor_type_id::half;
+    buffer.attribute[ attr_id ].type = scene_graph::accessor_type_id::float_;
     buffer.attribute[ attr_id ].data = std::move( encoded );
   }
 }
@@ -1284,7 +1292,7 @@ void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command 
         gct::gltf::convert_to_n20t11b1( vb );
       }
       else if( c.substr( 0, 6 ) == "float_" ) {
-        gct::gltf::convert_to_fixed( vb, gct::to_vertex_attribute_id( c.substr( 6 ) ) );
+        gct::gltf::convert_to_float( vb, gct::to_vertex_attribute_id( c.substr( 6 ) ) );
       }
       else if( c.substr( 0, 5 ) == "half_" ) {
         gct::gltf::convert_to_half( vb, gct::to_vertex_attribute_id( c.substr( 5 ) ) );

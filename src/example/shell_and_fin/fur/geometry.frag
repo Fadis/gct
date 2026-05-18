@@ -52,7 +52,7 @@ void main() {
     iter,
     p,
     gl_FragCoord.z,
-    input_id.xy
+    input_id
   );
   endInvocationInterlockARB();
 }

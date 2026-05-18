@@ -34,7 +34,11 @@ signed_octahedron encode_signed_octahedron( vec3 decoded ) {
   encoded.v.y = n.y * 0.5f + 0.5f;
   encoded.v.x = n.x * 0.5f + encoded.v.y;
   encoded.v.y = n.x * -0.5f + encoded.v.y;
+#ifdef __cplusplus
+  encoded.sign = int( glm::clamp( n.z * FLT_MAX, 0.0f, 1.0f ) );
+#else
   encoded.sign = int( clamp( n.z * FLT_MAX, 0.0f, 1.0f ) );
+#endif
   return encoded;
 }
 

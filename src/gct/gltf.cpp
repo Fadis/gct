@@ -169,6 +169,39 @@ namespace gct::gltf {
     }
     return std::make_tuple( position_type_id, meshlet_count, vertex_count );
   }
+  bool is_compatible_to_traditional_vertex_input(
+    const device_t &device,
+    const fx::gltf::Document &doc,
+    const fx::gltf::Primitive &primitive_
+  ) {
+    const auto &vbf = device.get_vertex_buffer_formats();
+    scene_graph::accessor_type_id position_type_id = scene_graph::accessor_type_id::float_;
+    std::uint32_t meshlet_count = 0u;
+    std::uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
+    for( const auto &[target,index]: primitive_.attributes ) {
+      const auto &accessor = doc.accessors[ index ];
+      const auto type_id = scene_graph::to_accessor_type_id( accessor );
+      const auto vulkan_type_id = scene_graph::to_vulkan_format(
+        scene_graph::to_accessor_type_id( accessor ),
+        scene_graph::to_accessor_component_count( accessor ),
+        accessor.normalized
+      );
+      if( !vulkan_type_id ) return false;
+      if( vbf.find( *vulkan_type_id ) == vbf.end() ) return false;
+    }
+    if( primitive_.indices >= 0 ) {
+      const auto &accessor = doc.accessors[ primitive_.indices ];
+      const auto type_id = scene_graph::to_accessor_type_id( accessor );
+      const auto vulkan_type_id = scene_graph::to_vulkan_format(
+        scene_graph::to_accessor_type_id( accessor ),
+        scene_graph::to_accessor_component_count( accessor ),
+        accessor.normalized
+      );
+      if( !vulkan_type_id ) return false;
+      if( vulkan_type_id != vk::Format::eR16Uint && vulkan_type_id != vk::Format::eR32Uint ) return false;
+    }
+    return true;
+  }
 
   vk::Format to_vulkan_format(
     fx::gltf::Accessor::ComponentType componentType,

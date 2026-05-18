@@ -7,7 +7,7 @@ struct gbuffer_value {
   vec3 normal;
   float metallic;
   float roughness;
-  ivec2 input_id;
+  ivec4 input_id;
   vec4 albedo;
   vec3 emissive;
   float occlusion;

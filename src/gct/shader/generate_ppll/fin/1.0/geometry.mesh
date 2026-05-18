@@ -298,7 +298,7 @@ void main() {
       output_tangent[ fvo + vertex_id ] = vec4( mat3(l2w) * tangent[ vertex_id ].xyz, tangent[ vertex_id ].w );
       output_tex_coord0[ fvo + vertex_id ] = tex_coord0[ vertex_id ];
       output_tex_coord1[ fvo + vertex_id ] = tex_coord1[ vertex_id ];
-      output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, 0, 0 );
+      output_id[ fvo + vertex_id ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
     }
     for( uint primitive_id = 0u; primitive_id != 2u; ++primitive_id ) {
       gl_PrimitiveTriangleIndicesEXT[ fpo + primitive_id ] = uvec3(

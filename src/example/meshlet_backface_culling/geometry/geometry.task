@@ -63,10 +63,8 @@ void main() {
     const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
     const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-    // メッシュの頂点数を96で割ってメッシュレットの数を求める
-    const uint invocation_count = mesh.vertex_count / ( 32 * 3 ) + ( ( mesh.vertex_count % ( 32 * 3 ) == 0 ) ? 0u : 1u );
     // 各メッシュレットについて
-    for( uint i = 0u; i != invocation_count; ++i ) {
+    for( uint i = 0u; i != mesh.meshlet_count; ++i ) {
       // メッシュレットの情報(法錐と頂点座標の平均)を得る
       const meshlet_type meshlet = meshlet_pool[ mesh.meshlet + i ];
       // 頂点座標の平均から視点へのベクトルと法錐の軸の内積が事前に求めた閾値を下回る場合、メッシュレットに含まれる全てのプリミティブは視点に対して背面を向けている

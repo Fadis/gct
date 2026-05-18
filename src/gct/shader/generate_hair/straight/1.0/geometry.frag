@@ -40,7 +40,7 @@ void main() {
     iter,
     p,
     gl_FragCoord.z,
-    uvec2( 0, 0 )
+    uvec4( 0, 0, 0, 0 )
   );
   endInvocationInterlockARB();
 }

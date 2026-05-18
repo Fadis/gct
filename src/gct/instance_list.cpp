@@ -56,7 +56,7 @@ instance_list::instance_list(
       }
     }
     const auto prim = resource->prim.get( inst->descriptor.prim );
-    max_primitive_count = std::max( max_primitive_count,  prim->count / 3u );
+    max_primitive_count = std::max( max_primitive_count,  prim->mesh.vertex_count / 3u );
   }
   if( !resource->push_constant_mp ) {
     throw -1;
@@ -69,6 +69,52 @@ instance_list::instance_list(
 #endif
   update_device_side_list();
 }
+instance_list::instance_list(
+  const instance_list_create_info &ci,
+  const scene_graph &graph,
+  const std::vector< pool< std::shared_ptr< instance > >::descriptor > &l,
+  const std::unordered_set< std::uint32_t > &primitive_filter
+) : property_type( ci ), resource( graph.get_resource() ) {
+  std::unordered_set< pool< std::shared_ptr< primitive > >::descriptor > known_prim;
+  for( const auto &i: l ) {
+    const auto inst = resource->inst.get( i );
+    const auto prim = resource->prim.get( inst->descriptor.prim );
+    if( primitive_filter.empty() || primitive_filter.find( prim->gltf_index ) != primitive_filter.end() ) {
+      if( inst->is_highest_lod || props.all_lods ) {
+        if( props.unique_prim_list ) {
+          if( known_prim.find( inst->descriptor.prim ) == known_prim.end() ) {
+            known_prim.insert( inst->descriptor.prim );
+            draw_list.push_back(
+              resource_pair()
+                .set_inst( i )
+                .set_prim( inst->descriptor.prim )
+            );
+          }
+        }
+        else {
+          draw_list.push_back(
+            resource_pair()
+              .set_inst( i )
+              .set_prim( inst->descriptor.prim )
+          );
+        }
+      }
+      max_primitive_count = std::max( max_primitive_count,  prim->mesh.vertex_count / 3u );
+    }
+  }
+  if( !resource->push_constant_mp ) {
+    throw -1;
+  }
+  const auto &device = get_device( *graph.get_props().allocator_set.allocator );
+#ifdef VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME
+  enable_conditional = device.get_activated_extensions().find( VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME ) != device.get_activated_extensions().end();
+#else
+  enable_conditional = false;
+#endif
+  update_device_side_list();
+}
+
+
 void instance_list::operator()(
   command_buffer_recorder_t &rec,
   const compiled_scene_graph &compiled,
@@ -206,7 +252,7 @@ void instance_list::update_device_side_list() {
         const auto inst = resource->inst.get( draw_list[ i ].inst );
         const auto prim = resource->prim.get( draw_list[ i ].prim );
         if( !prim ) throw -1;
-        const std::uint32_t tc = prim->count / ( 3u * 32u * 32u ) + (( prim->count % ( 3u * 32u * 32u ) ) ? 1u : 0u );
+        const std::uint32_t tc = prim->mesh.meshlet_count / 32u + (( prim->mesh.meshlet_count % 32u ) ? 1u : 0u );
         inst->set_mesh_task_offset( total_task_count );
         inst->set_mesh_task_count( tc );
         task_count[ draw_list[ i ].prim ] = tc;

@@ -21,12 +21,12 @@
  */
 #include <nlohmann/json.hpp>
 #include <vulkan/vulkan.hpp>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnarrowing"
-#include <fx/gltf.h>
-#pragma GCC diagnostic pop
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
+#include <gct/fx/gltf.h>
+#pragma GCC diagnostic pop
 #include <gct/exception.hpp>
 #include <gct/gltf.hpp>
 #include <gct/descriptor_pool.hpp>

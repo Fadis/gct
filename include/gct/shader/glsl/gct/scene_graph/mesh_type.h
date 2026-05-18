@@ -1,6 +1,12 @@
 #ifndef GCT_SHADER_SCENE_GRAPH_MESH_TYPE_H
 #define GCT_SHADER_SCENE_GRAPH_MESH_TYPE_H
 
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+using namespace glm;
+#endif
+
 struct mesh_type {
   uint accessor; // 最初のアクセサのオフセット
   uint vertex_count; // 頂点数
@@ -17,7 +23,7 @@ struct mesh_type {
   uint adjacency_offset;
   uint same_position_offset;
   uint compression_method;
-  uint reserved;
+  uint meshlet_count;
 };
 
 #endif

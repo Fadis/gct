@@ -11,6 +11,7 @@ import shutil
 
 possible_input_format=[
   'asis',
+  'dds:argb_8888',
   'dds:bc1',
   'dds:bc2',
   'dds:bc3',

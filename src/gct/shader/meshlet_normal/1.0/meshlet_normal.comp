@@ -28,7 +28,6 @@ void main() {
   const uint vertex_id = primitive_id * 3u;
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
-  const uint meshlet_count = mesh.vertex_count / ( gl_SubgroupSize * 3 ) + ( ( mesh.vertex_count % ( gl_SubgroupSize * 3 ) == 0 ) ? 0u : 1u );
 
   const meshlet_reader reader = init_meshlet_reader( prim.mesh, gl_WorkGroupID.y );
   const face_position f = read_face_position( reader );

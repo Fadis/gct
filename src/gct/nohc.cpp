@@ -28,7 +28,7 @@ unsigned int get_vertex_count(
   unsigned int sum = 0u;
   for( const auto &e: v ) {
     const auto prim = il.get_resource()->prim.get( e.prim );
-    sum += prim->count;
+    sum += prim->mesh.vertex_count;
   }
   return sum;
 }

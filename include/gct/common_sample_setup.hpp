@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_set>
 #include <gct/allocator_set.hpp>
 
 namespace gct {
@@ -50,6 +51,7 @@ struct common_sample_setup {
   allocator_set_t allocator_set;
   bool force_geometry = false;
   bool record = false;
+  std::unordered_set< std::uint32_t > primitive_filter;
 };
 
 }

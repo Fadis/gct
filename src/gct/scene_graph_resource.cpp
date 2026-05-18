@@ -18,12 +18,21 @@
 #include <gct/pool.hpp>
 #include <gct/scene_graph_resource.hpp>
 #include <gct/mappable_buffer.hpp>
+#include <gct/device.hpp>
+#include <gct/descriptor_pool.hpp>
+#include <gct/descriptor_set.hpp>
+#include <gct/device.hpp>
+#include <gct/get_device.hpp>
 
 namespace gct::scene_graph {
   
 scene_graph_resource::scene_graph_resource(
   const scene_graph_create_info &ci
 ) : prim( ci.prim_pool_size ), inst( ci.inst_pool_size ) {}
+
+device_t &scene_graph_resource::get_device() const {
+  return gct::get_device( *descriptor_set );
+}
 
 scene_graph_resource::operator std::vector< named_resource > () {
   std::vector< named_resource > n;

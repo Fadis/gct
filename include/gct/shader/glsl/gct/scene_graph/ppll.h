@@ -212,7 +212,7 @@ void ppll_insert(
   ppll_iter iter,
   primitive_value p,
   float depth,
-  vec2 input_id
+  vec4 input_id
 ) {
   const ivec2 gbuffer_size = imageSize( image_pool_2du[ nonuniformEXT( iter.image.gbuffer ) ] ).xy;
   const uint start = imageLoad( image_pool_2du[ nonuniformEXT( iter.image.start ) ], iter.image_pos ).r;
@@ -275,7 +275,7 @@ void ppll_insert(
     imageStore(
       image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
       ivec3( pixel_pos, gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL ) ),
-      vec4( p.normal, 1.0 )
+      vec4( p.normal, input_id.z )
     );
   }
   if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_EMISSIVE_OCCLUSION ) ) {
@@ -304,7 +304,7 @@ void ppll_insert(
     imageStore(
       image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
       ivec3( pixel_pos, gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TANGENT ) ),
-      vec4( p.tangent, 0.0 )
+      vec4( p.tangent, input_id.w )
     );
   }
   if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 ) ) {
@@ -378,6 +378,12 @@ vec3 ppll_get_normal(
   return ppll_get_component( iter, GCT_GBUFFER_NORMAL, vec4( 0, 0, 0, 0 ) ).xyz;
 }
 
+vec4 ppll_get_normal_meshlet_id(
+  ppll_iter iter
+) {
+  return ppll_get_component( iter, GCT_GBUFFER_NORMAL, vec4( 0, 0, 0, 0 ) );
+}
+
 vec4 ppll_get_eo(
   ppll_iter iter
 ) {
@@ -401,6 +407,13 @@ vec3 ppll_get_tangent(
 ) {
   return ppll_get_component( iter, GCT_GBUFFER_TANGENT, vec4( 0, 0, 0, 0 ) ).xyz;
 }
+
+vec4 ppll_get_tangent_face_id(
+  ppll_iter iter
+) {
+  return ppll_get_component( iter, GCT_GBUFFER_TANGENT, vec4( 0, 0, 0, 0 ) );
+}
+
 
 vec4 ppll_get_texcoord01(
   ppll_iter iter
@@ -431,11 +444,11 @@ gbuffer_value ppll_get(
 ) {
   const vec4 position_depth = imageLoad( image_pool_2d[ nonuniformEXT( iter.image.position ) ], ppll_get_pixel_pos( iter ) );
   const vec4 albedo = ppll_get_albedo( iter );
-  const vec3 normal = ppll_get_normal( iter );
+  const vec4 normal = ppll_get_normal_meshlet_id( iter );
   const vec4 eo = ppll_get_eo( iter );
   const vec4 mrid = ppll_get_mrid( iter );
   const vec3 optflow = ppll_get_optflow( iter );
-  const vec3 tangent = ppll_get_tangent( iter );
+  const vec4 tangent = ppll_get_tangent_face_id( iter );
   const vec4 texcoord01 = ppll_get_texcoord01( iter );
   const vec4 texcoord23 = ppll_get_texcoord23( iter );
   const vec4 color0 = ppll_get_color0( iter );
@@ -443,15 +456,15 @@ gbuffer_value ppll_get(
   gbuffer_value p;
   p.pos = position_depth.xyz;
   p.depth = position_depth.w;
-  p.normal = normal;
+  p.normal = normal.xyz;
   p.metallic = mrid.x;
   p.roughness = mrid.y;
-  p.input_id = ivec2( mrid.zw );
+  p.input_id = ivec4( mrid.zw, normal.w, tangent.w );
   p.albedo = albedo;
   p.emissive = eo.xyz;
   p.occlusion = eo.w;
   p.optflow = optflow;
-  p.tangent = tangent;
+  p.tangent = tangent.xyz;
   p.texcoord[ 0 ] = texcoord01.xy;
   p.texcoord[ 1 ] = texcoord01.zw;
   p.texcoord[ 2 ] = texcoord23.xy;
