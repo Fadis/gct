@@ -1,3 +1,5 @@
+#include <charconv>
+#include <boost/crc.hpp>
 #ifdef GCT_ENABLE_DGF
 #include <DGF.h>
 #include <DGFBaker.h>
@@ -481,9 +483,7 @@ void store_mesh_on_cpu(
     prim_object.attributes.clear();
     for( auto &[attr_id,attr]: primitive.attribute ) {
       if( !attr.reuse ) {
-        std::cout << nlohmann::json( attr_id ) << " " << pos << " " << bin.size() << std::endl;
         insert_padding( bin, pos, get_block_size( attr ) );
-        std::cout << nlohmann::json( attr_id ) << " " << pos << " " << bin.size() << std::endl;
         {
           fx::gltf::BufferView v;
           v.buffer = 0u;
@@ -828,7 +828,8 @@ face_attribute meshlet_reader::operator()(
 }
 
 void convert_to_dgf(
-  loaded_vertex_buffer &buffer
+  loaded_vertex_buffer &buffer,
+  std::uint32_t bit_width
 ) {
   if( buffer.attribute.find( vertex_attribute_id::position ) != buffer.attribute.end() ) {
     if( buffer.attribute.at( vertex_attribute_id::position ).type == scene_graph::accessor_type_id::dgf ) return;
@@ -836,7 +837,7 @@ void convert_to_dgf(
     DGFBaker::Config config = {};
     config.blockMaxTris = 32u;
     config.blockMaxVerts = 96u;
-    config.targetBitWidth = 12;
+    config.targetBitWidth = bit_width;
     config.generateTriangleRemap = true;
     config.enableUserData = true;
     DGFBaker::Baker baker( config );
@@ -915,6 +916,13 @@ void convert_to_dgf(
         }
       }
     }
+
+   if( buffer.attribute[ vertex_attribute_id::position ].reuse && !buffer.attribute[ vertex_attribute_id::index ].reuse ) {
+     buffer.attribute[ vertex_attribute_id::position ].reuse = std::nullopt;
+   }
+   if( !buffer.attribute[ vertex_attribute_id::position ].reuse && buffer.attribute[ vertex_attribute_id::index ].reuse ) {
+     buffer.attribute[ vertex_attribute_id::index ].reuse = std::nullopt;
+   }
 
     buffer.attribute[ vertex_attribute_id::position ].type = scene_graph::accessor_type_id::dgf;
     buffer.attribute[ vertex_attribute_id::position ].component_count = 1u;
@@ -1270,11 +1278,98 @@ void generate_minmax(
   }
 }
 
+void drop_reuse(
+  loaded_vertex_buffer &buffer
+) {
+  for( auto &[key,attr]: buffer.attribute ) {
+    attr.reuse = std::nullopt;
+  }
+}
+
+void meshlet_statistics(
+  const loaded_mesh &mesh
+) {
+  std::uint32_t min = 0u;
+  std::uint32_t max = 0;
+  float average = 0.0f;
+  bool initial =true;
+  std::uint32_t meshlet_count = 0u;
+  for( auto &[key,buffer]: mesh ) {
+    for( std::uint32_t m = 0u; m != buffer.meshlet_count; ++m ) {
+      gct::gltf::meshlet_reader reader( buffer, m );
+      if( initial ) {
+        min = reader.get_face_count();
+        max = reader.get_face_count();
+        average = reader.get_face_count();
+        meshlet_count = 1u;
+        initial = false;
+      }
+      else {
+        min = std::min( min, reader.get_face_count() );
+        max = std::max( max, reader.get_face_count() );
+        average = ( average * meshlet_count + reader.get_face_count() )/( meshlet_count + 1u );
+        meshlet_count += 1u;
+      }
+    }
+  }
+  std::cout << "メッシュレット統計" << std::endl;
+  std::cout << "  最小 : " << min << std::endl;
+  std::cout << "  最大 : " << max << std::endl;
+  std::cout << "  平均 : " << average << std::endl;
+  std::cout << "  メッシュレットの数 : " << meshlet_count << std::endl;
+}
+
+void dedup(
+  loaded_mesh &mesh
+) {
+  std::unordered_multimap< std::uint32_t, accessor_link > crcs;
+  for( auto &[key,buffer]: mesh ) {
+    for( auto &[attr_id,attr]: buffer.attribute ) {
+      if( !attr.reuse ) {
+        auto self = accessor_link()
+          .set_mesh_id( key.mesh_id )
+          .set_primitive_id( key.primitive_id )
+          .set_attr_id( attr_id );
+        boost::crc_32_type crc;
+        crc.process_bytes( attr.data.data(), attr.data.size() );
+        std::uint32_t crc_value = crc.checksum();
+        const auto [cand_begin,cand_end] = crcs.equal_range( crc_value );
+        bool reused = false;
+        for( auto cur = cand_begin; cur != cand_end; ++cur ) {
+          auto &cand_data = mesh.at( primitive_key().set_mesh_id( cur->second.mesh_id ).set_primitive_id( cur->second.primitive_id ) ).attribute.at( cur->second.attr_id ).data;
+          if( std::equal( attr.data.begin(), attr.data.end(), cand_data.begin(), cand_data.end() ) ) {
+            attr.reuse = cur->second;
+            reused = true;
+            std::cout << "reuse " << cur->second.mesh_id << "." << cur->second.primitive_id << "." << nlohmann::json( cur->second.attr_id ) << " = " <<  key.mesh_id << "." << key.primitive_id << "." << nlohmann::json( attr_id ) << std::endl;
+            break;
+          }
+        }
+        if( !reused ) {
+          crcs.insert(
+            std::make_pair(
+               crc_value,
+               accessor_link()
+                 .set_mesh_id( key.mesh_id )
+                 .set_primitive_id( key.primitive_id )
+                 .set_attr_id( attr_id )
+            )
+          );
+        }
+      }
+    }
+  }
+}
+
 void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command ) {
   for( auto &[key,vb]: mesh ) {
     for( const auto &c: command ) {
-      if( c == "dgf" ) {
-        gct::gltf::convert_to_dgf( vb );
+      if( c.substr( 0, 4 ) == "dgf:" ) {
+        const auto level_str = c.substr( 4 );
+        std::uint32_t level = 0u;
+        if( std::from_chars( level_str.data(), level_str.data() + level_str.size(), level ).ptr == level_str.data() + level_str.size() ) {
+          gct::gltf::convert_to_dgf( vb, level );
+          continue;
+        }
       }
       if( c == "undgf" ) {
         gct::gltf::convert_from_dgf( vb );
@@ -1303,8 +1398,19 @@ void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command 
       else if( c == "generate_tangent" ) {
         gct::gltf::generate_tangent( vb );
       }
+      else if( c == "drop_reuse" ) {
+        gct::gltf::drop_reuse( vb );
+      }
     }
     gct::gltf::generate_minmax( vb );
+  }
+  for( const auto &c: command ) {
+    if( c == "meshlet_statistics" ) {
+      meshlet_statistics( mesh );
+    }
+    else if( c == "dedup" ) {
+      dedup( mesh );
+    }
   }
 }
 

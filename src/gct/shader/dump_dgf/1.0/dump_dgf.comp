@@ -28,7 +28,7 @@
 #include <gct/global_uniforms.h>
 
 layout (std430, binding = 25) buffer Dest {
-  uint data[];
+  float data[];
 } dest;
 
 layout(push_constant) uniform PushConstants {
@@ -43,23 +43,38 @@ void main() {
   // 描画対象のID
   const resource_pair_type id = resource_pair[ push_constants.offset ];
   // メッシュの情報を取得する
-  const primitive_resource_index_type prim = primitive_resource_index[ /*id.prim*/61 ];
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
 
   // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
-  const uint meshlet_id = push_constants.meshlet_id;
+  const uint meshlet_id = gl_WorkGroupID.x;
   
   // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
+  const mesh_type mesh = mesh_pool[ prim.mesh ];
+  const accessor_type a = accessor_pool[ mesh.accessor + 1 ];
   const meshlet_reader reader = init_meshlet_reader( prim.mesh, meshlet_id );
   const face_attribute f = read_face_attribute( reader );
   const uint face_id = gl_SubgroupInvocationID;
 
   if( f.valid ) {
-    dest.data[ gl_SubgroupInvocationID * 3u + 0u ] = f.vertex[ 0 ].index;
-    dest.data[ gl_SubgroupInvocationID * 3u + 1u ] = f.vertex[ 1 ].index;
-    dest.data[ gl_SubgroupInvocationID * 3u + 2u ] = f.vertex[ 2 ].index;
+    for( uint i = 0u; i != 3u; i++ ) {
+      for( uint j = 0u; j != 3u; j++ ) {
+        //if( f.vertex[ i ].index * 3u + j < 100*3u ) {
+          dest.data[ f.vertex[ i ].index * 3u + j ] = f.vertex[ i ].position[ j ];
+        //}
+      }
+    }
   }
-  
-
+  /*dest.data[ 0 ] = 12345.0;
+  dest.data[ 1 ] = 2.0;
+  dest.data[ 2 ] = 3.0;
+  dest.data[ 3 ] = 4.0;
+  dest.data[ 4 ] = 5.0;
+  dest.data[ 5 ] = 6.0;
+  dest.data[ 6 ] = 7.0;
+  dest.data[ 7 ] = 8.0;
+  dest.data[ 8 ] = 9.0;
+  dest.data[ 9 ] = 10.0;
+*/
   /*for( uint i = 0u; i != 8u; ++i ) {
     dest.data[ gl_SubgroupInvocationID * 8u + i ] = vertex_buffer_u32[ 0 ].data[ gl_SubgroupInvocationID * 8u + i ];
   }*/

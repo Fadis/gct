@@ -148,7 +148,8 @@ struct vertex_attribute_diff {
 };
 
 void convert_to_dgf(
-  loaded_vertex_buffer &buffer
+  loaded_vertex_buffer &buffer,
+  std::uint32_t
 );
 
 void convert_from_dgf(
@@ -192,6 +193,14 @@ void generate_tangent(
 
 void generate_minmax(
   loaded_vertex_buffer &buffer
+);
+
+void meshlet_statistics(
+  const loaded_mesh &mesh
+);
+
+void dedup(
+  const loaded_mesh &mesh
 );
 
 void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command );

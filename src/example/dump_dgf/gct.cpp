@@ -115,17 +115,12 @@ int main( int argc, const char *argv[] ) {
       .set_aspect_ratio( float( res.width )/float( res.height ) )
   );
 
-  std::shared_ptr< gct::mappable_buffer_t > dest =
-    res.allocator->create_mappable_buffer(
-      32u * 3u * sizeof( float ),
-      vk::BufferUsageFlagBits::eStorageBuffer
-    );
-
   const auto il = std::make_shared< gct::scene_graph::instance_list >(
     gct::scene_graph::instance_list_create_info()
       .set_parallel_mode3( true ),
     *sg,
-    doc.get_descriptor()
+    doc.get_descriptor(),
+    res.primitive_filter
   );
 
   auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -136,6 +131,20 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->execute_and_wait();
   }
+
+  const auto rp = il->get_draw_list();
+  if( rp.empty() ) return 0;
+
+  const auto prim = sg->get_resource()->prim.get( rp[ 0 ].prim );
+
+  const auto unique_vertex_count = prim->mesh.unique_vertex_count;
+  const auto meshlet_count = prim->mesh.meshlet_count;
+
+  std::shared_ptr< gct::mappable_buffer_t > dest =
+    res.allocator->create_mappable_buffer(
+       unique_vertex_count * 3u * sizeof( float ),
+      vk::BufferUsageFlagBits::eStorageBuffer
+    );
   
   auto dump_dgf = gct::compute(
     gct::compute_create_info()
@@ -146,6 +155,8 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "dest", dest } )
   );
   std::cout << "offset : " << il->get_shape().offset << std::endl;
+  std::cout << "unique vertex count : " << unique_vertex_count << std::endl;
+  std::cout << "meshlet count : " << meshlet_count << std::endl;
   dump_dgf.set_push_constant( "offset", il->get_shape().offset );
   dump_dgf.set_push_constant( "meshlet_id", 0u );
 
@@ -154,19 +165,23 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       il->setup_resource_pair_buffer( recorder );
-      dump_dgf( recorder, 0u, 32u, 1u, 1u );
+      dump_dgf( recorder, 0u, meshlet_count *32u, 1u, 1u );
+      recorder.barrier(
+        gct::syncable()
+          .add( dest )
+      );
       recorder.sync_to_host( dest );
     }
     command_buffer->execute_and_wait();
   }
   
-  std::vector< std::uint32_t > result;
+  std::vector< float > result;
   {
-    auto mapped = dest->map< std::uint32_t >();
+    auto mapped = dest->map< float >();
     std::copy( mapped.begin(), mapped.end(), std::back_inserter( result ) );
   }
-  for( unsigned int i = 0u; i != result.size(); ++i ) {
-    std::cout << result[ i ] << std::endl;
+  for( unsigned int i = 0u; i != result.size(); i += 3 ) {
+    std::cout << result[ i ] << ", " << result[ i + 1 ] << ", " << result[ i + 2 ] << std::endl;
   }
 
 }

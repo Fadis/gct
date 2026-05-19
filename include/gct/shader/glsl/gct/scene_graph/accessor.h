@@ -260,6 +260,8 @@ meshlet_reader init_meshlet_reader( uint mesh_id, uint meshlet_id, bool wave_mod
   const mesh_type mesh = mesh_pool[ mesh_id ];
   const uint max_face_count = gl_SubgroupSize;
   meshlet_reader reader;
+  reader.valid = false;
+  if( meshlet_id >= mesh.meshlet_count ) return reader;
   reader.mesh_id = mesh_id;
   reader.meshlet_id = meshlet_id;
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
@@ -330,12 +332,12 @@ face_attribute read_face_attribute( meshlet_reader reader, uint face_id ) {
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
     if( reader.dgf_info.header.numTriangles <= face_id ) return null_face_attr;
     uvec3 index;
-    /*if( reader.wave_mode ) {
-      index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
-    }
-    else {*/
+    //if( reader.wave_mode ) {
+    //  index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
+    //}
+    //else {
       index = DGFGetTriangle_BitScan_Lane( reader.dgf_info, face_id );
-    /*}*/
+    //}
     for( uint i = 0u; i != 3u; ++i ) {
       f.vertex[ i ].position = vec4( DGFGetVertex( reader.dgf_info, index[ i ] ), 1.0f );
     }

@@ -118,7 +118,7 @@ void main() {
         ( ( sbv0.z < 0.0 ) ? ( sbv0.z + radius >= -1.0 ) : ( sbv0.z - radius <= 1.0 ) );
 
       // 視錐台カリングの結果と背面カリングの結果の両方で見えると判断された場合見える事にする
-      const bool visible = has_meshlet;// ( has_meshlet && inside_of_frustum && ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) ) );
+      const bool visible = /*has_meshlet;*/ ( has_meshlet && inside_of_frustum /*&& ( prim.cull == 0 || ( dot( normalize( ( l2w * vec4( meshlet.normal.xyz, 1.0 ) ).xyz ), normalize( global_uniforms.eye_pos.xyz - meshlet.center.xyz ) ) >= meshlet.normal.w ) )*/ );
       // 各スレッドがメッシュレットが見えると判断したかどうかを集める    
       const uvec4 visible_bits = subgroupBallot( visible );
       // このスレッドよりスレッドIDが小さいスレッドの中でメッシュレットが見えると判断したスレッドの数
