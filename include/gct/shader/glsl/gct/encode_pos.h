@@ -1,6 +1,12 @@
 #ifndef GCT_SHADER_ENCODE_POS_H
 #define GCT_SHADER_ENCODE_POS_H
 
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+using namespace glm;
+#endif
+
 ivec3 decode_pos_3d( uint v ) {
   return ivec3(
     ( v >> 20 ) & 0x3FF,

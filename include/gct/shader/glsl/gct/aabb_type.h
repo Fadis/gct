@@ -1,6 +1,14 @@
 #ifndef GCT_SHADER_AABB_TYPE_H
 #define GCT_SHADER_AABB_TYPE_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+using namespace glm;
+using uint = std::uint32_t;
+#endif
+
 struct aabb_type {
   vec4 min;
   vec4 max;

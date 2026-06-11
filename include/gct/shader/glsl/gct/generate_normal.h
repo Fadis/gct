@@ -2,7 +2,6 @@
 #define GCT_SHADER_GENERATE_NORMAL_H
 
 #ifdef __cplusplus
-#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/geometric.hpp>
 using namespace glm;

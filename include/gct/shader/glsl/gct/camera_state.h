@@ -1,6 +1,13 @@
 #ifndef GCT_SHADER_CAMERA_STATE_H
 #define GCT_SHADER_CAMERA_STATE_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#include <glm/vec4.hpp>
+using namespace glm;
+using uint = std::uint32_t;
+#endif
+
 struct auto_focus_state {
   uint history;
   uint max_history;

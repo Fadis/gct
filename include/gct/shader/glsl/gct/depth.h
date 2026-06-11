@@ -1,6 +1,13 @@
 #ifndef GCT_SHADER_DEPTH_H
 #define GCT_SHADER_DEPTH_H
 
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+using namespace glm;
+#endif
+
 float decode_depth(float d,float zNear,float zFar)
 {
   return zNear * zFar / (zFar + d * (zNear - zFar));

@@ -1,6 +1,13 @@
 #ifndef GCT_SHADER_GBUFFER_FORMAT_H
 #define GCT_SHADER_GBUFFER_FORMAT_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#include <gct/glsl_bit.hpp>
+using uint = std::uint32_t;
+using namespace gct;
+#endif
+
 #define GCT_GBUFFER_POSITION_DEPTH ( 1u << 0 )
 #define GCT_GBUFFER_ALBEDO_ALPHA   ( 1u << 1 )
 #define GCT_GBUFFER_NORMAL   ( 1u << 2 )

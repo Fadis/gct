@@ -1,6 +1,11 @@
 #ifndef GCT_SHADER_COLOR_SPACE_H
 #define GCT_SHADER_COLOR_SPACE_H
 
+#ifdef __cplusplus
+#include <cstdint>
+using uint = std::uint32_t;
+#endif
+
 #define GCT_SHADER_COLOR_SPACE_UNKNOWN 0
 #define GCT_SHADER_COLOR_SPACE_CIE_XYZ 1
 #define GCT_SHADER_COLOR_SPACE_NTSC 2

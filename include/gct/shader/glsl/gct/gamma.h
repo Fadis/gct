@@ -1,6 +1,11 @@
 #ifndef GCT_SHADER_GAMMA_H
 #define GCT_SHADER_GAMMA_H
 
+#ifdef __cplusplus
+#include <glm/mat3x3.hpp>
+using namespace glm;
+#endif
+
 const mat3 xyz_to_bt709 = mat3(
   3.2408357,  -0.9692294, 0.0556449,
   -1.5373195, 1.8759400,  -0.2040314,
@@ -8,7 +13,7 @@ const mat3 xyz_to_bt709 = mat3(
 );
 
 vec3 gamma( vec3 v ) {
-  return min( max( v / (v + 0.155 ) * 1.019, vec3( 0, 0, 0 ) ), vec3( 1, 1, 1 ) );
+  return min( max( v / (v + vec3( 0.155, 0.155, 0.155 ) ) * vec3( 1.019, 1.019, 1.019 ), vec3( 0, 0, 0 ) ), vec3( 1, 1, 1 ) );
 }
 
 #endif

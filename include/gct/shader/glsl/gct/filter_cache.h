@@ -1,6 +1,14 @@
 #ifndef GCT_FILTER_CACHE
 #define GCT_FILTER_CACHE
 
+#ifdef __cplusplus
+#include <algorithm>
+#include <glm/vec4.hpp>
+#include <glm/vec2.hpp>
+using namespace std;
+using namespace glm;
+#endif
+
 ivec4 horizontal_filter_cache_pos(
   ivec2 screen_pos,
   ivec2 image_size,

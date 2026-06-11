@@ -1,38 +1,33 @@
 #ifndef GCT_SHADER_COLOR_H
 #define GCT_SHADER_COLOR_H
-/*
-vec3 distinguishable_color_palette[ 8 ] = vec3[8](
-vec3(0.4876017 , 0.23227803, 0.8869847 ),
-vec3(0.76119182, 0.74122304, 1.0),
-vec3(0.73004231, 0.8094791 , 1.0),
-vec3(0.6820066 , 0.77989407, 0.11461076),
-vec3(0.83866277, 0.92561889, 0.64617487),
-vec3(0.40123724, 0.55730215, 0.88969337),
-vec3(0.5791739 , 0.49337188, 0.33342828),
-vec3(0.40949384, 0.43085104, 0.46911341)
+
+#ifdef __cplusplus
+#include <glm/vec3.hpp>
+using namespace glm;
+#endif
+
+vec3 distinguishable_color_palette[ 8 ] =
+#ifdef __cplusplus
+{
+#else
+vec3[8](
+#endif
+vec3(0.240, 0.110, 0.625),
+vec3(0.153, 0.257, 0.204),
+vec3(0.349, 0.405, 0.831),
+vec3(0.450, 0.416, 0.057),
+vec3(0.647, 0.744, 0.161),
+vec3(0.141, 0.152, 0.443),
+vec3(0.329, 0.176, 0.022),
+vec3(0.020, 0.021, 0.023)
+#ifdef __cplusplus
+};
+#else
 );
-*/
-vec3 distinguishable_color_palette[ 16 ] = vec3[16](
-vec3( 0.2, 0, 0 ),
-vec3( 0.4, 0, 0 ),
-vec3( 0.6, 0, 0 ),
-vec3( 0, 0.2, 0 ),
-vec3( 0, 0.4, 0 ),
-vec3( 0, 0.6, 0 ),
-vec3( 0, 0, 0.2 ),
-vec3( 0, 0, 0.4 ),
-vec3( 0, 0, 0.6 ),
-vec3( 0.2, 0.2, 0 ),
-vec3( 0.4, 0.4, 0 ),
-vec3( 0.6, 0.6, 0 ),
-vec3( 0, 0.2, 0.2 ),
-vec3( 0, 0.4, 0.4 ),
-vec3( 0, 0.6, 0.6 ),
-vec3( 0.2, 0, 0.2 )
-);
+#endif
 
 vec3 distinguishable_color( uint index ) {
-  return distinguishable_color_palette[ index & 0xF ];
+  return distinguishable_color_palette[ index & 0x7 ];
 }
 
 #endif

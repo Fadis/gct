@@ -2,7 +2,12 @@
 #define GCT_SHADER_GAUSS_H
 
 int gauss5_16_size = 33;
-float gauss5_16[33] =float[](
+float gauss5_16[33] =
+#ifdef __cplusplus
+{
+#else
+float[](
+#endif
   0.00047727012762788825,
   0.0008872108237830642,
   0.0015845926274539839,
@@ -36,10 +41,19 @@ float gauss5_16[33] =float[](
   0.0015845926274539839,
   0.0008872108237830642,
   0.00047727012762788825
+#ifdef __cplusplus
+};
+#else
 );
+#endif
 
 int gauss12_32_size = 65;
-float gauss12_32[65] = float[](
+float gauss12_32[65] =
+#ifdef __cplusplus
+{
+#else
+float[](
+#endif
   0.000956115699134062,
   0.0011899052129231784,
   0.0014706128321010032,
@@ -105,12 +119,25 @@ float gauss12_32[65] = float[](
   0.0014706128321010032,
   0.0011899052129231784,
   0.000956115699134062
+#ifdef __cplusplus
+};
+#else
 );
+#endif
 
 int adaptive_gauss8_16_size = 33;
-float adaptive_gauss8_16[33*58] = float[](
+float adaptive_gauss8_16[33*58] =
+#ifdef __cplusplus
+{
+#else
+float[](
+#endif
 #include "adaptive_gauss8_16.inc"
+#ifdef __cplusplus
+};
+#else
 );
+#endif
 
 #endif
 

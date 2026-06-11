@@ -1,7 +1,18 @@
 #ifndef GCT_SHADER_RANDOM_H
 #define GCT_SHADER_RANDOM_H
 
-vec2 blue_noise512[] = vec2[](
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+using namespace glm;
+#else
+#endif
+
+vec2 blue_noise512[] =
+#ifdef __cplusplus
+{
+#else
+vec2[](
+#endif
   vec2( 0.12269, 0.174132 ),
   vec2( 0.329898, 0.0135964 ),
   vec2( 0.603371, 0.295006 ),
@@ -514,7 +525,11 @@ vec2 blue_noise512[] = vec2[](
   vec2( 0.318027, 0.347617 ),
   vec2( 0.0616636, 0.265079 ),
   vec2( 0.0996416, 0.851777 )
+#ifdef __cplusplus
+};
+#else
 );
+#endif
 
 #endif
 
