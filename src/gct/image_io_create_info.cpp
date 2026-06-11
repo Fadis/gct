@@ -349,7 +349,7 @@ void image_io_create_info::update_rendering_info(
               .setLoadOp( is_inout ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear )
               .setStoreOp( vk::AttachmentStoreOp::eStore )
               .setClearValue(
-                vk::ClearColorValue( 1.f, 0.f, 0.f, 0.f )
+                vk::ClearColorValue( 0.f, 1.f, 0.f, 0.f )
               )
           )
       );

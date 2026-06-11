@@ -165,7 +165,7 @@ namespace gct::gltf {
       vertex_count = std::min( vertex_count, accessor.count );
     }
     if( position_type_id != scene_graph::accessor_type_id::dgf ) {
-      meshlet_count = vertex_count;
+      meshlet_count = vertex_count / 32u + ( ( vertex_count % 32u ) ? 1u : 0u );
     }
     return std::make_tuple( position_type_id, meshlet_count, vertex_count );
   }

@@ -199,8 +199,20 @@ void meshlet_statistics(
   const loaded_mesh &mesh
 );
 
+void mesh_statistics(
+  const loaded_mesh &mesh
+);
+
+void dump_vertex(
+  const loaded_mesh &mesh
+);
+
 void dedup(
   const loaded_mesh &mesh
+);
+
+void dump_attribute_size(
+  loaded_mesh &mesh
 );
 
 void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command );

@@ -250,9 +250,9 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::graphics >(
         gct::graphics_create_info()
           .set_swapchain_image_count( 1u )
-          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.task.spv" )
-          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.mesh.spv" )
-          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "standard" / "geometry.frag.spv" )
+          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "meshlet_id" / "geometry.task.spv" )
+          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "meshlet_id" / "geometry.mesh.spv" )
+          .add_shader( gct::get_system_shader_path() / "forward_rendering" / "meshlet_id" / "geometry.frag.spv" )
           .use_dynamic_rendering(
             vk::Format::eR16G16B16A16Sfloat,
             vk::Format::eD32Sfloat,

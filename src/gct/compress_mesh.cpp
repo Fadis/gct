@@ -1319,6 +1319,122 @@ void meshlet_statistics(
   std::cout << "  メッシュレットの数 : " << meshlet_count << std::endl;
 }
 
+void mesh_statistics(
+  const loaded_mesh &mesh
+) {
+  std::uint32_t vertex_count = 0u;
+  std::uint32_t unique_vertex_count = 0;
+  std::uint32_t meshlet_count = 0u;
+  for( auto &[key,buffer]: mesh ) {
+    vertex_count += buffer.vertex_count;
+    unique_vertex_count += buffer.unique_vertex_count;
+  }
+  std::cout << "メッシュ統計" << std::endl;
+  std::cout << "  頂点数 : " << vertex_count << std::endl;
+  std::cout << "  ユニーク頂点数 : " << unique_vertex_count << std::endl;
+}
+
+void dump_vertex(
+  const loaded_mesh &mesh
+) {
+  for( auto &[key,vb] : mesh ) {
+    std::cout << "primitive " << key.mesh_id << " " << key.primitive_id << std::endl;
+    std::cout << "  vertex_count=" << vb.vertex_count <<
+                  " unique_vertex_count=" << vb.unique_vertex_count <<
+                  " meshlet_count=" << vb.meshlet_count <<
+                  std::endl;
+    for( const auto &[attr_id,attr]: vb.attribute ) {
+      std::cout << "  " << nlohmann::json( attr_id ) << " min=(" <<
+        attr.min[ 0 ] << "," << attr.min[ 1 ] << "," << attr.min[ 2 ] << "," << attr.min[ 3 ] << ") max=(" <<
+        attr.max[ 0 ] << "," << attr.max[ 1 ] << "," << attr.max[ 2 ] << "," << attr.max[ 3 ] << ") size=" <<
+        attr.data.size() <<
+        std::endl;
+    }
+    for( std::uint32_t m = 0u; m != vb.meshlet_count; ++m ) {
+      gct::gltf::meshlet_reader reader( vb, m );
+      std::cout << "  meshlet " << m << " face_count=" << reader.get_face_count() << std::endl;
+      for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
+        const auto f = reader( i );
+        if( f.valid ) {
+          std::cout << "    face " << i << std::endl;
+          for( std::uint32_t j = 0u; j != f.vertex.size(); ++j ) {
+            std::cout << "      ";
+            if( vb.attribute.find( gct::vertex_attribute_id::position ) != vb.attribute.end() ) {
+              std::cout << "p(" <<
+                           f.vertex[ j ].position.x << "," <<
+                           f.vertex[ j ].position.y << "," <<
+                           f.vertex[ j ].position.z << ")";
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::normal ) != vb.attribute.end() ) {
+              std::cout << "n(" <<
+                           f.vertex[ j ].normal.x << "," <<
+                           f.vertex[ j ].normal.y << "," <<
+                           f.vertex[ j ].normal.z << ")";
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::tangent ) != vb.attribute.end() ) {
+              std::cout << "t(" <<
+                           f.vertex[ j ].tangent.x << "," <<
+                           f.vertex[ j ].tangent.y << "," <<
+                           f.vertex[ j ].tangent.z << "," <<
+                           f.vertex[ j ].tangent.w << ")";
+            }
+            else if(
+              vb.attribute.find( gct::vertex_attribute_id::normal ) != vb.attribute.end() &&
+              vb.attribute.at( gct::vertex_attribute_id::normal ).type == gct::scene_graph::accessor_type_id::n21t11
+            ) {
+              std::cout << "t(" <<
+                           f.vertex[ j ].tangent.x << "," <<
+                           f.vertex[ j ].tangent.y << "," <<
+                           f.vertex[ j ].tangent.z << "," <<
+                           f.vertex[ j ].tangent.w << ")";
+            }
+            else if(
+              vb.attribute.find( gct::vertex_attribute_id::normal ) != vb.attribute.end() &&
+              vb.attribute.at( gct::vertex_attribute_id::normal ).type == gct::scene_graph::accessor_type_id::n20t11b1
+            ) {
+              std::cout << "t(" <<
+                           f.vertex[ j ].tangent.x << "," <<
+                           f.vertex[ j ].tangent.y << "," <<
+                           f.vertex[ j ].tangent.z << "," <<
+                           f.vertex[ j ].tangent.w << ")";
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::texcoord_0 ) != vb.attribute.end() ) {
+              std::cout << "u(" <<
+                           f.vertex[ j ].tex_coord0.x << "," <<
+                           f.vertex[ j ].tex_coord0.y << ")" <<
+                           std::endl;
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::color_0 ) != vb.attribute.end() ) {
+              std::cout << "c(" <<
+                           f.vertex[ j ].color0.x << "," <<
+                           f.vertex[ j ].color0.y << "," <<
+                           f.vertex[ j ].color0.z << "," <<
+                           f.vertex[ j ].color0.w << ")" <<
+                           std::endl;
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::joint_0 ) != vb.attribute.end() ) {
+              std::cout << "j(" <<
+                           f.vertex[ j ].joint0.x << "," <<
+                           f.vertex[ j ].joint0.y << "," <<
+                           f.vertex[ j ].joint0.z << "," <<
+                           f.vertex[ j ].joint0.w << ")" <<
+                           std::endl;
+            }
+            if( vb.attribute.find( gct::vertex_attribute_id::weight_0 ) != vb.attribute.end() ) {
+              std::cout << "j(" <<
+                           f.vertex[ j ].weight0.x << "," <<
+                           f.vertex[ j ].weight0.y << "," <<
+                           f.vertex[ j ].weight0.z << "," <<
+                           f.vertex[ j ].weight0.w << ")" <<
+                           std::endl;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 void dedup(
   loaded_mesh &mesh
 ) {
@@ -1357,6 +1473,28 @@ void dedup(
         }
       }
     }
+  }
+}
+
+void dump_attribute_size(
+  loaded_mesh &mesh
+) {
+  std::unordered_map< vertex_attribute_id, std::size_t > bytes;
+  for( auto &[key,buffer]: mesh ) {
+    for( auto &[attr_id,attr]: buffer.attribute ) {
+      if( !attr.reuse ) {
+        if( bytes.find( attr_id ) != bytes.end() ) {
+          bytes[ attr_id ] += attr.data.size();
+        }
+        else {
+          bytes[ attr_id ] = attr.data.size();
+        }
+      }
+    }
+  }
+  std::cout << "属性毎のサイズ" << std::endl;
+  for( auto &[key,value]: bytes ) {
+    std::cout << "  " << nlohmann::json( key ) << " : " << value << std::endl;
   }
 }
 
@@ -1408,8 +1546,17 @@ void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command 
     if( c == "meshlet_statistics" ) {
       meshlet_statistics( mesh );
     }
+    else if( c == "mesh_statistics" ) {
+      mesh_statistics( mesh );
+    }
+    else if( c == "dump_vertex" ) {
+      dump_vertex( mesh );
+    }
     else if( c == "dedup" ) {
       dedup( mesh );
+    }
+    else if( c == "dump_attribute_size" ) {
+      dump_attribute_size( mesh );
     }
   }
 }

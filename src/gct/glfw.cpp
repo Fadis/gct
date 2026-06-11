@@ -271,6 +271,10 @@ namespace gct {
       camera_angle_v = std::min( camera_angle_v + 0.02 * M_PI/2, M_PI/2 * 0.95 );
       camera_pos_changed = true;
     }
+    if( pressed_keys.find( GLFW_KEY_V ) != pressed_keys.end() ) {
+      camera_pos[ 1 ] += speed * 0.02;
+      camera_pos_changed = true;
+    }
     if( pressed_keys.find( GLFW_KEY_X ) != pressed_keys.end() ) {
       camera_angle_v = 0.0;
       camera_pos_changed = true;
