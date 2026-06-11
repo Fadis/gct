@@ -10,7 +10,6 @@ target_link_libraries(
   gct_input
   Threads::Threads
   Boost::program_options
-  Boost::system
 )
 
 add_executable( libinput_keysym
@@ -23,7 +22,6 @@ target_link_libraries(
   gct_input
   Threads::Threads
   Boost::program_options
-  Boost::system
 )
 
 endif()

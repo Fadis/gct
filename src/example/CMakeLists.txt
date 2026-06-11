@@ -143,7 +143,9 @@ subdirs(
   multi_rigid
   dump_texture
   meshlet_id
+  forward_meshlet_id
   face_id
+  forward_face_id
   dump_dgf
 )
 if( DXC_FOUND )

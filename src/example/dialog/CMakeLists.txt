@@ -7,7 +7,6 @@ target_link_libraries(
   gct
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
 )
@@ -21,7 +20,6 @@ target_link_libraries(
   gct
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
 )

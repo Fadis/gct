@@ -1,7 +1,6 @@
 add_executable( glsl_include glsl_include.cpp )
 target_link_libraries( glsl_include
   Boost::program_options
-  Boost::system
 )
 
 add_executable(
@@ -11,11 +10,9 @@ add_executable(
 )
 target_link_libraries( ttf_to_gltf
   Boost::program_options
-  Boost::system
 )
 target_link_libraries( ttf_to_gltf
   Boost::program_options
-  Boost::system
 )
 
 add_library( gct SHARED
@@ -396,7 +393,6 @@ target_link_libraries(
   gct
   Threads::Threads
   Boost::context
-  Boost::system
   KTX::ktx
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
@@ -425,7 +421,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${CMAKE_DL_LIBS}
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
@@ -543,6 +538,7 @@ endif()
 add_executable( gen_cube_mat gen_cube_mat.cpp )
 target_link_libraries( gen_cube_mat
   gct
+  Boost::program_options
   ${Boost_PROGRAM_OPTIONS_LIBRARIES}
 )
 
@@ -553,7 +549,6 @@ target_link_libraries( dump_spirv
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( dump_gpuinfo dump_gpuinfo.cpp )
@@ -563,7 +558,6 @@ target_link_libraries( dump_gpuinfo
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( list_vertex list_vertex.cpp )
@@ -573,7 +567,6 @@ target_link_libraries( list_vertex
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( list_vertex2 list_vertex2.cpp )
@@ -583,7 +576,6 @@ target_link_libraries( list_vertex2
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( meshconv meshconv.cpp )
@@ -593,7 +585,6 @@ target_link_libraries( meshconv
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_dgf_cross test_dgf_cross.cpp )
@@ -603,7 +594,6 @@ target_link_libraries( test_dgf_cross
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( list_triangle list_triangle.cpp )
@@ -613,7 +603,6 @@ target_link_libraries( list_triangle
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n21t11 test_n21t11.cpp )
@@ -623,7 +612,6 @@ target_link_libraries( test_n21t11
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n21t11_glsl test_n21t11_glsl.cpp )
@@ -633,7 +621,6 @@ target_link_libraries( test_n21t11_glsl
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n21t11_cross test_n21t11_cross.cpp )
@@ -643,7 +630,6 @@ target_link_libraries( test_n21t11_cross
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n20t11b1 test_n20t11b1.cpp )
@@ -653,7 +639,6 @@ target_link_libraries( test_n20t11b1
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n20t11b1_glsl test_n20t11b1_glsl.cpp )
@@ -663,7 +648,6 @@ target_link_libraries( test_n20t11b1_glsl
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n20t11b1_cross test_n20t11b1_cross.cpp )
@@ -673,7 +657,6 @@ target_link_libraries( test_n20t11b1_cross
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n31 test_n31.cpp )
@@ -683,7 +666,6 @@ target_link_libraries( test_n31
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n31_glsl test_n31_glsl.cpp )
@@ -693,7 +675,6 @@ target_link_libraries( test_n31_glsl
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( test_n31_cross test_n31_cross.cpp )
@@ -703,7 +684,6 @@ target_link_libraries( test_n31_cross
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 if( DGFSDK_FOUND )
@@ -714,7 +694,6 @@ target_link_libraries( gen_dgf
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
   ${DGFSDK_LIBRARIES}
 )
 
@@ -725,7 +704,6 @@ target_link_libraries( test_dgf
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 
@@ -738,7 +716,6 @@ add_executable( test_quaternion test_quaternion.cpp )
 #  Threads::Threads
 #  Boost::program_options
 #  Boost::context
-#  Boost::system
 #)
 
 add_executable( dump_dds dump_dds.cpp )
@@ -747,7 +724,6 @@ target_link_libraries( dump_dds
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( dump_ktx1 dump_ktx1.cpp )
@@ -756,7 +732,6 @@ target_link_libraries( dump_ktx1
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( dump_ktx2 dump_ktx2.cpp )
@@ -765,7 +740,6 @@ target_link_libraries( dump_ktx2
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_executable( image_diff image_diff.cpp )
@@ -774,7 +748,6 @@ target_link_libraries( image_diff
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
 )
 
 add_shader( gct gct/shader/scene_graph/matrix_pool/write.comp  INSTALL )
@@ -977,6 +950,12 @@ add_shader( gct gct/shader/forward_rendering/kajiya_kay_blinn_phong/1.0/geometry
 add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.task INSTALL )
 add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/forward_rendering/marschner_karis/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/meshlet_id/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/meshlet_id/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/meshlet_id/geometry.frag INSTALL )
+add_shader( gct gct/shader/forward_rendering/face_id/geometry.task INSTALL )
+add_shader( gct gct/shader/forward_rendering/face_id/geometry.mesh INSTALL )
+add_shader( gct gct/shader/forward_rendering/face_id/geometry.frag INSTALL )
 
 add_shader( gct gct/shader/draw_fluid/depth/geometry.task INSTALL )
 add_shader( gct gct/shader/draw_fluid/depth/geometry.mesh INSTALL )
@@ -1079,7 +1058,6 @@ target_link_libraries(
   Threads::Threads
   Boost::program_options
   Boost::context
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}
@@ -1095,7 +1073,6 @@ target_link_libraries(
   gct
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
 )
@@ -1110,7 +1087,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}
@@ -1127,7 +1103,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}
@@ -1145,7 +1120,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}
@@ -1162,7 +1136,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}
@@ -1179,7 +1152,6 @@ target_link_libraries(
   gct_glfw
   Threads::Threads
   Boost::program_options
-  Boost::system
   ${pkgcfg_lib_Vulkan_vulkan}
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_GLFW_glfw}

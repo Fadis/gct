@@ -10,7 +10,6 @@ target_link_libraries(
   gct_text
   Threads::Threads
   Boost::program_options
-  Boost::system
 )
 
 endif()
