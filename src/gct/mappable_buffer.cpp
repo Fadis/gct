@@ -17,7 +17,7 @@ namespace gct {
             vk::BufferUsageFlagBits::eTransferDst
           )
       ),
-    VMA_MEMORY_USAGE_GPU_ONLY,
+    VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
     flags
   ) ),
   staging( new buffer_t(
@@ -30,8 +30,8 @@ namespace gct {
             vk::BufferUsageFlagBits::eTransferDst
           )
       ),
-    VMA_MEMORY_USAGE_CPU_TO_GPU,
-    VmaAllocationCreateFlags( 0 )
+    VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
+    VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
   ) ) {
   }
   void to_json( nlohmann::json &dest, const mappable_buffer_t &src ) {
