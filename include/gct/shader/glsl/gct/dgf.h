@@ -14,6 +14,7 @@
 #include <glm/geometric.hpp>
 #include <gct/glsl_bit.hpp>
 #include <gct/dummy_byte_address_buffer.hpp>
+#include <gct/dummy_subgroup.hpp>
 using namespace std;
 using namespace glm;
 using namespace gct;
@@ -451,7 +452,6 @@ struct TriangleBits {
 };
 
 
-#ifndef __cplusplus
 uint64_t Wave64ActiveBallot(bool expr) {
   uvec4 b = subgroupBallot(expr);
   uint64_t r = b.y;
@@ -468,7 +468,7 @@ TriangleBits GetTriangleBitsWaveBallot(DGFBlockInfo s) {
 
   const uint WAVE_SIZE = gl_SubgroupSize;
   for (uint waveBase = 0; waveBase < DGF_MAX_TRIS; waveBase += WAVE_SIZE) {
-    uint i = waveBase + gl_SubgroupID;
+    uint i = waveBase + gl_SubgroupInvocationID;
     const uint ctrl = LoadTriangleControlValues(s, i);
 
     // DGF blocks have a limit of 64 triangles.
@@ -482,7 +482,6 @@ TriangleBits GetTriangleBitsWaveBallot(DGFBlockInfo s) {
   result.isBacktrack &= mask;
   return result;
 }
-#endif
 
 // Decode a triangle using a single lane
 TriangleBits GetTriangleBitsSingleLane(DGFBlockInfo s) {
@@ -498,13 +497,11 @@ TriangleBits GetTriangleBitsSingleLane(DGFBlockInfo s) {
 
 // Decode a triangle using the full wave.
 //  Must be called within wave-uniform control flow with a wave-uniform DGF block
-#ifndef __cplusplus
 uvec3 DGFGetTriangle_BitScan_Wave(DGFBlockInfo s, uint triangleIndexInBlock) {
   TriangleBits triangleBits = GetTriangleBitsWaveBallot(s);
   uvec3 indices = ControlScan(triangleIndexInBlock, triangleBits.isRestart, triangleBits.isEdge2, triangleBits.isBacktrack);
   return DemuxIndices(indices, s);
 }
-#endif
 
 // Decode a triangle using a single lane
 uvec3 DGFGetTriangle_BitScan_Lane(DGFBlockInfo s, uint triangleIndexInBlock) {

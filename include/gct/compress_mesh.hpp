@@ -8,7 +8,7 @@
 #include <gct/setter.hpp>
 #include <gct/scene_graph_accessor.hpp>
 #include <gct/vertex_attribute.hpp>
-
+#include <gct/meshlet_type.hpp>
 
 namespace gct::gltf {
 
@@ -44,6 +44,18 @@ struct buffer_view_key {
 bool operator==( const buffer_view_key &l, const buffer_view_key &r );
 bool operator!=( const buffer_view_key &l, const buffer_view_key &r );
 
+struct meshlet_key {
+  LIBGCT_SETTER( mesh_id )
+  LIBGCT_SETTER( primitive_id )
+  LIBGCT_SETTER( meshlet_id )
+  std::uint32_t mesh_id = 0u;
+  std::uint32_t primitive_id = 0u;
+  std::uint32_t meshlet_id = 0u;
+};
+
+bool operator==( const meshlet_key &l, const meshlet_key &r );
+bool operator!=( const meshlet_key &l, const meshlet_key &r );
+
 }
 
 namespace std {
@@ -64,6 +76,13 @@ namespace std {
   struct hash< gct::gltf::buffer_view_key > {
     std::size_t operator()( const gct::gltf::buffer_view_key &v ) const {
       return std::hash< std::uint64_t >()( ( std::uint64_t( v.buffer_view_id ) << 32u ) | std::uint64_t( v.offset ) );
+    }
+  };
+  template<>
+  struct hash< gct::gltf::meshlet_key > {
+    std::size_t operator()( const gct::gltf::meshlet_key &v ) const {
+      return std::hash< std::uint64_t >()( ( std::uint64_t( v.mesh_id ) << 32u ) | std::uint64_t( v.primitive_id ) ) ^
+             std::hash< std::uint32_t >()( std::uint32_t( v.meshlet_id ) );
     }
   };
 }
@@ -93,6 +112,8 @@ struct loaded_vertex_buffer {
 };
 
 using loaded_mesh = std::unordered_map< primitive_key, loaded_vertex_buffer >;
+
+using meshlet_info = std::unordered_map< meshlet_key, meshlet_type >;
 
 loaded_vertex_buffer load_vertex_on_cpu(
   const std::filesystem::path &base_dir,

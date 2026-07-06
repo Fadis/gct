@@ -52,13 +52,15 @@ void main() {
 
   const vec3 center_pos = subgroupAdd( f.position[ 0 ].xyz + f.position[ 1 ].xyz + f.position[ 2 ].xyz )/( active_count * 3u );
   const float radius = subgroupMax(
-    max(
-      distance( center_pos, f.position[ 0 ].xyz ),
+    f.valid ?
       max(
-        distance( center_pos, f.position[ 1 ].xyz ),
-        distance( center_pos, f.position[ 2 ].xyz )
-      )
-    )
+        distance( center_pos, f.position[ 0 ].xyz ),
+        max(
+          distance( center_pos, f.position[ 1 ].xyz ),
+          distance( center_pos, f.position[ 2 ].xyz )
+        )
+      ):
+      0.0
   );
   if( gl_SubgroupInvocationID == 0 ) {
     meshlet_pool[ mesh.meshlet + primitive_id / gl_SubgroupSize ].normal = vec4( average_normal, normal_threshold );

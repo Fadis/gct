@@ -78,6 +78,7 @@ struct primitive_descriptor {
 void to_json( nlohmann::json &dest, const primitive_descriptor &src );
 
 struct primitive {
+  LIBGCT_SETTER( name )
   LIBGCT_SETTER( vertex_buffer )
   LIBGCT_SETTER( indexed )
   LIBGCT_SETTER( index_buffer )
@@ -106,6 +107,7 @@ struct primitive {
   LIBGCT_SETTER( mass )
   LIBGCT_SETTER( gltf_index )
   LIBGCT_SETTER( descriptor )
+  std::string name;
   std::unordered_map< std::uint32_t, buffer_offset > vertex_buffer;
   bool indexed = false;
   buffer_offset index_buffer;

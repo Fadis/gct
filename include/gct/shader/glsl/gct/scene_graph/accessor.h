@@ -332,12 +332,12 @@ face_attribute read_face_attribute( meshlet_reader reader, uint face_id ) {
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
     if( reader.dgf_info.header.numTriangles <= face_id ) return null_face_attr;
     uvec3 index;
-    //if( reader.wave_mode ) {
-    //  index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
-    //}
-    //else {
+    if( reader.wave_mode ) {
+      index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
+    }
+    else {
       index = DGFGetTriangle_BitScan_Lane( reader.dgf_info, face_id );
-    //}
+    }
     for( uint i = 0u; i != 3u; ++i ) {
       f.vertex[ i ].position = vec4( DGFGetVertex( reader.dgf_info, index[ i ] ), 1.0f );
     }
@@ -478,12 +478,12 @@ face_position read_face_position( meshlet_reader reader, uint face_id ) {
   if( accessor_pool[ mesh.accessor + 1 ].type == GCT_SHADER_TYPE_ID_DGF ) {
     if( reader.dgf_info.header.numTriangles <= face_id ) return null_face_pos;
     uvec3 index;
-    /*if( reader.wave_mode ) {
+    if( reader.wave_mode ) {
       index = DGFGetTriangle_BitScan_Wave( reader.dgf_info, face_id );
     }
-    else {*/
+    else {
       index = DGFGetTriangle_BitScan_Lane( reader.dgf_info, face_id );
-    /*}*/
+    }
     for( uint i = 0u; i != 3u; ++i ) {
       f.position[ i ] = vec4( DGFGetVertex( reader.dgf_info, index[ i ] ), 1.0f );
     }

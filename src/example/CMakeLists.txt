@@ -147,6 +147,8 @@ subdirs(
   face_id
   forward_face_id
   dump_dgf
+  dump_meshlet_info
+  dump_mesh_info
 )
 if( DXC_FOUND )
 subdirs(

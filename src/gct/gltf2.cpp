@@ -1,4 +1,3 @@
-#include <iostream>
 #include "gct/exception.hpp"
 #include <iterator>
 #include <algorithm>
@@ -425,8 +424,8 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   scene_graph::mesh_t mesh;
 
   check_primitive( doc, primitive_ );
-  const auto [position_type_id,meshlet_count,unique_vertex_count] = get_meshlet_count( doc, primitive_ );
-  vertex_count = unique_vertex_count;
+  const auto [position_type_id,meshlet_count,vertex_count_,unique_vertex_count] = get_meshlet_count( doc, primitive_ );
+  vertex_count = vertex_count_;
 
   const bool compat = is_compatible_to_traditional_vertex_input( props.graph->get_resource()->get_device(), doc, primitive_ );
 
@@ -510,6 +509,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
   if( vertex_count == 0 )
     throw invalid_gltf( "頂点属性がない", __FILE__, __LINE__ );
   scene_graph::primitive p;
+  p.set_name( "mesh." + std::to_string( mesh_id ) + "." + std::to_string( prim_id ) );
   nlohmann::json ext = primitive_.extensionsAndExtras;
 
   auto vs_flag = shader_flag_t::vertex;
@@ -902,7 +902,7 @@ std::pair< scene_graph::primitive, nlohmann::json > gltf2::create_primitive(
       }
       // メッシュレット毎の情報の配列のうち、最初のメッシュレットのインデックスを記録
       if( props.graph->get_resource()->meshlet ) {
-        const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( vertex_count / ( props.meshlet_size * 3u ) + ( ( vertex_count % ( props.meshlet_size * 3u ) ) ? 1u : 0u ) );
+        const auto meshlet_desc = props.graph->get_resource()->meshlet->allocate( mesh.meshlet_count );
         p.descriptor.set_meshlet( meshlet_desc );
         if( mmp.has( "meshlet" ) ) {
           m.data()->*mmp[ "meshlet" ] = *meshlet_desc;

@@ -66,6 +66,7 @@ namespace gct::gltf {
   std::tuple<
     scene_graph::accessor_type_id,   
     std::uint32_t,
+    std::uint32_t,
     std::uint32_t
   > get_meshlet_count(
     const fx::gltf::Document &doc,

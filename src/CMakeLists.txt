@@ -382,10 +382,13 @@ add_library( gct SHARED
   gct/n31.cpp
   gct/glsl_bit.cpp
   gct/dummy_byte_address_buffer.cpp
+  gct/dummy_subgroup.cpp
   gct/mikktspace.cpp
   gct/vertex_attribute_id.cpp
   gct/compress_mesh.cpp
   gct/fixed.cpp
+  gct/meshlet_type.cpp
+  gct/mesh_type.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

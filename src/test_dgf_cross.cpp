@@ -51,6 +51,10 @@ void inspect(
       DGFBlockInfo block_info = DGFInit( 0u, m );
       for( std::uint32_t i = 0u; i != block_info.header.numTriangles; ++i ) {
         const glm::uvec3 f = DGFGetTriangle_BitScan_Lane( block_info, i );
+        const glm::uvec3 f2 = DGFGetTriangle_BitScan_Wave( block_info, i );
+        if( f.x != f2.x || f.y != f2.y || f.z != f2.z ) {
+          std::cout << "inconsistent : " << i << " (" << f.x << "," << f.y << "," << f.z << ") != (" << f2.x << "," << f2.y << "," << f2.z << ")" << std::endl;
+        }
         device.push_back( DGFGetVertex( block_info, f[ 0 ] ) );
         device.push_back( DGFGetVertex( block_info, f[ 1 ] ) );
         device.push_back( DGFGetVertex( block_info, f[ 2 ] ) );
@@ -95,7 +99,7 @@ int main( int argc, const char *argv[] ) {
   quota.MaxBufferByteLength = 1024 * 1024 * 1024;
   fx::gltf::Document doc = fx::gltf::LoadFromText( vm[ "model" ].as< std::string >(), quota );
   const auto base_dir = std::filesystem::path( vm[ "model" ].as< std::string >() ).parent_path();
-  inspect( base_dir, doc, vm.count( "convert" ) ? vm[ "convert" ].as< std::vector< std::string > >() : std::vector< std::string >{}, vm[ "primfilter" ].as< std::vector< std::uint32_t > >() );
+  inspect( base_dir, doc, vm.count( "convert" ) ? vm[ "convert" ].as< std::vector< std::string > >() : std::vector< std::string >{}, vm.count( "primfilter" ) ? vm[ "primfilter" ].as< std::vector< std::uint32_t > >() : std::vector< std::uint32_t >() );
 
 }
 

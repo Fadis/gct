@@ -142,6 +142,7 @@ namespace gct::gltf {
   std::tuple<
     scene_graph::accessor_type_id,   
     std::uint32_t,
+    std::uint32_t,
     std::uint32_t
   > get_meshlet_count(
     const fx::gltf::Document &doc,
@@ -149,7 +150,6 @@ namespace gct::gltf {
   ) {
     scene_graph::accessor_type_id position_type_id = scene_graph::accessor_type_id::float_;
     std::uint32_t meshlet_count = 0u;
-    std::uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
     for( const auto &[target,index]: primitive_.attributes ) {
       if( target == "POSITION" ) {
         const auto &accessor = doc.accessors[ index ];
@@ -160,14 +160,23 @@ namespace gct::gltf {
         }
       }
     }
+    std::uint32_t unique_vertex_count = std::numeric_limits< uint32_t >::max();
     for( const auto &[target,index]: primitive_.attributes ) {
       const auto &accessor = doc.accessors[ index ];
-      vertex_count = std::min( vertex_count, accessor.count );
+      unique_vertex_count = std::min( unique_vertex_count, accessor.count );
+    }
+    std::uint32_t vertex_count = std::numeric_limits< uint32_t >::max();
+    if( primitive_.indices >= 0u ) {
+      const auto &accessor = doc.accessors[ primitive_.indices ];
+      vertex_count = accessor.count;
+    }
+    else {
+      vertex_count = unique_vertex_count;
     }
     if( position_type_id != scene_graph::accessor_type_id::dgf ) {
       meshlet_count = vertex_count / 32u + ( ( vertex_count % 32u ) ? 1u : 0u );
     }
-    return std::make_tuple( position_type_id, meshlet_count, vertex_count );
+    return std::make_tuple( position_type_id, meshlet_count, vertex_count, unique_vertex_count );
   }
   bool is_compatible_to_traditional_vertex_input(
     const device_t &device,

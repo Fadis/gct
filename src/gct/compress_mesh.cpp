@@ -4,6 +4,7 @@
 #include <DGF.h>
 #include <DGFBaker.h>
 #endif
+#include <glm/geometric.hpp>
 #include <gct/fx/gltf.h>
 #include <gct/scene_graph_accessor.hpp>
 #include <gct/gltf.hpp>
@@ -16,6 +17,7 @@
 #include <gct/fixed.hpp>
 #include <gct/mikktspace.hpp>
 #include <gct/half.hpp>
+#include <gct/meshlet_type.hpp>
 
 namespace gct::gltf {
 
@@ -41,6 +43,13 @@ bool operator==( const buffer_view_key &l, const buffer_view_key &r ) {
 
 bool operator!=( const buffer_view_key &l, const buffer_view_key &r ) {
   return l.buffer_view_id != r.buffer_view_id || l.offset != r.offset;
+}
+
+bool operator==( const meshlet_key &l, const meshlet_key &r ) {
+  return l.mesh_id == r.mesh_id && l.primitive_id == r.primitive_id && l.meshlet_id == r.meshlet_id;
+}
+bool operator!=( const meshlet_key &l, const meshlet_key &r ) {
+  return l.mesh_id != r.mesh_id || l.primitive_id != r.primitive_id || l.meshlet_id != r.meshlet_id;
 }
 
 std::size_t get_component_size(
@@ -169,7 +178,7 @@ loaded_vertex_buffer load_vertex_on_cpu(
   loaded_vertex_buffer buffer;
 
   check_primitive( doc, primitive_ );
-  const auto [position_type_id,meshlet_count,vertex_count] = get_meshlet_count( doc, primitive_ );
+  const auto [position_type_id,meshlet_count,vertex_count,unique_vertex_count] = get_meshlet_count( doc, primitive_ );
 
   for( const auto &[target,index]: primitive_.attributes ) {
     const auto &accessor = doc.accessors[ index ];
@@ -218,8 +227,6 @@ loaded_vertex_buffer load_vertex_on_cpu(
     write_vertex( m.data(), buffer.attribute[ attr_id ], offset, stride, block_count );
   }
   
-  std::uint32_t unique_vertex_count = 0u;
- 
   if( primitive_.indices >= 0 ) {
     const auto &accessor = doc.accessors[ primitive_.indices ];
     if( accessor.bufferView < 0 || doc.bufferViews.size() <= size_t( accessor.bufferView ) ) throw gct::exception::invalid_argument( "参照されたbufferViewが存在しない", __FILE__, __LINE__ );
@@ -244,8 +251,6 @@ loaded_vertex_buffer load_vertex_on_cpu(
       throw invalid_gltf( "サポートされていない型が設定されている" );
     }
  
-    unique_vertex_count = vertex_count;
-
     bool reuse = false;
     const auto al = accessor_link()
       .set_mesh_id( key.mesh_id )
@@ -271,9 +276,6 @@ loaded_vertex_buffer load_vertex_on_cpu(
  
     gct::mmaped_file m( uri );
     write_vertex( m.data(), buffer.attribute[ attr_id ], offset, stride, vertex_count );
-  }
-  else {
-    unique_vertex_count = vertex_count;
   }
 
   if( position_type_id == scene_graph::accessor_type_id::dgf ) {
@@ -1333,10 +1335,82 @@ void mesh_statistics(
   std::cout << "  頂点数 : " << vertex_count << std::endl;
   std::cout << "  ユニーク頂点数 : " << unique_vertex_count << std::endl;
 }
+    
+meshlet_info generate_meshlet_info(
+  const loaded_mesh &mesh
+) {
+  meshlet_info mi;
+  for( auto &[key,vb] : mesh ) {
+    for( std::uint32_t m = 0u; m != vb.meshlet_count; ++m ) {
+      std::uint32_t vertex_count = 0u;
+      glm::vec3 center = glm::vec3( 0.f, 0.f, 0.f ); 
+      float radius = 0.f;
+      glm::vec3 average_normal = glm::vec3( 0.f, 0.f, 0.f );
+      float min_fa_dot = 2.0f;
+      std::uint32_t excentric_normal_index = 0u;
+      glm::vec3 excentric_normal = glm::vec3( 0.f, 0.f, 0.f );
+      gct::gltf::meshlet_reader reader( vb, m );
+      for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
+        const auto f = reader( i );
+        if( f.valid ) {
+          for( std::uint32_t j = 0u; j != f.vertex.size(); ++j ) {
+            if( vb.attribute.find( gct::vertex_attribute_id::position ) != vb.attribute.end() ) {
+              center += glm::vec3( f.vertex[ j ].position.x, f.vertex[ j ].position.y, f.vertex[ j ].position.z );
+              ++vertex_count;
+            }
+          }
+        }
+      }
+      center /= vertex_count;
+      for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
+        const auto f = reader( i );
+        if( f.valid ) {
+          for( std::uint32_t j = 0u; j != f.vertex.size(); ++j ) {
+            if( vb.attribute.find( gct::vertex_attribute_id::position ) != vb.attribute.end() ) {
+              radius = std::max( radius, glm::distance( center, glm::vec3( f.vertex[ j ].position.x, f.vertex[ j ].position.y, f.vertex[ j ].position.z ) ) );
+            }
+          }
+        }
+      }
+      for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
+        const auto f = reader( i );
+        if( f.valid ) {
+          if( vb.attribute.find( gct::vertex_attribute_id::position ) != vb.attribute.end() && f.vertex.size() == 3u ) {
+            average_normal += glm::normalize( glm::cross( glm::vec3( f.vertex[ 2 ].position - f.vertex[ 0 ].position ), glm::vec3( f.vertex[ 1 ].position - f.vertex[ 0 ].position ) ) );
+          }
+        }
+      }
+      average_normal = glm::normalize( average_normal );
+      for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
+        const auto f = reader( i );
+        if( f.valid ) {
+          if( vb.attribute.find( gct::vertex_attribute_id::position ) != vb.attribute.end() && f.vertex.size() == 3u ) {
+            const auto normal = glm::cross( glm::normalize( glm::vec3( f.vertex[ 2 ].position - f.vertex[ 0 ].position ) ), glm::normalize( glm::vec3( f.vertex[ 1 ].position - f.vertex[ 0 ].position ) ) );
+            const auto fa_dot = glm::dot( normal, average_normal );
+            if( fa_dot < min_fa_dot ) {
+              excentric_normal_index = i;
+              excentric_normal = normal;
+              min_fa_dot = fa_dot;
+            }
+          }
+        }
+      }
+      const float ea_dot = glm::dot( excentric_normal, average_normal );
+      float normal_threshold = ( ea_dot > 0.0 ) ? -std::sin( std::acos( ea_dot ) ) : -2.0;
+      //normal_threshold = ( normal_threshold < -0.5 ) ? -2.0 : normal_threshold;
+      mi[ meshlet_key().set_mesh_id( key.mesh_id ).set_primitive_id( key.primitive_id ).set_meshlet_id( m ) ] =
+        meshlet_type()
+          .set_center( glm::vec4( center.x, center.y, center.z, radius ) )
+          .set_normal( glm::vec4( average_normal.x, average_normal.y, average_normal.z, normal_threshold ) );
+    }
+  }
+  return mi;
+}
 
 void dump_vertex(
   const loaded_mesh &mesh
 ) {
+  const auto mi = generate_meshlet_info( mesh );
   for( auto &[key,vb] : mesh ) {
     std::cout << "primitive " << key.mesh_id << " " << key.primitive_id << std::endl;
     std::cout << "  vertex_count=" << vb.vertex_count <<
@@ -1353,6 +1427,13 @@ void dump_vertex(
     for( std::uint32_t m = 0u; m != vb.meshlet_count; ++m ) {
       gct::gltf::meshlet_reader reader( vb, m );
       std::cout << "  meshlet " << m << " face_count=" << reader.get_face_count() << std::endl;
+      auto current_mi = mi.find( meshlet_key().set_mesh_id( key.mesh_id ).set_primitive_id( key.primitive_id ).set_meshlet_id( m ) );
+      if( current_mi != mi.end() ) {
+        std::cout << "    center=(" << current_mi->second.center.x << "," << current_mi->second.center.y << "," << current_mi->second.center.z << ")" << std::endl;
+        std::cout << "    radius=" << current_mi->second.center.w << std::endl;
+        std::cout << "    normal=(" << current_mi->second.normal.x << "," << current_mi->second.normal.y << "," << current_mi->second.normal.z << ")" << std::endl;
+        std::cout << "    min_dot=" << current_mi->second.normal.w << std::endl;
+      }
       for( std::uint32_t i = 0u; i != reader.get_face_count(); ++i ) {
         const auto f = reader( i );
         if( f.valid ) {
@@ -1430,6 +1511,23 @@ void dump_vertex(
             }
           }
         }
+      }
+    }
+  }
+}
+
+void dump_meshlet(
+  const loaded_mesh &mesh
+) {
+  const auto mi = generate_meshlet_info( mesh );
+  for( auto &[key,vb] : mesh ) {
+    for( std::uint32_t m = 0u; m != vb.meshlet_count; ++m ) {
+      gct::gltf::meshlet_reader reader( vb, m );
+      auto current_mi = mi.find( meshlet_key().set_mesh_id( key.mesh_id ).set_primitive_id( key.primitive_id ).set_meshlet_id( m ) );
+      if( current_mi != mi.end() ) {
+        std::cout << "mesh." << key.mesh_id << "." << key.primitive_id << "." << m << " ";
+        std::cout << "{\"center\":[" << current_mi->second.center.x << "," << current_mi->second.center.y << "," << current_mi->second.center.z << "," << current_mi->second.center.w << "],";
+        std::cout << "\"normal\":[" << current_mi->second.normal.x << "," << current_mi->second.normal.y << "," << current_mi->second.normal.z << current_mi->second.normal.w << "]}" << std::endl;
       }
     }
   }
@@ -1551,6 +1649,9 @@ void convert_mesh( loaded_mesh &mesh, const std::vector< std::string > &command 
     }
     else if( c == "dump_vertex" ) {
       dump_vertex( mesh );
+    }
+    else if( c == "dump_meshlet" ) {
+      dump_meshlet( mesh );
     }
     else if( c == "dedup" ) {
       dedup( mesh );
