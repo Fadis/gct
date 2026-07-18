@@ -16,6 +16,7 @@
 #include <gct/shader/glsl/gct/n20t11b1.h>
 #include <gct/shader/glsl/gct/generate_normal.h>
 #include <gct/shader/glsl/gct/mikktspace.h>
+#include <gct/shader/glsl/gct/vertex_attribute.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 using namespace glm;
@@ -33,7 +34,9 @@ using namespace glm;
 #include <gct/n20t11b1.h>
 #include <gct/generate_normal.h>
 #include <gct/mikktspace.h>
+#include <gct/vertex_attribute.h>
 #endif
+
 
 uint read_index( accessor_type a, uint i ) {
   if( a.enabled == 0 ) return i;
@@ -188,30 +191,6 @@ void write_vertex( accessor_type a, uint i, vec4 v ) {
     }
   }
 }
-
-struct vertex_attribute {
-  vec4 position;
-  vec4 normal;
-  vec4 tangent;
-  vec4 tex_coord0;
-  vec4 color0;
-  vec4 joint0;
-  vec4 weight0;
-  vec4 lod_morph;
-  uint index;
-};
-
-struct face_attribute {
-  vertex_attribute vertex[ 3 ];
-  uint primitive_id;
-  bool valid;
-};
-
-struct face_position {
-  vec4 position[ 3 ];
-  uint primitive_id;
-  bool valid;
-};
 
 
 

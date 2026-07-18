@@ -5,7 +5,7 @@
 #include<gct/aabb_type.h>
 
 layout(set = GCT_SHADER_SCENE_GRAPH_BUFFER_SET_ID, binding = 4, std430) buffer AABBPool {
-  aabb_type aabb_pool[];
+  aabb4_type aabb_pool[];
 };
 
 #endif

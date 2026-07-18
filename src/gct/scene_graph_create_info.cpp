@@ -28,6 +28,7 @@ scene_graph_create_info::scene_graph_create_info() {
   camera.set_buffer_name( "camera_pool" );
   adjacency.set_buffer_name( "adjacency_pool" );
   ppll_state.set_buffer_name( "ppll_state_pool" );
+  rasterization_info.set_buffer_name( "rasterization_info_pool" );
   const std::uint32_t max_particle_count = 2097152u;
   const std::uint32_t max_rigid_count = 65536u;
   particle.set_max_buffer_count( max_particle_count );
@@ -46,6 +47,7 @@ scene_graph_create_info::scene_graph_create_info() {
   lambda.set_max_request_count( 64u );
   adjacency.set_max_buffer_count( max_particle_count * 3u );
   adjacency.set_max_request_count( 64u );
+  rasterization_info.set_max_buffer_count( 1024u * 1024u );
 }
 
 scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesystem::path &dir ) {
@@ -72,6 +74,7 @@ scene_graph_create_info &scene_graph_create_info::set_shader( const std::filesys
   camera.set_shader( dir / "camera_pool" );
   adjacency.set_shader( dir / "adjacency_pool" );
   ppll_state.set_shader( dir / "ppll_state_pool" );
+  rasterization_info.set_shader( dir / "rasterization_info_pool" );
   return *this;
 }
 
@@ -106,6 +109,8 @@ void to_json( nlohmann::json &dest, const scene_graph_create_info &src ) {
   dest[ "lambda" ] = src.lambda;
   dest[ "camera" ] = src.camera;
   dest[ "adjacency" ] = src.adjacency;
+  dest[ "ppll_state" ] = src.ppll_state;
+  dest[ "rasterization_info" ] = src.rasterization_info;
   dest[ "prim_pool_size" ] = src.prim_pool_size;
   dest[ "inst_pool_size" ] = src.inst_pool_size;
   dest[ "descriptor_set_id" ] = src.descriptor_set_id;

@@ -1,0 +1,227 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算を使う
+#extension GL_KHR_shader_subgroup : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_vote : enable
+
+// 64bit整数を使う
+#extension GL_ARB_gpu_shader_int64 : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_MAKE_IMAGE_COHERENT
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+#include <gct/rasterize.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+  uint lock;
+} push_constants;
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+// 頂点属性
+layout (location = 0) out vec4 output_position[]; // 頂点座標
+layout (location = 1) out vec3 output_normal[]; // 法線
+layout (location = 2) out vec4 output_tangent[]; // 接線
+layout (location = 3) out vec2 output_tex_coord[]; // テクスチャ座標
+layout (location = 4) out vec4 output_optflow[];
+layout (location = 5) flat out vec4 output_id[]; // ノードのIDとメッシュのID
+layout (location = 6) out vec4 output_previous_position[];
+
+// タスクペイロード
+struct task_data {
+  // 見えると判断されたメッシュレットのID
+  uint meshlet_index[ 32 ];
+  // ローカル座標系からワールド座標系への変換行列
+  mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
+  mat4 l2s;
+  // どのノードの下のどのメッシュを描くかを指定するID
+  uint resource_pair_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.offset + td.resource_pair_id ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+
+  // 変換行列をタスクペイロードから取り出す
+  const mat4 l2w = td.l2w;
+  const mat4 l2s = td.l2s;
+  
+  // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
+  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  
+  // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
+  const meshlet_reader reader = init_meshlet_reader( prim.mesh, meshlet_id );
+  const face_attribute f = read_face_attribute( reader );
+
+  // 頂点の座標をローカル座標系からワールド座標系に変換する
+  const vec4 wp0 = l2w * f.vertex[ 0 ].position;
+  const vec4 wp1 = l2w * f.vertex[ 1 ].position;
+  const vec4 wp2 = l2w * f.vertex[ 2 ].position;
+  
+  rasterizable_face_attribute fa;
+  fa.vertex[ 0 ].position = wp0;
+  fa.vertex[ 1 ].position = wp1;
+  fa.vertex[ 2 ].position = wp2;
+ 
+  // 頂点座標からワールド座標系での面の法線を求める
+  const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
+
+  // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
+  // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
+  const bool front = dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0;
+  bool visible = f.valid && ( prim.cull == 0 || front );
+
+  const vec4 v0_view = l2s * f.vertex[ 0 ].position;
+  const vec4 v1_view = l2s * f.vertex[ 1 ].position;
+  const vec4 v2_view = l2s * f.vertex[ 2 ].position;
+  const ivec2 framebuffer_size = imageSize( image_pool_2dua[ push_constants.lock ] );
+  rasterization_state rast_state =
+    visible ?
+    rasterization_init( v0_view, v1_view, v2_view, framebuffer_size.x, framebuffer_size.y ) :
+    rasterization_state(
+      ivec2( 0, 0 ),
+      ivec2( 0, 0 ),
+      vec2( 0, 0 ),
+      0, 0, 0, 0, 0, 0, 0
+    );
+  const uint candidate_pixel_count = rasterization_get_candidate_count( rast_state );
+  if( candidate_pixel_count != 0u ) {
+    fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+    fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+    fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+    fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
+    fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
+    fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
+    fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
+    fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
+    fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
+    fa.vertex[ 0 ].id = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+    fa.vertex[ 1 ].id = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+    fa.vertex[ 2 ].id = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+  }
+  else {
+    visible = false;
+
+  }
+
+  if( candidate_pixel_count <= 1024 ) {
+    uint mask = ( 1u << candidate_pixel_count ) >> 1;
+    visible = false;
+    bool rasterized = false;
+    for( uint i = 0u; i != 1024u; ++i ) {
+      if( i < candidate_pixel_count ) {
+        rasterization_result rast_result = rasterization_rasterize( rast_state, i );
+        if( rast_result.valid ) {
+          rasterizable_vertex_attribute attr = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa );
+          const float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z/v0_view.w, v1_view.z/v1_view.w, v2_view.z/v2_view.w );
+          attr.position.w = depth;
+          primitive_value p = read_primitive( attr );
+          if( p.albedo.a > 0.0 ) {
+            rasterized = true;
+            const ivec2 image_pos = rast_result.pixel;
+            bool keep_waiting = true;
+            while( keep_waiting ) {
+              if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) != uint( 1 ) ) {
+                kplus_iter iter = kplus_begin(
+                  kplus_image( push_constants.gbuffer, push_constants.position ),
+                  image_pos,
+                  push_constants.gbuffer_format
+                );
+                kplus_insert(
+                  iter,
+                  p,
+                  depth,
+                  fa.vertex[ 0 ].id
+                );
+                memoryBarrier();
+                imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
+                keep_waiting = false;
+              }
+            }
+          }
+        }
+      }
+    }
+    if( rasterized ) {
+      const uint visibility_index = instance_resource_index[ uint( fa.vertex[ 0 ].id.x ) ].visibility;
+      visibility_pool[ visibility_index ] = 1;
+    }
+  }
+
+  //visible = false;
+
+  // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
+  const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
+  // 自身よりスレッドIDが小さいスレッドの中で担当するプリミティブが見えると判断された数の3倍
+  // この値がこのスレッドが出力の何番目に頂点を書くべきかになる
+  const uint filtered_vertex_offset = subgroupExclusiveAdd( visible ? 3 : 0 );
+
+  // 見える頂点の数分の頂点とプリミティブを書けるようにする
+  SetMeshOutputsEXT( filtered_vertex_count, filtered_vertex_count / 3 );
+
+  // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
+  if( !visible ) return;
+
+  //if( gl_WorkGroupID.x != 0u ) return;
+
+  // 頂点のスクリーン座標系での座標を出力先に書く
+  gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = v0_view;
+  gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = v1_view;
+  gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = v2_view;
+  // 頂点のワールド座標系での座標を出力先に書く
+  output_position[ filtered_vertex_offset ] = fa.vertex[ 0 ].position;
+  output_position[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].position;
+  output_position[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].position;
+  // 頂点のワールド座標系での法線を出力先に書く
+  output_normal[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].normal;
+  output_normal[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].normal;
+  output_normal[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].normal;
+  // 頂点のワールド座標系での接線を出力先に書く
+  output_tangent[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].tangent;
+  output_tangent[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].tangent;
+  output_tangent[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].tangent;
+  // 頂点のテクスチャ座標を出力先に書く
+  output_tex_coord[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].texcoord;
+  output_tex_coord[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].texcoord;
+  output_tex_coord[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].texcoord;
+  // 頂点のIDにノードのIDとメッシュのIDを書いておく
+  output_id[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].id;
+  output_id[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].id;
+  output_id[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].id;
+  // 上の3頂点で1つの三角形プリミティブになる事を書く
+  gl_PrimitiveTriangleIndicesEXT[ filtered_vertex_offset / 3 ] = uvec3( filtered_vertex_offset, filtered_vertex_offset + 1, filtered_vertex_offset + 2 );
+}
+

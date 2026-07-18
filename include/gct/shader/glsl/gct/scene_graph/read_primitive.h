@@ -4,6 +4,7 @@
 #include <gct/primitive_value.h>
 #include <gct/scene_graph/primitive_resource_index.h>
 #include <gct/scene_graph/texture_pool.h>
+#include <gct/vertex_attribute.h>
 
 primitive_value read_primitive(
   uint primitive_id,
@@ -76,6 +77,20 @@ primitive_value read_primitive(
   temp.tangent = tangent_;
   temp.texcoord[ 0 ] = vert_texcoord;
   return temp;
+}
+
+primitive_value read_primitive(
+  rasterizable_vertex_attribute attr
+) {
+  return read_primitive(
+    uint( attr.id.y ),
+    attr.position,
+    attr.normal,
+    attr.tangent,
+    attr.texcoord,
+    attr.optflow,
+    attr.previous_position
+  );
 }
 
 primitive_value read_primitive(

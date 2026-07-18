@@ -1,4 +1,3 @@
-#include <iostream>
 #include <boost/range/iterator_range.hpp>
 #include <nlohmann/json.hpp>
 #include <vulkan2json/BufferCopy.hpp>
@@ -340,10 +339,8 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
     rec.transfer_barrier( { buffer }, {} );
   }
   rec.barrier( { buffer }, {} );
-  std::cout << "debug -4 " << props.buffer_name << std::endl;
   rec.on_executed(
     [self=shared_from_this()]( vk::Result result ) {
-      std::cout << "debug -3 " << self->props.buffer_name << std::endl;
       std::vector< std::function< void() > > cbs;
       std::vector< buffer_descriptor > used_on_gpu;
       {
@@ -351,32 +348,24 @@ void buffer_pool::state_type::flush( command_buffer_recorder_t &rec ) {
         auto staging = self->staging_buffer->map< std::uint8_t >();
         std::sort( self->used_on_gpu.begin(), self->used_on_gpu.end(), []( const auto &l, const auto &r ) { return *l < *r; } );
         self->used_on_gpu.erase( std::unique( self->used_on_gpu.begin(), self->used_on_gpu.end(), []( const auto &l, const auto &r ) { return *l == *r; } ), self->used_on_gpu.end() );
-          std::cout << "debug -2 " << std::endl;
         for( const auto &desc: self->used_on_gpu ) {
-            std::cout << "debug -1 " << *desc << std::endl;
           if( ( self->buffer_state.find( *desc ) != self->buffer_state.end() ) ) {
             auto &s = self->buffer_state[ *desc ];
             const auto begin = self->read_request_index.lower_bound( *desc );
             const auto array_size = self->index_allocator.get_size( *desc );
             const auto end = self->read_request_index.lower_bound( *desc + array_size );
-            std::cout << "debug 0 " << *desc << " " << ( *desc + array_size ) << std::endl;
             for( const auto &index_rrr: boost::make_iterator_range( begin, end ) ) {
               const auto &[index,rrr] = index_rrr;
               const auto si = self->staging_index.find( index );
-              std::cout << "debug 1 " << index << std::endl;
               if( si != self->staging_index.end() ) {
-                std::cout << "debug 2 " << index << std::endl;
                 const auto corresponding = self->cbs.equal_range( index );
                 if( corresponding.first != corresponding.second ) {
-                  std::cout << "debug 3 " << index << std::endl;
                   if( result == vk::Result::eSuccess ) {
-                    std::cout << "debug 4 " << index << std::endl;
                     std::vector< std::uint8_t > temp( self->aligned_size );
                     const auto begin = std::next( staging.begin(), self->aligned_size * si->second );
                     const auto end = std::next( begin, self->aligned_size );
                     std::copy( begin, end, temp.begin() );
                     for( auto iter = corresponding.first; iter != corresponding.second; ++iter ) {
-                      std::cout << "debug 5 " << index << std::endl;
                       cbs.push_back( [cb=iter->second,result,temp=temp]() mutable { cb( result, std::move( temp ) ); } );
                     }
                   }

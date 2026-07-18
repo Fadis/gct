@@ -14,7 +14,7 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 layout(binding = 1,std430) buffer AABBPool {
-  aabb_type aabb[];
+  aabb4_type aabb[];
 };
 
 layout(binding = 2,std430) buffer MatrixPool {
@@ -35,7 +35,7 @@ layout(binding = 3,std430) buffer Request {
 void main() {
   const uint index = gl_GlobalInvocationID.x;
   if( index < push_constants.count ) {
-    aabb_type a = aabb[ request[ index + push_constants.offset ].local ];
+    aabb4_type a = aabb[ request[ index + push_constants.offset ].local ];
     a.min /= a.min.w;
     a.max /= a.max.w;
     vec4 vertex[ 8 ];
@@ -50,7 +50,7 @@ void main() {
     const mat4 m = matrix[ request[ index + push_constants.offset ].matrix ];
     vec4 v = m * vertex[ 0 ];
     v /= v.w;
-    aabb_type world_aabb;
+    aabb4_type world_aabb;
     world_aabb.min = v;
     world_aabb.max = v;
     for( uint i = 1; i != 8; i++ ) {

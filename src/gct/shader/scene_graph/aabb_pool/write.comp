@@ -14,11 +14,11 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 layout(binding = 0,std430) buffer StagingMatrixPool {
-  aabb_type staging[];
+  aabb4_type staging[];
 };
 
 layout(binding = 1,std430) buffer AABBPool {
-  aabb_type aabb[];
+  aabb4_type aabb[];
 };
 
 struct request_type {

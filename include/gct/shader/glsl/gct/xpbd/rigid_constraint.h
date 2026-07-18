@@ -162,7 +162,7 @@ rigid_collision_dx_dq rigid_border_solve(
 rigid_collision_dx_dq rigid_border_dx(
   uint rigid_id,
   uint global_particle_id,
-  aabb_type aabb,
+  aabb4_type aabb,
   float dt
 ) {
   vec3 dx = vec3( 0.0, 0.0, 0.0 );

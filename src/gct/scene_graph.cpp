@@ -282,6 +282,10 @@ scene_graph::scene_graph(
     std::cout << "Using system ppll_state_pool" << std::endl;
     props->ppll_state.set_shader( shader_path / "dummy" );
   }
+  if( !props->rasterization_info.shader_exists() ) {
+    std::cout << "Using system rasterization_info_pool" << std::endl;
+    props->rasterization_info.set_shader( shader_path / "dummy" );
+  }
 
   resource->matrix.reset( new matrix_pool(
     matrix_pool_create_info( props->matrix )
@@ -403,6 +407,10 @@ scene_graph::scene_graph(
     buffer_pool_create_info( props->ppll_state )
       .set_allocator_set( props->allocator_set )
   ) );
+  resource->rasterization_info.reset( new buffer_pool(
+    buffer_pool_create_info( props->rasterization_info )
+      .set_allocator_set( props->allocator_set )
+  ) );
   resource->last_visibility = props->allocator_set.allocator->create_mappable_buffer(
     resource->visibility->get_buffer()->get_props().get_basic().size,
     use_conditional ?
@@ -444,9 +452,7 @@ scene_graph::scene_graph(
   if( resource->image && resource->descriptor_set->has( "image_metadata_pool" ) ) {
     u.push_back( { "image_metadata_pool", resource->image->get_metadata_buffer() } );
   }
-  std::cout << __FILE__ << " " << __LINE__ << " " << resource->descriptor_set->has( "texture_metadata_pool" ) << std::endl;
   if( resource->texture && resource->descriptor_set->has( "texture_metadata_pool" ) ) {
-    std::cout << __FILE__ << " " << __LINE__ << " " << resource->texture->get_metadata_buffer().get() << std::endl;
     u.push_back( { "texture_metadata_pool", resource->texture->get_metadata_buffer() } );
   }
   if( resource->resource_pair && resource->descriptor_set->has( "resource_pair" ) ) {
@@ -477,7 +483,6 @@ scene_graph::scene_graph(
     u.push_back( { "distance_constraint_pool", resource->distance_constraint->get_buffer() } );
   }
   if( resource->constraint && resource->descriptor_set->has( "constraint_pool" ) ) {
-    std::cout << "update constraint_pool descriptor" << std::endl;
     u.push_back( { "constraint_pool", resource->constraint->get_buffer() } );
   }
   if( resource->spatial_hash && resource->descriptor_set->has( "spatial_hash_pool" ) ) {
@@ -497,6 +502,9 @@ scene_graph::scene_graph(
   }
   if( resource->ppll_state && resource->descriptor_set->has( "ppll_state_pool" ) ) {
     u.push_back( { "ppll_state_pool", resource->ppll_state->get_buffer() } );
+  }
+  if( resource->rasterization_info && resource->descriptor_set->has( "rasterization_info_pool" ) ) {
+    u.push_back( { "rasterization_info_pool", resource->rasterization_info->get_buffer() } );
   }
   resource->descriptor_set->update( std::move( u ) );
 
@@ -618,6 +626,10 @@ void scene_graph::operator()( command_buffer_recorder_t &rec ) const {
   if( resource->ppll_state ) {
     (*resource->ppll_state)( rec );
     s.add( resource->ppll_state->get_buffer() );
+  }
+  if( resource->rasterization_info ) {
+    (*resource->rasterization_info)( rec );
+    s.add( resource->rasterization_info->get_buffer() );
   }
 
   rec.compute_to_graphics_barrier( s );

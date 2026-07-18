@@ -66,6 +66,7 @@ struct scene_graph_resource {
   LIBGCT_SETTER( camera )
   LIBGCT_SETTER( adjacency )
   LIBGCT_SETTER( ppll_state )
+  LIBGCT_SETTER( rasterization_info )
   LIBGCT_SETTER( descriptor_set_layout )
   LIBGCT_SETTER( descriptor_set )
   LIBGCT_SETTER( texture_descriptor_set )
@@ -104,6 +105,7 @@ struct scene_graph_resource {
   std::shared_ptr< buffer_pool > camera;
   std::shared_ptr< buffer_pool > adjacency;
   std::shared_ptr< buffer_pool > ppll_state;
+  std::shared_ptr< buffer_pool > rasterization_info;
   std::shared_ptr< mappable_buffer_t > last_visibility;
   std::shared_ptr< vertex_buffer_pool > vertex;
   std::shared_ptr< light_pool > light;
@@ -294,6 +296,12 @@ void to_json( nlohmann::json&, const scene_graph_resource& );
         set_allocator_set( ( r ) ->ppll_state->get_props().allocator_set ); \
       } \
       add_resource( { "ppll_state_pool", ( r ) ->ppll_state->get_buffer() } ); \
+    } \
+    if( ( r ) ->rasterization_info ) { \
+      if( !allocator_set.allocator ) { \
+        set_allocator_set( ( r ) ->rasterization_info->get_props().allocator_set ); \
+      } \
+      add_resource( { "rasterization_info_pool", ( r ) ->rasterization_info->get_buffer() } ); \
     } \
     ignore_unused_descriptor = true; \
   }

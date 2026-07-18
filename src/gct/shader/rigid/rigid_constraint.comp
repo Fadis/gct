@@ -74,7 +74,7 @@ void main() {
         rigid_border_dx(
           inst.rigid,
           mesh.particle_offset + vertex_id,
-          aabb_type(
+          aabb4_type(
             vec4( -2.6, -100.0, -2.1, 1.0 ),
             vec4( 2.6, -0.05, 1.5, 1.0 )
           ),

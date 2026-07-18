@@ -44,7 +44,7 @@ void main() {
     mesh.rigid,
     mesh.particle_offset,
     mesh.unique_vertex_count,
-    aabb_type(
+    aabb4_type(
       vec4( -2.6, -100.0, -2.1, 1.0 ),
       vec4( 2.6, -0.05, 1.5, 1.0 )
     )

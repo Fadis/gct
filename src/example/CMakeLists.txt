@@ -116,6 +116,7 @@ subdirs(
   xpbd
   fluid
   standard
+  standard3
   forward
   forward2
   dump_adjacency
@@ -149,6 +150,7 @@ subdirs(
   dump_dgf
   dump_meshlet_info
   dump_mesh_info
+  test_rasterization_host
 )
 if( DXC_FOUND )
 subdirs(

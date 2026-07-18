@@ -52,7 +52,7 @@ vec4 pbd_collision_constraint_dx(
 vec4 pbd_border_dx(
   uint particle_id,
   uint particle_offset,
-  aabb_type aabb
+  aabb4_type aabb
 ) {
   vec3 dx = vec3( 0.0, 0.0, 0.0 );
   uint dx_count = 0u;

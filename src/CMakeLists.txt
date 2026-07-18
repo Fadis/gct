@@ -389,6 +389,7 @@ add_library( gct SHARED
   gct/fixed.cpp
   gct/meshlet_type.cpp
   gct/mesh_type.cpp
+  gct/gamma.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -905,6 +906,9 @@ add_shader( gct gct/shader/generate_k+buffer/standard/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.frag INSTALL )
 
 
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.task INSTALL )
