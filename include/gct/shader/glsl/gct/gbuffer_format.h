@@ -21,16 +21,16 @@ using namespace gct;
 #define GCT_GBUFFER_COLOR0   ( 1u << 10 )
 #define GCT_GBUFFER_COLOR1   ( 1u << 11 )
 
-uint gbuffer_get_layer( uint active_layers, uint layer_bit ) {
-  return bitCount( active_layers & ( ( layer_bit << 1 ) - 1u ) ) - 1u;
+int gbuffer_get_layer( uint active_layers, uint layer_bit ) {
+  return int( bitCount( active_layers & ( ( layer_bit << 1 ) - 1u ) ) - 1u );
 }
 
 bool gbuffer_has_layer( uint active_layers, uint layer_bit ) {
   return ( active_layers & layer_bit ) != 0u;
 }
 
-uint gbuffer_get_layer_count( uint active_layers ) {
-  return bitCount( active_layers );
+int gbuffer_get_layer_count( uint active_layers ) {
+  return int( bitCount( active_layers ) );
 }
 
 #endif

@@ -151,6 +151,9 @@ subdirs(
   dump_meshlet_info
   dump_mesh_info
   test_rasterization_host
+  test_gbuffer_format
+  dump_kplus_buffer
+  dump_kplus_rendering
 )
 if( DXC_FOUND )
 subdirs(

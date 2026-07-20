@@ -736,7 +736,9 @@ int main( int argc, const char *argv[] ) {
   const auto compiled = builder();
   const auto merged_view = compiled.get_view( flare_desc[ "output_color" ] );
   const auto bloom_view = compiled.get_view( filtered_bloom );
-  
+  const auto lighting_view = compiled.get_view( lighting_desc[ "dest" ] );
+  const auto mix_ao_view = compiled.get_view( mix_ao_desc[ "dest_image" ] );
+
   const auto skyview_param =
     gct::skyview_parameter()
       .set_convert_to_xyz( false )
@@ -1009,8 +1011,7 @@ int main( int argc, const char *argv[] ) {
           );
         }
         tone.set( rec, 0 );
-        if( res.force_geometry || walk.light_moved() ) {
-          const auto shadow_data = global_uniforms_t()
+        if( res.force_geometry || walk.light_moved() ) { const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *shadow_projection )
             .set_camera_matrix( *shadow_camera )
             .set_screen_to_world_matrix( *screen_to_world_desc )
@@ -1102,18 +1103,21 @@ int main( int argc, const char *argv[] ) {
         );
        
         tone.get( rec, 0 );
-        if( res.record ) {
+        if( res.record && frame_counter == 299 ) {
           record_gamma( rec, 0u );
           rec.compute_to_transfer_barrier(
             gct::syncable()
-              .add( record )
+              .add( lighting_view )
           );
-          rec.dump_image(
-            res.allocator,
-            record->get_factory(),
-            "video/" + std::to_string( frame_counter ) + ".png",
-            0
-          );
+          for( std::uint32_t i = 0u; i != 2u; ++i ) {
+            rec.dump_image(
+              res.allocator,
+              mix_ao_view->get_factory(),
+              "mix_ao_" + std::to_string( i ) + ".exr",
+              0,
+              i
+            );
+          }
         }
       }
       command_buffer->execute(

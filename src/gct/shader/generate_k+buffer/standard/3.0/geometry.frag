@@ -45,11 +45,12 @@ void main() {
   bool keep_waiting = true;
   //for( uint i = 0u; i != 16u && keep_waiting; ++i ) {
   while( keep_waiting ) {
-    if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) != uint( 1 ) ) {
+    if( imageAtomicExchange( image_pool_2dua_array[ push_constants.lock ], ivec3( image_pos, 1 ), uint( 1 ) ) != uint( 1 ) ) {
       kplus_iter iter = kplus_begin(
         kplus_image( push_constants.gbuffer, push_constants.position ),
         image_pos,
-        push_constants.gbuffer_format
+        push_constants.gbuffer_format,
+        1
       );
       kplus_insert(
         iter,
@@ -58,7 +59,7 @@ void main() {
         input_id
       );
       memoryBarrier();
-      imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
+      imageAtomicExchange( image_pool_2dua_array[ push_constants.lock ], ivec3( image_pos, 1 ), uint( 0 ) );
       keep_waiting = false;
     }
   }

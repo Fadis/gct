@@ -107,7 +107,7 @@ void main() {
   const vec4 v0_view = l2s * f.vertex[ 0 ].position;
   const vec4 v1_view = l2s * f.vertex[ 1 ].position;
   const vec4 v2_view = l2s * f.vertex[ 2 ].position;
-  const ivec2 framebuffer_size = imageSize( image_pool_2dua[ push_constants.lock ] );
+  const ivec2 framebuffer_size = imageSize( image_pool_2dua_array[ push_constants.lock ] ).xy;
   rasterization_state rast_state =
     visible ?
     rasterization_init( v0_view, v1_view, v2_view, framebuffer_size.x, framebuffer_size.y ) :
@@ -137,11 +137,11 @@ void main() {
 
   }
 
-  if( candidate_pixel_count <= 1024 ) {
+  if( candidate_pixel_count <= 16 ) {
     uint mask = ( 1u << candidate_pixel_count ) >> 1;
     visible = false;
     bool rasterized = false;
-    for( uint i = 0u; i != 1024u; ++i ) {
+    for( uint i = 0u; i != 16u; ++i ) {
       if( i < candidate_pixel_count ) {
         rasterization_result rast_result = rasterization_rasterize( rast_state, i );
         if( rast_result.valid ) {
@@ -154,11 +154,12 @@ void main() {
             const ivec2 image_pos = rast_result.pixel;
             bool keep_waiting = true;
             while( keep_waiting ) {
-              if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) != uint( 1 ) ) {
+              if( imageAtomicExchange( image_pool_2dua_array[ push_constants.lock ], ivec3( image_pos, 0 ), uint( 1 ) ) != uint( 1 ) ) {
                 kplus_iter iter = kplus_begin(
                   kplus_image( push_constants.gbuffer, push_constants.position ),
                   image_pos,
-                  push_constants.gbuffer_format
+                  push_constants.gbuffer_format,
+                  0
                 );
                 kplus_insert(
                   iter,
@@ -167,7 +168,7 @@ void main() {
                   fa.vertex[ 0 ].id
                 );
                 memoryBarrier();
-                imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
+                imageAtomicExchange( image_pool_2dua_array[ push_constants.lock ], ivec3( image_pos, 0 ), uint( 0 ) );
                 keep_waiting = false;
               }
             }
@@ -179,7 +180,7 @@ void main() {
       const uint visibility_index = instance_resource_index[ uint( fa.vertex[ 0 ].id.x ) ].visibility;
       visibility_pool[ visibility_index ] = 1;
     }
-  }
+  }  
 
   //visible = false;
 

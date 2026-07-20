@@ -237,7 +237,7 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = 4u * 8u + 1u - 1u;
+  constexpr std::size_t egbuf_count = ( 4u * 4u + 1u - 1u ) * 2u;
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -282,12 +282,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
-              .setArrayLayers( 4u )
+              .setArrayLayers( 8u )
           )
       )
       .set_range(
         gct::subview_range()
-          .set_layer_count( 4u )
+          .set_layer_count( 8u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -308,7 +308,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
+              .setArrayLayers( 2u )
           )
+      )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 2u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
