@@ -41,7 +41,6 @@ struct rasterizable_vertex_attribute {
   vec4 tangent;
   vec2 texcoord;
   vec4 optflow;
-  vec4 id;
   vec4 previous_position;
 };
 

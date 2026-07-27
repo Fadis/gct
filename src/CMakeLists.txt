@@ -909,6 +909,13 @@ add_shader( gct gct/shader/generate_k+buffer/standard/2.0/geometry.frag INSTALL 
 add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/standard/3.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/2.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/2.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/2.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/2.0/geometry.comp INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/3.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/3.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy/3.0/geometry.frag INSTALL )
 
 
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.task INSTALL )
@@ -980,6 +987,7 @@ add_shader( gct gct/shader/merge/2.0/merge.comp INSTALL )
 
 add_shader( gct gct/shader/nearest_position/nearest_position.comp INSTALL )
 add_shader( gct gct/shader/nearest_position/kplus/2.0/nearest_position.comp INSTALL )
+add_shader( gct gct/shader/nearest_position/kplus/3.0/nearest_position.comp INSTALL )
 add_shader( gct gct/shader/nearest_position/ppll/1.0/nearest_position.comp INSTALL )
 
 add_shader( gct gct/shader/probe_ppll/1.0/probe_ppll.comp INSTALL )
@@ -1004,6 +1012,7 @@ add_shader( gct gct/shader/generate_fur_texture/1.0/fin.comp INSTALL )
 
 add_shader( gct gct/shader/lighting/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/2.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/kplus/3.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/flat/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/simple/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/1.0/lighting.comp INSTALL )

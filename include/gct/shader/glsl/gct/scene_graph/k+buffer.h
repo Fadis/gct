@@ -6,6 +6,7 @@
 #include <gct/scene_graph/image_pool.h>
 #include <gct/pre_dof_pixel.h>
 #include <gct/depth.h>
+#include <gct/vertex_attribute.h>
 #include <gct/gbuffer_format.h>
 #include <gct/color.h>
 
@@ -563,6 +564,51 @@ kplus_iter kplus_begin(
   );
 }
 
+void kplus_begin(
+#ifdef __cplusplus
+  kplus_iter &dest,
+#else
+  out kplus_iter dest,
+#endif
+  kplus_image image,
+  ivec2 image_pos,
+  uint active_layer,
+  int offset
+) {
+  const int layer_count = gbuffer_get_layer_count( active_layer );
+  const int gbuffer_offset = offset * ( layer_count * 4 + 1 );
+  const int depth_offset = offset * 4;
+  const ivec4 sample_index = ivec4( imageLoad( image_pool_2d_array[ nonuniformEXT( image.gbuffer ) ], ivec3( image_pos, gbuffer_offset + layer_count * 4 ) ) );
+  int index = -1;
+  int layer = 0;
+  if( sample_index.w != 0u ) {
+    index = 3;
+    layer = sample_index.w - 1;
+  }
+  else if( sample_index.z != 0u ) {
+    index = 2;
+    layer = sample_index.z - 1;
+  }
+  else if( sample_index.y != 0u ) {
+    index = 1;
+    layer = sample_index.y - 1;
+  }
+  else if( sample_index.x != 0u ) {
+    index = 0;
+    layer = sample_index.x - 1;
+  }
+  dest = kplus_iter(
+    image,
+    image_pos,
+    index,
+    layer,
+    active_layer,
+    gbuffer_offset,
+    depth_offset
+  );
+}
+
+
 kplus_iter kplus_begin(
   kplus_image image,
   ivec2 image_pos,
@@ -883,6 +929,7 @@ void kplus_insert(
           ( order.new_sample_index - 1 ) * layer_count +
           gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_OPTFLOW_MARK )
         ),
+        //vec4( 0.0, 0.0, 0.0, 0.0 )
         vec4( p.optflow, 0.0 )
       );
     }
@@ -950,6 +997,195 @@ void kplus_insert(
     }
     imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ), vec4( order.sample_index ) );
   }
+}
+
+void kplus_insert_lazy(
+  kplus_iter iter,
+  rasterizable_vertex_attribute p,
+  float depth,
+  vec4 input_id
+) {
+  const int layer_count = gbuffer_get_layer_count( iter.active_layer );
+  const kplus_order order = kplus_get_insert_at( iter, depth );
+  if( order.new_sample_pos < 4 ) {
+    imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.depth ) ], ivec3( iter.image_pos, iter.depth_offset + order.new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_POSITION_DEPTH ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_POSITION_DEPTH )
+        ),
+        vec4( p.position.xyz, depth )
+      );
+    }
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_NORMAL ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL )
+        ),
+        vec4( p.normal, input_id.z )
+      );
+    }
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID )
+        ),
+        vec4( 0.0f, 0.0f, input_id.x, input_id.y )
+      );
+    }
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_OPTFLOW_MARK ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_OPTFLOW_MARK )
+        ),
+        p.optflow
+      );
+    }
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TANGENT ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TANGENT )
+        ),
+        p.tangent
+      );
+    }
+    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 ) ) {
+      imageStore(
+        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+        ivec3(
+          iter.image_pos,
+          iter.gbuffer_offset +
+          ( order.new_sample_index - 1 ) * layer_count +
+          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 )
+        ),
+        vec4( p.texcoord.x, p.texcoord.y, 0.0f, 0.0f )
+      );
+    }
+    imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ), vec4( order.sample_index ) );
+  }
+}
+
+void kplus_insert_complement(
+  kplus_iter iter,
+  primitive_value p,
+  vec4 input_id
+) {
+  const int layer_count = gbuffer_get_layer_count( iter.active_layer );
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_NORMAL ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL )
+      ),
+      vec4( p.normal, input_id.z )
+    );
+  }
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_ALBEDO_ALPHA ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_ALBEDO_ALPHA )
+      ),
+      p.albedo
+    );
+  }
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_EMISSIVE_OCCLUSION ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_EMISSIVE_OCCLUSION )
+      ),
+      vec4( p.emissive, p.occlusion )
+    );
+  }
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID )
+      ),
+      vec4( p.metallic, p.roughness, input_id.x, input_id.y )
+    );
+  }
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_COLOR0 ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_COLOR0 )
+      ),
+      p.color[ 0 ]
+    );
+  }
+  if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_COLOR1 ) ) {
+    imageStore(
+      image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
+      ivec3(
+        iter.image_pos,
+        iter.gbuffer_offset +
+        ( iter.layer ) * layer_count +
+        gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_COLOR0 )
+      ),
+      p.color[ 1 ]
+    );
+  }
+}
+
+void kplus_erase(
+  kplus_iter iter
+) {
+  if( kplus_is_end( iter ) ) return;
+  const int layer_count = gbuffer_get_layer_count( iter.active_layer );
+  vec4 order = imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ) );
+  for( uint i = iter.index; i != 4u; ++i ) { 
+    order[ i ] = ( i == 3u ) ? 0.0f : order[ i + 1u ];
+  }
+  imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ), order );
+}
+
+void kplus_erase_back(
+  kplus_iter iter
+) {
+  const int layer_count = gbuffer_get_layer_count( iter.active_layer );
+  vec4 order = imageLoad( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ) );
+  for( uint i = iter.index + 1u; i != 4u; ++i ) { 
+    order[ i ] = 0.0f;
+  }
+  imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.gbuffer_offset + layer_count * 4 ), order );
 }
 
 float kplus_get_depth(
@@ -1114,7 +1350,7 @@ void kplus_merge(
 ) {
   const int layer_count = gbuffer_get_layer_count( iter0.active_layer );
   for( uint i = 0u; i != 4u; i++ ) {
-    if( !kplus_is_end( iter0 ) ) {
+    if( !kplus_is_end( iter1 ) ) {
       const float depth = kplus_get_depth( iter1 );
       const kplus_order order = kplus_get_insert_at( iter0, depth );
       if( order.new_sample_pos < 4 ) {
@@ -1298,7 +1534,7 @@ pre_dof_pixel kplus_mix(
       ( has_layer ) ?
       kplus_get( iter, scattering_image ) :
       vec4( 0.0, 0.0, 0.0, 0.0 );
-    const vec4 radiance = 
+    const vec4 radiance =
       vec4( ( ambient + ( lighting.rgb ) ) * scat.w + scat.rgb, albedo.a );
     near_depth = min( depth, near_depth );
     far_depth = min( depth, far_depth );
@@ -1507,7 +1743,24 @@ pre_dof_pixel kplus_mix_face_id(
   );
 }
 
-
+float kplus_fast_depth(
+  uint depth,
+  ivec2 image_pos,
+  int offset
+) {
+  return
+    max(
+      max(
+        imageLoad( image_pool_2d_array[ nonuniformEXT( depth ) ], ivec3( image_pos, offset * 4 + 0 ) ).x,
+        imageLoad( image_pool_2d_array[ nonuniformEXT( depth ) ], ivec3( image_pos, offset * 4 + 1 ) ).x
+      ),
+      max(
+        imageLoad( image_pool_2d_array[ nonuniformEXT( depth ) ], ivec3( image_pos, offset * 4 + 2 ) ).x,
+        imageLoad( image_pool_2d_array[ nonuniformEXT( depth ) ], ivec3( image_pos, offset * 4 + 3 ) ).x
+      )
+    );
+  
+}
 
 #endif
 

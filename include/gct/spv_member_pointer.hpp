@@ -65,6 +65,9 @@ public:
   void to_json( nlohmann::json& ) const;
   [[nodiscard]] bool has( const std::string &name ) const;
   [[nodiscard]] std::size_t get_member_count() const;
+  [[nodiscard]] const spv_member_pointer::child_type &get_member() const;
+  [[nodiscard]] bool is_struct() const;
+  [[nodiscard]] bool is_array() const;
 private:
   std::shared_ptr< SpvReflectShaderModule > reflect;
   std::size_t begin_;
@@ -82,6 +85,7 @@ class spv_member_pointer_impl {
 public:
   child_type::const_iterator cur_child;
 };
+
 
 void to_json( nlohmann::json&, const spv_member_pointer& );
 template< typename T >
@@ -110,6 +114,17 @@ public:
     else {
       throw exception::invalid_argument( "spv_reference::operator U& : Incompatible value.", __FILE__, __LINE__ );
     }
+  }
+  const T &get_head() const {
+    return head;
+  }
+  const spv_member_pointer &get_member_pointer() const {
+    return mp;
+  }
+  template< typename U >
+  const U *get() const {
+    const auto cur = std::next( reinterpret_cast< std::uint8_t* >( &*head ), mp.get_offset() );
+    return reinterpret_cast< U* >( cur );
   }
 private:
   T head;

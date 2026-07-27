@@ -383,6 +383,11 @@ namespace gct {
       const vk::ImageSubresourceRange &range
     );
     void fill(
+      const std::shared_ptr< image_t > &dest,
+      const vk::ClearColorValue &color,
+      const std::vector< vk::ImageSubresourceRange > &range
+    );
+    void fill(
       const std::shared_ptr< image_view_t > &dest,
       const std::array< float, 4u > &color
     );

@@ -6,14 +6,27 @@
 #include <gct/scene_graph/texture_pool.h>
 #include <gct/vertex_attribute.h>
 
+
+vec3 calc_optflow(
+  vec4 vert_current_screeen_pos,
+  vec4 vert_previous_screen_pos
+) {
+  if( vert_current_screeen_pos.w == 0.0f || vert_previous_screen_pos.w == 0.0f ) return vec3( 0.0f, 0.0f, 0.0f ); 
+  const vec4 screen_pos = vert_current_screeen_pos;
+  const vec3 screen_pos_ = screen_pos.xyz / screen_pos.w;
+  const vec4 previous_screen_pos = vert_previous_screen_pos;
+  const vec3 previous_screen_pos_ = previous_screen_pos.xyz / previous_screen_pos.w;
+  return screen_pos_.xyz - previous_screen_pos_.xyz;
+}
+
 primitive_value read_primitive(
   uint primitive_id,
   vec4 vert_position,
   vec3 vert_normal,
   vec4 vert_tangent,
   vec2 vert_texcoord,
-  vec4 vert_optflow,
-  vec4 vert_previous_position
+  vec4 vert_current_screeen_pos,
+  vec4 vert_previous_screen_pos
 ) {
   const primitive_resource_index_type prim =
     primitive_resource_index[ primitive_id ];
@@ -59,11 +72,7 @@ primitive_value read_primitive(
     ( prim.occlusion_texture != 0 ) ?
     mix( 1 - prim.occlusion_strength, 1, texture( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord ).r ) :
     1.0;
-  const vec4 screen_pos = vert_optflow;
-  const vec3 screen_pos_ = screen_pos.xyz / screen_pos.w;
-  const vec4 previous_screen_pos = vert_previous_position;
-  const vec3 previous_screen_pos_ = previous_screen_pos.xyz / previous_screen_pos.w;
-  const vec3 optflow = screen_pos_.xyz - previous_screen_pos_.xyz;
+  const vec3 optflow = calc_optflow( vert_current_screeen_pos, vert_previous_screen_pos );
 
   primitive_value temp;
   temp.pos = pos;
@@ -79,11 +88,94 @@ primitive_value read_primitive(
   return temp;
 }
 
+vec4 read_primitive_albedo_only(
+  uint primitive_id,
+  vec2 vert_texcoord
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+
+  const vec4 albedo =
+    ( prim.base_color_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.base_color_texture ],
+      texture( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord )
+    ) :
+    prim.base_color;
+
+  return albedo;
+}
+
+primitive_value read_primitive_excluding_albedo(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec4 vert_tangent,
+  vec2 vert_texcoord,
+  vec4 vert_current_screeen_pos,
+  vec4 vert_previous_screen_pos,
+  vec4 albedo
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal_ = normalize( vert_normal.xyz );
+  const vec3 tangent_ = normalize( vert_tangent.xyz );
+  vec3 normal;
+  if( prim.normal_texture != 0 ) {
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
+    const mat3 its = mat3( tangent_, binormal, normal_ );
+    normal = its * ( normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 ) );
+  }
+  else {
+    normal = normal_;
+  }
+
+  const vec3 pos = vert_position.xyz;
+  const vec3 emissive =
+    ( prim.emissive_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.emissive_texture ],
+      texture( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord ).rgb
+    ) :
+    prim.emissive.rgb;
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = texture( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+  float occlusion =
+    ( prim.occlusion_texture != 0 ) ?
+    mix( 1 - prim.occlusion_strength, 1, texture( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord ).r ) :
+    1.0;
+  const vec3 optflow = calc_optflow( vert_current_screeen_pos, vert_previous_screen_pos );
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = albedo;
+  temp.emissive = emissive;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
+  temp.occlusion = occlusion;
+  temp.optflow = optflow;
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord;
+  return temp;
+}
+
+
 primitive_value read_primitive(
-  rasterizable_vertex_attribute attr
+  rasterizable_vertex_attribute attr,
+  vec4 id
 ) {
   return read_primitive(
-    uint( attr.id.y ),
+    uint( id.y ),
     attr.position,
     attr.normal,
     attr.tangent,
@@ -98,8 +190,8 @@ primitive_value read_primitive(
   vec4 vert_position,
   vec3 vert_normal,
   vec2 vert_texcoord,
-  vec4 vert_optflow,
-  vec4 vert_previous_position
+  vec4 vert_current_screeen_pos,
+  vec4 vert_previous_screen_pos
 ) {
   const primitive_resource_index_type prim =
     primitive_resource_index[ primitive_id ];
@@ -128,11 +220,7 @@ primitive_value read_primitive(
     ( prim.occlusion_texture != 0 ) ?
     mix( 1 - prim.occlusion_strength, 1, texture( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord ).r ) :
     1.0;
-  const vec4 screen_pos = vert_optflow;
-  const vec3 screen_pos_ = screen_pos.xyz / screen_pos.w;
-  const vec4 previous_screen_pos = vert_previous_position;
-  const vec3 previous_screen_pos_ = previous_screen_pos.xyz / previous_screen_pos.w;
-  const vec3 optflow = screen_pos_.xyz - previous_screen_pos_.xyz;
+  const vec3 optflow = calc_optflow( vert_current_screeen_pos, vert_previous_screen_pos );
 
   primitive_value temp;
   temp.pos = pos;

@@ -44,6 +44,9 @@ public:
       );
     }
   }
+  [[nodiscard]] bool has_push_constant() const {
+    return push_constant_enabled() && push_constant_storage_is_ready();
+  }
 protected:
   [[nodiscard]] std::vector< std::uint8_t > &get_push_constant_internal() const {
     return push_constant;

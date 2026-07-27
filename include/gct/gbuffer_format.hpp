@@ -1,7 +1,9 @@
 #ifndef GCT_GBUFFER_FORMAT_HPP
 #define GCT_GBUFFER_FORMAT_HPP
 
+#include <vector>
 #include <cstdint>
+#include <vulkan/vulkan.hpp>
 
 namespace gct {
   enum class gbuffer_format : std::uint32_t {
@@ -23,6 +25,12 @@ namespace gct {
   gbuffer_format operator^( gbuffer_format l, gbuffer_format r );
   std::uint32_t get_kplus_layer_count( gbuffer_format );
   std::uint32_t get_ppll_layer_count( gbuffer_format );
+
+  std::uint32_t get_layer( gbuffer_format active_layers, gbuffer_format layer_bit );
+  bool has_layer( gbuffer_format active_layers, gbuffer_format layer_bit );
+  std::uint32_t get_layer_count( gbuffer_format active_layers );
+  std::vector< vk::ImageSubresourceRange > gbuffer_format_to_image_subresource_range( gbuffer_format all, gbuffer_format selected );
+  std::vector< vk::ImageSubresourceRange > kplus_gbuffer_format_to_image_subresource_range( gbuffer_format all, gbuffer_format selected, bool index );
 }
 
 #endif

@@ -9,12 +9,14 @@
 #include <glm/mat4x4.hpp>
 #include <gct/shader/glsl/gct/aabb_type.h>
 #include <gct/shader/glsl/gct/vertex_attribute.h>
+#include <gct/shader/glsl/gct/gbuffer_format.h>
 using namespace glm;
 using namespace std;
 using uint = std::uint32_t;
 #else
 #include <gct/aabb_type.h>
 #include <gct/vertex_attribute.h>
+#include <gct/gbuffer_format.h>
 #endif
 
 uint rasterization_to_framebuffer_index( int x, int y, int width ) {
@@ -92,6 +94,10 @@ struct rasterization_state {
   ivec2 bounding_box_size;
   vec2 left_top_pixel_pos_barycentric;
 
+  vec2 v0_screen;
+  vec2 v1_screen;
+  vec2 v2_screen;
+
   float inv_v0w;
   float inv_v1w;
   float inv_v2w;
@@ -102,7 +108,7 @@ struct rasterization_state {
 	float dt_dy;
 };
 
-rasterization_state rasterization_init(
+rasterization_state rasterization_init0(
   vec3 v0_view3,
   vec3 v1_view3,
   vec3 v2_view3,
@@ -114,10 +120,13 @@ rasterization_state rasterization_init(
       ivec2( 0, 0 ),
       ivec2( 0, 0 ),
       vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
       0, 0, 0, 0, 0, 0, 0
     );
   }
-
+  
   vec2 v0_screen = rasterization_ndc_to_screen( v0_view3, width, height );
   vec2 v1_screen = rasterization_ndc_to_screen( v1_view3, width, height );
   vec2 v2_screen = rasterization_ndc_to_screen( v2_view3, width, height );
@@ -142,57 +151,112 @@ rasterization_state rasterization_init(
       )
     );
 
-  if( rasterization_check_tiny_bounding_box( screen_space_bounding_box ) ) {
+  /*if( rasterization_check_tiny_bounding_box( screen_space_bounding_box ) ) {
     return rasterization_state(
       ivec2( 0, 0 ),
       ivec2( 0, 0 ),
       vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
       0, 0, 0, 0, 0, 0, 0
     );
-  }
+  }*/
 
   const ivec2 bounding_box_pixel_left_top = ivec2( ceil( screen_space_bounding_box.min ) );
   const ivec2 bounding_box_pixel_count =
     ivec2( ceil( screen_space_bounding_box.max ) ) - bounding_box_pixel_left_top;
 
-  const int pixel_count = bounding_box_pixel_count.x * bounding_box_pixel_count.y;
-
-  const vec2 v_ab = v1_screen - v0_screen;
-  const vec2 v_ac = v2_screen - v0_screen;
-
-  const float factor = 1.0f / rasterization_cross2( v_ab, v_ac );
-
-  const float ds_dx =  v_ac.y * factor;
-  const float ds_dy = -v_ac.x * factor;
-	const float dt_dx = -v_ab.y * factor;
-	const float dt_dy =  v_ab.x * factor;
-
-  // bounding box内での左上のピクセルの位置
-  const vec2 bounding_box_left_top_pixel_pos = vec2(
-    bounding_box_pixel_left_top.x - v0_screen.x,
-	  bounding_box_pixel_left_top.y - v0_screen.y
-  );
-
-  const vec2 bounding_box_left_top_pixel_pos_barycentric = vec2(
-    ( bounding_box_left_top_pixel_pos.x * v_ac.y - bounding_box_left_top_pixel_pos.y * v_ac.x ) * factor,
-    ( v_ab.x * bounding_box_left_top_pixel_pos.y - v_ab.y * bounding_box_left_top_pixel_pos.x ) * factor
-  );
-
   return rasterization_state(
     bounding_box_pixel_left_top,
     bounding_box_pixel_count,
-    bounding_box_left_top_pixel_pos_barycentric,
+    vec2( 0.0, 0.0 ),
+    v0_screen,
+    v1_screen,
+    v2_screen,
     1.0f,
     1.0f,
     1.0f,
-    ds_dx,
-    ds_dy,
- 	  dt_dx,
- 	  dt_dy
+    0,
+    0,
+    0,
+    0
   );
 }
 
+void rasterization_init1(
+#ifdef __cplusplus
+  rasterization_state &state
+#else
+  inout rasterization_state state
+#endif
+) {
+  if( state.inv_v0w == 0.0 ) return;
 
+  const vec2 v_ab = state.v1_screen - state.v0_screen;
+  const vec2 v_ac = state.v2_screen - state.v0_screen;
+
+  const float factor = 1.0f / rasterization_cross2( v_ab, v_ac );
+
+  state.ds_dx =  v_ac.y * factor;
+  state.ds_dy = -v_ac.x * factor;
+	state.dt_dx = -v_ab.y * factor;
+  state.dt_dy =  v_ab.x * factor;
+
+  // bounding box内での左上のピクセルの位置
+  const vec2 bounding_box_left_top_pixel_pos = vec2(
+    state.left_top_pixel.x - state.v0_screen.x,
+	  state.left_top_pixel.y - state.v0_screen.y
+  );
+
+  state.left_top_pixel_pos_barycentric = vec2(
+    ( bounding_box_left_top_pixel_pos.x * v_ac.y - bounding_box_left_top_pixel_pos.y * v_ac.x ) * factor,
+    ( v_ab.x * bounding_box_left_top_pixel_pos.y - v_ab.y * bounding_box_left_top_pixel_pos.x ) * factor
+  );
+}
+
+rasterization_state rasterization_init(
+  vec3 v0_view3,
+  vec3 v1_view3,
+  vec3 v2_view3,
+  uint width,
+  uint height
+) {
+  rasterization_state state = rasterization_init0( v0_view3, v1_view3, v2_view3, width, height );
+  rasterization_init1( state );
+  return state;
+}
+
+rasterization_state rasterization_init0(
+  vec4 v0_view,
+  vec4 v1_view,
+  vec4 v2_view,
+  uint width,
+  uint height
+) {
+  const float inv_v0w = 1.0f/v0_view.w;
+  const float inv_v1w = 1.0f/v1_view.w;
+  const float inv_v2w = 1.0f/v2_view.w;
+  rasterization_state state = rasterization_init0( vec3(v0_view)*inv_v0w, vec3(v1_view)*inv_v1w, vec3(v2_view)*inv_v2w, width, height );
+  state.inv_v0w = inv_v0w;
+  state.inv_v1w = inv_v1w;
+  state.inv_v2w = inv_v2w;
+  return state;
+}
+
+rasterization_state rasterization_init(
+  vec4 v0_view,
+  vec4 v1_view,
+  vec4 v2_view,
+  uint width,
+  uint height
+) {
+  rasterization_state state = rasterization_init0( v0_view, v1_view, v2_view, width, height );
+  rasterization_init1( state );
+  return state;
+}
+
+/*
 rasterization_state rasterization_init(
   vec4 v0_view,
   vec4 v1_view,
@@ -211,6 +275,9 @@ rasterization_state rasterization_init(
       ivec2( 0, 0 ),
       ivec2( 0, 0 ),
       vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
       0, 0, 0, 0, 0, 0, 0
     );
   }
@@ -244,6 +311,9 @@ rasterization_state rasterization_init(
       ivec2( 0, 0 ),
       ivec2( 0, 0 ),
       vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
       0, 0, 0, 0, 0, 0, 0
     );
   }
@@ -251,8 +321,6 @@ rasterization_state rasterization_init(
   const ivec2 bounding_box_pixel_left_top = ivec2( ceil( screen_space_bounding_box.min ) );
   const ivec2 bounding_box_pixel_count =
     ivec2( ceil( screen_space_bounding_box.max ) ) - bounding_box_pixel_left_top;
-
-  const int pixel_count = bounding_box_pixel_count.x * bounding_box_pixel_count.y;
 
   const vec2 v_ab = v1_screen - v0_screen;
   const vec2 v_ac = v2_screen - v0_screen;
@@ -279,6 +347,9 @@ rasterization_state rasterization_init(
     bounding_box_pixel_left_top,
     bounding_box_pixel_count,
     bounding_box_left_top_pixel_pos_barycentric,
+    v0_screen,
+    v1_screen,
+    v2_screen,
     inv_v0w,
     inv_v1w,
     inv_v2w,
@@ -288,7 +359,7 @@ rasterization_state rasterization_init(
  	  dt_dy
   );
 }
-
+*/
 /*
 struct rasterization_state {
   ivec2 left_top_pixel;
@@ -352,6 +423,42 @@ rasterization_result rasterization_rasterize(
     true
   );
 }
+
+struct rasterization_result_simple {
+  ivec2 pixel;
+  bool valid;
+};
+
+
+rasterization_result_simple rasterization_rasterize_simple(
+  rasterization_state state,
+  uint index
+) {
+  const ivec2 pixel_in_bounding_box = ivec2(
+    index % state.bounding_box_size.x,
+    index / state.bounding_box_size.x
+  );
+  if( pixel_in_bounding_box.y >= state.bounding_box_size.y ) {
+    return rasterization_result_simple( ivec2( 0, 0 ), false );
+  }
+  const float s = state.left_top_pixel_pos_barycentric.x +
+            pixel_in_bounding_box.x * state.ds_dx +
+            pixel_in_bounding_box.y * state.ds_dy;
+	const float t = state.left_top_pixel_pos_barycentric.y +
+            pixel_in_bounding_box.x * state.dt_dx +
+            pixel_in_bounding_box.y * state.dt_dy;
+
+  const float v = 1.0f - ( s + t );
+  if( s < 0.0f || t < 0.0f || v < 0.0f ) {
+    return rasterization_result_simple( ivec2( 0, 0 ), false );
+  }
+
+  return rasterization_result_simple(
+    state.left_top_pixel + pixel_in_bounding_box,
+    true
+  );
+}
+
 
 float rasterization_interpolate(
   rasterization_state state,
@@ -464,33 +571,66 @@ vec4 rasterization_perspective_correct_interpolate(
 rasterizable_vertex_attribute rasterization_interpolate(
   rasterization_state state,
   rasterization_result rast,
-  rasterizable_face_attribute v
+  rasterizable_face_attribute v,
+  uint gbuffer_format
 ) {
-  return rasterizable_vertex_attribute(
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].position, v.vertex[ 1 ].position, v.vertex[ 2 ].position ),
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].normal, v.vertex[ 1 ].normal, v.vertex[ 2 ].normal ),
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].tangent, v.vertex[ 1 ].tangent, v.vertex[ 2 ].tangent ),
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].texcoord, v.vertex[ 1 ].texcoord, v.vertex[ 2 ].texcoord ),
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].optflow, v.vertex[ 1 ].optflow, v.vertex[ 2 ].optflow ),
-    v.vertex[ 0 ].id,
-    rasterization_interpolate( state, rast, v.vertex[ 0 ].previous_position, v.vertex[ 1 ].previous_position, v.vertex[ 2 ].previous_position )
-  );
+  rasterizable_vertex_attribute r;
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_POSITION_DEPTH ) ) {
+    r.position = rasterization_interpolate( state, rast, v.vertex[ 0 ].position, v.vertex[ 1 ].position, v.vertex[ 2 ].position );
+  //}
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_NORMAL ) ) {
+    r.normal = rasterization_interpolate( state, rast, v.vertex[ 0 ].normal, v.vertex[ 1 ].normal, v.vertex[ 2 ].normal );
+  //}
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_TANGENT ) ) {
+    r.tangent = rasterization_interpolate( state, rast, v.vertex[ 0 ].tangent, v.vertex[ 1 ].tangent, v.vertex[ 2 ].tangent );
+  //}
+  r.texcoord = rasterization_interpolate( state, rast, v.vertex[ 0 ].texcoord, v.vertex[ 1 ].texcoord, v.vertex[ 2 ].texcoord );
+  if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_OPTFLOW_MARK ) ) {
+    r.optflow = rasterization_interpolate( state, rast, v.vertex[ 0 ].optflow, v.vertex[ 1 ].optflow, v.vertex[ 2 ].optflow );
+    r.previous_position = rasterization_interpolate( state, rast, v.vertex[ 0 ].previous_position, v.vertex[ 1 ].previous_position, v.vertex[ 2 ].previous_position );
+  }
+  else {
+    r.optflow = vec4( 0.0f, 0.0f, 0.0f, 0.0f );
+    r.previous_position = vec4( 0.0f, 0.0f, 0.0f, 0.0f );
+  }
+  return r;
 }
 
 rasterizable_vertex_attribute rasterization_perspective_correct_interpolate(
   rasterization_state state,
   rasterization_result rast,
-  rasterizable_face_attribute v
+  rasterizable_face_attribute v,
+  uint gbuffer_format
 ) {
-  return rasterizable_vertex_attribute(
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].position, v.vertex[ 1 ].position, v.vertex[ 2 ].position ),
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].normal, v.vertex[ 1 ].normal, v.vertex[ 2 ].normal ),
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].tangent, v.vertex[ 1 ].tangent, v.vertex[ 2 ].tangent ),
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].texcoord, v.vertex[ 1 ].texcoord, v.vertex[ 2 ].texcoord ),
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].optflow, v.vertex[ 1 ].optflow, v.vertex[ 2 ].optflow ),
-    v.vertex[ 0 ].id,
-    rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].previous_position, v.vertex[ 1 ].previous_position, v.vertex[ 2 ].previous_position )
-  );
+  rasterizable_vertex_attribute r;
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_POSITION_DEPTH ) ) {
+    r.position = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].position, v.vertex[ 1 ].position, v.vertex[ 2 ].position );
+  //}
+  //else {
+  //  r.position = vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+  //}
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_NORMAL ) ) {
+    r.normal = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].normal, v.vertex[ 1 ].normal, v.vertex[ 2 ].normal );
+  //}
+  //else {
+  //  r.normal = vec3( 0.0f, 0.0f, 0.0f );
+  //}
+  //if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_TANGENT ) ) {
+    r.tangent = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].tangent, v.vertex[ 1 ].tangent, v.vertex[ 2 ].tangent );
+  //}
+  //else {
+  //  r.tangent = vec4( 0.0f, 0.0f, 0.0f, 0.0f );
+  //}
+  r.texcoord = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].texcoord, v.vertex[ 1 ].texcoord, v.vertex[ 2 ].texcoord );
+  if( gbuffer_has_layer( gbuffer_format, GCT_GBUFFER_OPTFLOW_MARK ) ) {
+    r.optflow = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].optflow, v.vertex[ 1 ].optflow, v.vertex[ 2 ].optflow );
+    r.previous_position = rasterization_perspective_correct_interpolate( state, rast, v.vertex[ 0 ].previous_position, v.vertex[ 1 ].previous_position, v.vertex[ 2 ].previous_position );
+  }
+  else {
+    r.optflow = vec4( 0.0f, 0.0f, 0.0f, 0.0f );
+    r.previous_position = vec4( 0.0f, 0.0f, 0.0f, 0.0f );
+  }
+  return r;
 }
 
 struct rasterization_statistics {

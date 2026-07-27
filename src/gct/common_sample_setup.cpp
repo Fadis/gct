@@ -39,14 +39,15 @@ common_sample_setup::common_sample_setup(
     ( "help,h", "show this message" )
     ( "debug,d", po::bool_switch(), "enable debug log" )
     ( "validation,v", po::bool_switch(), "enable validation layer" )
-    ( "record,r", po::bool_switch(), "record frames" );
+    ( "record,r", po::bool_switch(), "record frames" )
+    ( "device,D", po::value< std::string >()->default_value( "0" ), "select device" )
+    ( "size,s", po::value< std::string >()->default_value("native"), "window size" );
   if( enable_gltf ) {
     desc.add_options()
       ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" );
   }
   if( enable_glfw ) {
     desc.add_options()
-      ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
       ( "fullscreen,f", po::bool_switch(), "fullscreen" )
       ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
@@ -117,7 +118,29 @@ common_sample_setup::common_sample_setup(
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME
   );
 
-  auto selected = groups[ 0 ].with_extensions( device_extensions_ );
+  std::uint32_t device_index = 0u;
+  if( vm[ "device" ].as< std::string >() == "?" ) {
+    std::uint32_t index = 0u;
+    for( auto &g: groups ) {
+      std::cout << index << " : " << g.devices[ 0 ]->get_props().get_basic().deviceName << std::endl;
+      ++index;
+    }
+    exit( 0 );
+  }
+  else {
+    const std::string device_index_str = vm[ "device" ].as< std::string >();
+    if( std::from_chars( device_index_str.data(), device_index_str.data()+device_index_str.size(), device_index ).ptr != device_index_str.data() + device_index_str.size() ) {
+      std::cerr << "Invalid device index : " << device_index_str << std::endl;
+      exit( 1 );
+    }
+  }
+
+  if( device_index > groups.size() ) {
+    std::cerr << "No such device : " << device_index << std::endl;
+    exit( 1 );
+  }
+
+  auto selected = groups[ device_index ].with_extensions( device_extensions_ );
 
   if(
     selected.devices[ 0 ]->get_props().get_subgroup_size_control().minSubgroupSize > 32u ||
@@ -128,28 +151,28 @@ common_sample_setup::common_sample_setup(
       selected.devices[ 0 ]->get_props().get_subgroup_size_control().maxSubgroupSize << std::endl;
     exit( 1 );
   }
+  const std::string window_size = vm[ "size" ].as< std::string >();
+  if( window_size != "native" ) { 
+    boost::fusion::vector< unsigned int, unsigned int > parsed_window_size;
+    {
+      auto iter = window_size.begin();
+      const auto end = window_size.end();
+      namespace qi = boost::spirit::qi;
+      if( !qi::parse( iter, end, qi::uint_ >> 'x' >> qi::uint_, parsed_window_size ) ) {
+        std::cerr << "Invalid window size: " << window_size << std::endl;
+        exit( 1 );
+      }
+    }
+    width = boost::fusion::at_c< 0 >( parsed_window_size );
+    height = boost::fusion::at_c< 1 >( parsed_window_size );
+  }
+  else {
+    width = 1920;
+    height = 1080;
+  }
 
   if( enable_glfw ) {
     const bool fullscreen = vm[ "fullscreen" ].as< bool >();
-    const std::string window_size = vm[ "size" ].as< std::string >();
-    if( window_size != "native" ) { 
-      boost::fusion::vector< unsigned int, unsigned int > parsed_window_size;
-      {
-        auto iter = window_size.begin();
-        const auto end = window_size.end();
-        namespace qi = boost::spirit::qi;
-        if( !qi::parse( iter, end, qi::uint_ >> 'x' >> qi::uint_, parsed_window_size ) ) {
-          std::cerr << "Invalid window size: " << window_size << std::endl;
-          exit( 1 );
-        }
-      }
-      width = boost::fusion::at_c< 0 >( parsed_window_size );
-      height = boost::fusion::at_c< 1 >( parsed_window_size );
-    }
-    else {
-      width = 1920;
-      height = 1080;
-    }
     light_count = vm[ "light" ].as< unsigned int >();
     force_geometry = vm[ "geometry" ].as< bool >();
     if( vm.count( "primfilter" ) ) {
@@ -158,7 +181,7 @@ common_sample_setup::common_sample_setup(
     }
     window.reset( new gct::glfw_window( width, height, "window title", fullscreen ) );
     gct::glfw::get().poll();
-    surface = window->get_surface( *groups[ 0 ].devices[ 0 ] );
+    surface = window->get_surface( *groups[ device_index ].devices[ 0 ] );
  
     std::vector< gct::queue_requirement_t > queue_requirements{
       gct::queue_requirement_t{

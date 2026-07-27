@@ -237,7 +237,13 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = 4u * 4u + 1u;
+  const auto gbuffer_format =
+      gct::gbuffer_format::albedo_alpha |
+      gct::gbuffer_format::normal |
+      gct::gbuffer_format::emissive_occlusion |
+      gct::gbuffer_format::metallic_roughness_id;
+
+  const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -263,12 +269,13 @@ int main( int argc, const char *argv[] ) {
   );
 
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
+ 
+  const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
+    gbuffer_format, gct::gbuffer_format::albedo_alpha, true
+  );
 
-  const auto gbuffer_format =
-      gct::gbuffer_format::albedo_alpha |
-      gct::gbuffer_format::normal |
-      gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
+  const auto gbuffer_clear_color = vk::ClearColorValue()
+    .setFloat32( { 0.f, 0.f, 0.f, 0.f } );
  
   const auto extended_depth_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
@@ -727,8 +734,6 @@ int main( int argc, const char *argv[] ) {
       .add( "output_color", starburst_desc )
   );
 
-
-
   const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
 
   builder.output( flare_desc[ "output_color" ] );
@@ -1061,7 +1066,7 @@ int main( int argc, const char *argv[] ) {
         }
         if( res.force_geometry || walk.light_moved() || walk.camera_moved() ) {
           {
-            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.fill( extended_gbuffer->get_factory(), gbuffer_clear_color, gbuffer_erase_range );
             rec.fill( extended_depth->get_factory(), gct::color::web::white );
             rec.barrier(
               gct::syncable()

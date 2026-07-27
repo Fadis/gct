@@ -5,8 +5,36 @@
 #include <memory>
 #include <unordered_set>
 #include <gct/allocator_set.hpp>
+#include <gct/setter.hpp>
+#include <gct/array_of.hpp>
+#include <gct/descriptor_pool_create_info.hpp>
 
 namespace gct {
+
+struct common_sample_setup_create_info {
+  LIBGCT_SETTER( argc )
+  LIBGCT_SETTER( argv )
+  LIBGCT_SETTER( device_extensions )
+  LIBGCT_SETTER( descriptor_pool )
+  LIBGCT_SETTER( enable_glfw )
+  LIBGCT_SETTER( enable_device_address )
+  LIBGCT_SETTER( enable_gltf )
+  common_sample_setup_create_info &add_device_extensions( const char *name ) {
+    device_extensions.push_back( name );
+    return *this;
+  }
+  common_sample_setup_create_info &clear() {
+    device_extensions.clear();
+    return *this;
+  }
+  int argc = 0;
+  const char **argv = nullptr;
+  std::vector< const char* > device_extensions;
+  descriptor_pool_create_info_t descriptor_pool;
+  bool enable_glfw = true;
+  bool enable_device_address = false;
+  bool enable_gltf = true;
+};
 
 class instance_t;
 class surface_t;
@@ -16,7 +44,6 @@ class swapchain_t;
 class image_t;
 class image_view_t;
 class descriptor_pool_t;
-class descriptor_pool_create_info_t;
 class pipeline_cache_t;
 class allocator_t;
 class glfw_window;

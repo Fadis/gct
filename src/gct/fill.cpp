@@ -147,6 +147,43 @@ void command_buffer_recorder_t::fill(
     dest->get_props().get_basic().subresourceRange
   );
 }
+void command_buffer_recorder_t::fill(
+  const std::shared_ptr< image_t > &dest,
+  const vk::ClearColorValue &color,
+  const std::vector< vk::ImageSubresourceRange > &range_
+) {
+  const auto layout = dest->get_layout().get_uniform_layout();
+  const bool need_convert =
+    layout != vk::ImageLayout::eSharedPresentKHR &&
+    layout != vk::ImageLayout::eGeneral &&
+    layout != vk::ImageLayout::eTransferDstOptimal;
+  auto range = range_;
+  for( auto &r: range ) {
+    r.setAspectMask( format_to_aspect( dest->get_props().get_basic().format ) );
+    if( r.baseMipLevel == 0u && r.levelCount == 0u ) {
+      r
+        .setBaseMipLevel( 0u )
+        .setLevelCount( dest->get_props().get_basic().mipLevels );
+    }
+    if( r.baseArrayLayer == 0u && r.layerCount == 0u ) {
+      r
+        .setBaseArrayLayer( 0u )
+        .setLayerCount( dest->get_props().get_basic().arrayLayers );
+    }
+  }
+  if( need_convert ) {
+    convert_image( dest, vk::ImageLayout::eGeneral );
+  }
+  (*get_factory())->clearColorImage(
+    **dest,
+    need_convert ? vk::ImageLayout::eGeneral : layout,
+    color,
+    range
+  );
+  if( need_convert ) {
+    convert_image( dest, layout );
+  }
+}
 
 }
 

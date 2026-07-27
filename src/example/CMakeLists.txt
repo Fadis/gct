@@ -116,7 +116,9 @@ subdirs(
   xpbd
   fluid
   standard
+  standard_lazy
   standard3
+  standard3_lazy
   forward
   forward2
   dump_adjacency
@@ -153,6 +155,9 @@ subdirs(
   test_rasterization_host
   test_gbuffer_format
   dump_kplus_buffer
+  dump_kplus_buffer_2_lazy
+  dump_kplus_buffer_3
+  dump_kplus_buffer_3_lazy
   dump_kplus_rendering
 )
 if( DXC_FOUND )

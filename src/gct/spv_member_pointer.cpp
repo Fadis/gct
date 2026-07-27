@@ -61,11 +61,9 @@ namespace gct {
   }
   const spv_member_pointer &spv_member_pointer::operator[]( const std::string &name ) const {
     if( stride != 0u ) {
-      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     if( !child || child->empty() ) {
-      std::cout << __FILE__ << " " << __LINE__ << " " << name << std::endl;
       throw exception::invalid_argument( "spv_member_pointer::operator[] : Not a struct.", __FILE__, __LINE__ );
     }
     const auto iter = child->find( name );
@@ -99,6 +97,19 @@ namespace gct {
     temp.begin_ += temp.stride * i;
     temp.stride = 0u;
     return temp;
+  }
+  const spv_member_pointer::child_type &spv_member_pointer::get_member() const {
+    if( child && !child->empty() ) {
+      return *child;
+    }
+    throw exception::invalid_argument( "spv_member_pointer::operator[] : Not an array.", __FILE__, __LINE__ );
+    
+  }
+  bool spv_member_pointer::is_struct() const {
+    return ( child && !child->empty() );
+  }
+  bool spv_member_pointer::is_array() const {
+    return stride != 0u;
   }
   spv_member_pointer spv_member_pointer::begin() const {
     if( stride != 0u ) {
@@ -257,6 +268,9 @@ namespace gct {
   void to_json( nlohmann::json &dest, const spv_member_pointer &src ) {
     src.to_json( dest );
   }
+
+
+
 #if 0
   spv_member_pointer::spv_member_pointer(
     std::uint8_t *b,

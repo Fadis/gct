@@ -119,17 +119,12 @@ int main( int argc, const char *argv[] ) {
   const gct::common_sample_setup res(
     argc, argv,
     {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
       VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
       VK_KHR_MAINTENANCE1_EXTENSION_NAME,
       VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
       VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
       VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME,
       VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME,
-      VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME,
-      VK_KHR_MULTIVIEW_EXTENSION_NAME,
-      VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
       VK_KHR_MAINTENANCE_4_EXTENSION_NAME,
       VK_EXT_MESH_SHADER_EXTENSION_NAME//,
     },
@@ -146,7 +141,10 @@ int main( int argc, const char *argv[] ) {
       .set_descriptor_pool_size( vk::DescriptorType::eStorageBuffer, 65536*5 )
       .set_descriptor_pool_size( vk::DescriptorType::eCombinedImageSampler, 65536*2 )
       .set_descriptor_pool_size( vk::DescriptorType::eStorageImage, 65536*2 )
-      .rebuild_chain()
+      .rebuild_chain(),
+    false,
+    false,
+    true
   );
 
   const auto sg = std::make_shared< gct::scene_graph::scene_graph >(
@@ -237,7 +235,13 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = 4u * 8u + 1u;
+  const auto gbuffer_format =
+      gct::gbuffer_format::albedo_alpha |
+      gct::gbuffer_format::normal |
+      gct::gbuffer_format::emissive_occlusion |
+      gct::gbuffer_format::metallic_roughness_id;
+
+  const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -264,12 +268,13 @@ int main( int argc, const char *argv[] ) {
 
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
 
-  const auto gbuffer_format =
-      gct::gbuffer_format::albedo_alpha |
-      gct::gbuffer_format::normal |
-      gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
- 
+  const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
+    gbuffer_format, gct::gbuffer_format::albedo_alpha, true
+  );
+
+  const auto gbuffer_clear_color = vk::ClearColorValue()
+    .setFloat32( { 0.f, 0.f, 0.f, 0.f } );
+
   const auto extended_depth_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -432,6 +437,33 @@ int main( int argc, const char *argv[] ) {
       .add_resource( { "global_uniforms", shadow_uniform } )
   );
 
+  gct::shader_graph::builder builder( sg->get_resource() );
+
+  const auto np_desc = builder.call(
+    builder.get_image_io_create_info(
+      std::make_shared< gct::compute >(
+        gct::compute_create_info()
+          .set_allocator_set( res.allocator_set )
+          .set_shader( gct::get_system_shader_path() / "nearest_position" / "kplus" / "2.0" / "nearest_position.comp.spv" )
+          .set_scene_graph( sg->get_resource() )
+      ),
+      gct::image_io_plan()
+        .add_input( "gbuffer" )
+        .add_input( "position" )
+        .add_output( "dest", "gbuffer", glm::vec2( 1.f, -1.f ), vk::Format::eR32Sfloat )
+        .set_dim( "gbuffer", glm::vec2( 1.f, -1.f ) )
+        .set_node_name( "nearest_position" )
+    )
+    .set_push_constant( "gbuffer_format", gbuffer_format )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "gbuffer", extended_gbuffer_desc.linear )
+      .add( "position", extended_depth_desc.linear )    
+  );
+
+  builder.output( np_desc[ "dest" ] );
+  const auto compiled = builder();
+
   auto generate_meshlet_info = gct::compute(
     gct::compute_create_info()
       .set_allocator_set( res.allocator_set )
@@ -493,7 +525,7 @@ int main( int argc, const char *argv[] ) {
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   float average = 0.f;
-  while( frame_counter != 300u ) {
+  while( frame_counter != 600u ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     gct::blocking_timer frame_rate;
     // depth
@@ -675,7 +707,10 @@ int main( int argc, const char *argv[] ) {
             }
             (*sg)( rec );
           }
+          rec.barrier( extended_gbuffer );
+          rec.barrier( extended_depth );
         }
+        compiled( rec );
       }
       command_buffer->execute(
         gct::submit_info_t()

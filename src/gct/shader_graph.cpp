@@ -1014,6 +1014,7 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
       }
       if( new_independent_vertex.empty() ) {
         if( visited.size() != std::distance( v_begin, v_end ) ) {
+          std::cout << log << std::endl;
           throw exception::runtime_error( "All assignable images are assigned, but there are still " + std::to_string( std::distance( v_begin, v_end ) - visited.size() ) + " nodes with unassigned images.\n" );
         }
         log += "assign_image : done\n";
@@ -1737,6 +1738,9 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
           ) != is->second.expected_consumer.end();
           if( !expected ) {
             log += (*graph)[ v ].get_node_name() + "(" + std::to_string( *is->first ) + ") is not ready to execute due to input image " + i.first + " is not expected to be used now.\n";
+            for( const auto &ex: is->second.expected_consumer ) {
+              log += "debug1 : " + (*graph)[ ex ].get_node_name() + "\n";
+            }
             return std::make_pair( false, 0 );
           }
           const bool ready =
@@ -2256,6 +2260,7 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
           }
           is->second.last_generator_type = image_generator_type::inout;
           const auto [out_begin,out_end] = out_edges( v, *graph );
+          std::optional< graph_type::vertex_descriptor > selected_inout;
           for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
             const auto &sub = (*graph)[ edge ];
             const auto match = std::find_if(
@@ -2267,19 +2272,77 @@ std::unordered_map< std::string, vertex::subresult_type > vertex::result_type::g
             );
             if( match != sub.end() ) {
               const auto dest = target( edge, *graph );
-              const auto existing = std::find(
-                is->second.next_expected_consumer.begin(),
-                is->second.next_expected_consumer.end(),
-                dest
-              );
-              if( existing == is->second.next_expected_consumer.end() ) {
-                is->second.next_expected_consumer.push_back( dest );
+              if( vertex_command_id( (*graph)[ dest ].command.index() ) == vertex_command_id::call ) {
+                const auto &create_info = std::get< std::shared_ptr< image_io_create_info > >( (*graph)[ dest ].command );
+                if( create_info->get_inout().find( match->to ) != create_info->get_inout().end() ) {
+                  const auto existing = std::find(
+                    is->second.next_expected_consumer.begin(),
+                    is->second.next_expected_consumer.end(),
+                    dest
+                  );
+                  if( existing == is->second.next_expected_consumer.end() ) {
+                    log += "debug3 : " + (*graph)[ v ].get_node_name() + "." + match->from + " -> " + (*graph)[ dest ].get_node_name() + "." + match->to + " insert " + "\n";
+                    is->second.next_expected_consumer.push_back( dest );
+                  }
+                  if( is->second.expected_consumer.empty() ) {
+                    log += "debug4 : " + (*graph)[ v ].get_node_name() + "." + match->from + " -> " + (*graph)[ dest ].get_node_name() + "." + match->to + " swap " + "\n";
+                    std::swap(
+                      is->second.expected_consumer,
+                      is->second.next_expected_consumer
+                    );
+                    selected_inout = dest;
+                  }
+                }
               }
-              if( is->second.expected_consumer.empty() ) {
-                std::swap(
-                  is->second.expected_consumer,
-                  is->second.next_expected_consumer
+            }
+          }
+          if( selected_inout ) {
+            for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
+              const auto &sub = (*graph)[ edge ];
+              const auto match = std::find_if(
+                sub.begin(),
+                sub.end(),
+                [&i]( const auto &e ) {
+                  return e.from == i.first;
+                }
+              );
+              if( match != sub.end() ) {
+                const auto dest = target( edge, *graph );
+                if( dest != *selected_inout ) {
+                  const auto existing = std::find(
+                    is->second.next_expected_consumer.begin(),
+                    is->second.next_expected_consumer.end(),
+                    dest
+                  );
+                  if( existing == is->second.next_expected_consumer.end() ) {
+                    log += "debug5 : " + (*graph)[ v ].get_node_name() + "." + match->from + " -> " + (*graph)[ dest ].get_node_name() + "." + match->to + " insert " + "\n";
+                    is->second.next_expected_consumer.push_back( dest );
+                  }
+                }
+              }
+            }
+          }
+          else {
+            for( const auto &edge: boost::make_iterator_range( out_begin, out_end ) ) {
+              const auto &sub = (*graph)[ edge ];
+              const auto match = std::find_if(
+                sub.begin(),
+                sub.end(),
+                [&i]( const auto &e ) {
+                  return e.from == i.first;
+                }
+              );
+              if( match != sub.end() ) {
+                const auto dest = target( edge, *graph );
+                const auto existing = std::find(
+                  is->second.expected_consumer.begin(),
+                  is->second.expected_consumer.end(),
+                  dest
                 );
+                if( existing == is->second.expected_consumer.end() ) {
+                  log += "debug6 : " + (*graph)[ v ].get_node_name() + "." + match->from + " -> " + (*graph)[ dest ].get_node_name() + "." + match->to + " insert " + "\n";
+                  is->second.expected_consumer.push_back( dest );
+                }
               }
             }
           }

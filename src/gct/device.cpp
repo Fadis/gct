@@ -124,6 +124,28 @@ namespace gct {
         );
     }
 #endif
+#if defined(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) && defined(VK_EXT_MESH_SHADER_EXTENSION_NAME)
+    if(
+      group_.devices[ 0 ]->get_props().get_activated_extensions().find( "VK_EXT_mesh_shader" ) != group_.devices[ 0 ]->get_props().get_activated_extensions().end() &&
+      group_.devices[ 0 ]->get_props().get_activated_extensions().find( "VK_KHR_fragment_shading_rate" ) == group_.devices[ 0 ]->get_props().get_activated_extensions().end()
+    ) {
+       group_.devices[ 0 ]->get_features().set_mesh_shader(
+         vk::PhysicalDeviceMeshShaderFeaturesEXT( group_.devices[ 0 ]->get_features().get_mesh_shader() )
+           .setPrimitiveFragmentShadingRateMeshShader( false )
+      );
+    }
+#endif
+#if defined(VK_KHR_MULTIVIEW_EXTENSION_NAME) && defined(VK_EXT_MESH_SHADER_EXTENSION_NAME)
+    if(
+      group_.devices[ 0 ]->get_props().get_activated_extensions().find( "VK_EXT_mesh_shader" ) != group_.devices[ 0 ]->get_props().get_activated_extensions().end() &&
+      group_.devices[ 0 ]->get_props().get_activated_extensions().find( "VK_KHR_multiview" ) == group_.devices[ 0 ]->get_props().get_activated_extensions().end()
+    ) {
+       group_.devices[ 0 ]->get_features().set_mesh_shader(
+         vk::PhysicalDeviceMeshShaderFeaturesEXT( group_.devices[ 0 ]->get_features().get_mesh_shader() )
+           .setMultiviewMeshShader( false )
+      );
+    }
+#endif
     create_info
       .rebuild_chain();
     auto tail = get_chain_tail( create_info.get_head() );

@@ -237,7 +237,13 @@ int main( int argc, const char *argv[] ) {
       .set_final_layout( vk::ImageLayout::eColorAttachmentOptimal )
   );
 
-  constexpr std::size_t egbuf_count = ( 4u * 4u + 1u - 1u ) * 2u;
+  const auto gbuffer_format =
+      gct::gbuffer_format::albedo_alpha |
+      gct::gbuffer_format::normal |
+      gct::gbuffer_format::emissive_occlusion |
+      gct::gbuffer_format::metallic_roughness_id;
+
+  const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -263,12 +269,13 @@ int main( int argc, const char *argv[] ) {
   );
 
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
+ 
+  const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
+    gbuffer_format, gct::gbuffer_format::albedo_alpha, true
+  );
 
-  const auto gbuffer_format =
-      gct::gbuffer_format::albedo_alpha |
-      gct::gbuffer_format::normal |
-      gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
+  const auto gbuffer_clear_color = vk::ClearColorValue()
+    .setFloat32( { 0.f, 0.f, 0.f, 0.f } );
  
   const auto extended_depth_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
@@ -282,12 +289,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
-              .setArrayLayers( 8u )
+              .setArrayLayers( 4u )
           )
       )
       .set_range(
         gct::subview_range()
-          .set_layer_count( 8u )
+          .set_layer_count( 4u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -295,6 +302,12 @@ int main( int argc, const char *argv[] ) {
   );
   
   const auto extended_depth = sg->get_resource()->image->get( extended_depth_desc.linear );
+  
+  vk::ClearColorValue uimage_clear_color;
+  uimage_clear_color.uint32[ 0 ] = 0u;
+  uimage_clear_color.uint32[ 1 ] = 0u;
+  uimage_clear_color.uint32[ 2 ] = 0u;
+  uimage_clear_color.uint32[ 3 ] = 0u;
 
   const auto lock_image_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
@@ -308,12 +321,7 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
-              .setArrayLayers( 2u )
           )
-      )
-      .set_range(
-        gct::subview_range()
-          .set_layer_count( 2u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -329,6 +337,7 @@ int main( int argc, const char *argv[] ) {
       recorder.set_image_layout( extended_gbuffer, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( extended_depth, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( lock_image, vk::ImageLayout::eGeneral );
+      recorder.fill( lock_image->get_factory(), uimage_clear_color );
     }
     command_buffer->execute_and_wait();
   }
@@ -594,7 +603,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", extended_gbuffer_desc.linear )
-      .add( "position", extended_depth_desc.linear )    
+      .add( "position", extended_depth_desc.linear ) 
   );
   
   const auto np_desc = builder.call(
@@ -656,7 +665,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", extended_gbuffer_desc.linear )
-      .add( "position", extended_depth_desc.linear )    
+      .add( "position", extended_depth_desc.linear ) 
       .add( "occlusion", ao_out_desc[ "dest" ] )
       .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
       .add( "lighting_image", lighting_desc )
@@ -754,8 +763,6 @@ int main( int argc, const char *argv[] ) {
     gct::shader_graph::vertex::combined_result_type()
       .add( "output_color", starburst_desc )
   );
-
-
 
   const auto filtered_bloom = bloom_gauss( builder, merge_desc[ "bloom" ] );
 
@@ -896,7 +903,7 @@ int main( int argc, const char *argv[] ) {
       gct::af_state state = gct::af_state()
         .set_znear( std::min(0.1f*scale,0.5f) )
         .set_zfar( scale )
-        .set_lens_size( 0.001f*0.05f/2.8f )
+        .set_lens_size( 0.05f/2.8f )
         .set_visible_range( 1.0 );
       recorder.copy( state, af_state_buffer );
     }
@@ -948,13 +955,6 @@ int main( int argc, const char *argv[] ) {
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   float average = 0.f;
-
-  vk::ClearColorValue uimage_clear_color;
-  uimage_clear_color.uint32[ 0 ] = 0u;
-  uimage_clear_color.uint32[ 1 ] = 0u;
-  uimage_clear_color.uint32[ 2 ] = 0u;
-  uimage_clear_color.uint32[ 3 ] = 0u;
-
   while( !walk.end() ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     auto &sync = framebuffers[ current_frame ];
@@ -1096,14 +1096,12 @@ int main( int argc, const char *argv[] ) {
         }
         if( res.force_geometry || walk.light_moved() || walk.camera_moved() ) {
           {
-            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.fill( extended_gbuffer->get_factory(), gbuffer_clear_color, gbuffer_erase_range );
             rec.fill( extended_depth->get_factory(), gct::color::web::white );
-            //rec.fill( lock_image->get_factory(), uimage_clear_color );
             rec.barrier(
               gct::syncable()
                 .add( extended_gbuffer )
                 .add( extended_depth )
-                .add( lock_image )
             );
             auto render_pass_token = rec.begin_render_pass(
               gbuffer.get_render_pass_begin_info( 0 ),
@@ -1123,7 +1121,6 @@ int main( int argc, const char *argv[] ) {
           }
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
-          rec.barrier( lock_image );
         }
           
         glm::ivec2 focus( res.width/2, res.height/2 );

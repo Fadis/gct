@@ -9,6 +9,7 @@
 #include <gct/image.hpp>
 #include <gct/color_attachment_name.hpp>
 #include <gct/graphics_execution_shape.hpp>
+#include <gct/spv_member_pointer_to_json.hpp>
 
 namespace gct {
 
@@ -634,9 +635,18 @@ void to_json( nlohmann::json &dest, const image_io_create_info &src ) {
   dest[ "dim" ].push_back( src.get_dim()[ 0 ] );
   dest[ "dim" ].push_back( src.get_dim()[ 1 ] );
   dest[ "dim" ].push_back( src.get_dim()[ 2 ] );
-  dest[ "push_constant" ] = nlohmann::json::array();
-  for( const auto &b : src.get_push_constant() ) {
-    dest[ "push_constant" ].push_back( int( b ) );
+
+  if( src.has_push_constant() ) {
+    auto &pcmp = src.get_push_constant_member_pointer();
+    if( pcmp ) {
+      dest[ "push_constant" ] = nlohmann::json( src.get_push_constant().data()->*(*pcmp) );
+    }
+    else {
+      dest[ "push_constant" ] = nlohmann::json::array();
+      for( const auto &b : src.get_push_constant() ) {
+        dest[ "push_constant" ].push_back( int( b ) );
+      }
+    }
   }
 }
 
