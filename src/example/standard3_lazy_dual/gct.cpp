@@ -68,7 +68,7 @@
 #include <gct/get_library_path.hpp>
 #include <gct/color_attachment_name.hpp>
 #include <gct/gbuffer_format.hpp>
-
+#include <vulkan2json/ImageSubresourceRange.hpp>
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
   std::shared_ptr< gct::semaphore_t > draw_complete;
@@ -243,9 +243,11 @@ int main( int argc, const char *argv[] ) {
       gct::gbuffer_format::tangent |
       gct::gbuffer_format::texcoord0_texcoord1 |
       gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id;
+      gct::gbuffer_format::metallic_roughness_id |
+      gct::gbuffer_format::dual_layer;
 
   const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
+  std::cout << "debug : " << egbuf_count << std::endl;
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -273,8 +275,9 @@ int main( int argc, const char *argv[] ) {
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
  
   const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
-    gbuffer_format, gct::gbuffer_format( 0 ), true
+    gbuffer_format, gct::gbuffer_format( 0 )/*::albedo_alpha*/, true, 2u
   );
+  std::cout << nlohmann::json( gbuffer_erase_range ).dump( 2 ) << std::endl;
 
   const auto gbuffer_clear_color = vk::ClearColorValue()
     .setFloat32( { 0.f, 0.f, 0.f, 0.f } );
@@ -291,12 +294,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
-              .setArrayLayers( 4u )
+              .setArrayLayers( 8u )
           )
       )
       .set_range(
         gct::subview_range()
-          .set_layer_count( 4u )
+          .set_layer_count( 8u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -534,7 +537,7 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "3.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_dual" / "3.0" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
@@ -588,7 +591,7 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "2.0" / "geometry.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_dual" / "3.0" / "geometry.comp.spv" )
           .set_scene_graph( sg->get_resource() )
       ),
       gct::image_io_plan()

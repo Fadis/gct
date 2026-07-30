@@ -240,8 +240,6 @@ int main( int argc, const char *argv[] ) {
   const auto gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::normal |
-      gct::gbuffer_format::tangent |
-      gct::gbuffer_format::texcoord0_texcoord1 |
       gct::gbuffer_format::emissive_occlusion |
       gct::gbuffer_format::metallic_roughness_id;
 
@@ -304,33 +302,6 @@ int main( int argc, const char *argv[] ) {
   );
   
   const auto extended_depth = sg->get_resource()->image->get( extended_depth_desc.linear );
-  
-  vk::ClearColorValue uimage_clear_color;
-  uimage_clear_color.uint32[ 0 ] = 0u;
-  uimage_clear_color.uint32[ 1 ] = 0u;
-  uimage_clear_color.uint32[ 2 ] = 0u;
-  uimage_clear_color.uint32[ 3 ] = 0u;
-
-  const auto lock_image_desc = sg->get_resource()->image->allocate(
-    gct::image_allocate_info()
-      .set_create_info(
-        gct::image_create_info_t()
-          .set_basic(
-            gct::basic_2d_image( res.width, res.height )
-              .setFormat( vk::Format::eR32Uint )
-              .setUsage(
-                vk::ImageUsageFlagBits::eStorage |
-                vk::ImageUsageFlagBits::eTransferDst |
-                vk::ImageUsageFlagBits::eTransferSrc
-              )
-          )
-      )
-      .set_layout(
-        vk::ImageLayout::eGeneral
-      )
-  );
-  
-  const auto lock_image = sg->get_resource()->image->get( lock_image_desc.linear );
 
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -338,8 +309,6 @@ int main( int argc, const char *argv[] ) {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( extended_gbuffer, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( extended_depth, vk::ImageLayout::eGeneral );
-      recorder.set_image_layout( lock_image, vk::ImageLayout::eGeneral );
-      recorder.fill( lock_image->get_factory(), uimage_clear_color );
     }
     command_buffer->execute_and_wait();
   }
@@ -534,14 +503,13 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "3.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
   geometry.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
   geometry.set_push_constant( "position", *extended_depth_desc.linear );
   geometry.set_push_constant( "gbuffer_format", gbuffer_format );
-  geometry.set_push_constant( "lock", *lock_image_desc.linear );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
   shadow_uniform =
@@ -588,7 +556,7 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "2.0" / "geometry.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "standard" / "2.0" / "geometry.comp.spv" )
           .set_scene_graph( sg->get_resource() )
       ),
       gct::image_io_plan()
@@ -605,35 +573,12 @@ int main( int argc, const char *argv[] ) {
       .add( "position", extended_depth_desc.linear )    
   );
 
-  /*const auto np_desc = builder.call(
-    builder.get_image_io_create_info(
-      std::make_shared< gct::compute >(
-        gct::compute_create_info()
-          .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "nearest_position" / "kplus" / "2.0" / "nearest_position.comp.spv" )
-          .set_scene_graph( sg->get_resource() )
-      ),
-      gct::image_io_plan()
-        .add_input( "gbuffer" )
-        .add_input( "position" )
-        .add_output( "dest", "gbuffer", glm::vec2( 1.f, -1.f ), vk::Format::eR32Sfloat )
-        .set_dim( "gbuffer", glm::vec2( 1.f, -1.f ) )
-        .set_node_name( "nearest_position" )
-    )
-    .set_push_constant( "gbuffer_format", gbuffer_format )
-  )(
-    gct::shader_graph::vertex::combined_result_type()
-      .add( "gbuffer", deffered_geometry[ "gbuffer" ] )
-      .add( "position", extended_depth_desc.linear )    
-  );*/
-
-
   const auto lighting_desc = builder.call(
     builder.get_image_io_create_info(
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "lighting" / "kplus" / "3.0" / "lighting.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "lighting" / "kplus" / "2.0" / "lighting.comp.spv" )
           .set_scene_graph( sg->get_resource() )
           .add_resource( { "global_uniforms", global_uniform } )
       ),
@@ -641,7 +586,7 @@ int main( int argc, const char *argv[] ) {
         .add_input( "gbuffer" )
         .add_input( "position" )
         .add_output( "dest", "gbuffer", { 1.f, -4.f }, vk::Format::eR16G16B16A16Sfloat )
-        .set_dim( "gbuffer", { 1.f, -1.f } )
+        .set_dim( "gbuffer", { 1.f, -4.f } )
         .set_node_name( "lighting" )
     )
     .set_push_constant( "unproject", *unproject_to_world_desc )
@@ -650,7 +595,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", deffered_geometry[ "gbuffer" ] )
-      .add( "position", extended_depth_desc.linear ) 
+      .add( "position", extended_depth_desc.linear )    
   );
   
   const auto ao_out_desc = hbao(
@@ -690,7 +635,7 @@ int main( int argc, const char *argv[] ) {
   )(
     gct::shader_graph::vertex::combined_result_type()
       .add( "gbuffer", deffered_geometry[ "gbuffer" ] )
-      .add( "position", extended_depth_desc.linear ) 
+      .add( "position", extended_depth_desc.linear )    
       .add( "occlusion", ao_out_desc[ "dest" ] )
       .add( "scattering", skyview_froxel_out_desc[ "dest" ] )
       .add( "lighting_image", lighting_desc )
@@ -980,7 +925,6 @@ int main( int argc, const char *argv[] ) {
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   float average = 0.f;
-
   while( !walk.end() ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     auto &sync = framebuffers[ current_frame ];
@@ -1128,7 +1072,6 @@ int main( int argc, const char *argv[] ) {
               gct::syncable()
                 .add( extended_gbuffer )
                 .add( extended_depth )
-            //    .add( lock_image )
             );
             auto render_pass_token = rec.begin_render_pass(
               gbuffer.get_render_pass_begin_info( 0 ),
@@ -1148,7 +1091,6 @@ int main( int argc, const char *argv[] ) {
           }
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
-          //rec.barrier( lock_image );
         }
           
         glm::ivec2 focus( res.width/2, res.height/2 );

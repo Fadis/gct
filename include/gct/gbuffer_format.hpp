@@ -18,11 +18,13 @@ namespace gct {
     texcoord0_texcoord1 = ( 1u << 8 ),
     texcoord2_texcoord3 = ( 1u << 9 ),
     color0 = ( 1u << 10 ),
-    color1 = ( 1u << 11 )
+    color1 = ( 1u << 11 ),
+    dual_layer = ( 1u << 30 )
   };
   gbuffer_format operator|( gbuffer_format l, gbuffer_format r );
   gbuffer_format operator&( gbuffer_format l, gbuffer_format r );
   gbuffer_format operator^( gbuffer_format l, gbuffer_format r );
+  bool is_dual_layer( gbuffer_format );
   std::uint32_t get_kplus_layer_count( gbuffer_format );
   std::uint32_t get_ppll_layer_count( gbuffer_format );
 
@@ -31,6 +33,7 @@ namespace gct {
   std::uint32_t get_layer_count( gbuffer_format active_layers );
   std::vector< vk::ImageSubresourceRange > gbuffer_format_to_image_subresource_range( gbuffer_format all, gbuffer_format selected );
   std::vector< vk::ImageSubresourceRange > kplus_gbuffer_format_to_image_subresource_range( gbuffer_format all, gbuffer_format selected, bool index );
+  std::vector< vk::ImageSubresourceRange > kplus_gbuffer_format_to_image_subresource_range( gbuffer_format all, gbuffer_format selected, bool index, std::uint32_t set_count );
 }
 
 #endif

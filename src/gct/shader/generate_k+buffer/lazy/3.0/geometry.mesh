@@ -120,7 +120,7 @@ void main() {
 
   bool use_softrast = false;
 
-  if( visible && candidate_pixel_count <= 5 ) {
+  if( visible && candidate_pixel_count <= 6 ) {
     visible = false;
     use_softrast = true;
   }
@@ -139,19 +139,37 @@ void main() {
   if( use_softrast ) {
     rasterization_init1( rast_state );
     bool fa_initialized = false;
-    rasterizable_vertex_attribute va;
+    //rasterizable_vertex_attribute va;
+    rasterizable_face_attribute fa;
     vec4 id_vec;
     for( uint i = 0u; i != candidate_pixel_count; ++i ) {
-      rasterization_result_simple rast_result = rasterization_rasterize_simple( rast_state, i );
+      //rasterization_result_simple rast_result = rasterization_rasterize_simple( rast_state, i );
+      rasterization_result rast_result = rasterization_rasterize( rast_state, i );
       if( rast_result.valid ) {
         if( !fa_initialized ) {
-          va.position = wp0;
-          va.normal = fn;
-          va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-          va.texcoord = f.vertex[ 0 ].tex_coord0.xy;
+          //va.position = wp0;
+          //va.normal = fn;
+          //va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
+          //va.texcoord = f.vertex[ 0 ].tex_coord0.xy;
+
+          fa.vertex[ 0 ].position = wp0;
+          fa.vertex[ 1 ].position = wp1;
+          fa.vertex[ 2 ].position = wp2;
+          fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
+          fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
+          fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
+          fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
+          fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
+          fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
+
           id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
           fa_initialized = true;
         }
+        rasterizable_vertex_attribute va = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa, push_constants.gbuffer_format );
+        float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
         bool keep_waiting = true;
         while( keep_waiting ) {
           if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {
@@ -164,7 +182,8 @@ void main() {
             kplus_insert_lazy(
               iter,
               va,
-              v0_view.z*rast_state.inv_v0w,
+              //v0_view.z*rast_state.inv_v0w,
+              depth,
               id_vec
             );
             imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );

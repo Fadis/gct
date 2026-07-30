@@ -273,7 +273,7 @@ int main( int argc, const char *argv[] ) {
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
 
   const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
-    gbuffer_format, gct::gbuffer_format::albedo_alpha, true
+    gbuffer_format, gct::gbuffer_format( 0 ), true
   );
 
   const auto gbuffer_clear_color = vk::ClearColorValue()

@@ -20,6 +20,7 @@ using namespace gct;
 #define GCT_GBUFFER_TEXCOORD2_TEXCOORD3 ( 1u << 9 )
 #define GCT_GBUFFER_COLOR0   ( 1u << 10 )
 #define GCT_GBUFFER_COLOR1   ( 1u << 11 )
+#define GCT_GBUFFER_DUAL_LAYER   ( 1u << 30 )
 
 int gbuffer_get_layer( uint active_layers, uint layer_bit ) {
   return int( bitCount( active_layers & ( ( layer_bit << 1 ) - 1u ) ) - 1u );
@@ -30,7 +31,11 @@ bool gbuffer_has_layer( uint active_layers, uint layer_bit ) {
 }
 
 int gbuffer_get_layer_count( uint active_layers ) {
-  return int( bitCount( active_layers ) );
+  return int( bitCount( active_layers & 0x3FFFFFFF ) );
+}
+
+bool gbuffer_is_dual_layer( uint active_layers ) {
+  return bool( active_layers & GCT_GBUFFER_DUAL_LAYER );
 }
 
 #endif
