@@ -429,6 +429,38 @@ struct rasterization_result_simple {
   bool valid;
 };
 
+rasterization_result_simple rasterization_rasterize_point(
+  rasterization_state state
+) {
+  const vec2 v_ab = state.v1_screen - state.v0_screen;
+  const vec2 v_ac = state.v2_screen - state.v0_screen;
+
+  const float factor = 1.0f / rasterization_cross2( v_ab, v_ac );
+
+  // bounding box内での左上のピクセルの位置
+  const vec2 bounding_box_left_top_pixel_pos = vec2(
+    state.left_top_pixel.x - state.v0_screen.x,
+	  state.left_top_pixel.y - state.v0_screen.y
+  );
+
+  state.left_top_pixel_pos_barycentric = vec2(
+    ( bounding_box_left_top_pixel_pos.x * v_ac.y - bounding_box_left_top_pixel_pos.y * v_ac.x ) * factor,
+    ( v_ab.x * bounding_box_left_top_pixel_pos.y - v_ab.y * bounding_box_left_top_pixel_pos.x ) * factor
+  );
+
+  const float s = state.left_top_pixel_pos_barycentric.x;
+	const float t = state.left_top_pixel_pos_barycentric.y;
+
+  const float v = 1.0f - ( s + t );
+  if( s < 0.0f || t < 0.0f || v < 0.0f ) {
+    return rasterization_result_simple( ivec2( 0, 0 ), false );
+  }
+
+  return rasterization_result_simple(
+    state.left_top_pixel,
+    true
+  );
+}
 
 rasterization_result_simple rasterization_rasterize_simple(
   rasterization_state state,
