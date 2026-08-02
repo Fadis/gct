@@ -90,12 +90,6 @@ void main() {
   const vec4 wp0 = l2w * f.vertex[ 0 ].position;
   const vec4 wp1 = l2w * f.vertex[ 1 ].position;
   const vec4 wp2 = l2w * f.vertex[ 2 ].position;
-  /*
-  rasterizable_face_attribute fa;
-  fa.vertex[ 0 ].position = wp0;
-  fa.vertex[ 1 ].position = wp1;
-  fa.vertex[ 2 ].position = wp2;
- */
   // 頂点座標からワールド座標系での面の法線を求める
   const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
 
@@ -121,21 +115,6 @@ void main() {
       0, 0, 0, 0, 0, 0, 0
     );
   const uint candidate_pixel_count = rasterization_get_candidate_count( rast_state );
-  /*const vec4 id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-  if( candidate_pixel_count != 0u ) {
-    fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-    fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-    fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-    fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-    fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
-    fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
-    fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
-    fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
-    fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
-  }
-  else {
-    visible = false;
-  }*/
   if( candidate_pixel_count == 0u ) {
     visible = false;
   }
@@ -147,8 +126,6 @@ void main() {
     use_softrast = true;
   }
 
-  //visible = false;
-
   // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
   // 自身よりスレッドIDが小さいスレッドの中で担当するプリミティブが見えると判断された数の3倍
@@ -158,106 +135,47 @@ void main() {
   // 見える頂点の数分の頂点とプリミティブを書けるようにする
   SetMeshOutputsEXT( filtered_vertex_count, filtered_vertex_count / 3 );
 
-  /*if( use_softrast ) {
-    rasterization_init1( rast_state );
-    for( uint i = 0u; i != candidate_pixel_count; ++i ) {
-      rasterization_result rast_result = rasterization_rasterize( rast_state, i );
-      const ivec2 image_pos = rast_result.pixel;
-      if( rast_result.valid ) {
-        //const float existing_depth = kplus_fast_depth( push_constants.position, image_pos, 0 );
-        float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
-        //if( !isnan( depth ) && depth < existing_depth ) {
-        if( !isnan( depth ) ) {
-          rasterizable_vertex_attribute attr = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa, push_constants.gbuffer_format );
-          primitive_value p = read_primitive( attr, id_vec );
-          if( p.albedo.a > 0.0 ) {
-            bool keep_waiting = true;
-            while( keep_waiting ) {
-              if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) != uint( 1 ) ) {
-                kplus_iter iter = kplus_begin(
-                  kplus_image( push_constants.gbuffer, push_constants.position ),
-                  image_pos,
-                  push_constants.gbuffer_format,
-                  0
-                );
-                kplus_insert(
-                  iter,
-                  p,
-                  depth,
-                  id_vec
-                );
-                memoryBarrier();
-                imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
-                keep_waiting = false;
-              }
-            }
-          }
-        }
-      }
-    }
-  }*/
   if( use_softrast ) {
     rasterization_init1( rast_state );
-    bool fa_initialized = false;
-    rasterizable_vertex_attribute va;
-    //rasterizable_face_attribute fa;
+    rasterizable_face_attribute fa;
     vec4 id_vec;
-    for( uint i = 0u; i != candidate_pixel_count; ++i ) {
-      rasterization_result_simple rast_result = rasterization_rasterize_simple( rast_state, i );
-      //rasterization_result rast_result = rasterization_rasterize( rast_state, i );
-      if( rast_result.valid ) {
-        if( !fa_initialized ) {
-          va.position = wp0;
-          va.normal = fn;
-          va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-          va.texcoord = f.vertex[ 0 ].tex_coord0.xy;
+    rasterization_result rast_result = rasterization_rasterize( rast_state, 0 );
+    if( rast_result.valid ) {
+      fa.vertex[ 0 ].position = wp0;
+      fa.vertex[ 1 ].position = wp1;
+      fa.vertex[ 2 ].position = wp2;
+      fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+      fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+      fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+      fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
+      fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
+      fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
+      fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
+      fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
+      fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
 
-          //fa.vertex[ 0 ].position = wp0;
-          //fa.vertex[ 1 ].position = wp1;
-          //fa.vertex[ 2 ].position = wp2;
-          //fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-          //fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-          //fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
-          //fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-          //fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
-          //fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
-          //fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
-          //fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
-          //fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
-
-          id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-          fa_initialized = true;
-        }
-        primitive_value p = read_primitive( va, id_vec );
-        //rasterizable_vertex_attribute va = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa, push_constants.gbuffer_format );
-        //float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
-        bool keep_waiting = true;
-        while( keep_waiting ) {
-          if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {
-            kplus_iter iter = kplus_begin(
-              kplus_image( push_constants.gbuffer, push_constants.position ),
-              rast_result.pixel,
-              push_constants.gbuffer_format,
-              0
-            );
-            /*kplus_insert_lazy(
-              iter,
-              va,
-              v0_view.z*rast_state.inv_v0w,
-              //depth,
-              id_vec
-            );*/
-            kplus_insert(
-              iter,
-              p,
-              v0_view.z*rast_state.inv_v0w,
-              //depth,
-              id_vec
-            );
-            memoryBarrier();
-            imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );
-            keep_waiting = false;
-          }
+      id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+      rasterizable_vertex_attribute va = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa, push_constants.gbuffer_format );
+      float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
+      primitive_value p = read_primitive( va, id_vec );
+      bool keep_waiting = true;
+      while( keep_waiting ) {
+        if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {
+          kplus_iter iter = kplus_begin(
+            kplus_image( push_constants.gbuffer, push_constants.position ),
+            rast_result.pixel,
+            push_constants.gbuffer_format,
+            0
+          );
+          kplus_insert(
+            iter,
+            p,
+            depth,
+            id_vec
+          );
+          memoryBarrier();
+          imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );
+          keep_waiting = false;
         }
       }
     }
@@ -267,36 +185,6 @@ void main() {
   // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
   if( !visible ) return;
 
-  //if( gl_WorkGroupID.x != 0u ) return;
-
-/*
-  // 頂点のスクリーン座標系での座標を出力先に書く
-  gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = v0_view;
-  gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = v1_view;
-  gl_MeshVerticesEXT[ filtered_vertex_offset + 2u ].gl_Position = v2_view;
-  // 頂点のワールド座標系での座標を出力先に書く
-  output_position[ filtered_vertex_offset ] = fa.vertex[ 0 ].position;
-  output_position[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].position;
-  output_position[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].position;
-  // 頂点のワールド座標系での法線を出力先に書く
-  output_normal[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].normal;
-  output_normal[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].normal;
-  output_normal[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].normal;
-  // 頂点のワールド座標系での接線を出力先に書く
-  output_tangent[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].tangent;
-  output_tangent[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].tangent;
-  output_tangent[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].tangent;
-  // 頂点のテクスチャ座標を出力先に書く
-  output_tex_coord[ filtered_vertex_offset + 0u ] = fa.vertex[ 0 ].texcoord;
-  output_tex_coord[ filtered_vertex_offset + 1u ] = fa.vertex[ 1 ].texcoord;
-  output_tex_coord[ filtered_vertex_offset + 2u ] = fa.vertex[ 2 ].texcoord;
-  // 頂点のIDにノードのIDとメッシュのIDを書いておく
-  output_id[ filtered_vertex_offset + 0u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-  output_id[ filtered_vertex_offset + 1u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-  output_id[ filtered_vertex_offset + 2u ] = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-  // 上の3頂点で1つの三角形プリミティブになる事を書く
-  gl_PrimitiveTriangleIndicesEXT[ filtered_vertex_offset / 3 ] = uvec3( filtered_vertex_offset, filtered_vertex_offset + 1, filtered_vertex_offset + 2 );
-*/
   // 頂点のスクリーン座標系での座標を出力先に書く
   gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = v0_view;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = v1_view;

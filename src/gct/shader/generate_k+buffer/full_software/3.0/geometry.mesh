@@ -1,0 +1,175 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+// 8bit、16bitの値のバッファを読めるようにする拡張を使う
+// 頂点バッファをシェーダーから読むのに使う
+#extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_8bit_storage : enable
+
+// Subgroup演算を使う
+#extension GL_KHR_shader_subgroup : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_vote : enable
+
+// 64bit整数を使う
+#extension GL_ARB_gpu_shader_int64 : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_ENABLE_8BIT_16BIT_STORAGE
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_MAKE_IMAGE_COHERENT
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/accessor.h>
+#include <gct/global_uniforms.h>
+#include <gct/rasterize.h>
+
+layout(push_constant) uniform PushConstants {
+  uint offset;
+  uint count;
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+  uint lock;
+} push_constants;
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+// タスクペイロード
+struct task_data {
+  // 見えると判断されたメッシュレットのID
+  uint meshlet_index[ 32 ];
+  // ローカル座標系からワールド座標系への変換行列
+  mat4 l2w;
+  // ローカル座標系からスクリーン座標系への変換行列
+  mat4 l2s;
+  // どのノードの下のどのメッシュを描くかを指定するID
+  uint resource_pair_id;
+};
+taskPayloadSharedEXT task_data td;
+
+void main() {
+  // 描画対象のID
+  const resource_pair_type id = resource_pair[ push_constants.offset + td.resource_pair_id ];
+  // メッシュの情報を取得する
+  const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
+
+  // 変換行列をタスクペイロードから取り出す
+  const mat4 l2w = td.l2w;
+  const mat4 l2s = td.l2s;
+  
+  // タスクペイロードからこのローカルワークグループが処理すべきメッシュレットのIDを取り出す
+  const uint meshlet_id = td.meshlet_index[ gl_WorkGroupID.x ];
+  
+  // スレッドが担当するプリミティブが存在する場合頂点配列から頂点の情報を読む
+  const meshlet_reader reader = init_meshlet_reader( prim.mesh, meshlet_id );
+  const face_attribute f = read_face_attribute( reader );
+
+  // 頂点の座標をローカル座標系からワールド座標系に変換する
+  const vec4 wp0 = l2w * f.vertex[ 0 ].position;
+  const vec4 wp1 = l2w * f.vertex[ 1 ].position;
+  const vec4 wp2 = l2w * f.vertex[ 2 ].position;
+  // 頂点座標からワールド座標系での面の法線を求める
+  const vec3 fn = normalize( cross( wp2.xyz - wp0.xyz, wp1.xyz - wp0.xyz ) );
+
+  // 面から視点へのベクトルと面の法線の内積が0以下の場合そのプリミティブは視点に対して背面を向けている(=見えない)
+  // glTFでdoubleSidedが指定されている場合は背面でも見える事にする
+  const bool front = dot( fn.xyz, global_uniforms.eye_pos.xyz - wp0.xyz ) >= 0;
+  bool visible = f.valid && ( prim.cull == 0 || front );
+
+  const vec4 v0_view = l2s * f.vertex[ 0 ].position;
+  const vec4 v1_view = l2s * f.vertex[ 1 ].position;
+  const vec4 v2_view = l2s * f.vertex[ 2 ].position;
+  const ivec2 framebuffer_size = imageSize( image_pool_2dua_array[ push_constants.lock ] ).xy;
+  rasterization_state rast_state =
+    visible ?
+    rasterization_init0( v0_view, v1_view, v2_view, framebuffer_size.x, framebuffer_size.y ) :
+    rasterization_state(
+      ivec2( 0, 0 ),
+      ivec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      vec2( 0, 0 ),
+      0, 0, 0, 0, 0, 0, 0
+    );
+  const uint candidate_pixel_count = rasterization_get_candidate_count( rast_state );
+  if( candidate_pixel_count == 0u ) {
+    visible = false;
+  }
+  
+  bool use_softrast = false;
+
+  if( visible ) {
+    visible = false;
+    use_softrast = true;
+  }
+
+  SetMeshOutputsEXT( 0, 0 );
+
+  if( use_softrast ) {
+    rasterization_init1( rast_state );
+    bool fa_initialized = false;
+    rasterizable_face_attribute fa;
+    vec4 id_vec;
+    for( uint i = 0u; i != candidate_pixel_count; ++i ) {
+      rasterization_result rast_result = rasterization_rasterize( rast_state, i );
+      if( rast_result.valid ) {
+        if( !fa_initialized ) {
+
+          fa.vertex[ 0 ].position = wp0;
+          fa.vertex[ 1 ].position = wp1;
+          fa.vertex[ 2 ].position = wp2;
+          fa.vertex[ 0 ].normal = ( (( f.vertex[ 0 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 0 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 1 ].normal = ( (( f.vertex[ 1 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 1 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 2 ].normal = ( (( f.vertex[ 2 ].normal == vec4( 0, 0, 0, 1 ) ) ? fn : mat3(l2w) * f.vertex[ 2 ].normal.xyz ) ).xyz * ( front ? 1.0 : -1.0 );
+          fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
+          fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
+          fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
+          fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
+          fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
+          fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
+
+          id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
+          fa_initialized = true;
+        }
+        rasterizable_vertex_attribute va = rasterization_perspective_correct_interpolate( rast_state, rast_result, fa, push_constants.gbuffer_format );
+        float depth = rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
+        primitive_value p = read_primitive( va, id_vec );
+        bool keep_waiting = true;
+        while( keep_waiting ) {
+          if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {
+            kplus_iter iter = kplus_begin(
+              kplus_image( push_constants.gbuffer, push_constants.position ),
+              rast_result.pixel,
+              push_constants.gbuffer_format,
+              0
+            );
+            kplus_insert(
+              iter,
+              p,
+              depth,
+              id_vec
+            );
+            memoryBarrier();
+            imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );
+            keep_waiting = false;
+          }
+        }
+      }
+    }
+  }
+}
+

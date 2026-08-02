@@ -232,7 +232,10 @@ enum class d3d10_resource_misc2_flags {
 };
 
 struct header_dxt10 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wchanges-meaning"
   dxgi_format dxgi_format = dxgi_format::DXGI_FORMAT_UNKNOWN;
+#pragma GCC diagnostic pop
   d3d10_resource_dimension resource_dimension = d3d10_resource_dimension::D3D10_RESOURCE_DIMENSION_UNKNOWN;
   d3d10_resource_misc_flag misc_flag = d3d10_resource_misc_flag( 0 );
   std::uint32_t array_size = 0;
