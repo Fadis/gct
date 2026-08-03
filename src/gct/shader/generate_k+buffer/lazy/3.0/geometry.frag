@@ -31,7 +31,7 @@ void main() {
   p.position = input_position;
   p.normal = input_normal.xyz;
   p.tangent = input_tangent;
-  p.texcoord = input_texcoord;
+  p.texcoord = vec3( input_texcoord, 0.0 );
 
   //const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   //visibility_pool[ visibility_index ] = 1;

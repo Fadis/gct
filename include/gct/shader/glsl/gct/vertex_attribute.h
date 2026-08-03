@@ -39,7 +39,7 @@ struct rasterizable_vertex_attribute {
   vec4 position;
   vec3 normal;
   vec4 tangent;
-  vec2 texcoord;
+  vec3 texcoord;
   vec4 optflow;
   vec4 previous_position;
 };

@@ -422,7 +422,7 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "3.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_hybrid" / "3.0" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
@@ -476,7 +476,7 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy" / "2.0" / "geometry.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_hybrid" / "3.0" / "geometry.comp.spv" )
           .set_scene_graph( sg->get_resource() )
       ),
       gct::image_io_plan()

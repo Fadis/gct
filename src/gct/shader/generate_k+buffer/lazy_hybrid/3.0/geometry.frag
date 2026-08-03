@@ -10,8 +10,6 @@
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #define GCT_MAKE_IMAGE_COHERENT
-#define GCT_DISABLE_DEPRECATED_KPLUS_API
-#define GCT_USE_GET_LOD_LEVEL
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
@@ -26,23 +24,26 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
-  //const float existing_depth = kplus_fast_depth( push_constants.position, image_pos, 0 );
-  //if( gl_FragCoord.z >= existing_depth ) discard;
 
-  rasterizable_vertex_attribute p;
-  p.position = input_position;
-  p.normal = input_normal.xyz;
-  p.tangent = input_tangent;
-  p.texcoord = vec3( input_texcoord, get_lod_level( uint( input_id.y ), input_texcoord ) );
-
-  //const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
-  //visibility_pool[ visibility_index ] = 1;
+  primitive_value p = read_primitive(
+    uint( input_id.y ),
+    input_position,
+    input_normal,
+    input_tangent,
+    input_texcoord,
+    vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
+    vec4( 0.0f, 0.0f, 0.0f, 0.0f )
+  );
+  
+  if( p.albedo.a <= 0.0 ) discard;
+  
+  const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
+  visibility_pool[ visibility_index ] = 1;
 
   beginInvocationInterlockARB();
-  //while( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) == uint( 1 ) ) {}
-  //bool keep_waiting = true;
-  //while( keep_waiting ) {
-  //  if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, 1u ) != 1u ) {
+  bool keep_waiting = true;
+  while( keep_waiting ) {
+    if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, 1u ) != 1u ) {
       kplus_iter iter =
       kplus_begin(
         kplus_image( push_constants.gbuffer, push_constants.position ),
@@ -50,16 +51,16 @@ void main() {
         push_constants.gbuffer_format,
         0
       );
-      kplus_insert_lazy(
+      kplus_insert(
         iter,
         p,
         gl_FragCoord.z,
         input_id
       );
       imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
-  //    keep_waiting = false;
-  //  }
-  //}
+      keep_waiting = false;
+    }
+  }
   endInvocationInterlockARB();
 }
 

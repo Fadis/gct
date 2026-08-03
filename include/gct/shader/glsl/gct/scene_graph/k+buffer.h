@@ -993,7 +993,7 @@ void kplus_insert(
           ( order.new_sample_index - 1 ) * layer_count +
           gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 )
         ),
-        vec4( p.texcoord[ 0 ], p.texcoord[ 1 ] )
+        vec4( p.texcoord[ 0 ], 0.0, 1.0 )
       );
     }
     if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD2_TEXCOORD3 ) ) {
@@ -1118,7 +1118,7 @@ void kplus_insert_lazy(
           ( order.new_sample_index - 1 ) * layer_count +
           gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 )
         ),
-        vec4( p.texcoord.x, p.texcoord.y, 0.0f, 0.0f )
+        vec4( p.texcoord.x, p.texcoord.y, p.texcoord.z, 0.0f )
       );
     }
     imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.index_offset ), vec4( order.sample_index ) );

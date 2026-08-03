@@ -10,6 +10,7 @@
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #define GCT_MAKE_IMAGE_COHERENT
+#define GCT_USE_GET_LOD_LEVEL
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
@@ -26,7 +27,7 @@ void main() {
   p.position = input_position;
   p.normal = input_normal.xyz;
   p.tangent = input_tangent;
-  p.texcoord = input_texcoord;
+  p.texcoord = vec3( input_texcoord, get_lod_level( uint( input_id.y ), input_texcoord ) );
 
   //const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   //visibility_pool[ visibility_index ] = 1;

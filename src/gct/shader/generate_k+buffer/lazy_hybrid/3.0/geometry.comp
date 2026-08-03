@@ -73,23 +73,25 @@ void main()  {
     if( kplus_is_end( iter ) ) {
       break;
     }
-    const vec4 normal_meshlet_id = kplus_get_normal_meshlet_id( iter );
-    const vec4 id = vec4( kplus_get_mrid( iter ).zw, normal_meshlet_id.w, 0.0f );
     const vec4 texcoord = kplus_get_texcoord01( iter );
-
-    primitive_value p = read_primitive(
-      uint( id.y ),
-      kplus_get_pos_depth( iter ),
-      normal_meshlet_id.xyz,
-      kplus_get_tangent_face_id( iter ),
-      texcoord.xyz,
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f )
-    );
     nearest_depth = kplus_get_depth( iter );
-    kplus_insert_complement( iter, p, id );
-    const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
-    visibility_pool[ visibility_index ] = 1;
+    if( texcoord.w == 0.0 ) {
+      const vec4 normal_meshlet_id = kplus_get_normal_meshlet_id( iter );
+      const vec4 id = vec4( kplus_get_mrid( iter ).zw, normal_meshlet_id.w, 0.0f );
+     
+      primitive_value p = read_primitive(
+        uint( id.y ),
+        kplus_get_pos_depth( iter ),
+        normal_meshlet_id.xyz,
+        kplus_get_tangent_face_id( iter ),
+        texcoord.xyz,
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f )
+      );
+      kplus_insert_complement( iter, p, id );
+      const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
+      visibility_pool[ visibility_index ] = 1;
+    }
     iter = kplus_next( iter );
   }
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.depth ) ], screen_pos, vec4( nearest_depth, 0.0, 0.0, 0.0 ) );

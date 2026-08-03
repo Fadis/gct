@@ -162,9 +162,9 @@ void main() {
           fa.vertex[ 0 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
           fa.vertex[ 1 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 1 ].tangent.xyz ).xyz, f.vertex[ 1 ].tangent.w );
           fa.vertex[ 2 ].tangent = vec4( ( mat3(l2w) * f.vertex[ 2 ].tangent.xyz ).xyz, f.vertex[ 2 ].tangent.w );
-          fa.vertex[ 0 ].texcoord = f.vertex[ 0 ].tex_coord0.xy;
-          fa.vertex[ 1 ].texcoord = f.vertex[ 1 ].tex_coord0.xy;
-          fa.vertex[ 2 ].texcoord = f.vertex[ 2 ].tex_coord0.xy;
+          fa.vertex[ 0 ].texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 0.0 );
+          fa.vertex[ 1 ].texcoord = vec3( f.vertex[ 1 ].tex_coord0.xy, 0.0 );
+          fa.vertex[ 2 ].texcoord = vec3( f.vertex[ 2 ].tex_coord0.xy, 0.0 );
 
           id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
           fa_initialized = true;

@@ -121,6 +121,7 @@ subdirs(
   standard3
   standard3_lazy
   standard3_lazy_dual
+  standard3_lazy_hybrid
   forward
   forward2
   dump_adjacency
@@ -162,6 +163,7 @@ subdirs(
   dump_kplus_buffer_3
   dump_kplus_buffer_3_lazy
   dump_kplus_buffer_3_lazy_dual
+  dump_kplus_buffer_3_lazy_hybrid
   dump_kplus_buffer_full_software
   dump_kplus_buffer_incomplete_softrast
   dump_kplus_rendering

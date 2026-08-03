@@ -525,7 +525,7 @@ int main( int argc, const char *argv[] ) {
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   float average = 0.f;
-  while( frame_counter != 600u ) {
+  while( frame_counter != 1200u ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     gct::blocking_timer frame_rate;
     // depth
