@@ -557,14 +557,14 @@ int main( int argc, const char *argv[] ) {
   std::minstd_rand rng;
   std::uniform_real_distribution jitter_dist( -0.0005, 0.0005 );
   float average = 0.f;
-  while( frame_counter != 1200u ) {
+  {
     const auto begin_date = std::chrono::high_resolution_clock::now();
-    gct::blocking_timer frame_rate;
+    //gct::blocking_timer frame_rate;
     // depth
     {
       {
         auto rec = command_buffer->begin();
-        if( frame_counter == 0u ) {
+        {
           const auto global_data = global_uniforms_t()
             .set_projection_matrix( *proj_desc )
             .set_camera_matrix( *camera_desc )
@@ -603,7 +603,7 @@ int main( int argc, const char *argv[] ) {
           rec.copy( global_data, global_uniform );
           rec.transfer_to_graphics_barrier( global_uniform );
         }
-        if( frame_counter == 0u ) {
+        {
           auto render_pass_token = rec.begin_render_pass(
             depth_gbuffer.get_render_pass_begin_info( 0 ),
             vk::SubpassContents::eInline
@@ -619,7 +619,7 @@ int main( int argc, const char *argv[] ) {
 
         }
         // occlusion query
-        if( frame_counter == 0u ) {
+        {
           il->setup_resource_pair_buffer( rec );
           {
             auto render_pass_token = rec.begin_render_pass(
@@ -643,7 +643,7 @@ int main( int argc, const char *argv[] ) {
             vk::ImageLayout::eGeneral
           );
         }
-        if( frame_counter == 0u ) {
+        {
           const auto shadow_data = global_uniforms_t()
             .set_projection_matrix( *shadow_projection )
             .set_camera_matrix( *shadow_camera )
@@ -693,9 +693,24 @@ int main( int argc, const char *argv[] ) {
             }
           );
         }
-        if( true ) {
+      }
+      command_buffer->execute(
+        gct::submit_info_t()
+      );
+    }
+    command_buffer->wait_for_executed();
+  }
+
+  while( frame_counter != 1200u ) {
+    const auto begin_date = std::chrono::high_resolution_clock::now();
+    //gct::blocking_timer frame_rate;
+    // depth
+    {
+      {
+        auto rec = command_buffer->begin();
+        {
           {
-            rec.fill( extended_gbuffer->get_factory(), gct::color::special::transparent );
+            rec.fill( extended_gbuffer->get_factory(), gbuffer_clear_color, gbuffer_erase_range );
             rec.fill( extended_depth->get_factory(), gct::color::web::white );
             rec.barrier(
               gct::syncable()
@@ -715,9 +730,6 @@ int main( int argc, const char *argv[] ) {
               geometry
             );
           }
-          /*if( walk.get_current_camera() == 0 ) {
-            sg->rotate_visibility( rec );
-          }*/
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
           if( res.record && frame_counter == 299 ) {
@@ -750,11 +762,11 @@ int main( int argc, const char *argv[] ) {
     }
     command_buffer->wait_for_executed();
     const auto end_date = std::chrono::high_resolution_clock::now();
-    average = ( average * std::min( frame_counter, 60u ) + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( std::min( frame_counter, 60u ) + 1 );
+    average = ( average * std::min( frame_counter, 600u ) + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( std::min( frame_counter, 600u ) + 1 );
     if( frame_counter % 60 == 0 ) {
       std::cout << "elapsed : " << average << std::endl;
     }
-    glfwPollEvents();
+    //glfwPollEvents();
     ++frame_counter;
    // break;
   }

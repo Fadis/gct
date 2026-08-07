@@ -931,6 +931,10 @@ add_shader( gct gct/shader/generate_k+buffer/full_software/3.0/geometry.frag INS
 add_shader( gct gct/shader/generate_k+buffer/incomplete_softrast/3.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/incomplete_softrast/3.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/incomplete_softrast/3.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/cull_small_triangles/3.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/cull_small_triangles/3.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/cull_small_triangles/3.0/geometry.frag INSTALL )
+
 
 
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.task INSTALL )

@@ -121,11 +121,6 @@ void main() {
   
   bool use_softrast = false;
 
-  if( visible && candidate_pixel_count <= 1 ) {
-    visible = false;
-    use_softrast = true;
-  }
-
   // メッシュレット(=32プリミティブ)の中で見えるプリミティブの数の3倍(=見える頂点の数)
   const uint filtered_vertex_count = subgroupAdd( visible ? 3 : 0 );
   // 自身よりスレッドIDが小さいスレッドの中で担当するプリミティブが見えると判断された数の3倍
@@ -134,41 +129,6 @@ void main() {
 
   // 見える頂点の数分の頂点とプリミティブを書けるようにする
   SetMeshOutputsEXT( filtered_vertex_count, filtered_vertex_count / 3 );
-
-  if( use_softrast ) {
-    rasterizable_vertex_attribute va;
-    vec4 id_vec;
-    rasterization_result_simple rast_result = rasterization_rasterize_point( rast_state );
-    if( rast_result.valid ) {
-      va.position = wp0;
-      va.normal = fn;
-      va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-      va.texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 0.0 );
-
-      id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
-      primitive_value p = read_primitive( va, id_vec );
-      bool keep_waiting = true;
-      while( keep_waiting ) {
-        if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {
-          kplus_iter iter = kplus_begin(
-            kplus_image( push_constants.gbuffer, push_constants.position ),
-            rast_result.pixel,
-            push_constants.gbuffer_format,
-            0
-          );
-          kplus_insert(
-            iter,
-            p,
-            v0_view.z*rast_state.inv_v0w,
-            id_vec
-          );
-          //memoryBarrier();
-          imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );
-          keep_waiting = false;
-        }
-      }
-    }
-  }
 
   // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
   if( !visible ) return;

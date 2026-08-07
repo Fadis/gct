@@ -3,6 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_ARB_fragment_shader_interlock : enable
 #extension GL_EXT_shader_image_load_formatted : enable
 
 #include "io_with_tangent.h"
@@ -42,24 +43,19 @@ void main() {
   const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   visibility_pool[ visibility_index ] = 1;
 
-  bool keep_waiting = true;
-  while( keep_waiting ) {
-    if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) != uint( 1 ) ) {
-      kplus_iter iter = kplus_begin(
-        kplus_image( push_constants.gbuffer, push_constants.position ),
-        image_pos,
-        push_constants.gbuffer_format,
-        0
-      );
-      kplus_insert(
-        iter,
-        p,
-        gl_FragCoord.z,
-        input_id
-      );
-      imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 0 ) );
-      keep_waiting = false;
-    }
-  }
+  beginInvocationInterlockARB();
+  kplus_iter iter = kplus_begin(
+    kplus_image( push_constants.gbuffer, push_constants.position ),
+    image_pos,
+    push_constants.gbuffer_format,
+    0
+  );
+  kplus_insert(
+    iter,
+    p,
+    gl_FragCoord.z,
+    input_id
+  );
+  endInvocationInterlockARB();
 }
 

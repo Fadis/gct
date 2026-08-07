@@ -163,7 +163,7 @@ void main() {
               depth,
               id_vec
             );
-            memoryBarrier();
+            //memoryBarrier();
             imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 0 ) );
             keep_waiting = false;
           }

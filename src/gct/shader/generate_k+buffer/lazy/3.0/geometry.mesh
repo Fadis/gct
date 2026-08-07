@@ -133,16 +133,16 @@ void main() {
 
   // 見える頂点の数分の頂点とプリミティブを書けるようにする
   SetMeshOutputsEXT( filtered_vertex_count, filtered_vertex_count / 3 );
-
+  
   if( use_softrast ) {
-    rasterizable_vertex_attribute va;
-    vec4 id_vec;
     rasterization_result_simple rast_result = rasterization_rasterize_point( rast_state );
     if( rast_result.valid ) {
+      rasterizable_vertex_attribute va;
+      vec4 id_vec;
       va.position = wp0;
       va.normal = fn;
       va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-      va.texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 0.0 );
+      va.texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 4.0 );
 
       id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
       bool keep_waiting = true;
@@ -169,7 +169,7 @@ void main() {
 
   // 自身の担当するプリミティブが見えないと判断されたスレッドは即座に終了する
   if( !visible ) return;
-
+  
   // 頂点のスクリーン座標系での座標を出力先に書く
   gl_MeshVerticesEXT[ filtered_vertex_offset ].gl_Position = v0_view;
   gl_MeshVerticesEXT[ filtered_vertex_offset + 1u ].gl_Position = v1_view;

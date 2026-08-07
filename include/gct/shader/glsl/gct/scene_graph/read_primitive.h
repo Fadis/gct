@@ -175,6 +175,24 @@ vec4 read_primitive_albedo_only(
   return albedo;
 }
 
+vec4 read_primitive_albedo_only(
+  uint primitive_id,
+  vec3 vert_texcoord
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+
+  const vec4 albedo =
+    ( prim.base_color_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.base_color_texture ],
+      textureLod( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord.xy, vert_texcoord.z )
+    ) :
+    prim.base_color;
+
+  return albedo;
+}
+
 primitive_value read_primitive_excluding_albedo(
   uint primitive_id,
   vec4 vert_position,

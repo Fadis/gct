@@ -45,7 +45,7 @@ void main()  {
       break;
     }
     const vec4 id = vec4( kplus_get_mrid( iter ).zw, 0.0f, 0.0f );
-    const vec2 texcoord = kplus_get_texcoord01( iter ).xy;
+    const vec3 texcoord = kplus_get_texcoord01( iter ).xyz;
 
     vec4 albedo = read_primitive_albedo_only(
       uint( id.y ),

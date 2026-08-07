@@ -142,7 +142,7 @@ void main() {
       va.position = wp0;
       va.normal = fn;
       va.tangent = vec4( ( mat3(l2w) * f.vertex[ 0 ].tangent.xyz ).xyz, f.vertex[ 0 ].tangent.w );
-      va.texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 0.0 );
+      va.texcoord = vec3( f.vertex[ 0 ].tex_coord0.xy, 4.0 );
 
       id_vec = vec4( id.inst, id.prim, meshlet_id, f.primitive_id );
       bool keep_waiting = true;

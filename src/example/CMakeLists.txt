@@ -166,9 +166,11 @@ subdirs(
   dump_kplus_buffer_3_lazy_hybrid
   dump_kplus_buffer_full_software
   dump_kplus_buffer_incomplete_softrast
+  dump_kplus_buffer_cull_small_triangles
   dump_kplus_rendering
   full_software
   incomplete_softrast
+  cull_small_triangles
 )
 if( DXC_FOUND )
 subdirs(
