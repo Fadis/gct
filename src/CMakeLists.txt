@@ -893,6 +893,10 @@ add_shader( gct gct/shader/visualize_particle_constraint/geometry.task INSTALL )
 add_shader( gct gct/shader/visualize_particle_constraint/geometry.mesh INSTALL )
 add_shader( gct gct/shader/visualize_particle_constraint/geometry.frag INSTALL )
 
+add_shader( gct gct/shader/generate_gbuffer/standard/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_gbuffer/standard/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_gbuffer/standard/1.0/geometry.frag INSTALL )
+
 add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/no_culling/geometry.frag INSTALL )

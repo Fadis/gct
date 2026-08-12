@@ -51,13 +51,6 @@ int main( int argc, const char *argv[] ) {
   const std::uint32_t width = boost::fusion::at_c< 0 >( parsed_image_size );
   const std::uint32_t height = boost::fusion::at_c< 1 >( parsed_image_size );
   std::vector< std::uint8_t > color_buffer( width * height * 4u, 0u );
-  for( unsigned int p = 0u; p != color_buffer.size(); p += 4u ) {
-    color_buffer[ p + 0u ] = 128u;
-    color_buffer[ p + 1u ] = 128u;
-    color_buffer[ p + 2u ] = 128u;
-    color_buffer[ p + 3u ] = 255u;
-  }
-
   std::mt19937 gen( std::random_device{}() );
   std::uniform_real_distribution<> dist( -1.2, 1.2 );
 
@@ -82,8 +75,6 @@ int main( int argc, const char *argv[] ) {
 
   auto camera_pos = glm::vec3{ 0.f, -3.0f, 6.0f };
 
-  auto rotate = glm::rotate( float( M_PI * 9.0f/16.0f ), glm::vec3( 1.0f, 0.0f, 0.0f ) );
-
   auto camera = glm::lookAt(
     camera_pos,
     glm::vec3( 0.f, 0.f, 0.f ),
@@ -92,6 +83,17 @@ int main( int argc, const char *argv[] ) {
 
   auto projection =
     glm::perspective( 0.39959648408210363f, (float(width)/float(height)), 0.1f, 10.f );
+  
+  for( unsigned int f = 0u; f != 120u; ++f ) {
+  
+  auto rotate = glm::rotate( float( M_PI * f/60.f ), glm::vec3( 1.0f, 0.0f, 0.0f ) );
+  for( unsigned int p = 0u; p != color_buffer.size(); p += 4u ) {
+    color_buffer[ p + 0u ] = 128u;
+    color_buffer[ p + 1u ] = 128u;
+    color_buffer[ p + 2u ] = 128u;
+    color_buffer[ p + 3u ] = 255u;
+  }
+
 
   for( unsigned int t = 0u; t != vertex.size(); t += 3u ) {
 
@@ -112,9 +114,6 @@ int main( int argc, const char *argv[] ) {
     );
     
     std::uint32_t cand_count = rasterization_get_candidate_count( rast );
- 
-    std::cout << "cand count : " << cand_count << std::endl;
-    
  
     const bool pci = vm[ "perspective" ].as< bool >();
  
@@ -138,18 +137,21 @@ int main( int argc, const char *argv[] ) {
       }
     }
   }
-
 #if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
     using namespace OIIO_CURRENT_NAMESPACE;
 #else
     using namespace OIIO_NAMESPACE;
 #endif
   auto oiio_type = TypeDesc::UINT8;
-  auto out = ImageOutput::create( vm[ "output" ].as< std::string >() );
+  const std::string filename = vm[ "output" ].as< std::string >() + "/" + std::to_string( f ) + ".png";
+  auto out = ImageOutput::create( filename );
   if( !out ) throw -1;
   ImageSpec spec( width, height, 4u, oiio_type );
-  out->open( vm[ "output" ].as< std::string >(), spec );
+  out->open( filename, spec );
   out->write_image( oiio_type, color_buffer.data() );
   out->close();
+
+  }
+
 }
 

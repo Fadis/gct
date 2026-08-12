@@ -41,7 +41,8 @@ common_sample_setup::common_sample_setup(
     ( "validation,v", po::bool_switch(), "enable validation layer" )
     ( "record,r", po::bool_switch(), "record frames" )
     ( "device,D", po::value< std::string >()->default_value( "0" ), "select device" )
-    ( "size,s", po::value< std::string >()->default_value("native"), "window size" );
+    ( "size,s", po::value< std::string >()->default_value("native"), "window size" )
+    ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" );
   if( enable_gltf ) {
     desc.add_options()
       ( "model,m", po::value< std::vector< std::string > >()->multitoken(), "glTF filename" );
@@ -49,7 +50,6 @@ common_sample_setup::common_sample_setup(
   if( enable_glfw ) {
     desc.add_options()
       ( "fullscreen,f", po::bool_switch(), "fullscreen" )
-      ( "walk,w", po::value< std::string >()->default_value(".walk"), "walk state filename" )
       ( "ambient,a", po::value< float >()->default_value( 0.1 ), "ambient light level" )
       ( "light,l", po::value< unsigned int >()->default_value( 50u ), "max light count" )
       ( "geometry,g", po::bool_switch(), "force running geometry processing every frame" )
@@ -68,8 +68,8 @@ common_sample_setup::common_sample_setup(
     model_filename = vm[ "model" ].as< std::vector< std::string > >()[ 0 ];
     model_filename_list = vm[ "model" ].as< std::vector< std::string > >();
   }
+  walk_state_filename = vm[ "walk" ].as< std::string >();
   if( enable_glfw ) {
-    walk_state_filename = vm[ "walk" ].as< std::string >();
     ambient_level = std::min( std::max( vm[ "ambient" ].as< float >(), 0.f ), 1.f );
     glfw::get();
     uint32_t iext_count = 0u;

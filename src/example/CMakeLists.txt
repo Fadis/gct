@@ -155,8 +155,11 @@ subdirs(
   dump_dgf
   dump_meshlet_info
   dump_mesh_info
+  test_rasterization_host_triangle
   test_rasterization_host
+  test_rasterization_host_video
   test_gbuffer_format
+  dump_gbuffer
   dump_kplus_buffer
   dump_kplus_buffer_2_cull
   dump_kplus_buffer_2_lazy

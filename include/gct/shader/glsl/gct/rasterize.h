@@ -151,18 +151,6 @@ rasterization_state rasterization_init0(
       )
     );
 
-  /*if( rasterization_check_tiny_bounding_box( screen_space_bounding_box ) ) {
-    return rasterization_state(
-      ivec2( 0, 0 ),
-      ivec2( 0, 0 ),
-      vec2( 0, 0 ),
-      vec2( 0, 0 ),
-      vec2( 0, 0 ),
-      vec2( 0, 0 ),
-      0, 0, 0, 0, 0, 0, 0
-    );
-  }*/
-
   const ivec2 bounding_box_pixel_left_top = ivec2( ceil( screen_space_bounding_box.min ) );
   const ivec2 bounding_box_pixel_count =
     ivec2( ceil( screen_space_bounding_box.max ) ) - bounding_box_pixel_left_top;

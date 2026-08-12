@@ -13,8 +13,6 @@
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
-//layout(early_fragment_tests) in;
-
 layout(push_constant) uniform PushConstants {
   uint offset;
   uint count;

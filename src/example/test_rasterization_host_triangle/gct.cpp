@@ -15,7 +15,6 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtx/transform.hpp>
-#include <glm/gtx/string_cast.hpp>
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/version.h>
 #include <gct/exception.hpp>
@@ -63,21 +62,15 @@ int main( int argc, const char *argv[] ) {
 
 
   std::vector< glm::vec4 > vertex{
-    glm::vec4{ -1.0f, -1.0f, 0.0f, 1.0f },
-    glm::vec4{  1.0f, -1.0f, 0.0f, 1.0f },
-    glm::vec4{ -1.0f,  1.0f, 0.0f, 1.0f },
-    glm::vec4{ -1.0f,  1.0f, 0.0f, 1.0f },
-    glm::vec4{  1.0f, -1.0f, 0.0f, 1.0f },
-    glm::vec4{  1.0f,  1.0f, 0.0f, 1.0f }
+    glm::vec4{ -0.08020833333333333f,  0.6351851851851851f,  0.0f, 1.0f },
+    glm::vec4{  0.4593750000000001f,  -0.09259259259259256f, 0.0f, 1.0f },
+    glm::vec4{ -0.44166666666666665f, -0.6851851851851851f,  0.0f, 1.0f }
   };
   
-  std::vector< glm::vec2 > texcoord{
-    glm::vec2{  0.0f,  0.0f },
-    glm::vec2{  1.0f,  0.0f },
-    glm::vec2{  0.0f,  1.0f },
-    glm::vec2{  0.0f,  1.0f },
-    glm::vec2{  1.0f,  0.0f },
-    glm::vec2{  1.0f,  1.0f }
+  std::vector< glm::vec3 > color{
+    glm::vec3{ 1.0f, 0.0f, 0.0f },
+    glm::vec3{ 0.0f, 1.0f, 0.0f },
+    glm::vec3{ 0.0f, 0.0f, 1.0f }
   };
 
   auto camera_pos = glm::vec3{ 0.f, -3.0f, 6.0f };
@@ -95,13 +88,13 @@ int main( int argc, const char *argv[] ) {
 
   for( unsigned int t = 0u; t != vertex.size(); t += 3u ) {
 
-    auto v0 = projection * camera * rotate * vertex[ t + 0 ];
-    auto v1 = projection * camera * rotate * vertex[ t + 1 ];
-    auto v2 = projection * camera * rotate * vertex[ t + 2 ];
+    auto v0 = vertex[ t + 0 ];
+    auto v1 = vertex[ t + 1 ];
+    auto v2 = vertex[ t + 2 ];
     
-    auto t0 = texcoord[ t + 0 ];
-    auto t1 = texcoord[ t + 1 ];
-    auto t2 = texcoord[ t + 2 ];
+    auto c0 = color[ t + 0 ];
+    auto c1 = color[ t + 1 ];
+    auto c2 = color[ t + 2 ];
  
     rasterization_state rast = rasterization_init(
       v0,
@@ -121,15 +114,11 @@ int main( int argc, const char *argv[] ) {
     for( std::uint32_t i = 0u; i != cand_count; ++i ) {
       rasterization_result p = rasterization_rasterize( rast, i );
       if( p.valid ) {
-        glm::vec2 t =
+        glm::vec3 c =
           pci ?
-          rasterization_perspective_correct_interpolate( rast, p, t0, t1, t2 ) :
-          rasterization_interpolate( rast, p, t0, t1, t2 );
-        glm::vec3 c_srgb =
-          ( ( fmod( t.x * 8, 1.0f ) > 0.5f ) ^ ( fmod( t.y * 8, 1.0f ) < 0.5f ) ) ?
-          glm::vec3( 0.0f, 0.0f, 0.0f ) :
-          glm::vec3( 1.0f, 1.0f, 1.0f );
-        //glm::vec3 c_srgb = glm::vec3( t.x, t.y, 0.0f );
+          rasterization_perspective_correct_interpolate( rast, p, c0, c1, c2 ) :
+          rasterization_interpolate( rast, p, c0, c1, c2 );
+        glm::vec3 c_srgb = glm::vec3( c.x, c.y, c.z );
         const std::uint32_t pixel_offset = ( p.pixel.x + p.pixel.y * width ) * 4u;
         color_buffer[ pixel_offset + 0u ] = c_srgb.x * 255;
         color_buffer[ pixel_offset + 1u ] = c_srgb.y * 255;
