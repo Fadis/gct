@@ -10,6 +10,7 @@
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
 #define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
 #define GCT_MAKE_IMAGE_COHERENT
+#define GCT_USE_GET_LOD_LEVEL
 #include <gct/scene_graph.h>
 #include <gct/global_uniforms.h>
 
@@ -24,8 +25,6 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
-  //const float existing_depth = kplus_fast_depth( push_constants.position, image_pos, 0 );
-  //if( gl_FragCoord.z >= existing_depth ) discard;
 
   rasterizable_vertex_attribute p;
   p.position = input_position;
@@ -33,11 +32,7 @@ void main() {
   p.tangent = input_tangent;
   p.texcoord = vec3( input_texcoord, 0.0 );
 
-  //const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
-  //visibility_pool[ visibility_index ] = 1;
-
   beginInvocationInterlockARB();
-  //while( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, uint( 1 ) ) == uint( 1 ) ) {}
   bool keep_waiting = true;
   while( keep_waiting ) {
     if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], image_pos, 1u ) != 1u ) {

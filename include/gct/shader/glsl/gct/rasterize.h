@@ -653,6 +653,50 @@ rasterizable_vertex_attribute rasterization_perspective_correct_interpolate(
   return r;
 }
 
+float rasterization_interpolate(
+  vec2 st,
+  float v0,
+  float v1,
+  float v2
+) {
+  float v_ds = v1 - v0;
+  float v_dt = v2 - v0;
+  return v0 + st.x * v_ds + st.y * v_dt;
+}
+
+vec2 rasterization_interpolate(
+  vec2 st,
+  vec2 v0,
+  vec2 v1,
+  vec2 v2
+) {
+  vec2 v_ds = v1 - v0;
+  vec2 v_dt = v2 - v0;
+  return v0 + st.x * v_ds + st.y * v_dt;
+}
+
+vec3 rasterization_interpolate(
+  vec2 st,
+  vec3 v0,
+  vec3 v1,
+  vec3 v2
+) {
+  vec3 v_ds = v1 - v0;
+  vec3 v_dt = v2 - v0;
+  return v0 + st.x * v_ds + st.y * v_dt;
+}
+
+vec4 rasterization_interpolate(
+  vec2 st,
+  vec4 v0,
+  vec4 v1,
+  vec4 v2
+) {
+  vec4 v_ds = v1 - v0;
+  vec4 v_dt = v2 - v0;
+  return v0 + st.x * v_ds + st.y * v_dt;
+}
+
 struct rasterization_statistics {
   uint x;
   uint y;

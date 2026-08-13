@@ -122,6 +122,8 @@ subdirs(
   standard3_lazy
   standard3_lazy_dual
   standard3_lazy_hybrid
+  standard31_lazy
+  standard32_lazy
   forward
   forward2
   dump_adjacency
@@ -167,13 +169,20 @@ subdirs(
   dump_kplus_buffer_3_lazy
   dump_kplus_buffer_3_lazy_dual
   dump_kplus_buffer_3_lazy_hybrid
+  dump_kplus_buffer_31_lazy
+  dump_kplus_buffer_32_lazy
   dump_kplus_buffer_full_software
   dump_kplus_buffer_incomplete_softrast
   dump_kplus_buffer_cull_small_triangles
+  dump_kplus_buffer_drop_small_triangles
+  dump_kplus_buffer_drop_small_triangles_partial
+  dump_kplus_buffer_drop_small_triangles_lazy
   dump_kplus_rendering
   full_software
   incomplete_softrast
   cull_small_triangles
+  drop_small_triangles
+  drop_small_triangles_partial
 )
 if( DXC_FOUND )
 subdirs(

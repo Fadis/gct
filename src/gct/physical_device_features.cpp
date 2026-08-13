@@ -670,6 +670,9 @@
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
 #include <vulkan2json/PhysicalDeviceYcbcrImageArraysFeaturesEXT.hpp>
 #endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+#include <vulkan2json/PhysicalDeviceFragmentShaderBarycentricFeaturesKHR.hpp>
+#endif
 #ifdef VK_VERSION_1_3
 #include <vulkan2json/PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures.hpp>
 #elif defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
@@ -877,9 +880,6 @@ namespace gct {
 #endif
 #ifdef VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_density_map_offset )
-#endif
-#ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-    LIBGCT_EXTENSION_TO_JSON( fragment_shader_barycentric )
 #endif
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( fragment_shader_interlock )
@@ -1267,6 +1267,9 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_TO_JSON( ycbcr_image_array )
 #endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_TO_JSON( fragment_shader_barycentric )
+#endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_TO_JSON( zero_initialize_workgroup_memory )
 #endif
@@ -1470,9 +1473,6 @@ namespace gct {
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME )
 #elif defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_density_map_offset, VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME )
-#endif
-#ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shader_barycentric, "VK_NV_fragment_shader_barycentric" )
 #endif
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shader_interlock, "VK_EXT_fragment_shader_interlock" )
@@ -1872,6 +1872,9 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
       LIBGCT_EXTENSION_CREATE_IF_EXT( ycbcr_image_array, "VK_EXT_ycbcr_image_arrays" )
 #endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+      LIBGCT_EXTENSION_CREATE_IF_EXT( fragment_shader_barycentric, VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME )
+#endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
       LIBGCT_EXTENSION_CREATE_IF_VERSION_OR_EXT( zero_initialize_workgroup_memory, 1, 3, 0, "VK_KHR_zero_initialize_workgroup_memory" )
 #endif
@@ -2083,9 +2086,6 @@ namespace gct {
 #endif
 #if defined(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME) || defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_density_map_offset )
-#endif
-#ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-    LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shader_barycentric )
 #endif
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shader_interlock )
@@ -2473,6 +2473,9 @@ namespace gct {
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_REBUILD_CHAIN( ycbcr_image_array )
 #endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_REBUILD_CHAIN( fragment_shader_barycentric )
+#endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_REBUILD_CHAIN( zero_initialize_workgroup_memory )
 #endif
@@ -2661,9 +2664,6 @@ namespace gct {
 #endif
 #if defined(VK_EXT_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME) || defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( fragment_density_map_offset )
-#endif
-#ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-    LIBGCT_EXTENSION_CHECK_SUBSET( fragment_shader_barycentric )
 #endif
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( fragment_shader_interlock )
@@ -3048,6 +3048,9 @@ namespace gct {
 #endif
 #ifdef VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME
     LIBGCT_EXTENSION_CHECK_SUBSET( ycbcr_image_array )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_CHECK_SUBSET( fragment_shader_barycentric )
 #endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_CHECK_SUBSET( zero_initialize_workgroup_memory )

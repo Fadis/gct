@@ -29,9 +29,6 @@ void main() {
   p.tangent = input_tangent;
   p.texcoord = vec3( input_texcoord, get_lod_level( uint( input_id.y ), input_texcoord ) );
 
-  //const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
-  //visibility_pool[ visibility_index ] = 1;
-
   const ivec2 image_pos = ivec2( gl_FragCoord.x, gl_FragCoord.y );
   beginInvocationInterlockARB();
   kplus_iter iter = kplus_begin(

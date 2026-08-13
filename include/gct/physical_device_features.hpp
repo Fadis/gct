@@ -230,9 +230,6 @@ public:
 #elif defined(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM , fragment_density_map_offset )
 #endif
-#ifdef VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
-    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShaderBarycentricFeaturesNV , fragment_shader_barycentric )
-#endif
 #ifdef VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShaderInterlockFeaturesEXT , fragment_shader_interlock )
 #endif
@@ -699,6 +696,9 @@ public:
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeatures , zero_initialize_workgroup_memory )
 #elif defined(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME)
     LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR , zero_initialize_workgroup_memory )
+#endif
+#ifdef VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME
+    LIBGCT_EXTENSION_SETTER( vk::PhysicalDeviceFragmentShaderBarycentricFeaturesKHR , fragment_shader_barycentric )
 #endif
   };
   void to_json( nlohmann::json&, const physical_device_features_t& );

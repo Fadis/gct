@@ -34,10 +34,10 @@ void main()  {
     screen_pos,
     push_constants.gbuffer_format
   );
-  /*const float alpha = kplus_get_albedo( iter ).w;
-  if( alpha != 0.0f ) {
-    return;
-  }*/
+
+  vec2 id_cache[ 4 ];
+  vec4 texcoord_cache[ 4 ];
+  vec4 albedo_cache[ 4 ];
 
   kplus_iter nearest_opaque = iter;
   for( uint i = 0u; i != 4u; ++i ) {
@@ -45,28 +45,28 @@ void main()  {
       break;
     }
     const vec4 id = vec4( kplus_get_mrid( iter ).zw, 0.0f, 0.0f );
-    const vec3 texcoord = kplus_get_texcoord01( iter ).xyz;
+    const vec4 texcoord = kplus_get_texcoord01( iter );
 
     vec4 albedo = read_primitive_albedo_only(
       uint( id.y ),
-      texcoord
+      texcoord.xyz
     );
 
-    if( albedo.w == 1.0f ) {
+    id_cache[ iter.layer ] = id.xy;
+    texcoord_cache[ iter.layer ] = texcoord;
+    albedo_cache[ iter.layer ] = albedo;
+
+    if( albedo.w >= 1.0f ) {
       nearest_opaque = iter;
     }
-    else if( albedo.w == 0.0 ) {
+    else if( albedo.w <= 0.0f ) {
       kplus_erase( iter );
     }
     iter = kplus_next( iter );
   }
   kplus_erase_back( nearest_opaque );
 
-  iter = kplus_begin(
-    kplus_image( push_constants.gbuffer, push_constants.position ),
-    screen_pos,
-    push_constants.gbuffer_format
-  );
+  iter = nearest_opaque;
 
   float nearest_depth = 1.0;
   for( uint i = 0u; i != 4u; ++i ) {
@@ -74,17 +74,16 @@ void main()  {
       break;
     }
     const vec4 normal_meshlet_id = kplus_get_normal_meshlet_id( iter );
-    const vec4 id = vec4( kplus_get_mrid( iter ).zw, normal_meshlet_id.w, 0.0f );
-    const vec4 texcoord = kplus_get_texcoord01( iter );
+    const vec4 id = vec4( id_cache[ iter.layer ], normal_meshlet_id.w, 0.0f );
+    const vec3 texcoord = texcoord_cache[ iter.layer ].xyz;
 
-    primitive_value p = read_primitive(
+    primitive_value p = read_primitive_excluding_albedo(
       uint( id.y ),
       kplus_get_pos_depth( iter ),
       normal_meshlet_id.xyz,
       kplus_get_tangent_face_id( iter ),
       texcoord.xyz,
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f )
+      albedo_cache[ iter.layer ]
     );
     nearest_depth = kplus_get_depth( iter );
     kplus_insert_complement( iter, p, id );

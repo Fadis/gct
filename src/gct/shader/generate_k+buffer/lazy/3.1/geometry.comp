@@ -1,0 +1,97 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+
+layout(local_size_x = 16, local_size_y = 8 ) in;
+
+#include <gct/constants.h>
+#include <gct/global_uniforms.h>
+#include <gct/scene_graph/image_pool.h>
+#include <gct/scene_graph/texture_pool.h>
+#include <gct/scene_graph/matrix_pool.h>
+#include <gct/scene_graph/instance_resource_index.h>
+#include <gct/scene_graph/visibility_pool.h>
+#include <gct/scene_graph/k+buffer.h>
+#include <gct/scene_graph/read_primitive.h>
+
+layout(push_constant) uniform PushConstants {
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+  uint depth;
+} push_constants;
+
+void main()  {
+  const ivec2 screen_pos = ivec2( gl_GlobalInvocationID.xy );
+
+  kplus_iter iter = kplus_begin(
+    kplus_image( push_constants.gbuffer, push_constants.position ),
+    screen_pos,
+    push_constants.gbuffer_format
+  );
+
+  vec2 id_cache[ 4 ];
+  vec3 texcoord_cache[ 4 ];
+  vec4 albedo_cache[ 4 ];
+
+  kplus_iter nearest_opaque = iter;
+  for( uint i = 0u; i != 4u; ++i ) {
+    if( kplus_is_end( iter ) ) {
+      break;
+    }
+    const vec2 id = kplus_get_mrid( iter ).zw;
+    const vec3 texcoord = kplus_get_texcoord01( iter ).xyz;
+
+    vec4 albedo = read_primitive_albedo_only(
+      uint( id.y ),
+      texcoord
+    );
+
+    id_cache[ iter.layer ] = id;
+    texcoord_cache[ iter.layer ] = texcoord;
+    albedo_cache[ iter.layer ] = albedo;
+
+    if( albedo.w >= 1.0f ) {
+      nearest_opaque = iter;
+    }
+    else if( albedo.w <= 0.0f ) {
+      kplus_erase( iter );
+    }
+    iter = kplus_next( iter );
+  }
+  kplus_erase_back( nearest_opaque );
+
+  iter = nearest_opaque;
+  kplus_iter nearest_iter = iter;
+  for( uint i = 0u; i != 4u; ++i ) {
+    if( kplus_is_end( iter ) ) {
+      break;
+    }
+    const kplus_normal_meshlet_id nm = kplus_decompress_normal_meshlet_id( iter );
+    const vec4 id = vec4( id_cache[ iter.layer ], nm.meshlet_id, 0.0f );
+    const vec3 texcoord = texcoord_cache[ iter.layer ];
+
+    primitive_value p = read_primitive_excluding_albedo(
+      uint( id.y ),
+      kplus_get_pos_depth( iter ),
+      nm.normal,
+      nm.tangent,
+      texcoord,
+      albedo_cache[ iter.layer ]
+    );
+    nearest_iter = iter;
+    kplus_insert_complement( iter, p, id );
+    const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
+    visibility_pool[ visibility_index ] = 1;
+    iter = kplus_next( iter );
+  }
+  float nearest_depth = kplus_get_depth( nearest_iter );
+  imageStore( image_pool_2d[ nonuniformEXT( push_constants.depth ) ], screen_pos, vec4( nearest_depth, 0.0, 0.0, 0.0 ) );
+  
+}
+

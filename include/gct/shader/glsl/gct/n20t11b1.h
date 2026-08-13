@@ -79,6 +79,21 @@ vec4 n20t11b1_decode_tangent( uint packed, vec3 normal ) {
   return vec4( decoded, ( encoded_tangent.flip != 0 ) ? -1.0 : 1.0 );
 }
 
+vec3 n20t11b1_encodef( uint v ) {
+  return vec3(
+    float( v >> 20 ),
+    float( ( v >> 10 ) & 0x3FF ),
+    float( v & 0x3FF )
+  );
+}
+
+uint n20t11b1_decodef( vec3 v ) {
+  return
+    ( uint( v.x ) << 20 ) |
+    ( uint( v.y ) << 10 ) |
+    ( uint( v.z ) );
+}
+
 #endif
 
 

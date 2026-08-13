@@ -100,3 +100,4 @@ std::vector< vk::ImageSubresourceRange > kplus_gbuffer_format_to_image_subresour
 }
 
 }
+

@@ -732,29 +732,29 @@ int main( int argc, const char *argv[] ) {
           }
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
-          if( res.record && frame_counter == 299 ) {
-            for( std::uint32_t i = 0u; i != egbuf_count; ++i ) {
-              sg->get_resource()->image->dump(
-                extended_gbuffer_desc.linear,
-                gct::image_dump_info()
-                  .set_filename( "gbuffer_" + std::to_string( i ) + ".exr" )
-                  .set_layer( i )
-              );
-            }
-            for( std::uint32_t i = 0u; i != 4u; ++i ) {
-              sg->get_resource()->image->dump(
-                extended_depth_desc.linear,
-                gct::image_dump_info()
-                  .set_filename( "depth_" + std::to_string( i ) + ".exr" )
-                  .set_layer( i )
-              );
-            }
-            (*sg)( rec );
-          }
-          rec.barrier( extended_gbuffer );
-          rec.barrier( extended_depth );
         }
         compiled( rec );
+        rec.barrier( extended_gbuffer );
+        rec.barrier( extended_depth );
+        if( res.record && frame_counter == 299 ) {
+          for( std::uint32_t i = 0u; i != egbuf_count; ++i ) {
+            sg->get_resource()->image->dump(
+              extended_gbuffer_desc.linear,
+              gct::image_dump_info()
+                .set_filename( "gbuffer_" + std::to_string( i ) + ".exr" )
+                .set_layer( i )
+            );
+          }
+          for( std::uint32_t i = 0u; i != 4u; ++i ) {
+            sg->get_resource()->image->dump(
+              extended_depth_desc.linear,
+              gct::image_dump_info()
+                .set_filename( "depth_" + std::to_string( i ) + ".exr" )
+                .set_layer( i )
+            );
+          }
+          (*sg)( rec );
+        }
       }
       command_buffer->execute(
         gct::submit_info_t()

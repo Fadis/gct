@@ -15,5 +15,27 @@ struct primitive_value {
   vec4 color[ 2 ];
 };
 
+primitive_value null_primitive_value = primitive_value(
+  vec3( 0, 0, 0 ),
+  vec3( 0, 0, 0 ),
+  vec4( 0, 0, 0, 0 ),
+  vec3( 0, 0, 0 ),
+  0,
+  0,
+  0,
+  vec3( 0, 0, 0 ),
+  vec3( 0, 0, 0 ),
+  vec2[ 4 ](
+    vec2( 0, 0 ),
+    vec2( 0, 0 ),
+    vec2( 0, 0 ),
+    vec2( 0, 0 )
+  ),
+  vec4[ 2 ](
+    vec4( 0, 0, 0, 0 ),
+    vec4( 0, 0, 0, 0 )
+  )
+);
+
 #endif
 

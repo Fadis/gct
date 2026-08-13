@@ -256,6 +256,186 @@ primitive_value read_primitive_excluding_albedo(
   return temp;
 }
 
+primitive_value read_primitive_excluding_albedo(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec4 vert_tangent,
+  vec3 vert_texcoord,
+  vec4 vert_current_screeen_pos,
+  vec4 vert_previous_screen_pos,
+  vec4 albedo
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal_ = normalize( vert_normal.xyz );
+  const vec3 tangent_ = normalize( vert_tangent.xyz );
+  vec3 normal;
+  if( prim.normal_texture != 0 ) {
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
+    const mat3 its = mat3( tangent_, binormal, normal_ );
+    normal = its * ( normalize( textureLod( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord.xy, vert_texcoord.z ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 ) );
+  }
+  else {
+    normal = normal_;
+  }
+
+  const vec3 pos = vert_position.xyz;
+  const vec3 emissive =
+    ( prim.emissive_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.emissive_texture ],
+      textureLod( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord.xy, vert_texcoord.z ).rgb
+    ) :
+    prim.emissive.rgb;
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = textureLod( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord.xy, vert_texcoord.z );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+  float occlusion =
+    ( prim.occlusion_texture != 0 ) ?
+    mix( 1 - prim.occlusion_strength, 1, textureLod( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord.xy, vert_texcoord.z ).r ) :
+    1.0;
+  const vec3 optflow = calc_optflow( vert_current_screeen_pos, vert_previous_screen_pos );
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = albedo;
+  temp.emissive = emissive;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
+  temp.occlusion = occlusion;
+  temp.optflow = optflow;
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord.xy;
+  return temp;
+}
+
+primitive_value read_primitive_excluding_albedo(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec4 vert_tangent,
+  vec2 vert_texcoord,
+  vec4 albedo
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal_ = normalize( vert_normal.xyz );
+  const vec3 tangent_ = normalize( vert_tangent.xyz );
+  vec3 normal;
+  if( prim.normal_texture != 0 ) {
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
+    const mat3 its = mat3( tangent_, binormal, normal_ );
+    normal = its * ( normalize( texture( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 ) );
+  }
+  else {
+    normal = normal_;
+  }
+
+  const vec3 pos = vert_position.xyz;
+  const vec3 emissive =
+    ( prim.emissive_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.emissive_texture ],
+      texture( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord ).rgb
+    ) :
+    prim.emissive.rgb;
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = texture( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+  float occlusion =
+    ( prim.occlusion_texture != 0 ) ?
+    mix( 1 - prim.occlusion_strength, 1, texture( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord ).r ) :
+    1.0;
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = albedo;
+  temp.emissive = emissive;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
+  temp.occlusion = occlusion;
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord.xy;
+  return temp;
+}
+
+primitive_value read_primitive_excluding_albedo(
+  uint primitive_id,
+  vec4 vert_position,
+  vec3 vert_normal,
+  vec4 vert_tangent,
+  vec3 vert_texcoord,
+  vec4 albedo
+) {
+  const primitive_resource_index_type prim =
+    primitive_resource_index[ primitive_id ];
+  const vec3 normal_ = normalize( vert_normal.xyz );
+  const vec3 tangent_ = normalize( vert_tangent.xyz );
+  vec3 normal;
+  if( prim.normal_texture != 0 ) {
+    const vec3 binormal = cross( tangent_, normal_ ) * vert_tangent.w;
+    const mat3 its = mat3( tangent_, binormal, normal_ );
+    normal = its * ( normalize( textureLod( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord.xy, vert_texcoord.z ).rgb * vec3( prim.normal_scale, prim.normal_scale, 1 ) * 2.0 - 1.0 ) );
+  }
+  else {
+    normal = normal_;
+  }
+
+  const vec3 pos = vert_position.xyz;
+  const vec3 emissive =
+    ( prim.emissive_texture != 0 ) ?
+    from_color_profile(
+      texture_metadata_pool[ prim.emissive_texture ],
+      textureLod( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord.xy, vert_texcoord.z ).rgb
+    ) :
+    prim.emissive.rgb;
+  float metallic;
+  float roughness;
+  if( prim.metallic_roughness_texture != 0 ) {
+    vec4 mr = textureLod( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord.xy, vert_texcoord.z );
+    metallic = mr.b;
+    roughness = mr.g;
+  }
+  else {
+    metallic = prim.metallic;
+    roughness = prim.roughness;
+  }
+  float occlusion =
+    ( prim.occlusion_texture != 0 ) ?
+    mix( 1 - prim.occlusion_strength, 1, textureLod( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord.xy, vert_texcoord.z ).r ) :
+    1.0;
+
+  primitive_value temp;
+  temp.pos = pos;
+  temp.normal = normal;
+  temp.albedo = albedo;
+  temp.emissive = emissive;
+  temp.metallic = metallic;
+  temp.roughness = roughness;
+  temp.occlusion = occlusion;
+  temp.tangent = tangent_;
+  temp.texcoord[ 0 ] = vert_texcoord.xy;
+  return temp;
+}
 
 primitive_value read_primitive(
   rasterizable_vertex_attribute attr,
@@ -274,13 +454,16 @@ primitive_value read_primitive(
 
 #ifdef GCT_USE_GET_LOD_LEVEL
 float get_lod_level(
-  uint primitive_id,
+  uint prim_id,
   vec2 vert_texcoord
 ) {
   const primitive_resource_index_type prim =
-    primitive_resource_index[ primitive_id ];
+    primitive_resource_index[ prim_id ];
   if( prim.base_color_texture != 0 ) {
     return textureQueryLod( texture_pool[ nonuniformEXT(prim.base_color_texture) ], vert_texcoord ).x;
+  }
+  /*else if( prim.normal_texture != 0 ) {
+    return textureQueryLod( texture_pool[ nonuniformEXT(prim.normal_texture) ], vert_texcoord ).x;
   }
   else if( prim.emissive_texture != 0 ) {
     return textureQueryLod( texture_pool[ nonuniformEXT(prim.emissive_texture) ], vert_texcoord ).x;
@@ -289,8 +472,8 @@ float get_lod_level(
     return textureQueryLod( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord ).x;
   }
   else if( prim.occlusion_texture != 0 ) {
-    return textureQueryLod( texture_pool[ nonuniformEXT(prim.metallic_roughness_texture) ], vert_texcoord ).x;
-  }
+    return textureQueryLod( texture_pool[ nonuniformEXT(prim.occlusion_texture) ], vert_texcoord ).x;
+  }*/
   else {
     return 0.0;
   }
