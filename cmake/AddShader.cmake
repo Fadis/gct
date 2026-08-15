@@ -162,7 +162,7 @@ function(add_shader TARGET SHADER)
   if(USE_SPIRV_OPT)
     add_custom_command(
       OUTPUT ${current-output-path}
-      COMMAND spirv-opt -o ${current-output-path} ${current-before_opt-path} --target-env=vulkan1.3 -O
+      COMMAND spirv-opt -O -o ${current-output-path} ${current-before_opt-path} --target-env=vulkan1.3 -O
       DEPENDS ${current-before_opt-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Optimizing ${SHADER} ..."

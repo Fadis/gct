@@ -1,0 +1,20 @@
+add_executable( standard31_lazy_count
+  gct.cpp
+)
+target_compile_definitions( standard31_lazy_count PRIVATE -DCMAKE_CURRENT_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" )
+target_compile_definitions( standard31_lazy_count PRIVATE -DCMAKE_CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" )
+
+target_link_libraries(
+  standard31_lazy_count
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  ${pkgcfg_lib_Vulkan_vulkan}
+  ${OIIO_LIBRARIES}
+  ${pkgcfg_lib_GLFW_glfw}
+  ${pkgcfg_lib_GLFW_glfw3}
+)
+
+add_shader( standard31_lazy_count mix_ao/mix_ao.comp )
+

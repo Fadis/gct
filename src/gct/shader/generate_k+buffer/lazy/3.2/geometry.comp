@@ -108,49 +108,51 @@ void main()  {
 
     if( albedo.w >= 1.0f ) {
       nearest_opaque = iter;
+      iter = kplus_next( iter );
     }
     else if( albedo.w <= 0.0f ) {
       kplus_erase( iter );
     }
     else {
+      iter = kplus_next( iter );
     }
-    iter = kplus_next( iter );
   }
   kplus_erase_back( nearest_opaque );
 
   iter = nearest_opaque;
 
-  float nearest_depth = 1.0;
+  kplus_iter nearest_iter = iter;
   for( uint i = 0u; i != 4u; ++i ) {
     if( kplus_is_end( iter ) ) {
       break;
     }
     const vec4 id = id_cache[ iter.layer ];
-    const vec3 texcoord = texcoord_cache[ iter.layer ].xyz;
-    const primitive_resource_index_type prim = primitive_resource_index[ uint( id.y ) ];
-    const face_attribute fa = read_face_attribute_without_texcoord( prim.mesh, face_texcoord_cache[ iter.layer ] );
-    const vec2 st = st_cache[ iter.layer ];
-    const vec4 normal = rasterization_interpolate( st, fa.vertex[ 0 ].normal, fa.vertex[ 1 ].normal, fa.vertex[ 2 ].normal );
-    const vec4 tangent = rasterization_interpolate( st, fa.vertex[ 0 ].tangent, fa.vertex[ 1 ].tangent, fa.vertex[ 2 ].tangent );
-
-    primitive_value p = read_primitive_excluding_albedo(
-      uint( id.y ),
-      vec4( 0, 0, 0, 0 ),
-      normal.xyz,
-      tangent,
-      texcoord_cache[ iter.layer ].xyz,
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
-      albedo_cache[ iter.layer ]
-    );
-    p.normal *= 0.5;
-    p.normal += 0.5;
-    nearest_depth = kplus_get_depth( iter );
-    kplus_insert_complement( iter, p, vec4( 0, 1, 1, 1 ) );
+    nearest_iter = iter;
+    if( id.z != -1 ) {
+      const vec3 texcoord = texcoord_cache[ iter.layer ].xyz;
+      const primitive_resource_index_type prim = primitive_resource_index[ uint( id.y ) ];
+      const face_attribute fa = read_face_attribute_without_texcoord( prim.mesh, face_texcoord_cache[ iter.layer ] );
+      const vec2 st = st_cache[ iter.layer ];
+      const vec4 normal = rasterization_interpolate( st, fa.vertex[ 0 ].normal, fa.vertex[ 1 ].normal, fa.vertex[ 2 ].normal );
+      const vec4 tangent = rasterization_interpolate( st, fa.vertex[ 0 ].tangent, fa.vertex[ 1 ].tangent, fa.vertex[ 2 ].tangent );
+     
+      primitive_value p = read_primitive_excluding_albedo(
+        uint( id.y ),
+        vec4( 0, 0, 0, 0 ),
+        normal.xyz,
+        tangent,
+        texcoord_cache[ iter.layer ].xyz,
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
+        albedo_cache[ iter.layer ]
+      );
+      kplus_insert_complement( iter, p, id );
+    }
     const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
     visibility_pool[ visibility_index ] = 1;
     iter = kplus_next( iter );
   }
+  float nearest_depth = kplus_get_depth( nearest_iter );
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.depth ) ], screen_pos, vec4( nearest_depth, 0.0, 0.0, 0.0 ) );
   
 }

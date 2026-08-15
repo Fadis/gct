@@ -268,6 +268,18 @@ std::shared_ptr< buffer_t > vertex_buffer_pool::state_type::get( const vertex_bu
   }
 }
 
+std::shared_ptr< mappable_buffer_t > vertex_buffer_pool::state_type::get_mappable( const vertex_buffer_descriptor &desc ) {
+  if( vertex_buffer_state.size() <= *desc || !vertex_buffer_state[ *desc ].valid ) {
+    throw exception::invalid_argument( "vertex_buffer_pool::get_mappable : No such sampler" );
+  }
+  if( vertex_buffer_state[ *desc ].buffer.index() == 0 ) {
+    return std::get< std::shared_ptr< mappable_buffer_t > >( vertex_buffer_state[ *desc ].buffer );
+  }
+  else {
+    throw exception::invalid_argument( "vertex_buffer_pool::get_mappable : The buffer is not mappable" );
+  }
+}
+
 std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::state_type::get() {
   std::vector< std::shared_ptr< buffer_t > > temp;
   temp.reserve( vertex_buffer_state.size() );
@@ -407,6 +419,12 @@ std::shared_ptr< buffer_t > vertex_buffer_pool::get( const vertex_buffer_descrip
   std::lock_guard< std::mutex > lock( state->guard );
   return state->get( desc );
 }
+
+std::shared_ptr< mappable_buffer_t > vertex_buffer_pool::get_mappable( const vertex_buffer_descriptor &desc ) {
+  std::lock_guard< std::mutex > lock( state->guard );
+  return state->get_mappable( desc );
+}
+
 
 std::vector< std::shared_ptr< buffer_t > > vertex_buffer_pool::get() {
   std::lock_guard< std::mutex > lock( state->guard );

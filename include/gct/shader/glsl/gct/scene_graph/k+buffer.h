@@ -1285,97 +1285,6 @@ void kplus_insert_lazy_compress(
   }
 }
 
-
-void kplus_insert_lazy_partial(
-  kplus_iter iter,
-  rasterizable_vertex_attribute p,
-  float depth,
-  vec4 input_id
-) {
-  const int layer_count = gbuffer_get_layer_count( iter.active_layer );
-  const kplus_order order = kplus_get_insert_at( iter, depth );
-  if( order.new_sample_pos < 4 ) {
-    imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.depth ) ], ivec3( iter.image_pos, iter.depth_offset + order.new_sample_index - 1 ), vec4( depth, 0.0, 0.0, 0.0 ) );
-    /*if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_POSITION_DEPTH ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_POSITION_DEPTH )
-        ),
-        vec4( p.position.xyz, depth )
-      );
-    }
-    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_NORMAL ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL )
-        ),
-        vec4( p.normal, input_id.z )
-      );
-    }
-    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_METALLIC_ROUGHNESS_ID )
-        ),
-        vec4( 0.0f, 0.0f, input_id.x, input_id.y )
-      );
-    }
-    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_OPTFLOW_MARK ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_OPTFLOW_MARK )
-        ),
-        p.optflow
-      );
-    }
-    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TANGENT ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TANGENT )
-        ),
-        p.tangent
-      );
-    }
-    if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 ) ) {
-      imageStore(
-        image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ],
-        ivec3(
-          iter.image_pos,
-          iter.gbuffer_offset +
-          ( order.new_sample_index - 1 ) * layer_count +
-          gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_TEXCOORD0_TEXCOORD1 )
-        ),
-        vec4( p.texcoord.x, p.texcoord.y, 0.0f, 0.0f )
-      );
-    }*/
-    imageStore( image_pool_2d_array[ nonuniformEXT( iter.image.gbuffer ) ], ivec3( iter.image_pos, iter.index_offset ), vec4( order.sample_index ) );
-    iter.layer_cache = order.sample_index;
-    iter.index = min( iter.index + 1, 3 );
-    iter.layer = ( iter.index >= 0 ) ? iter.layer_cache[ iter.index ] - 1 : 0;
-  }
-}
-
-
 void kplus_insert_complement(
   kplus_iter iter,
   primitive_value p,
@@ -1391,7 +1300,7 @@ void kplus_insert_complement(
         ( iter.layer ) * layer_count +
         gbuffer_get_layer( iter.active_layer, GCT_GBUFFER_NORMAL )
       ),
-      vec4( p.normal, input_id.z )
+      vec4( p.normal, -1.0 )
     );
   }
   if( gbuffer_has_layer( iter.active_layer, GCT_GBUFFER_ALBEDO_ALPHA ) ) {

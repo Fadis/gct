@@ -123,6 +123,7 @@ subdirs(
   standard3_lazy_dual
   standard3_lazy_hybrid
   standard31_lazy
+  standard31_lazy_count
   standard32_lazy
   forward
   forward2

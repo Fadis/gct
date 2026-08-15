@@ -240,7 +240,6 @@ int main( int argc, const char *argv[] ) {
   const auto gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::normal |
-      gct::gbuffer_format::tangent |
       gct::gbuffer_format::texcoord0_texcoord1 |
       gct::gbuffer_format::emissive_occlusion |
       gct::gbuffer_format::metallic_roughness_id;

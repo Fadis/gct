@@ -58,39 +58,45 @@ void main()  {
 
     if( albedo.w >= 1.0f ) {
       nearest_opaque = iter;
+      iter = kplus_next( iter );
     }
     else if( albedo.w <= 0.0f ) {
       kplus_erase( iter );
     }
-    iter = kplus_next( iter );
+    else {
+      iter = kplus_next( iter );
+    }
   }
   kplus_erase_back( nearest_opaque );
 
   iter = nearest_opaque;
 
-  float nearest_depth = 1.0;
+  kplus_iter nearest_iter = iter;
   for( uint i = 0u; i != 4u; ++i ) {
     if( kplus_is_end( iter ) ) {
       break;
     }
+    nearest_iter = iter;
     const vec4 normal_meshlet_id = kplus_get_normal_meshlet_id( iter );
     const vec4 id = vec4( id_cache[ iter.layer ], normal_meshlet_id.w, 0.0f );
-    const vec3 texcoord = texcoord_cache[ iter.layer ].xyz;
+    if( id.z != -1 ) {
+      const vec3 texcoord = texcoord_cache[ iter.layer ].xyz;
 
-    primitive_value p = read_primitive_excluding_albedo(
-      uint( id.y ),
-      kplus_get_pos_depth( iter ),
-      normal_meshlet_id.xyz,
-      kplus_get_tangent_face_id( iter ),
-      texcoord.xyz,
-      albedo_cache[ iter.layer ]
-    );
-    nearest_depth = kplus_get_depth( iter );
-    kplus_insert_complement( iter, p, id );
+      primitive_value p = read_primitive_excluding_albedo(
+        uint( id.y ),
+        kplus_get_pos_depth( iter ),
+        normal_meshlet_id.xyz,
+        kplus_get_tangent_face_id( iter ),
+        texcoord.xyz,
+        albedo_cache[ iter.layer ]
+      );
+      kplus_insert_complement( iter, p, id );
+    }
     const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
     visibility_pool[ visibility_index ] = 1;
     iter = kplus_next( iter );
   }
+  float nearest_depth = kplus_get_depth( nearest_iter );
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.depth ) ], screen_pos, vec4( nearest_depth, 0.0, 0.0, 0.0 ) );
   
 }

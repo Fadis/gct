@@ -72,13 +72,16 @@ void main()  {
       texcoord
     );
 
-    if( albedo.w == 1.0f ) {
+    if( albedo.w >= 1.0f ) {
       nearest_opaque = iter;
+      iter = kplus_next( iter );
     }
-    else if( albedo.w == 0.0 ) {
+    else if( albedo.w <= 0.0f ) {
       kplus_erase( iter );
     }
-    iter = kplus_next( iter );
+    else {
+      iter = kplus_next( iter );
+    }
   }
   kplus_erase_back( nearest_opaque );
 
@@ -88,30 +91,33 @@ void main()  {
     push_constants.gbuffer_format
   );
 
-  float nearest_depth = 1.0;
+  kplus_iter nearest_iter = iter;
   for( uint i = 0u; i != 4u; ++i ) {
     if( kplus_is_end( iter ) ) {
       break;
     }
     const vec4 normal_meshlet_id = kplus_get_normal_meshlet_id( iter );
     const vec4 id = vec4( kplus_get_mrid( iter ).zw, normal_meshlet_id.w, 0.0f );
-    const vec3 texcoord = kplus_get_texcoord01( iter ).xyz;
-
-    primitive_value p = read_primitive(
-      uint( id.y ),
-      kplus_get_pos_depth( iter ),
-      normal_meshlet_id.xyz,
-      kplus_get_tangent_face_id( iter ),
-      texcoord,
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
-      vec4( 0.0f, 0.0f, 0.0f, 0.0f )
-    );
-    nearest_depth = kplus_get_depth( iter );
-    kplus_insert_complement( iter, p, id );
+    nearest_iter = iter;
+    if( id.z != -1 ) {
+      const vec3 texcoord = kplus_get_texcoord01( iter ).xyz;
+     
+      primitive_value p = read_primitive(
+        uint( id.y ),
+        kplus_get_pos_depth( iter ),
+        normal_meshlet_id.xyz,
+        kplus_get_tangent_face_id( iter ),
+        texcoord,
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f ),
+        vec4( 0.0f, 0.0f, 0.0f, 0.0f )
+      );
+      kplus_insert_complement( iter, p, id );
+    }
     const uint visibility_index = instance_resource_index[ uint( id.x ) ].visibility;
     visibility_pool[ visibility_index ] = 1;
     iter = kplus_next( iter );
   }
+  float nearest_depth = kplus_get_depth( nearest_iter );
   imageStore( image_pool_2d[ nonuniformEXT( push_constants.depth ) ], screen_pos, vec4( nearest_depth, 0.0, 0.0, 0.0 ) );
   
 }

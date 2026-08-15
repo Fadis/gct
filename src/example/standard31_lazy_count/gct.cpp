@@ -68,7 +68,7 @@
 #include <gct/get_library_path.hpp>
 #include <gct/color_attachment_name.hpp>
 #include <gct/gbuffer_format.hpp>
-#include <vulkan2json/ImageSubresourceRange.hpp>
+
 struct fb_resources_t {
   std::shared_ptr< gct::semaphore_t > image_acquired;
   std::shared_ptr< gct::semaphore_t > draw_complete;
@@ -240,13 +240,12 @@ int main( int argc, const char *argv[] ) {
   const auto gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::normal |
+      gct::gbuffer_format::tangent |
       gct::gbuffer_format::texcoord0_texcoord1 |
       gct::gbuffer_format::emissive_occlusion |
-      gct::gbuffer_format::metallic_roughness_id |
-      gct::gbuffer_format::dual_layer;
+      gct::gbuffer_format::metallic_roughness_id;
 
   const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
-  std::cout << "debug : " << egbuf_count << std::endl;
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -274,9 +273,8 @@ int main( int argc, const char *argv[] ) {
   const auto extended_gbuffer = sg->get_resource()->image->get( extended_gbuffer_desc.linear );
  
   const auto gbuffer_erase_range = kplus_gbuffer_format_to_image_subresource_range(
-    gbuffer_format, gct::gbuffer_format( 0 )/*::albedo_alpha*/, true, 2u
+    gbuffer_format, gct::gbuffer_format( 0 ), true
   );
-  std::cout << nlohmann::json( gbuffer_erase_range ).dump( 2 ) << std::endl;
 
   const auto gbuffer_clear_color = vk::ClearColorValue()
     .setFloat32( { 0.f, 0.f, 0.f, 0.f } );
@@ -293,12 +291,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
-              .setArrayLayers( 8u )
+              .setArrayLayers( 4u )
           )
       )
       .set_range(
         gct::subview_range()
-          .set_layer_count( 8u )
+          .set_layer_count( 4u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -333,6 +331,10 @@ int main( int argc, const char *argv[] ) {
   );
   
   const auto lock_image = sg->get_resource()->image->get( lock_image_desc.linear );
+
+  std::vector< std::uint8_t > host_debug_counter( 40, 0u );
+  const auto debug_counter_desc = sg->get_resource()->vertex->allocate( host_debug_counter );
+  const auto debug_counter = sg->get_resource()->vertex->get_mappable( debug_counter_desc );
 
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
@@ -536,7 +538,7 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_dual" / "3.1" )
+      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_count" / "3.1" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
@@ -544,6 +546,7 @@ int main( int argc, const char *argv[] ) {
   geometry.set_push_constant( "position", *extended_depth_desc.linear );
   geometry.set_push_constant( "gbuffer_format", gbuffer_format );
   geometry.set_push_constant( "lock", *lock_image_desc.linear );
+  geometry.set_push_constant( "debug_counter", *debug_counter_desc );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
   shadow_uniform =
@@ -590,7 +593,7 @@ int main( int argc, const char *argv[] ) {
       std::make_shared< gct::compute >(
         gct::compute_create_info()
           .set_allocator_set( res.allocator_set )
-          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_dual" / "3.1" / "geometry.comp.spv" )
+          .set_shader( gct::get_system_shader_path() / "generate_k+buffer" / "lazy_count" / "3.1" / "geometry.comp.spv" )
           .set_scene_graph( sg->get_resource() )
       ),
       gct::image_io_plan()
@@ -1126,11 +1129,16 @@ int main( int argc, const char *argv[] ) {
           {
             rec.fill( extended_gbuffer->get_factory(), gbuffer_clear_color, gbuffer_erase_range );
             rec.fill( extended_depth->get_factory(), gct::color::web::white );
+            rec.fill( debug_counter, 0u );
             rec.barrier(
               gct::syncable()
                 .add( extended_gbuffer )
                 .add( extended_depth )
             //    .add( lock_image )
+            );
+            rec.barrier(
+              gct::syncable()
+                .add( debug_counter )
             );
             auto render_pass_token = rec.begin_render_pass(
               gbuffer.get_render_pass_begin_info( 0 ),
@@ -1150,6 +1158,11 @@ int main( int argc, const char *argv[] ) {
           }
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
+          rec.barrier(
+            gct::syncable()
+              .add( debug_counter )
+          );
+          rec.sync_to_host( debug_counter );
           //rec.barrier( lock_image );
         }
           
@@ -1213,6 +1226,10 @@ int main( int argc, const char *argv[] ) {
     average = ( average * std::min( frame_counter, 60u ) + std::chrono::duration_cast< std::chrono::microseconds >( end_date - begin_date ).count() )/( std::min( frame_counter, 60u ) + 1 );
     if( frame_counter % 60 == 0 ) {
       std::cout << "elapsed : " << average << std::endl;
+      const auto mapped = debug_counter->map< std::uint32_t >();
+      for( std::uint32_t i = 0u; i != 9u; ++i )  {
+        std::cout << "  debug " << i << " : " << mapped[ i ] << std::endl;
+      }
     }
     glfwPollEvents();
     ++current_frame;

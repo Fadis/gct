@@ -933,6 +933,10 @@ add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.0/geometry.task INSTALL
 add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.0/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.0/geometry.comp INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.1/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.1/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.1/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_dual/3.1/geometry.comp INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_hybrid/3.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_hybrid/3.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_hybrid/3.0/geometry.frag INSTALL )
@@ -955,6 +959,10 @@ add_shader( gct gct/shader/generate_k+buffer/drop_small_triangles_partial/1.0/ge
 add_shader( gct gct/shader/generate_k+buffer/drop_small_triangles_lazy/1.0/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/drop_small_triangles_lazy/1.0/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/drop_small_triangles_lazy/1.0/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.frag INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.comp INSTALL )
 
 
 
