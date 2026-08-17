@@ -163,6 +163,9 @@ subdirs(
   test_rasterization_host_video
   test_gbuffer_format
   dump_gbuffer
+  dump_gbuffer_lazy
+  dump_gbuffer_11_lazy
+  dump_baricentric
   dump_kplus_buffer
   dump_kplus_buffer_2_cull
   dump_kplus_buffer_2_lazy
@@ -177,6 +180,8 @@ subdirs(
   dump_kplus_buffer_cull_small_triangles
   dump_kplus_buffer_drop_small_triangles
   dump_kplus_buffer_drop_small_triangles_partial
+  dump_kplus_buffer_drop_lock
+  dump_kplus_buffer_drop_read_primitive
   dump_kplus_buffer_drop_small_triangles_lazy
   dump_kplus_rendering
   full_software

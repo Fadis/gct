@@ -241,7 +241,7 @@ int main( int argc, const char *argv[] ) {
       gct::gbuffer_format::emissive_occlusion |
       gct::gbuffer_format::metallic_roughness_id;
 
-  const std::size_t egbuf_count = gct::get_layer_count( gbuffer_format );
+  const std::size_t egbuf_count = gct::get_kplus_layer_count( gbuffer_format );
   const auto extended_gbuffer_desc = sg->get_resource()->image->allocate(
     gct::image_allocate_info()
       .set_create_info(
@@ -287,7 +287,12 @@ int main( int argc, const char *argv[] ) {
                 vk::ImageUsageFlagBits::eTransferDst |
                 vk::ImageUsageFlagBits::eTransferSrc
               )
+              .setArrayLayers( 4u )
           )
+      )
+      .set_range(
+        gct::subview_range()
+          .set_layer_count( 4u )
       )
       .set_layout(
         vk::ImageLayout::eGeneral
@@ -296,12 +301,41 @@ int main( int argc, const char *argv[] ) {
   
   const auto extended_depth = sg->get_resource()->image->get( extended_depth_desc.linear );
 
+  vk::ClearColorValue uimage_clear_color;
+  uimage_clear_color.uint32[ 0 ] = 0u;
+  uimage_clear_color.uint32[ 1 ] = 0u;
+  uimage_clear_color.uint32[ 2 ] = 0u;
+  uimage_clear_color.uint32[ 3 ] = 0u;
+
+  const auto lock_image_desc = sg->get_resource()->image->allocate(
+    gct::image_allocate_info()
+      .set_create_info(
+        gct::image_create_info_t()
+          .set_basic(
+            gct::basic_2d_image( res.width, res.height )
+              .setFormat( vk::Format::eR32Uint )
+              .setUsage(
+                vk::ImageUsageFlagBits::eStorage |
+                vk::ImageUsageFlagBits::eTransferDst |
+                vk::ImageUsageFlagBits::eTransferSrc
+              )
+          )
+      )
+      .set_layout(
+        vk::ImageLayout::eGeneral
+      )
+  );
+  
+  const auto lock_image = sg->get_resource()->image->get( lock_image_desc.linear );
+
   {
     auto command_buffer = res.queue->get_command_pool()->allocate();
     {
       auto recorder = command_buffer->begin();
       recorder.set_image_layout( extended_gbuffer, vk::ImageLayout::eGeneral );
       recorder.set_image_layout( extended_depth, vk::ImageLayout::eGeneral );
+      recorder.set_image_layout( lock_image, vk::ImageLayout::eGeneral );
+      recorder.fill( lock_image->get_factory(), uimage_clear_color );
     }
     command_buffer->execute_and_wait();
   }
@@ -386,13 +420,14 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_gbuffer" / "standard" / "1.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_k+buffer" / "drop_lock" / "1.0" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
   geometry.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
   geometry.set_push_constant( "position", *extended_depth_desc.linear );
   geometry.set_push_constant( "gbuffer_format", gbuffer_format );
+  geometry.set_push_constant( "lock", *lock_image_desc.linear );
 
   std::shared_ptr< gct::mappable_buffer_t > shadow_uniform;
   shadow_uniform =
@@ -486,7 +521,6 @@ int main( int argc, const char *argv[] ) {
   const glm::mat4 projection = glm::perspective( 0.6981317007977318f, (float(res.width)/float(res.height)), std::min(0.1f*scale,0.5f), scale );
   const float light_size = 0.3;
 
-  std::cout << res.walk_state_filename << std::endl;
   gct::glfw_walk walk( center, scale, res.walk_state_filename );
   const auto proj_desc = sg->get_resource()->matrix->allocate( projection );
   const auto previous_proj_desc = sg->get_resource()->matrix->get_history( proj_desc );
@@ -666,7 +700,6 @@ int main( int argc, const char *argv[] ) {
     command_buffer->wait_for_executed();
   }
 
-
   while( frame_counter != 1200u ) {
     const auto begin_date = std::chrono::high_resolution_clock::now();
     //gct::blocking_timer frame_rate;
@@ -698,26 +731,29 @@ int main( int argc, const char *argv[] ) {
           }
           rec.barrier( extended_gbuffer );
           rec.barrier( extended_depth );
-          if( res.record && frame_counter == 299 ) {
-            for( std::uint32_t i = 0u; i != egbuf_count; ++i ) {
-              sg->get_resource()->image->dump(
-                extended_gbuffer_desc.linear,
-                gct::image_dump_info()
-                  .set_filename( "gbuffer_" + std::to_string( i ) + ".png" )
-                  .set_layer( i )
-              );
-            }
+        }
+        compiled( rec );
+        rec.barrier( extended_gbuffer );
+        rec.barrier( extended_depth );
+        if( res.record && frame_counter == 299 ) {
+          for( std::uint32_t i = 0u; i != egbuf_count; ++i ) {
+            sg->get_resource()->image->dump(
+              extended_gbuffer_desc.linear,
+              gct::image_dump_info()
+                .set_filename( "gbuffer_" + std::to_string( i ) + ".exr" )
+                .set_layer( i )
+            );
+          }
+          for( std::uint32_t i = 0u; i != 4u; ++i ) {
             sg->get_resource()->image->dump(
               extended_depth_desc.linear,
               gct::image_dump_info()
-                .set_filename( "depth_0.png" )
+                .set_filename( "depth_" + std::to_string( i ) + ".exr" )
+                .set_layer( i )
             );
-            (*sg)( rec );
           }
-          rec.barrier( extended_gbuffer );
-          rec.barrier( extended_depth );
+          (*sg)( rec );
         }
-        compiled( rec );
       }
       command_buffer->execute(
         gct::submit_info_t()

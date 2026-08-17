@@ -386,7 +386,7 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_gbuffer" / "standard" / "1.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_baricentric" / "standard" / "1.0" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );

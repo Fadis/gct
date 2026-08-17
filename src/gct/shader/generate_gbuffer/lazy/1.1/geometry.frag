@@ -24,22 +24,17 @@ layout(push_constant) uniform PushConstants {
 } push_constants;
 
 void main() {
-  primitive_value p = read_primitive(
-    uint( input_id.y ),
-    input_position,
-    input_normal,
-    vec4( input_tangent.xyz, 0.0 ),
-    input_texcoord,
-    input_optflow,
-    input_previous_position
-  );
-  
-  if( p.albedo.a <= 0.0 ) discard;
-/*
+  rasterizable_vertex_attribute p;
+  p.position = input_position;
+  p.normal = input_normal.xyz;
+  p.tangent = input_tangent;
+  p.texcoord = vec3( input_texcoord, 0.0 );
+/*  
   p.normal *= 0.5;
   p.normal += 0.5;
   p.tangent.xzy *= 0.5;
   p.tangent.xyz += 0.5;
+  p.tangent.w = 1.0;
 */
   const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   visibility_pool[ visibility_index ] = 1;
@@ -51,7 +46,7 @@ void main() {
     image_pos,
     push_constants.gbuffer_format
   );
-  gbuffer_insert(
+  gbuffer_insert_lazy(
     iter,
     p,
     gl_FragCoord.z,

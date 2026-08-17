@@ -5,6 +5,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_fragment_shader_interlock : enable
 #extension GL_EXT_shader_image_load_formatted : enable
+#extension GL_EXT_fragment_shader_barycentric : enable
 
 #include "io_with_tangent.h"
 #define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
@@ -28,19 +29,19 @@ void main() {
     uint( input_id.y ),
     input_position,
     input_normal,
-    vec4( input_tangent.xyz, 0.0 ),
+    input_tangent,
     input_texcoord,
     input_optflow,
     input_previous_position
   );
   
   if( p.albedo.a <= 0.0 ) discard;
-/*
+  /*
   p.normal *= 0.5;
   p.normal += 0.5;
   p.tangent.xzy *= 0.5;
   p.tangent.xyz += 0.5;
-*/
+  */
   const uint visibility_index = instance_resource_index[ uint( input_id.x ) ].visibility;
   visibility_pool[ visibility_index ] = 1;
 
@@ -51,6 +52,9 @@ void main() {
     image_pos,
     push_constants.gbuffer_format
   );
+  const vec3 c1 = vec3( 0.5607843137254902, 0.2901960784313726, 0.8235294117647058 );
+  const vec3 c2 = vec3( 0.8980392156862745, 0.592156862745098, 0.3058823529411765 );
+  p.albedo = vec4( c1 * gl_BaryCoordEXT.y + c2 * gl_BaryCoordEXT.z, 1.0 );
   gbuffer_insert(
     iter,
     p,

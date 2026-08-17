@@ -238,6 +238,8 @@ int main( int argc, const char *argv[] ) {
   const auto gbuffer_format =
       gct::gbuffer_format::albedo_alpha |
       gct::gbuffer_format::normal |
+      gct::gbuffer_format::tangent |
+      gct::gbuffer_format::texcoord0_texcoord1 |
       gct::gbuffer_format::emissive_occlusion |
       gct::gbuffer_format::metallic_roughness_id;
 
@@ -386,7 +388,7 @@ int main( int argc, const char *argv[] ) {
           .set_gbuffer( gbuffer )
       )
       .set_swapchain_image_count( 1u )
-      .add_shader( gct::get_system_shader_path() / "generate_gbuffer" / "standard" / "1.0" )
+      .add_shader( gct::get_system_shader_path() / "generate_gbuffer" / "lazy" / "1.1" )
       .set_scene_graph( sg->get_resource() )
       .add_resource( { "global_uniforms", global_uniform } )
   );
