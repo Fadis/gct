@@ -867,7 +867,13 @@ int main( int argc, const char *argv[] ) {
     {
       auto recorder = command_buffer->begin();
       il->setup_resource_pair_buffer( recorder );
-      generate_meshlet_info( recorder, 0u, il->get_mesh_count(), il->get_max_primitive_count(), 1u );
+      const auto max_work_group_count = res.device->get_physical_device_group().devices[ 0 ]->get_props().get_basic().limits.maxComputeWorkGroupCount[ 1 ];
+      if( il->get_max_primitive_count() < max_work_group_count ) {
+        generate_meshlet_info( recorder, 0u, il->get_mesh_count(), il->get_max_primitive_count(), 1u );
+      }
+      else {
+        generate_meshlet_info( recorder, 0u, il->get_mesh_count(), max_work_group_count, il->get_max_primitive_count()/max_work_group_count );
+      }
     }
     command_buffer->execute_and_wait();
   }

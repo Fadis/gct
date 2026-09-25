@@ -159,6 +159,7 @@ void main() {
       rasterizable_vertex_attribute va;
       float depth = 0.0;// rasterization_interpolate( rast_state, rast_result, v0_view.z*rast_state.inv_v0w, v1_view.z*rast_state.inv_v1w, v2_view.z*rast_state.inv_v2w );
       primitive_value p;// = read_primitive( va, id_vec );
+      p.albedo = vec4( 0, 0, 0, 0 );
       bool keep_waiting = true;
       while( keep_waiting ) {
         if( imageAtomicExchange( image_pool_2dua[ push_constants.lock ], rast_result.pixel, uint( 1 ) ) != uint( 1 ) ) {

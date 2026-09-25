@@ -162,7 +162,8 @@ function(add_shader TARGET SHADER)
   if(USE_SPIRV_OPT)
     add_custom_command(
       OUTPUT ${current-output-path}
-      COMMAND spirv-opt -O -o ${current-output-path} ${current-before_opt-path} --target-env=vulkan1.3 -O
+      COMMAND spirv-opt -Oconfig=${CMAKE_SOURCE_DIR}/spirv-opt.config -o ${current-output-path} ${current-before_opt-path} --target-env=vulkan1.3
+      #COMMAND cp ${current-before_opt-path} ${current-output-path}
       DEPENDS ${current-before_opt-path}
       IMPLICIT_DEPENDS CXX ${current-shader-path}
       COMMENT "Optimizing ${SHADER} ..."

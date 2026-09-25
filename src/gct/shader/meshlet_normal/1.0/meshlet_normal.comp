@@ -24,12 +24,12 @@ layout(local_size_x = 1, local_size_y = 32 ) in;
 
 void main() {
   const resource_pair_type id = resource_pair[ push_constants.instance + gl_GlobalInvocationID.x ];
-  const uint primitive_id = gl_GlobalInvocationID.y;
+  const uint primitive_id = gl_GlobalInvocationID.y + gl_NumWorkGroups.y * gl_WorkGroupSize.y * gl_GlobalInvocationID.z;
   const uint vertex_id = primitive_id * 3u;
   const primitive_resource_index_type prim = primitive_resource_index[ id.prim ];
   const mesh_type mesh = mesh_pool[ prim.mesh ];
 
-  const meshlet_reader reader = init_meshlet_reader( prim.mesh, gl_WorkGroupID.y );
+  const meshlet_reader reader = init_meshlet_reader( prim.mesh, gl_WorkGroupID.y + gl_NumWorkGroups.y * gl_GlobalInvocationID.z );
   const face_position f = read_face_position( reader );
   
   const uvec4 active_bits = subgroupBallot( f.valid );

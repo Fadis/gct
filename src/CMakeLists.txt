@@ -690,6 +690,17 @@ target_link_libraries( test_n31_cross
   Boost::context
 )
 
+add_executable( dump_noise
+  dump_noise.cpp
+)
+
+target_link_libraries(
+  dump_noise
+  Threads::Threads
+  Boost::program_options
+  ${OIIO_LIBRARIES}
+)
+
 if( DGFSDK_FOUND )
 add_executable( gen_dgf gen_dgf.cpp )
 target_link_libraries( gen_dgf
@@ -818,12 +829,12 @@ add_shader( gct gct/shader/scene_graph/light_pool/update.comp INSTALL )
 #add_shader( gct gct/shader/scene_graph/lambda_pool/write.comp INSTALL )
 #add_shader( gct gct/shader/scene_graph/lambda_pool/read.comp INSTALL )
 
-add_shader( gct gct/shader/scene_graph/dummy/dummy.comp INSTALL )
-add_shader( gct gct/shader/scene_graph/dummy/dummy.vert INSTALL )
-add_shader( gct gct/shader/scene_graph/dummy/dummy.geom INSTALL )
-add_shader( gct gct/shader/scene_graph/dummy/dummy.frag INSTALL )
-add_shader( gct gct/shader/scene_graph/dummy/dummy.mesh INSTALL )
-add_shader( gct gct/shader/scene_graph/dummy/dummy.task INSTALL )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.comp INSTALL NOOPT )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.vert INSTALL NOOPT )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.geom INSTALL NOOPT )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.frag INSTALL NOOPT )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.mesh INSTALL NOOPT )
+add_shader( gct gct/shader/scene_graph/dummy/dummy.task INSTALL NOOPT )
 
 add_shader( gct gct/shader/ao/hbao/hbao_0.comp INSTALL )
 add_shader( gct gct/shader/ao/hbao/hbao_45.comp INSTALL )
