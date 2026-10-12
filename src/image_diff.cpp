@@ -22,7 +22,8 @@ int main(
     ( "help,h", "show this message" )
     ("first", po::value<std::string>(), "first")
     ("second", po::value<std::string>(), "second")
-    ("output", po::value<std::string>(), "output");
+    ("output", po::value<std::string>(), "output")
+    ("scale", po::value<float>()->default_value( 1.0f ), "scale");
   po::variables_map vm;
   po::store( po::command_line_parser( argc, argv ).options( desc ).positional( p ).run(), vm );
   po::notify( vm );
@@ -81,6 +82,7 @@ int main(
     second_spec.format,
     second_pixels.data()
   );
+  const float scale = vm[ "scale" ].as< float >();
   std::vector<std::uint8_t> output_pixels(second_spec.width * second_spec.height * 3u );
   for( std::uint32_t h = 0u; h != first_spec.height; ++h ) {
     for( std::uint32_t w = 0u; w != first_spec.width; ++w ) {
@@ -169,7 +171,7 @@ int main(
           )
         );
       }
-      const auto c = gct::level_to_color( d, -32.f, 256.f-32.f );
+      const auto c = gct::level_to_color( d * scale, -32.f, 256.f-32.f );
       output_pixels[ 0 + w * 3 + h * second_spec.width * 3 ] = c[ 0 ] * 255.f;
       output_pixels[ 1 + w * 3 + h * second_spec.width * 3 ] = c[ 1 ] * 255.f;
       output_pixels[ 2 + w * 3 + h * second_spec.width * 3 ] = c[ 2 ] * 255.f;

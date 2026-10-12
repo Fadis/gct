@@ -91,5 +91,16 @@ float noise_simplex2d_fbm5( vec2 v ) {
   return sum;
 }
 
+float noise_simplex2d_fbm10( vec2 v ) {
+  float sum = 0.0f;
+  float amp = 0.5f;
+  for( unsigned int i = 0u; i != 10u; i++ ) {
+    sum += amp * noise_simplex2d( v );
+    v *= 2.0f;
+    amp *= 0.5f;
+  }
+  return sum;
+}
+
 #endif
 

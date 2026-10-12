@@ -1,8 +1,14 @@
 #ifndef GCT_SHADER_RANDOM_H
 #define GCT_SHADER_RANDOM_H
 
+#ifdef __cplusplus
+#include <glm/vec2.hpp>
+#include <glm/geometric.hpp>
+using namespace glm;
+#endif
+
 float rand1( vec2 n ) {
-  return fract( sin( dot( n.xy, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+  return fract( sin( dot( n, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
 }
 
 #if 0

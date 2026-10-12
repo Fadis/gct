@@ -26,3 +26,6 @@
 	path = external/psrdnoise
 	url = https://github.com/stegu/psrdnoise.git
 	branch = main
+[submodule "external/voronoi"]
+	path = external/voronoi
+	url = https://github.com/JCash/voronoi.git

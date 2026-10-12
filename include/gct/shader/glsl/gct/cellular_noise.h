@@ -25,7 +25,7 @@ vec3 noise_mod7( vec3 x ) {
 
 // Cellular noise, returning F1 and F2 in a vec2.
 // Standard 3x3 search window for good F1 and F2 values
-vec2 noise_cellular( vec2 P ) {
+vec2 noise_cellular2d( vec2 P ) {
   const float K = 0.142857142857f; // 1/7
   const float Ko = 0.428571428571f; // 3/7
   const float jitter = 1.0f; // Less gives more regular pattern

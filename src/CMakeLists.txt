@@ -383,6 +383,7 @@ add_library( gct SHARED
   gct/glsl_bit.cpp
   gct/dummy_byte_address_buffer.cpp
   gct/dummy_subgroup.cpp
+  gct/dummy_image.cpp
   gct/mikktspace.cpp
   gct/vertex_attribute_id.cpp
   gct/compress_mesh.cpp
@@ -390,6 +391,13 @@ add_library( gct SHARED
   gct/meshlet_type.cpp
   gct/mesh_type.cpp
   gct/gamma.cpp
+  gct/gaussian_blue_noise.cpp
+  gct/jc_voronoi.cpp
+  gct/area.cpp
+  gct/intersect.cpp
+  gct/triangulation.cpp
+  gct/terrain_mesh.cpp
+  gct/fft.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -403,6 +411,7 @@ target_link_libraries(
   ${OIIO_LIBRARIES}
   ${pkgcfg_lib_VULKAN2JSON_vulkan2json}
   ${DGFSDK_LIBRARIES}
+  ${KISSFFT_LIBRARIES}
 )
 
 install( TARGETS gct )
@@ -696,6 +705,51 @@ add_executable( dump_noise
 
 target_link_libraries(
   dump_noise
+  gct
+  Threads::Threads
+  Boost::program_options
+  ${OIIO_LIBRARIES}
+)
+
+add_executable( fft_image
+  fft_image.cpp
+)
+
+target_link_libraries(
+  fft_image
+  gct
+  Threads::Threads
+  Boost::program_options
+  ${OIIO_LIBRARIES}
+)
+
+add_executable( dump_voronoi
+  dump_voronoi.cpp
+)
+
+target_link_libraries(
+  dump_voronoi
+  gct
+  Threads::Threads
+  Boost::program_options
+)
+
+add_executable( test_triangulation test_triangulation.cpp )
+target_link_libraries( test_triangulation
+  gct
+  gct_glfw
+  Threads::Threads
+  Boost::program_options
+  Boost::context
+)
+
+add_executable( test_terrain_generator
+  test_terrain_generator.cpp
+)
+
+target_link_libraries(
+  test_terrain_generator
+  gct
   Threads::Threads
   Boost::program_options
   ${OIIO_LIBRARIES}

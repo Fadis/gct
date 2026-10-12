@@ -98,6 +98,12 @@ pkg_check_modules(HARFBUZZ harfbuzz)
 pkg_check_modules(ICUUC icu-uc)
 pkg_check_modules(LIBINPUT libinput)
 pkg_check_modules(XKBCOMMON xkbcommon)
+
+pkg_check_modules(KISSFFT kissfft-float-openmp)
+if ( NOT KISSFFT_FOUND )
+  pkg_check_modules(KISSFFT kissfft-float)
+endif()
+
 if ( NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   pkg_check_modules(SDBUSCPP sdbus-c++)
   message( "SDBUSCPP : " ${SDBUSCPP_VERSION} )
@@ -157,6 +163,18 @@ INSTALL(
   DESTINATION
   include/gct/
 )
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/voronoi/src/jc_voronoi.h
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/jc_voronoi.h
+  COPYONLY
+)
+INSTALL(
+  FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/include/gct/jc_voronoi.h
+  DESTINATION
+  include/gct/
+)
+
 
 set( GCT_INCURE_DIRS "" )
 list( APPEND GCT_INCURE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" )
@@ -192,6 +210,9 @@ endif()
 if( DGFSDK_FOUND )
 list( APPEND GCT_INCURE_DIRS "${DGFSDK_INCLUDE_PATH}" )
 endif()
+if( KISSFFT_FOUND )
+list( APPEND GCT_INCURE_DIRS "${KISSFFT_INCLUDE_DIRS}" )
+endif()
 
 set( GCT_LINK_DIRS "" )
 list( APPEND GCT_LINK_DIRS "${Vulkan_LIBRARY_DIRS}" )
@@ -214,6 +235,9 @@ list( APPEND GCT_LINK_DIRS "${SDBUSCPP_LIBRARY_DIR}" )
 endif()
 if( NNEF_FOUND )
 list( APPEND GCT_LINK_DIRS "${NNEF_LIBRARY_DIR}" )
+endif()
+if( KISSFFT_FOUND )
+list( APPEND GCT_INCURE_DIRS "${KISSFFT_LIBRARY_DIR}" )
 endif()
 
 INCLUDE_DIRECTORIES(
