@@ -48,6 +48,7 @@ create_image_from_file(
   unsigned int max_channels_per_layer,
   bool enable_srgb = true
 );
+
 }
 
 #endif

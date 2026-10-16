@@ -352,6 +352,7 @@ add_library( gct SHARED
   gct/onesweep_create_info.cpp
   gct/onesweep.cpp
   gct/create_image_from_file.cpp
+  gct/host_image.cpp
   gct/scene_graph.cpp
   gct/scene_graph_create_info.cpp
   gct/scene_graph_resource.cpp
@@ -398,6 +399,7 @@ add_library( gct SHARED
   gct/triangulation.cpp
   gct/terrain_mesh.cpp
   gct/fft.cpp
+  gct/linear_interpolation.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

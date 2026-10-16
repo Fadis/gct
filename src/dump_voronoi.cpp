@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 #include <nlohmann/json.hpp>
 #include <gct/terrain_mesh.hpp>
+#include <gct/host_image.hpp>
 
 int main(
   int argc,
@@ -83,7 +84,10 @@ int main(
     std::cout << "a " << sum << "\t" << a << std::endl;
   }
 */
-  gct::terrain_mesh m( 100, 1.0f );
+  auto uplift = gct::create_host_image_from_file( "test.png", true, false, true );
+  gct::terrain_mesh m( 300, 1.0f, uplift );
+  m.uplift();
+  m.generate_river_tree();
   //std::cout << nlohmann::json( m ).dump( 2 ) << std::endl;
   std::vector< glm::vec2 > a;
   std::vector< glm::vec2 > b;
@@ -105,12 +109,14 @@ int main(
     q << v.x << " " << v.y << std::endl;
   }
 
+  std::cout << "triangle : " << m.triangle.size() << std::endl;
   std::fstream r( "r.txt", std::ios::out );
   for( const auto &t: m.triangle ) {
-    r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << std::endl;
-    r << m.vertex[ t.y ].position.x << "\t" << m.vertex[ t.y ].position.y << std::endl;
-    r << m.vertex[ t.z ].position.x << "\t" << m.vertex[ t.z ].position.y << std::endl;
-    r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << std::endl;
+    r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << "\t" << m.vertex[ t.x ].position.z << std::endl;
+    r << m.vertex[ t.y ].position.x << "\t" << m.vertex[ t.y ].position.y << "\t" << m.vertex[ t.y ].position.z << std::endl;
+    r << m.vertex[ t.z ].position.x << "\t" << m.vertex[ t.z ].position.y << "\t" << m.vertex[ t.z ].position.z << std::endl;
+    r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << "\t" << m.vertex[ t.x ].position.z << std::endl;
+    r << std::endl;
     r << std::endl;
   }
   std::fstream s( "s.txt", std::ios::out );
