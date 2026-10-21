@@ -4,11 +4,13 @@
 #include <nlohmann/json.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+#include <glm/geometric.hpp>
 #include <gct/gaussian_blue_noise.hpp>
 #include <gct/terrain_mesh.hpp>
 #include <gct/area.hpp>
 #include <gct/extension.hpp>
 #include <gct/linear_interpolation.hpp>
+#include <gct/cross2.hpp>
 #include <gct/jc_voronoi.h>
 
 namespace gct {
@@ -60,16 +62,17 @@ glm::ivec3 sort_element( const glm::ivec3 v ) {
   return temp;
 }
 
-terrain_mesh::terrain_mesh( std::size_t vertex_count, float area, const host_image &uplift ) {
-  auto result = gct::gaussian_blue_noise( vertex_count, 1000 );
+terrain_mesh::terrain_mesh( const terrain_mesh_create_info &create_info ) :
+  property( create_info ) {
+  auto result = gct::gaussian_blue_noise( props.point_count, 1000 );
   std::vector< jcv_point > points;
   for( auto &v: result ) {
     jcv_point p;
-    p.x = v.x;
-    p.y = v.y;
+    p.x = v.x * props.distance_scale.x;
+    p.y = v.y * props.distance_scale.y;
     points.push_back( p );
   }
-  jcv_rect bounding_box = { { 0.0f, 0.0f }, { 1.0f, 1.0f } };
+  jcv_rect bounding_box = { { 0.0f, 0.0f }, { 1.0f * props.distance_scale.x, 1.0f * props.distance_scale.y } };
   jcv_diagram diagram;
   memset(&diagram, 0, sizeof(jcv_diagram));
   jcv_diagram_generate( points.size(), points.data(), &bounding_box, 0, &diagram );
@@ -87,7 +90,7 @@ terrain_mesh::terrain_mesh( std::size_t vertex_count, float area, const host_ima
       voronoi_vertex.push_back( glm::vec2( graph_edge.pos[ 0 ].x, graph_edge.pos[ 0 ].y ) );
     }
     vertex[ sites[ i ].index ].set_uplift(
-      linear_interpolation( uplift, 0u, glm::vec2( vertex[ sites[ i ].index ].position ) )
+      linear_interpolation( props.uplift, 0u, glm::vec2( vertex[ sites[ i ].index ].position ) / props.distance_scale ) * props.max_uplift
     );
     vertex[ sites[ i ].index ].set_area( gct::area( voronoi_vertex ) );
   }
@@ -240,7 +243,7 @@ struct MarkRootVisitor : public boost::default_bfs_visitor {
   ) : mesh( m_ ), root( r_ ) {}
   void discover_vertex( terrain_river_tree_type::vertex_descriptor u, const terrain_river_tree_type & g ) const {
     assert( !mesh.vertex[ g[ u ] ].root );
-    std::cout << "vertex " << g[ u ] << " root " << root << std::endl;
+    //std::cout << "vertex " << g[ u ] << " root " << root << std::endl;
     mesh.vertex[ g[ u ] ].root = root;
   }
   terrain_mesh &mesh;
@@ -255,11 +258,11 @@ float terrain_mesh::calculate_area_sum( std::uint32_t start_index ) {
   for( auto iter = edge_begin; iter != edge_end; ++iter ) {
     const auto next_desc = target( *iter, river );
     const auto next_index = river[ next_desc ];
-    std::cout << start_index << " -> " << next_index << std::endl;
+    //std::cout << start_index << " -> " << next_index << std::endl;
     sum += calculate_area_sum( river[ next_desc ] );
   }
   //std::cout << "vertex : " << start_index << " sum : " << sum << " self : " << vertex[ start_index ].area << std::endl;
-  std::cout << "visited : " << start_index << std::endl;
+  //std::cout << "visited : " << start_index << std::endl;
   vertex[ start_index ].area_sum = sum;
   return sum;
 }
@@ -268,16 +271,15 @@ float terrain_mesh::calculate_area_sum( std::uint32_t start_index ) {
 void terrain_mesh::generate_river_tree() {
   river = terrain_river_tree_type();
   lake = terrain_full_graph_type();
-  saturate = terrain_river_tree_type();
+  //saturate = terrain_river_tree_type();
   for( unsigned int i = 0u; i != vertex.size(); ++i ) {
     vertex[ i ].river = add_vertex( river );
     vertex[ i ].root = std::nullopt;
     vertex[ i ].lake = std::nullopt;
-    vertex[ i ].saturate = std::nullopt;
+    //vertex[ i ].saturate = std::nullopt;
     river[ *vertex[ i ].river ] = i;
   }
-  std::unordered_set< std::uint32_t > lake_index;
-  std::unordered_set< std::uint32_t > border_lake_index;
+  lake_index.clear();
   for( unsigned int i = 0u; i != vertex.size(); ++i ) {
     auto [out_begin,out_end] = out_edges( vertex[ i ].full, graph );
     std::optional< std::uint32_t > lowest_vertex;
@@ -300,13 +302,10 @@ void terrain_mesh::generate_river_tree() {
     }
     else {
       lake_index.insert( i );
-      if( vertex[ i ].border ) {
-        border_lake_index.insert( i );
-      }
       vertex[ i ].lake = add_vertex( lake );
-      vertex[ i ].saturate = add_vertex( saturate );
+      //vertex[ i ].saturate = add_vertex( saturate );
       lake[ *vertex[ i ].lake ] = i;
-      saturate[ *vertex[ i ].saturate ] = i;
+      //saturate[ *vertex[ i ].saturate ] = i;
     }
   }
 
@@ -363,7 +362,7 @@ void terrain_mesh::generate_river_tree() {
     add_edge( *from, *to, lake );
   }
 
-  std::cout << "lake count 1 " << lake_index.size() << std::endl;
+  //std::cout << "lake count 1 " << lake_index.size() << std::endl;
   {
     auto [vertex_begin,vertex_end] = vertices( lake );
     for( auto from_lake_iter = vertex_begin; from_lake_iter != vertex_end; ++from_lake_iter ) {
@@ -393,7 +392,7 @@ void terrain_mesh::generate_river_tree() {
           }
           const auto to_height = vertex[ b_index ].position.z;
           const auto height_diff = to_height - from_lake_height;
-          std::cout << "lowest_height_diff : " << lowest_height_diff << " height_diff : " << height_diff <<std::endl; 
+          //std::cout << "lowest_height_diff : " << lowest_height_diff << " height_diff : " << height_diff <<std::endl; 
           if( lowest_height_diff > height_diff ) {
             lowest_height_diff = height_diff;
             lowest_edge = path->second.second;
@@ -412,14 +411,14 @@ void terrain_mesh::generate_river_tree() {
             std::swap( a_root_index, b_root_index );
           }
           const auto to_lake_height = vertex[ b_root_index ].position.z;
-          assert( vertex[ from_lake_index ].saturate );
-          assert( vertex[ b_root_index ].saturate );
-          add_edge( *vertex[ from_lake_index ].saturate, *vertex[ b_root_index ].saturate, saturate );
+          //assert( vertex[ from_lake_index ].saturate );
+          //assert( vertex[ b_root_index ].saturate );
+          //add_edge( *vertex[ from_lake_index ].saturate, *vertex[ b_root_index ].saturate, saturate );
           assert( vertex[ from_lake_index ].river );
           assert( vertex[ b_index ].river );
           if( to_lake_height < from_lake_height ) {
           //if( !boost::edge( *vertex[ a_index ].river, *vertex[ b_root_index ].river, river ).second ) { ///////
-            std::cout << "connect lake " << from_lake_index << " to " << b_root_index << " : "  << b_index << std::endl;
+            //std::cout << "connect lake " << from_lake_index << " to " << b_root_index << " : "  << b_index << std::endl;
             add_edge( *vertex[ b_index ].river, *vertex[ from_lake_index ].river, river );
             lake_index.erase( from_lake_index );
           }
@@ -427,17 +426,17 @@ void terrain_mesh::generate_river_tree() {
       }
     }
   }
-  std::cout << "lake count 2 " << lake_index.size() << std::endl;
+  //std::cout << "lake count 2 " << lake_index.size() << std::endl;
 
   {
     float sum = 0.0f;
     for( const auto &li: lake_index ) {
-      std::cout << "init " << li << std::endl;
+      //std::cout << "init " << li << std::endl;
       sum += calculate_area_sum( li );
     }
-    std::cout << "total " << sum << std::endl;
-    assert( sum > 0.99f );
-    assert( sum < 1.01f );
+    //std::cout << "total " << sum << std::endl;
+    assert( sum > 0.99f * props.distance_scale.x * props.distance_scale.y );
+    assert( sum < 1.01f * props.distance_scale.x * props.distance_scale.y );
   }
 
   /*std::vector< jcv_point > lake_points;
@@ -539,6 +538,172 @@ void terrain_mesh::generate_river_tree() {
   */
 }
 
+namespace {
+
+
+struct ErosionVisitor : public boost::default_bfs_visitor {
+  ErosionVisitor(
+    terrain_mesh &m_,
+    terrain_river_tree_type::vertex_descriptor r_
+  ) : mesh( m_ ), root( r_ ) {}
+  void tree_edge( const terrain_river_tree_type::edge_descriptor &e, const terrain_river_tree_type &g ) {
+    //std::cout << mesh.river[ source( e, g ) ] << " -> " << mesh.river[ target( e, g ) ] << " " << mesh.vertex[ mesh.river[ target( e, g ) ] ].area_sum << std::endl;
+    const float k = mesh.get_props().erosion_rate;
+    const float ami = mesh.vertex[ mesh.river[ target( e, g ) ] ].area_sum;
+    const float ui = mesh.vertex[ mesh.river[ target( e, g ) ] ].uplift;
+    const auto pi = mesh.vertex[ mesh.river[ target( e, g ) ] ].position;
+    const auto pj = mesh.vertex[ mesh.river[ source( e, g ) ] ].position;
+    const float d = glm::distance( glm::vec2( pi ), glm::vec2( pj ) );
+    const float delta_t = mesh.get_props().delta_t;
+    //if( pi.z > pj.z ) {
+      const float new_h = ( pi.z + delta_t * ( ui + k * ami / d ) ) / ( 1.0f + ( k * ami / d ) * delta_t );
+      //const float h_diff = new_h - pj.z;
+      //const float r = ( h_diff / d );
+      //if( r > 1.7320508075688767f ) {
+      //}
+      //else if( r > 0.5773502691896256f ) {
+      //  const auto ratio = ( r - 0.5773502691896256f ) / 1.154700538379251f;
+      //  mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
+      //    mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z * ( 1.0f - ratio ) +
+      //    new_h * ratio;
+      //}
+      //else {
+        mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z = new_h;
+      //}
+    //}
+    //else {
+    //  const float new_h = ( pi.z + delta_t * ( ui + k * ami / d ) ) / ( 1.0f + ( k * ami / d ) * delta_t );
+    //  mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z = new_h;
+    //}
+
+  }
+  terrain_mesh &mesh;
+  terrain_river_tree_type::vertex_descriptor root;
+};
+
+struct ThermalErosionVisitor : public boost::default_bfs_visitor {
+  ThermalErosionVisitor(
+    terrain_mesh &m_,
+    terrain_river_tree_type::vertex_descriptor r_
+  ) : mesh( m_ ), root( r_ ) {}
+  void tree_edge( const terrain_river_tree_type::edge_descriptor &e, const terrain_river_tree_type &g ) {
+    const auto pi = mesh.vertex[ mesh.river[ target( e, g ) ] ].position;
+    const auto pj = mesh.vertex[ mesh.river[ source( e, g ) ] ].position;
+    const float d = glm::distance( glm::vec2( pi ), glm::vec2( pj ) );
+    const float h_diff = pi.z - pj.z;
+    const float r = ( h_diff / ( d * 1000.f ) );
+    if( r > 0.5773502691896256f ) {
+      const float ratio = ( r - 0.5773502691896256f ) / ( 1.7320508075688767f - 0.5773502691896256f );
+       mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
+         pj.z + 0.5773502691896256f * d;
+         //( pj.z + 0.5773502691896256f * d ) * ratio +
+         //pi.z * ( 1.0f - ratio );
+    }
+    else if( r < -0.5773502691896256f ) {
+      const float ratio = ( -r - 0.5773502691896256f ) / ( 1.7320508075688767f - 0.5773502691896256f );
+       mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
+         pj.z - 0.5773502691896256f * d;
+         //( pj.z - 0.5773502691896256f * d ) * ratio +
+         //pi.z * ( 1.0f - ratio );
+    }
+  }
+  terrain_mesh &mesh;
+  terrain_river_tree_type::vertex_descriptor root;
+};
+
+
+}
+
+
+
+void terrain_mesh::erosion() {
+  for( auto &li: lake_index ) {
+    vertex[ li ].position.z += props.delta_t * vertex[ li ].uplift;
+    boost::breadth_first_search(
+      river,
+      *vertex[ li ].river,
+      visitor( ErosionVisitor{ *this, *vertex[ li ].river } )
+    );
+    boost::breadth_first_search(
+      river,
+      *vertex[ li ].river,
+      visitor( ThermalErosionVisitor{ *this, *vertex[ li ].river } )
+    );
+  }
+}
+
+void terrain_mesh::rasterize( host_image &dest ) {
+  for( const auto &t: triangle ) {
+    const glm::vec3 p0 = vertex[ t.x ].position;
+    const glm::vec3 p1 = vertex[ t.y ].position;
+    const glm::vec3 p2 = vertex[ t.z ].position;
+
+    const glm::vec2 s0 = glm::vec2(
+      p0.x / props.distance_scale.x * dest.width,
+      p0.y / props.distance_scale.y * dest.height
+    ) - glm::vec2( 0.5f, 0.5f );
+    const glm::vec2 s1 = glm::vec2(
+      p1.x / props.distance_scale.x * dest.width,
+      p1.y / props.distance_scale.y * dest.height
+    ) - glm::vec2( 0.5f, 0.5f );
+    const glm::vec2 s2 = glm::vec2(
+      p2.x / props.distance_scale.x * dest.width,
+      p2.y / props.distance_scale.y * dest.height
+    ) - glm::vec2( 0.5f, 0.5f );
+    glm::vec2 s_min = glm::min( glm::min( s0, s1 ), s2 );
+    glm::vec2 s_max = glm::max( glm::max( s0, s1 ), s2 );
+    s_min = glm::max( s_min, glm::vec2( 0, 0 ) );
+    s_max = glm::min( s_max, glm::vec2( dest.width, dest.height ) );
+  
+    const glm::ivec2 left_top_pixel = glm::ivec2( ceil( s_min ) );
+    const glm::ivec2 bounding_box_pixel_count =
+      glm::ivec2( ceil( s_max ) ) - left_top_pixel;
+ 
+    const glm::vec2 v_ab = s1 - s0;
+    const glm::vec2 v_ac = s2 - s0;
+ 
+    const float factor = 1.0f / rasterization_cross2( v_ab, v_ac );
+    //std::cout << "factor " << factor << std::endl; 
+    const float ds_dx =  v_ac.y * factor;
+    const float ds_dy = -v_ac.x * factor;
+    const float dt_dx = -v_ab.y * factor;
+    const float dt_dy =  v_ab.x * factor;
+    //std::cout << "ds_dx " << ds_dx << " " << ds_dy << " " << dt_dx << " " << dt_dy << std::endl; 
+
+    // bounding box内での左上のピクセルの位置
+    const glm::vec2 bounding_box_left_top_pixel_pos = glm::vec2(
+      left_top_pixel.x - s0.x,
+ 	    left_top_pixel.y - s0.y
+    );
+ 
+    const glm::vec2 left_top_pixel_pos_barycentric = glm::vec2(
+      ( bounding_box_left_top_pixel_pos.x * v_ac.y - bounding_box_left_top_pixel_pos.y * v_ac.x ) * factor,
+      ( v_ab.x * bounding_box_left_top_pixel_pos.y - v_ab.y * bounding_box_left_top_pixel_pos.x ) * factor
+    );
+
+    for( std::uint32_t y = 0u; y != bounding_box_pixel_count.y; ++y ) {
+      for( std::uint32_t x = 0u; x != bounding_box_pixel_count.x; ++x ) {
+        const glm::ivec2 pixel_in_bounding_box = glm::ivec2( x, y );
+        const float s = left_top_pixel_pos_barycentric.x +
+                        pixel_in_bounding_box.x * ds_dx +
+                        pixel_in_bounding_box.y * ds_dy;
+ 	 	    const float t = left_top_pixel_pos_barycentric.y +
+                        pixel_in_bounding_box.x * dt_dx +
+                        pixel_in_bounding_box.y * dt_dy;
+   
+        const float v = 1.0f - ( s + t );
+        if( s >= 0.0f && t >= 0.0f && v >= 0.0f ) {
+          float v_ds = p1.z - p0.z;
+          float v_dt = p2.z - p0.z;
+          dest.image[ ( left_top_pixel.x + x ) + ( left_top_pixel.y + y ) * dest.width ] = p0.z + s * v_ds + t * v_dt;
+          //dest.image[ 0 + ( left_top_pixel.x + x ) * dest.channels + ( left_top_pixel.y + y ) * dest.width * dest.channels ] = s;
+          //dest.image[ 1 + ( left_top_pixel.x + x ) * dest.channels + ( left_top_pixel.y + y ) * dest.width * dest.channels ] = t;
+        }
+      }
+    }
+  }
+}
+
 void to_json( nlohmann::json &dest, const terrain_mesh &src ) {
   dest = nlohmann::json::object();
   dest[ "vertex" ] = nlohmann::json::array();
@@ -561,7 +726,7 @@ void to_json( nlohmann::json &dest, const terrain_mesh &src ) {
     dest[ "triangle" ].push_back( temp );
   }
 }
-
+/*
 void from_json( const nlohmann::json &src, terrain_mesh &dest ) {
   if( !src.is_object() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
   dest = terrain_mesh{};
@@ -593,6 +758,7 @@ void from_json( const nlohmann::json &src, terrain_mesh &dest ) {
     }
   }
 }
+*/
 
 }
 

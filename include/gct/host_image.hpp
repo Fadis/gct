@@ -29,6 +29,18 @@ create_host_image_from_file(
   bool grayscale
 );
 
+host_image
+create_host_image(
+  std::uint32_t width,
+  std::uint32_t height,
+  std::uint32_t channels
+);
+
+void save_host_image(
+  const host_image &image,
+  const std::string &filename
+);
+
 }
 
 #endif

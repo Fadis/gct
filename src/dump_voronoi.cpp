@@ -84,12 +84,78 @@ int main(
     std::cout << "a " << sum << "\t" << a << std::endl;
   }
 */
-  auto uplift = gct::create_host_image_from_file( "test.png", true, false, true );
-  gct::terrain_mesh m( 300, 1.0f, uplift );
-  m.uplift();
-  m.generate_river_tree();
+  {
+    gct::terrain_mesh m(
+      gct::terrain_mesh_create_info()
+        .set_point_count( 10000 )
+        .set_uplift( gct::create_host_image_from_file( "test2.png", true, false, true ) )
+    );
+    //m.uplift();
+    for( unsigned int i = 0u; i != 301u; ++i ) {
+      std::cout << i << std::endl;
+      m.generate_river_tree();
+      //m.uplift();
+      m.erosion();
+      if( i % 100 == 0 ) {
+        std::fstream t( "t_" + std::to_string( i ) + ".txt", std::ios::out );
+        const auto [edge_begin,edge_end] = edges( m.river );
+        for( auto iter = edge_begin; iter != edge_end; ++iter ) {
+          auto source_pos = m.vertex[ m.river[ source( *iter, m.river ) ] ].position;
+          auto target_pos = m.vertex[ m.river[ target( *iter, m.river ) ] ].position;
+          t << source_pos.x << "\t" << source_pos.y << "\t" << source_pos.z << std::endl;
+          t << target_pos.x << "\t" << target_pos.y << "\t" << target_pos.z << std::endl;
+          t << std::endl;
+          t << std::endl;
+        }
+      }
+    }
+
+    std::fstream r( "r.txt", std::ios::out );
+    for( const auto &t: m.triangle ) {
+      r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << "\t" << m.vertex[ t.x ].position.z << std::endl;
+      r << m.vertex[ t.y ].position.x << "\t" << m.vertex[ t.y ].position.y << "\t" << m.vertex[ t.y ].position.z << std::endl;
+      r << m.vertex[ t.z ].position.x << "\t" << m.vertex[ t.z ].position.y << "\t" << m.vertex[ t.z ].position.z << std::endl;
+      r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << "\t" << m.vertex[ t.x ].position.z << std::endl;
+      r << std::endl;
+      r << std::endl;
+    }
+    auto dest_image = gct::create_host_image( 1024, 1024, 1u );
+    m.rasterize( dest_image );
+    for( auto &v: dest_image.image ) {
+      //std::cout << v << std::endl;
+      v /= 700.f;
+    }
+    gct::save_host_image( dest_image, "output.png" );
+  }
+  exit(0);
+  {
+    gct::terrain_mesh m(
+      gct::terrain_mesh_create_info()
+        .set_uplift( gct::create_host_image_from_file( "test2.png", true, false, true ) )
+    );
+    //m.uplift();
+    for( unsigned int i = 0u; i != 10001u; ++i ) {
+      std::cout << i << std::endl;
+      m.generate_river_tree();
+      m.uplift();
+      //m.erosion();
+      if( i % 500 == 0 ) {
+        std::fstream t( "u_" + std::to_string( i ) + ".txt", std::ios::out );
+        const auto [edge_begin,edge_end] = edges( m.river );
+        for( auto iter = edge_begin; iter != edge_end; ++iter ) {
+          auto source_pos = m.vertex[ m.river[ source( *iter, m.river ) ] ].position;
+          auto target_pos = m.vertex[ m.river[ target( *iter, m.river ) ] ].position;
+          t << source_pos.x << "\t" << source_pos.y << "\t" << source_pos.z << std::endl;
+          t << target_pos.x << "\t" << target_pos.y << "\t" << target_pos.z << std::endl;
+          t << std::endl;
+          t << std::endl;
+        }
+      }
+    }
+  }
+  exit( 0 );
   //std::cout << nlohmann::json( m ).dump( 2 ) << std::endl;
-  std::vector< glm::vec2 > a;
+/*  std::vector< glm::vec2 > a;
   std::vector< glm::vec2 > b;
   std::fstream p( "p.txt", std::ios::out );
   std::fstream q( "q.txt", std::ios::out );
@@ -104,12 +170,12 @@ int main(
   for( const auto &v: a ) {
     p << v.x << " " << v.y << std::endl;
   }
-  std::cout << std::endl;
+  //std::cout << std::endl;
   for( const auto &v: b ) {
     q << v.x << " " << v.y << std::endl;
   }
 
-  std::cout << "triangle : " << m.triangle.size() << std::endl;
+  //std::cout << "triangle : " << m.triangle.size() << std::endl;
   std::fstream r( "r.txt", std::ios::out );
   for( const auto &t: m.triangle ) {
     r << m.vertex[ t.x ].position.x << "\t" << m.vertex[ t.x ].position.y << "\t" << m.vertex[ t.x ].position.z << std::endl;
@@ -125,5 +191,17 @@ int main(
     s << m.vertex[ t.y ].position.x << "\t" << m.vertex[ t.y ].position.y << std::endl;
     s << std::endl;
   }
+  {
+    std::fstream t( "t.txt", std::ios::out );
+    const auto [edge_begin,edge_end] = edges( m.river );
+    for( auto iter = edge_begin; iter != edge_end; ++iter ) {
+      auto source_pos = m.vertex[ m.river[ source( *iter, m.river ) ] ].position;
+      auto target_pos = m.vertex[ m.river[ target( *iter, m.river ) ] ].position;
+      t << source_pos.x << "\t" << source_pos.y << "\t" << source_pos.z << std::endl;
+      t << target_pos.x << "\t" << target_pos.y << "\t" << target_pos.z << std::endl;
+      t << std::endl;
+      t << std::endl;
+    }
+  }*/
 }
 

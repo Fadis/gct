@@ -20,6 +20,7 @@ bool intersect(
   const std::array< glm::vec2, 2u > &b,
   bool edge
 ) {
+  if( a[ 0 ] == b[ 0 ] || a[ 0 ] == b[ 1 ] || a[ 1 ] == b[ 0 ] || a[ 1 ] == b[ 1 ] ) return edge;
   auto an = rot90( normalize( a[ 1 ] - a[ 0 ] ) );
   auto a_projected = dot( an, a[ 0 ] );
   auto b_begin_projected = dot( an, b[ 0 ] );

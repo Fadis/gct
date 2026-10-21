@@ -400,6 +400,7 @@ add_library( gct SHARED
   gct/terrain_mesh.cpp
   gct/fft.cpp
   gct/linear_interpolation.cpp
+  gct/cross2.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 

@@ -90,5 +90,39 @@ create_host_image_from_file(
   return state;
 }
 
+host_image
+create_host_image(
+  std::uint32_t width,
+  std::uint32_t height,
+  std::uint32_t channels
+) {
+  host_image state;
+
+  state.loaded = true;
+  state.width = width;
+  state.height = height;
+  state.channels = channels;
+  state.image.resize( state.width * state.height * state.channels, 0.0f );
+  return state;
+}
+
+void save_host_image(
+  const host_image &image,
+  const std::string &filename
+) {
+#if OIIO_VERSION_MAJOR >= 4 || ( OIIO_VERSION_MAJOR == 3 && OIIO_VERSION_MINOR >= 1 )
+  using namespace OIIO_CURRENT_NAMESPACE;
+#else
+  using namespace OIIO_NAMESPACE;
+#endif
+  auto out = ImageOutput::create( filename );
+  if( !out ) throw -1;
+  ImageSpec spec( image.width, image.height, image.channels, filename.substr( filename.size() - 4u ) == ".exr" ? TypeDesc::HALF : TypeDesc::UINT8 );
+  spec.attribute ("oiio:ColorSpace", "cie_xyz_d65_interchange");
+  out->open( filename, spec );
+  out->write_image( TypeDesc::FLOAT, image.image.data() );
+  out->close();
+}
+
 }
 

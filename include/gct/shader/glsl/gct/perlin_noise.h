@@ -30,36 +30,49 @@ using namespace glm;
 // Classic Perlin noise
 float noise_perlin2d( vec2 P ) {
   const vec4 pxyxy = vec4( P.x, P.y, P.x, P.y );
+  // Pを内包する単位矩形領域の頂点の座標
   vec4 Pi = floor(pxyxy) + vec4( 0.0, 0.0, 1.0, 1.0 );
+  // 単位矩形領域の各頂点からPまでのオフセット
   const vec4 Pf = fract(pxyxy) - vec4( 0.0, 0.0, 1.0, 1.0 );
+  // 単位矩形領域の頂点の座標を289で割った余りにする
+  // 精度不足対策
   Pi = noise_mod289( Pi ); // To avoid truncation effects in permutation
+  // 単位矩形領域の4つの頂点を転置して並べた物
   vec4 ix = vec4( Pi.x, Pi.z, Pi.x, Pi.z );
   vec4 iy = vec4( Pi.y, Pi.y, Pi.w, Pi.w );
+  // 各頂点からPまでのオフセットを転置して並べた物
   vec4 fx = vec4( Pf.x, Pf.z, Pf.x, Pf.z );
   vec4 fy = vec4( Pf.y, Pf.y, Pf.w, Pf.w );
-
+  // 単位矩形領域の頂点座標をseedとして乱数を作る
   vec4 i = noise_permute( noise_permute( ix ) + iy );
-
+  // 乱数から各頂点の勾配ベクトルを求める
   vec4 gx = fract( i * ( 1.0f / 41.0f ) ) * 2.0f - 1.0f;
+  // x方向成分を求めたらベクトルが単位長になるようにy方向成分を求める
   vec4 gy = abs( gx ) - 0.5f ;
+  // ?
   vec4 tx = floor( gx + 0.5f );
   gx = gx - tx;
 
+  // 勾配を転置して頂点毎に独立した値にしたもの
   vec2 g00 = vec2( gx.x, gy.x );
   vec2 g10 = vec2( gx.y, gy.y );
   vec2 g01 = vec2( gx.z, gy.z );
   vec2 g11 = vec2( gx.w, gy.w );
 
+  // ?
   vec4 norm = noise_taylor_inv_sqrt(
     vec4( dot( g00, g00 ), dot( g01, g01 ), dot( g10, g10 ), dot( g11, g11 ) )
   );
 
+  // 各頂点からPまでのオフセットと頂点の勾配のない席を取る
   float n00 = norm.x * dot( g00, vec2( fx.x, fy.x ) );
   float n01 = norm.y * dot( g01, vec2( fx.z, fy.z ) );
   float n10 = norm.z * dot( g10, vec2( fx.y, fy.y ) );
   float n11 = norm.w * dot( g11, vec2( fx.w, fy.w ) );
 
+  // 4つの頂点からの内積を合成する割合を決める関数
   vec2 fade_xy = noise_fade( vec2( Pf.x, Pf.y ) );
+  // 割合が決まったらあとはバイリニア
   vec2 n_x = mix( vec2( n00, n01 ), vec2( n10, n11 ), fade_xy.x );
   float n_xy = mix( n_x.x, n_x.y, fade_xy.y );
   return 2.3f * n_xy;
