@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cctype>
 #include <nlohmann/json.hpp>
 #include <gct/color_space.hpp>
@@ -220,6 +221,15 @@ color_profile parse_color_space( const std::string_view &name ) {
   }
   else if(
     ( cs_name_head = simplified.find( "scene_linear" ) ) != std::string::npos
+  ) {
+    space = color_space::aces_cg;
+    gamma = color_gamma::linear;
+    max_intensity = 10000.0;
+    prefix = std::string_view( simplified.begin(), std::next( std::next( simplified.begin(), cs_name_head ) ) );
+    variant = std::string_view( std::next( simplified.begin(), cs_name_head + 12 ), simplified.end() );
+  }
+  else if(
+    ( cs_name_head = simplified.find( "scene linear" ) ) != std::string::npos
   ) {
     space = color_space::aces_cg;
     gamma = color_gamma::linear;

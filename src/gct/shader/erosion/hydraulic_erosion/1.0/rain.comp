@@ -1,0 +1,32 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_MAKE_IMAGE_COHERENT
+#include <gct/scene_graph.h>
+#include <gct/terrain_erosion.h>
+
+layout(push_constant) uniform PushConstants {
+  uint height;
+  uint temp;
+} push_constants;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+void main()  {
+  const ivec2 image_pos = ivec2( gl_GlobalInvocationID.xy );
+  
+  const float Kr = 0.01f;
+  const float Ks = 0.01f;
+  const float Ke = 0.5f;
+  const float Kc = 0.01f;
+
+  hydraulic_erosion_rain( push_constants.height, push_constants.temp, image_pos, Kr, Ks );
+}
+
+

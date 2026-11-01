@@ -53,7 +53,7 @@ namespace gct {
   using terrain_river_tree_type = boost::adjacency_list<
     boost::hash_setS,
     boost::vecS,
-    boost::directedS,
+    boost::bidirectionalS,
     std::size_t
   >;
 
@@ -63,13 +63,23 @@ struct terrain_mesh_create_info {
   LIBGCT_SETTER( max_uplift )
   LIBGCT_SETTER( erosion_rate )
   LIBGCT_SETTER( delta_t )
+  LIBGCT_SETTER( uniform_grid )
+  LIBGCT_SETTER( stochastic )
+  LIBGCT_SETTER( connect_lake )
   LIBGCT_SETTER( uplift )
+  LIBGCT_SETTER( previous_height )
+  LIBGCT_SETTER( initial_height )
   std::size_t point_count = 10000;
-  glm::vec2 distance_scale = glm::vec2{ 50.0f/**1000.f*/, 50.0f/**1000.f*/ };
-  float max_uplift = 5.0e-3f;// // 5.0e-4f; // u
-  float erosion_rate = 5.61e-7f; // k
-  float delta_t = 5.0e+2;//  2.5e+5/(1000.f);
+  glm::vec2 distance_scale = glm::vec2{ 5.0f*1000.f, 5.0f*1000.f };
+  float max_uplift = 5.0e-3f; //5.0e-4f; // u
+  float erosion_rate = 5.61e-10f;// * 2.5e+5f; // k
+  float delta_t = 2.5e+3;//  2.5e+5/(1000.f);
+  bool uniform_grid = false;
+  bool stochastic = false;
+  bool connect_lake = true;
   host_image uplift;
+  host_image previous_height;
+  host_image initial_height;
 };
 
 struct terrain_vertex {
@@ -79,6 +89,12 @@ struct terrain_vertex {
   LIBGCT_SETTER( area_sum )
   LIBGCT_SETTER( border )
   LIBGCT_SETTER( previous_height )
+  LIBGCT_SETTER( t )
+  LIBGCT_SETTER( d )
+  LIBGCT_SETTER( s )
+  LIBGCT_SETTER( x )
+  LIBGCT_SETTER( dx0t )
+
   LIBGCT_SETTER( full )
   LIBGCT_SETTER( river )
   LIBGCT_SETTER( root )
@@ -90,6 +106,12 @@ struct terrain_vertex {
   float area_sum = 0.0f;
   bool border = false;
   float previous_height = 0.0f;
+  // pbae
+  float t = 0.0f;
+  float d = 0.0f;
+  float s = 0.0f;
+  std::uint32_t x = 0u;
+  bool dx0t = false;
   terrain_full_graph_type::vertex_descriptor full;
   std::optional< terrain_river_tree_type::vertex_descriptor > river;
   std::optional< terrain_river_tree_type::vertex_descriptor > root;
@@ -105,9 +127,15 @@ struct terrain_mesh :
   terrain_mesh( const terrain_mesh_create_info &create_info );
   void uplift();
   void erosion();
+  void erosion( std::uint32_t t );
   void generate_river_tree();
   float calculate_area_sum( std::uint32_t start_index );
   void dump() const;
+  void dump_triangle( const std::string &filename );
+  void dump_vertex( const std::string &filename );
+  void dump_edge( const std::string &filename );
+  void dump_river( const std::string &filename );
+  void dump_lake( const std::string &filename );
   void rasterize( host_image &dest );
   std::vector< terrain_vertex > vertex;
   std::vector< glm::ivec2 > edge;

@@ -242,5 +242,138 @@ common_sample_setup::common_sample_setup(
     .set_descriptor_pool( descriptor_pool );
 }
 
+filter_setup::filter_setup(
+  int argc,
+  const char *argv[],
+  const std::vector< const char* > &device_extensions,
+  const descriptor_pool_create_info_t &dpci,
+  bool enable_device_address
+) {
+  namespace po = boost::program_options;
+  po::options_description desc( "Options" );
+  desc.add_options()
+    ( "help,h", "show this message" )
+    ( "debug,d", po::bool_switch(), "enable debug log" )
+    ( "validation,v", po::bool_switch(), "enable validation layer" )
+    ( "device,D", po::value< std::string >()->default_value( "0" ), "select device" )
+    ( "input,i", po::value< std::string >(), "" )
+    ( "output,o", po::value< std::string >(), "" );
+  po::variables_map vm;
+  po::store( po::parse_command_line( argc, argv, desc ), vm );
+  po::notify( vm );
+  if( vm.count( "help" ) || !vm.count( "input" ) || !vm.count( "output" )  ) {
+    std::cout << desc << std::endl;
+    exit( 0 );
+  }
+
+  input = vm[ "input" ].as< std::string >();
+  output = vm[ "output" ].as< std::string >();
+
+  std::vector< const char* > iext{};
+  vulkanhpp::init();
+  thread_pool::init();
+  iext.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
+  const auto ilayers = get_instance_layers();
+  const auto iexts = get_instance_extensions( std::vector< const char* >() );
+  auto ici = instance_create_info_t()
+    .set_application_info(
+      vk::ApplicationInfo()
+        .setPApplicationName( "my_application" )
+        .setApplicationVersion(  VK_MAKE_VERSION( 1, 0, 0 ) )
+        .setApiVersion( VK_MAKE_VERSION( 1, 3, 0 ) )
+    )
+    .add_extension(
+      iext.begin(), iext.end()
+    );
+  if( vm[ "validation" ].as< bool >() ) {
+    ici.add_layer(
+      "VK_LAYER_KHRONOS_validation"
+    );
+#ifdef VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME
+    ici.add_extension( VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME );
+    ici.add_validation_feature_enable( vk::ValidationFeatureEnableEXT::eDebugPrintf );
+#endif
+  }
+  instance.reset( new instance_t( ici ) );
+  if( vm[ "validation" ].as< bool >() ) {
+    instance->abort_on_validation_failure( vm[ "debug" ].as< bool >() );
+  }
+
+  auto groups = instance->get_physical_devices( {} );
+
+  auto device_extensions_ = device_extensions;
+  device_extensions_.push_back(
+    VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME
+  );
+
+  std::uint32_t device_index = 0u;
+  if( vm[ "device" ].as< std::string >() == "?" ) {
+    std::uint32_t index = 0u;
+    for( auto &g: groups ) {
+      std::cout << index << " : " << g.devices[ 0 ]->get_props().get_basic().deviceName << std::endl;
+      ++index;
+    }
+    exit( 0 );
+  }
+  else {
+    const std::string device_index_str = vm[ "device" ].as< std::string >();
+    if( std::from_chars( device_index_str.data(), device_index_str.data()+device_index_str.size(), device_index ).ptr != device_index_str.data() + device_index_str.size() ) {
+      std::cerr << "Invalid device index : " << device_index_str << std::endl;
+      exit( 1 );
+    }
+  }
+
+  if( device_index > groups.size() ) {
+    std::cerr << "No such device : " << device_index << std::endl;
+    exit( 1 );
+  }
+
+  auto selected = groups[ device_index ].with_extensions( device_extensions_ );
+
+  if(
+    selected.devices[ 0 ]->get_props().get_subgroup_size_control().minSubgroupSize > 32u ||
+    selected.devices[ 0 ]->get_props().get_subgroup_size_control().maxSubgroupSize < 32u
+  ) {
+    std::cerr << "Selected GPU doesn't support setting subgroup to 32 : " <<
+      selected.devices[ 0 ]->get_props().get_subgroup_size_control().minSubgroupSize << " <= SubgroupSize <= " <<
+      selected.devices[ 0 ]->get_props().get_subgroup_size_control().maxSubgroupSize << std::endl;
+    exit( 1 );
+  }
+
+  std::vector< gct::queue_requirement_t > queue_requirements{
+    gct::queue_requirement_t{
+      vk::QueueFlagBits::eGraphics,
+      0u,
+      vk::Extent3D(),
+#ifdef VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME
+      vk::QueueGlobalPriorityEXT(),
+#endif
+      {},
+      vk::CommandPoolCreateFlagBits::eResetCommandBuffer
+    }
+  };
+  device = selected.create_device(
+    queue_requirements,
+    gct::device_create_info_t()
+  );
+  queue = device->get_queue( 0u );
+
+  descriptor_pool = device->get_descriptor_pool( dpci );
+
+  pipeline_cache = device->get_pipeline_cache();
+
+  VmaAllocatorCreateInfo allocator_create_info{};
+  if( enable_device_address ) {
+    allocator_create_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  }
+  allocator = device->get_allocator(
+    allocator_create_info
+  );
+  allocator_set
+    .set_allocator( allocator )
+    .set_pipeline_cache( pipeline_cache )
+    .set_descriptor_pool( descriptor_pool );
+}
+
 }
 

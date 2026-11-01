@@ -356,14 +356,11 @@ void image_io_create_info::update_rendering_info(
       );
     }
   }
-  std::cout << "set depth to rendering_info 0 " << name << std::endl;
   if( view->get_factory()->get_props().get_basic().usage & vk::ImageUsageFlagBits::eDepthStencilAttachment ) {
-    std::cout << "set depth to rendering_info 1 " << nlohmann::json( graphic_executable->get_props().pipeline_create_info.get_rendering().depthAttachmentFormat ) << " " << graphic_executable->get_props().pipeline_create_info.has_rendering()  << std::endl;
     const bool enable_depth =
       graphic_executable->get_props().pipeline_create_info.has_rendering() &&
       graphic_executable->get_props().pipeline_create_info.get_rendering().depthAttachmentFormat != vk::Format::eUndefined;
     if( name == "depth" && enable_depth ) {
-      std::cout << "set depth to rendering_info 2" << std::endl;
       rendering_info.set_depth_attachment(
         rendering_attachment_info_t()
           .set_view( view )

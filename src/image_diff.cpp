@@ -57,8 +57,7 @@ int main(
   const ImageSpec &second_spec = second_file->spec();
   if(
     first_spec.width != second_spec.width ||
-    first_spec.height != second_spec.height ||
-    first_spec.nchannels != second_spec.nchannels
+    first_spec.height != second_spec.height
   ) {
     std::cout << "different size" << std::endl;
     exit( 1 );
@@ -87,7 +86,17 @@ int main(
   for( std::uint32_t h = 0u; h != first_spec.height; ++h ) {
     for( std::uint32_t w = 0u; w != first_spec.width; ++w ) {
       float d = 0.0f;
-      if( first_spec.nchannels == 1 && second_spec.nchannels == 1 ) {
+      if( first_spec.nchannels >= 1 && second_spec.nchannels == 1 ) {
+        d = std::abs(
+          float(
+            first_pixels[ 0 + w * first_spec.nchannels + h * first_spec.width * first_spec.nchannels ]
+          ) -
+          float(
+            second_pixels[ 0 + w * second_spec.nchannels + h * second_spec.width * second_spec.nchannels ]
+          )
+        );
+      }
+      else if( first_spec.nchannels == 1 && second_spec.nchannels >= 1 ) {
         d = std::abs(
           float(
             first_pixels[ 0 + w * first_spec.nchannels + h * first_spec.width * first_spec.nchannels ]

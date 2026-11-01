@@ -528,10 +528,10 @@ void GBNAdaptive::optimize(int iterations) {
             // Attraction of image
             // -----------------------------------------------------------------
             float support = SUPPORT * sigma * std::sqrt(v[i] + vPixel);
-            int Xmin = std::max(floor(p[i].x - support), float(    0));
-            int Xmax = std::min( ceil(p[i].x + support), float(w - 1));
-            int Ymin = std::max(floor(p[i].y - support), float(    0));
-            int Ymax = std::min( ceil(p[i].y + support), float(h - 1));
+            int Xmin = std::max(std::floor(p[i].x - support), float(    0));
+            int Xmax = std::min( std::ceil(p[i].x + support), float(w - 1));
+            int Ymin = std::max(std::floor(p[i].y - support), float(    0));
+            int Ymax = std::min( std::ceil(p[i].y + support), float(h - 1));
             float a = 1 / (v[i] + vPixel);                                      // Kernel shaping factor
             ///*test*/ a = 1 / (v[i] + v[i] * unitAreaInv);
             //float a = 1 / ((1 + vPixel)*v[i]);                                  // Kernel shaping factor

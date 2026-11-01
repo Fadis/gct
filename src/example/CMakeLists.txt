@@ -189,6 +189,12 @@ subdirs(
   cull_small_triangles
   drop_small_triangles
   drop_small_triangles_partial
+  standard_terrain
+  height_to_normal
+  terrain_noise
+  thermal_erosion
+  simple_hydraulic_erosion
+  hydraulic_erosion
 )
 if( DXC_FOUND )
 subdirs(

@@ -1,0 +1,47 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_MAKE_IMAGE_COHERENT
+#include <gct/scene_graph.h>
+#include <gct/neighbor.h>
+
+layout(push_constant) uniform PushConstants {
+  uint src;
+  uint dest;
+  float strength;
+} push_constants;
+
+layout(local_size_x = 16, local_size_y = 16 ) in;
+
+const float xgrad[] = float[](
+  -1.0f,  0.0f,  1.0f,
+  -2.0f,         2.0f,
+  -1.0f,  0.0f,  1.0f
+);
+
+const float ygrad[] = float[](
+   1.0f,  2.0f,  1.0f,
+   0.0f,         0.0f,
+  -1.0f, -2.0f, -1.0f
+);
+
+void main()  {
+  const ivec2 image_pos = ivec2( gl_GlobalInvocationID.xy );
+  float dx = 0.0f;
+  float dy = 0.0f;
+  for( uint i = 0u; i != moore_neighbor_count; i++ ) {
+    const float h = imageLoad( image_pool_2d[ push_constants.src ], image_pos + moore_neighbor[ i ] ).r;
+    dx += h * xgrad[ i ];
+    dy += h * ygrad[ i ];
+  }
+  const float strength = push_constants.strength;
+  vec3 n = normalize( vec3(-dx * strength, -dy * strength, 1.0f ) );
+  imageStore( image_pool_2d[ push_constants.dest ], image_pos, vec4( n * 0.5f + 0.5f, 1.0f ) );
+}
+

@@ -401,6 +401,7 @@ add_library( gct SHARED
   gct/fft.cpp
   gct/linear_interpolation.cpp
   gct/cross2.cpp
+  gct/uniform_grid.cpp
   ../external/SPIRV-Reflect/spirv_reflect.c
 )
 
@@ -737,6 +738,17 @@ target_link_libraries(
   Boost::program_options
 )
 
+add_executable( dump_voronoi2
+  dump_voronoi2.cpp
+)
+
+target_link_libraries(
+  dump_voronoi2
+  gct
+  Threads::Threads
+  Boost::program_options
+)
+
 add_executable( test_triangulation test_triangulation.cpp )
 target_link_libraries( test_triangulation
   gct
@@ -1048,8 +1060,11 @@ add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.task INSTAL
 add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.mesh INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.frag INSTALL )
 add_shader( gct gct/shader/generate_k+buffer/lazy_count/3.1/geometry.comp INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/terrain/1.0/geometry.task INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/terrain/1.0/geometry.mesh INSTALL )
+add_shader( gct gct/shader/generate_k+buffer/terrain/1.0/geometry.frag INSTALL )
 
-
+add_shader( gct gct/shader/height_to_normal/1.0/height_to_normal.comp INSTALL )
 
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.task INSTALL )
 add_shader( gct gct/shader/generate_ppll/no_culling/geometry.mesh INSTALL )
@@ -1148,6 +1163,7 @@ add_shader( gct gct/shader/lighting/kplus/2.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/3.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/flat/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/kplus/simple/1.0/lighting.comp INSTALL )
+add_shader( gct gct/shader/lighting/kplus/directional/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/kajiya_kay/1.0/lighting.comp INSTALL )
 add_shader( gct gct/shader/lighting/ppll/stalling/1.0/lighting.comp INSTALL )
@@ -1193,6 +1209,18 @@ add_shader( gct gct/shader/gamma/1.0/gamma.comp INSTALL )
 add_shader( gct gct/shader/generate_adjacency/1.0/generate_adjacency.comp INSTALL )
 
 add_shader( gct gct/shader/dump_dgf/1.0/dump_dgf.comp INSTALL )
+
+add_shader( gct gct/shader/terrain_noise/1.0/terrain_noise.comp INSTALL )
+
+add_shader( gct gct/shader/erosion/thermal_erosion/1.0/dmax.comp INSTALL )
+add_shader( gct gct/shader/erosion/thermal_erosion/1.0/update.comp INSTALL )
+add_shader( gct gct/shader/erosion/simple_hydraulic_erosion/1.0/dmax.comp INSTALL )
+add_shader( gct gct/shader/erosion/simple_hydraulic_erosion/1.0/update.comp INSTALL )
+add_shader( gct gct/shader/erosion/hydraulic_erosion/1.0/rain.comp INSTALL )
+add_shader( gct gct/shader/erosion/hydraulic_erosion/1.0/flow.comp INSTALL )
+add_shader( gct gct/shader/erosion/hydraulic_erosion/1.0/update.comp INSTALL )
+
+add_shader( gct gct/shader/shift/1.0/shift.comp INSTALL )
 
 if( ENABLE_EXAMPLES )
 

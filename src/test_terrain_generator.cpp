@@ -28,7 +28,8 @@ void dump_image( std::uint32_t width, std::uint32_t height, std::uint32_t desc, 
 #else
     using namespace OIIO_NAMESPACE;
 #endif
-  ImageSpec spec( width, height, 3, TypeDesc::UINT8 );
+  ImageSpec spec( width, height, 4, TypeDesc::UINT8 );
+  spec.attribute ("oiio:ColorSpace", "scene_linear");
   std::vector<std::uint8_t> output_pixels( spec.width * spec.height * spec.nchannels, 255u );
 
   for( unsigned int y = 0u; y != spec.height; ++y ) {
@@ -38,6 +39,7 @@ void dump_image( std::uint32_t width, std::uint32_t height, std::uint32_t desc, 
       output_pixels[ 0 + x * spec.nchannels + y * spec.width * spec.nchannels ] = b;
       output_pixels[ 1 + x * spec.nchannels + y * spec.width * spec.nchannels ] = b;
       output_pixels[ 2 + x * spec.nchannels + y * spec.width * spec.nchannels ] = b;
+      output_pixels[ 3 + x * spec.nchannels + y * spec.width * spec.nchannels ] = 255u;
     }
   }
 
@@ -118,7 +120,7 @@ int main(
 
   auto initial = image_pool_2d[ terrain_desc ].pixel;
 
-  for( unsigned int iter = 0u; iter != 50000u; ++iter ) {
+  for( unsigned int iter = 0u; iter != 100u; ++iter ) {
     std::cout << "cycle : " << iter << std::endl;
     //std::cout << image_pool_2d[ terrain_desc ].pixel[ 256 * width + 256 ].x << std::endl;
     //std::cout << initial - imageLoad( image_pool_2d[ terrain_desc ], glm::ivec2( 256, 256 ) ).x << std::endl;
@@ -141,12 +143,12 @@ int main(
     }
     for( unsigned int y = 0u; y != height; ++y ) {
       for( unsigned int x = 0u; x != width; ++x ) {
-        hydraulic_erosion_flow2( temp_desc, dwdi_desc, ivec2( x, y ) );
+        hydraulic_erosion_flow( temp_desc, dwdi_desc, ivec2( x, y ) );
       }
     }
     for( unsigned int y = 0u; y != height; ++y ) {
       for( unsigned int x = 0u; x != width; ++x ) {
-        hydraulic_erosion_calc_update2( temp_desc, dwdi_desc, terrain_desc, ivec2( x, y ), Ke, Kc );
+        hydraulic_erosion_calc_update( temp_desc, dwdi_desc, terrain_desc, ivec2( x, y ), Ke, Kc );
       }
     }
     /*for( unsigned int y = 0u; y != height; ++y ) {

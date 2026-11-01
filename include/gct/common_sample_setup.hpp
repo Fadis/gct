@@ -81,6 +81,25 @@ struct common_sample_setup {
   std::unordered_set< std::uint32_t > primitive_filter;
 };
 
+struct filter_setup {
+  filter_setup(
+    int argc,
+    const char *argv[],
+    const std::vector< const char* > &device_extensions,
+    const descriptor_pool_create_info_t &dpci,
+    bool enable_device_address = false
+  ); 
+  std::shared_ptr< instance_t > instance;
+  std::shared_ptr< device_t > device;
+  std::shared_ptr< queue_t > queue;
+  std::shared_ptr< descriptor_pool_t > descriptor_pool;
+  std::shared_ptr< pipeline_cache_t > pipeline_cache;
+  std::shared_ptr< allocator_t > allocator;
+  allocator_set_t allocator_set;
+  std::string input;
+  std::string output;
+};
+
 }
 
 #endif

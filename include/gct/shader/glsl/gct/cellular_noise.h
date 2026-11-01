@@ -16,7 +16,7 @@
 #include <glm/vec4.hpp>
 using namespace glm;
 #else
-#include <gct/perlin_noise_commo.h>
+#include <gct/perlin_noise_common.h>
 #endif
 
 vec3 noise_mod7( vec3 x ) {

@@ -12,6 +12,7 @@
 #define GCT_SHADER_SIMPLEX_NOISE_H
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <gct/shader/glsl/gct/perlin_noise_common.h>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
@@ -19,8 +20,9 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 using namespace glm;
+using uint = std::uint32_t;
 #else
-#include <gct/perlin_noise_commo.h>
+#include <gct/perlin_noise_common.h>
 #endif
 
 float noise_simplex2d( vec2 v ) {
@@ -83,7 +85,7 @@ float noise_simplex2d( vec2 v ) {
 float noise_simplex2d_fbm5( vec2 v ) {
   float sum = 0.0f;
   float amp = 0.5f;
-  for( unsigned int i = 0u; i != 5u; i++ ) {
+  for( uint i = 0u; i != 5u; i++ ) {
     sum += amp * noise_simplex2d( v );
     v *= 2.0f;
     amp *= 0.5f;
@@ -94,7 +96,7 @@ float noise_simplex2d_fbm5( vec2 v ) {
 float noise_simplex2d_fbm10( vec2 v ) {
   float sum = 0.0f;
   float amp = 0.5f;
-  for( unsigned int i = 0u; i != 10u; i++ ) {
+  for( uint i = 0u; i != 10u; i++ ) {
     sum += amp * noise_simplex2d( v );
     v *= 2.0f;
     amp *= 0.5f;

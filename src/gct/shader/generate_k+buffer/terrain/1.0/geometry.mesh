@@ -1,0 +1,203 @@
+#version 460
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_ARB_fragment_shader_interlock : enable
+#extension GL_EXT_shader_image_load_formatted : enable
+
+// メッシュシェーダー拡張を使う
+#extension GL_EXT_mesh_shader : enable
+
+#define GCT_SHADER_SCENE_GRAPH_DISABLE_PUSH_CONSTANT
+#define GCT_USE_IMAGE_POOL_WITHOUT_FORMAT
+#define GCT_MAKE_IMAGE_COHERENT
+#include <gct/scene_graph.h>
+#include <gct/global_uniforms.h>
+
+layout(push_constant) uniform PushConstants {
+  uint gbuffer_format;
+  uint gbuffer;
+  uint position;
+  uint height_map;
+  uint normal_map;
+} push_constants;
+
+// 1つのローカルワークグループには32スレッドが含まれる
+layout(local_size_x = 32, local_size_y = 1 ) in;
+
+// 1つのローカルワークグループから最大で96頂点32プリミティブの三角形を出力する
+layout(triangles, max_vertices = 96, max_primitives = 32) out;
+
+// 頂点属性
+layout (location = 0) out vec4 output_position[]; // 頂点座標
+layout (location = 1) out vec3 output_normal[]; // 法線
+layout (location = 2) out vec2 output_texcoord[];
+
+// タスクペイロード
+struct task_data {
+  // 見えると判断されたメッシュレットのID
+  uint meshlet_index[ 32 ];
+  // ワールド座標系からスクリーン座標系への変換行列
+  mat4 w2s;
+  // メッシュシェーダーの実行元のタスクシェーダーが何番目のローカルワークグループかを表すID
+  uint tasklet_id;
+};
+taskPayloadSharedEXT task_data td;
+
+// タスクシェーダーのローカルワークグループのIDをそのローカルワークグループが担当する32x16のタイルの位置に変換する
+ivec3 index_to_task_offset( uint v ) {
+  const int x_index = int( v & 0x7 ) - 4;
+  const int y_index = int( ( v >> 3 ) & 0xF ) - 8;
+  const int layer = int( v >> 7 );
+  const bool hole =
+    layer >= 1 &&
+    x_index >= -2 &&
+    x_index < 2 &&
+    y_index >= -4 &&
+    y_index < 4;
+  return
+    hole ?
+    ivec3( 0, 0, -1 ) :
+    ivec3( x_index, y_index, layer );
+}
+
+// メッシュシェーダーのローカルワークグループのIDを4x4のタイルのメッシュレットの位置に変換する
+ivec2 index_to_meshlet_offset( uint v, ivec3 task_offset ) {
+  const int x_index = int( v & 0x7u );
+  const int y_index = int( v >> 3 );
+  return ivec2( x_index + task_offset.x * 8, y_index + task_offset.y * 4 );
+}
+
+// プリミティブの最初の頂点の座標とグリッドの幅からワールド空間での頂点座標を得る
+ivec3 index_to_primitive_offset( uint v, ivec2 meshlet_offset ) {
+  const int x_index = int( ( v >> 1 ) & 0x3 );
+  const int y_index = int( ( v >> 3 ) & 0x3 );
+  const int triangle_index = int( v & 0x1 );
+  return ivec3( x_index + meshlet_offset.x * 4, y_index + meshlet_offset.y * 4, triangle_index );
+}
+
+// 三角形2枚で縦横単位長の四角形を描く頂点配列
+const vec2 vertices[6] = vec2[](
+  vec2( 0, 0 ),
+  vec2( 0, 1 ),
+  vec2( 1, 0 ),
+  vec2( 1, 0 ),
+  vec2( 0, 1 ),
+  vec2( 1, 1 )
+);
+
+// プリミティブの位置から高さマップを読む時のミップレベルを求める
+// レイヤーの端の部分では1段階荒いレイヤーのミップレベルに近づける事でレイヤーの境界で穴が開く事を防ぐ
+float primitive_offset_to_blend_level( uint v, ivec3 primitive_offset ) {
+  ivec3 offset = primitive_offset;
+  offset.xy += ivec2( vertices[ v + ( ( primitive_offset.z == 0 ) ? 0 : 3 ) ] );
+  return
+    max(
+      min( float( max( abs( offset.x ) - 120, 0 ) ) / 8.0, 1.0 ),
+      min( float( max( abs( offset.y ) - 120, 0 ) ) / 8.0, 1.0 )
+    );
+}
+
+// プリミティブの最初の頂点の座標とグリッドの幅からワールド空間での頂点座標を得る
+vec4 index_to_vertex( uint v, uint triangle_id, vec2 primitive_pos, float edge_length ) {
+  vec2 pos = vertices[ v + ( ( triangle_id == 0 ) ? 0 : 3 ) ] * edge_length + primitive_pos;
+  return vec4( pos.x, 0.0, pos.y, 1.0 );
+}
+
+void main() {
+  // レイヤー0のグリッドの頂点の間隔を0.5mにする
+  const float grid_width = 0.2;
+  
+  // 視点の位置をグリッドの頂点にアラインさせて、中心のプリミティブの座標を求める
+  const vec4 world_center = global_uniforms.eye_pos;
+  const ivec2 center_primitive = ivec2( floor( world_center.xz / grid_width ) );
+  const vec2 aligned_world_center = vec2( center_primitive ) * grid_width;
+
+  // このローカルワークグループが処理する32x16のタイルの位置を求める
+  const ivec3 task_offset = index_to_task_offset( td.tasklet_id );
+  // このローカルワークグループが処理する4x4のタイルの位置を求める
+  const ivec2 meshlet_offset = index_to_meshlet_offset( td.meshlet_index[ gl_WorkGroupID.x ], task_offset );
+  // このスレッドが処理するプリミティブの位置を求める
+  const ivec3 primitive_offset = index_to_primitive_offset( gl_LocalInvocationID.x, meshlet_offset );
+  // グリッドの頂点間の距離を求める
+  // レイヤーが1つ進む毎に間隔が倍になる
+  const float edge_length = grid_width * ( 1 << task_offset.z );
+  // プリミティブの最初の頂点の座標を求める
+  const vec2 primitive_pos = aligned_world_center + vec2( primitive_offset.xy ) * edge_length;
+
+  // タスクペイロードから変換行列を取り出す
+  const mat4 w2s = td.w2s;
+
+  // このスレッドが出力の何番目に頂点を書くべきかを求める
+  const uint vertex_offset = gl_LocalInvocationID.x * 3u;
+
+  // 96頂点32プリミティブを出力できるようにする
+  SetMeshOutputsEXT( 96, 96 / 3 );
+
+  // このスレッドが処理するプリミティブの3つの頂点の座標を求める
+  vec4 wp0 = index_to_vertex( 0u, primitive_offset.z, primitive_pos, edge_length );
+  vec4 wp1 = index_to_vertex( 1u, primitive_offset.z, primitive_pos, edge_length );
+  vec4 wp2 = index_to_vertex( 2u, primitive_offset.z, primitive_pos, edge_length );
+
+  // 高さマップの大きさ
+  const float height_map_size = 5000.f;
+
+  // 高さマップのどのから値を読み出すかを求める
+  const vec2 tc0 = wp0.xz / height_map_size * 0.5 + 0.5;
+  const vec2 tc1 = wp1.xz / height_map_size * 0.5 + 0.5;
+  const vec2 tc2 = wp2.xz / height_map_size * 0.5 + 0.5;
+
+  // 高さマップを読む際のミップレベルを取得する
+  // レイヤーの端では1段階荒いレイヤーと頂点座標を合わせる為にミップレベルの値を1段階上のレイヤーに近づける
+  const float b0 = primitive_offset_to_blend_level( 0u, primitive_offset );
+  const float b1 = primitive_offset_to_blend_level( 1u, primitive_offset );
+  const float b2 = primitive_offset_to_blend_level( 2u, primitive_offset );
+
+  bool out_of_range0 = tc0.x < 0.0f || tc0.x > 1.0f || tc0.y < 0.0f || tc0.y > 1.0f;
+  bool out_of_range1 = tc1.x < 0.0f || tc1.x > 1.0f || tc1.y < 0.0f || tc1.y > 1.0f;
+  bool out_of_range2 = tc2.x < 0.0f || tc2.x > 1.0f || tc2.y < 0.0f || tc2.y > 1.0f;
+
+  // 高さマップからワールド空間でのy座標を得る
+  // レイヤーが1つ上がる毎にミップレベルを1段階上げる
+  wp0.y =
+    out_of_range0 ? 0.0f :
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc0, 0 ).r * 1000.0f;
+  wp1.y =
+    out_of_range1 ? 0.0f :
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc1, 0 ).r * 1000.0f;
+  wp2.y =
+    out_of_range2 ? 0.0f :
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc2, 0 ).r * 1000.0f;
+ 
+  // 法線マップからワールド空間での法線を得る
+  const float normal_scale = 1.0;//50000.0f/3000.0f;
+  const vec3 wn0 =
+    out_of_range0 ? vec3( 0, -1, 0 ) :
+    normalize( texture( texture_pool_2d[ nonuniformEXT( push_constants.normal_map ) ], tc0 ).xzy * vec3( normal_scale, 1, normal_scale ) * -2.0 + 1.0 );
+  const vec3 wn1 =
+    out_of_range1 ? vec3( 0, -1, 0 ) :
+    normalize( texture( texture_pool_2d[ nonuniformEXT( push_constants.normal_map ) ], tc1 ).xzy * vec3( normal_scale, 1, normal_scale ) * -2.0 + 1.0 );
+  const vec3 wn2 =
+    out_of_range1 ? vec3( 0, -1, 0 ) :
+    normalize( texture( texture_pool_2d[ nonuniformEXT( push_constants.normal_map ) ], tc2 ).xzy * vec3( normal_scale, 1, normal_scale ) * -2.0 + 1.0 );
+  
+  // 頂点のスクリーン座標系での座標を出力先に書く
+  gl_MeshVerticesEXT[ vertex_offset ].gl_Position = w2s * wp0;
+  gl_MeshVerticesEXT[ vertex_offset + 1u ].gl_Position = w2s * wp1;
+  gl_MeshVerticesEXT[ vertex_offset + 2u ].gl_Position = w2s * wp2;
+  // 頂点のワールド座標系での座標を出力先に書く
+  output_position[ vertex_offset ] = wp0;
+  output_position[ vertex_offset + 1u ] = wp1;
+  output_position[ vertex_offset + 2u ] = wp2;
+  // 頂点のワールド座標系での法線を出力先に書く
+  output_normal[ vertex_offset ] = wn0;
+  output_normal[ vertex_offset + 1u ] = wn1;
+  output_normal[ vertex_offset + 2u ] = wn2;
+  output_texcoord[ vertex_offset ] = tc0;
+  output_texcoord[ vertex_offset + 1u ] = tc1;
+  output_texcoord[ vertex_offset + 2u ] = tc2;
+  // 上の3頂点で1つの三角形プリミティブになる事を書く
+  gl_PrimitiveTriangleIndicesEXT[ vertex_offset / 3 ] = uvec3( vertex_offset, vertex_offset + 1, vertex_offset + 2 );
+}
+

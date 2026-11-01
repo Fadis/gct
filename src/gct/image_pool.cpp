@@ -341,8 +341,7 @@ image_pool::views image_pool::state_type::allocate(
   const bool enable_linear =
     props.enable_linear &&
     ci.enable_linear &&
-    cis.nonlinear_image->get_props().get_basic().arrayLayers == 1 &&
-    ( channels == 3u || channels == 4u );
+    cis.nonlinear_image->get_props().get_basic().arrayLayers == 1;
 
   if( enable_linear && cis.linear_image ) {
     linear_index = allocate_index();
@@ -748,18 +747,39 @@ void image_pool::state_type::flush( command_buffer_recorder_t &rec ) {
   //if( !rgb_to_xyz_request_list.empty() ) {
   //  const auto &req = rgb_to_xyz_request_list[ 0 ];
     const auto &color_prof =  req.rgb_image->get_factory()->get_props().get_profile();
-    const auto mat = props.csmat.from.find( color_prof.space );
+    const unsigned int channels = format_to_channels( req.rgb_image->get_props().get_basic().format );
+    const auto mat = props.csmat.from.find( ( channels < 3u ) ? color_space::cie_xyz : color_prof.space );
     auto shader = rgba8;
-    if( req.rgb_image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm ) {
+    if(
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR8Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR8G8Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR8G8B8Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR8G8B8A8Unorm
+    ) {
       shader = rgba8;
     }
-    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Unorm ) {
+    else if(
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16Unorm ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Unorm
+    ) {
       shader = rgba16;
     }
-    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Sfloat ) {
+    else if(
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR16G16B16A16Sfloat
+    ) {
       shader = rgba16f;
     }
-    else if( req.rgb_image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat ) {
+    else if(
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR32Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR32G32Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR32G32B32Sfloat ||
+      req.rgb_image->get_props().get_basic().format == vk::Format::eR32G32B32A32Sfloat
+    ) {
       shader = rgba32f;
     }
     else {

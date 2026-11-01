@@ -17,8 +17,9 @@ using namespace glm;
 #endif
 
 
-
+#ifndef __cplusplus
 #define M_PI 3.14159265358979323846f
+#endif
 
 float _f = 4.130f*4;
 float _b = 1.37834187f*4;
