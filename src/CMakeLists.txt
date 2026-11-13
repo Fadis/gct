@@ -727,12 +727,12 @@ target_link_libraries(
   ${OIIO_LIBRARIES}
 )
 
-add_executable( dump_voronoi
-  dump_voronoi.cpp
+add_executable( generate_terrain1
+  generate_terrain1.cpp
 )
 
 target_link_libraries(
-  dump_voronoi
+  generate_terrain1
   gct
   Threads::Threads
   Boost::program_options

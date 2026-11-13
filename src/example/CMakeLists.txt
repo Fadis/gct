@@ -195,6 +195,10 @@ subdirs(
   thermal_erosion
   simple_hydraulic_erosion
   hydraulic_erosion
+  render_terrain_noise
+  render_thermal_erosion
+  render_hydraulic_erosion
+  render_simple_hydraulic_erosion
 )
 if( DXC_FOUND )
 subdirs(

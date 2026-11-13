@@ -30,7 +30,7 @@ using uint = std::uint32_t;
  */
 void thermal_erosion_calc_dmax(
   uint src_image,
-  uint dest_image,
+  uint temp_image,
   ivec2 p,
   float T,
   float c
@@ -47,7 +47,7 @@ void thermal_erosion_calc_dmax(
   }
   float delta_h_per_di = ( dtotal > 0.0f ) ? ( c * ( dmax - T ) / dtotal ) : 0.0f;
 
-  imageStore( image_pool_2d[ dest_image ], p, vec4( center_h, delta_h_per_di, 0.0f, 0.0f ) );
+  imageStore( image_pool_2d[ temp_image ], p, vec4( center_h, delta_h_per_di, 0.0f, 0.0f ) );
 }
 
 /*
@@ -55,18 +55,18 @@ void thermal_erosion_calc_dmax(
  *  output : vec4( hij, 0, 0, 0 )
  */
 void thermal_erosion_update_height(
-  uint src_image,
+  uint temp_image,
   uint dest_image,
   ivec2 p,
   float T
 ) {
   const float c = 0.5f;
-  const vec3 center = vec3( imageLoad( image_pool_2d[ src_image ], p ) );
+  const vec3 center = vec3( imageLoad( image_pool_2d[ temp_image ], p ) );
   const float center_h = center.x;
   const float center_delta_h_per_di = center.y;
   float delta_h = 0.0f;
   for( uint i = 0u; i != neumann_neighbor_count; ++i ) {
-    const vec3 neighbor = vec3( imageLoad( image_pool_2d[ src_image ], p + neumann_neighbor[ i ] ) );
+    const vec3 neighbor = vec3( imageLoad( image_pool_2d[ temp_image ], p + neumann_neighbor[ i ] ) );
     const float neighbor_h = neighbor.x;
     const float neighbor_delta_h_per_di = neighbor.y;
     {

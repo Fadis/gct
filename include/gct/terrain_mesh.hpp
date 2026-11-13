@@ -70,10 +70,10 @@ struct terrain_mesh_create_info {
   LIBGCT_SETTER( previous_height )
   LIBGCT_SETTER( initial_height )
   std::size_t point_count = 10000;
-  glm::vec2 distance_scale = glm::vec2{ 5.0f*1000.f, 5.0f*1000.f };
+  glm::vec2 distance_scale = glm::vec2{ 50.0f*1000.f, 50.0f*1000.f };
   float max_uplift = 5.0e-3f; //5.0e-4f; // u
   float erosion_rate = 5.61e-10f;// * 2.5e+5f; // k
-  float delta_t = 2.5e+3;//  2.5e+5/(1000.f);
+  float delta_t = 2.5e+5;//  2.5e+5/(1000.f);
   bool uniform_grid = false;
   bool stochastic = false;
   bool connect_lake = true;

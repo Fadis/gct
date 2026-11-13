@@ -5,6 +5,7 @@
 #include <gct/fft.hpp>
 #include <gct/shader/glsl/gct/simplex_noise.h>
 #include <gct/shader/glsl/gct/perlin_noise.h>
+#include <gct/shader/glsl/gct/value_noise.h>
 #include <gct/shader/glsl/gct/cellular_noise.h>
 #include <gct/shader/glsl/gct/terrain_noise.h>
 #include <gct/shader/glsl/gct/phasor_noise.h>
@@ -22,7 +23,8 @@ int main(
     ( "output,o", po::value< std::string >(), "output filename" )
     ( "type,t", po::value< std::string >()->default_value( "white" ), "noise type" )
     ( "fft,f", po::bool_switch(), "generate frequency image" )
-    ( "scale,s", po::value< float >()->default_value( 1.0f ), "scale" );
+    ( "scale,s", po::value< float >()->default_value( 1.0f ), "scale" )
+    ( "modulate,m", po::value< float >()->default_value( 0.0f ), "modulate" );
   po::variables_map vm;
   po::store( po::parse_command_line( argc, argv, desc ), vm );
   po::notify( vm );
@@ -37,52 +39,99 @@ int main(
   std::vector< float > data( width * height );
   const float scale = vm[ "scale" ].as< float >();
 
+  const glm::vec2 x_offset = glm::vec2(
+    2.818472461772784f,
+    5.156369095321605f
+  );
+  const glm::vec2 y_offset = glm::vec2(
+    6.836664965664836f,
+    1.782568237626052f
+  );
+  const float modulate = vm[ "modulate" ].as< float >();
   const auto type = vm[ "type" ].as< std::string >();
   for( unsigned int y = 0u; y != height; ++y ) {
     for( unsigned int x = 0u; x != width; ++x ) {
       float a = 0.0f;
       glm::vec2 p = glm::vec2( scale * float( x )/width - 0.0f, scale * float( y )/height - 0.0f );
+
+      if( modulate != 0.0f ) {
+        p += glm::vec2(
+          noise_simplex2d( p + x_offset ),
+          noise_simplex2d( p + y_offset )
+        ) * modulate - modulate*0.5f;
+      }
+
+      bool has_negative = false;
       if( type == "white" ) {
         a = rand1( p );
+        has_negative = false;
+      }
+      else if( type == "value" ) {
+        a = noise_value2d( p );
+        has_negative = false;
+      }
+      else if( type == "value_fbm5" ) {
+        a = noise_value2d_fbm5( p );
+        has_negative = false;
+      }
+      else if( type == "value_point" ) {
+        a = noise_value2d_point( p );
+        has_negative = false;
       }
       else if( type == "perlin" ) {
         a = noise_perlin2d( p );
+        has_negative = true;
       }
       else if( type == "perlin_fbm5" ) {
         a = noise_perlin2d_fbm5( p );
+        has_negative = true;
       }
       else if( type == "simplex" ) {
         a = noise_simplex2d( p );
+        has_negative = true;
       }
       else if( type == "simplex_fbm5" ) {
         a = noise_simplex2d_fbm5( p );
+        has_negative = true;
       }
       else if( type == "simplex_fbm10" ) {
         a = noise_simplex2d_fbm10( p );
+        has_negative = true;
       }
       else if( type == "cellular0" ) {
         const auto v = noise_cellular2d( p );
         a = v.x;
+        has_negative = false;
       }
       else if( type == "cellular1" ) {
         const auto v = noise_cellular2d( p );
         a = v.y;
+        has_negative = false;
       }
       else if( type == "cellular2" ) {
         const auto v = noise_cellular2d( p );
         a = -v.x + v.y;
+        has_negative = true;
       }
       else if( type == "cellular3" ) {
         const auto v = noise_cellular2d( p );
         a = v.x - v.y;
+        has_negative = true;
       }
       else if( type == "terrain" ) {
         a = noise_terrain2d( p );
+        has_negative = true;
       }
       else if( type == "phaser" ) {
         a = phasor_noise_pwm( p );
+        has_negative = true;
       }
-      data[ x + y * width ] = a * 0.5f + 0.5f;
+      if( has_negative ) {
+        data[ x + y * width ] = a * 0.5f + 0.5f;
+      }
+      else {
+        data[ x + y * width ] = a;
+      }
     }
   }
 

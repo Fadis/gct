@@ -1,3 +1,5 @@
 .cache
 shaders/*.spv
 compile_commands.json
+build/
+build2/

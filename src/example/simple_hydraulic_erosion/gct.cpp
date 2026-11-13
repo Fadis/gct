@@ -88,7 +88,7 @@ int main( int argc, const char *argv[] ) {
     )
   )();
 
-  for( std::uint32_t i = 0u; i != 300u; ++i ) {
+  for( std::uint32_t i = 0u; i != 50u; ++i ) {
     const auto temp_desc = builder.call(
       builder.get_image_io_create_info(
         std::make_shared< gct::compute >(

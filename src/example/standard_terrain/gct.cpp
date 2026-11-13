@@ -448,16 +448,37 @@ int main( int argc, const char *argv[] ) {
 
   const auto height_map_desc = sg->get_resource()->image->allocate(
     gct::image_load_info()
-      .set_filename( CMAKE_CURRENT_SOURCE_DIR "/output.png" )
+      .set_filename( res.model_filename )
       .set_usage( vk::ImageUsageFlagBits::eSampled )
       .set_enable_linear( true )
   );
-  const auto height_map_tex_desc = sg->get_resource()->texture->allocate(
-    sg->get_resource()->sampler->allocate_linear(),
-    height_map_desc
-  );
+
+  float dx = 500000.f/4096.f;
+  float dy = 1000.f;
 
   gct::shader_graph::builder normal_builder( sg->get_resource() );
+
+  auto scale_desc = normal_builder.call(
+    normal_builder.get_image_io_create_info(
+      std::make_shared< gct::compute >(
+        gct::compute_create_info()
+          .set_allocator_set( res.allocator_set )
+          .set_shader( gct::get_system_shader_path() / "shift" / "1.0" / "shift.comp.spv" )
+          .set_scene_graph( sg->get_resource() )
+      ),
+      gct::image_io_plan()
+        .add_input( "src" )
+        .add_output( "dest", "src", { 1.f, -1.f }, vk::Format::eR32Sfloat )
+        .set_dim( "src", { 1.f, -1.f } )
+        .set_node_name( "terrain_erosion.shift" )
+    )
+    .set_push_constant( "scale", 4.0f )
+    .set_push_constant( "shift", 0.0f )
+  )(
+    gct::shader_graph::vertex::combined_result_type()
+      .add( "src", height_map_desc.linear )
+  );
+
   const auto filter_desc = normal_builder.call(
     normal_builder.get_image_io_create_info(
       std::make_shared< gct::compute >(
@@ -472,14 +493,20 @@ int main( int argc, const char *argv[] ) {
         .set_dim( "src", { 1.f, -1.f } )
         .set_node_name( "height_to_normal" )
     )
-    .set_push_constant( "strength", 8.f )
+    .set_push_constant( "strength",  dy/dx )
   )(
     gct::shader_graph::vertex::combined_result_type()
-      .add( "src", height_map_desc.linear )
+      .add( "src", scale_desc )
   );
   normal_builder.output( filter_desc[ "dest" ] );
+  normal_builder.output( scale_desc[ "dest" ] );
   const auto normal_compiled = normal_builder();
   const auto normal_map_desc = normal_compiled.get_image_descriptor( filter_desc[ "dest" ] );
+  const auto scaled_height_map_desc = normal_compiled.get_image_descriptor( scale_desc[ "dest" ] );
+  const auto height_map_tex_desc = sg->get_resource()->texture->allocate(
+    sg->get_resource()->sampler->allocate_linear(),
+    scaled_height_map_desc
+  );
   
   const auto normal_map_tex_desc = sg->get_resource()->texture->allocate(
     sg->get_resource()->sampler->allocate_linear(),
@@ -575,7 +602,7 @@ int main( int argc, const char *argv[] ) {
   terrain.set_push_constant( "gbuffer", *extended_gbuffer_desc.linear );
   terrain.set_push_constant( "position", *extended_depth_desc.linear );
   terrain.set_push_constant( "gbuffer_format", gbuffer_format );
-  terrain.set_push_constant( "height_map", *height_map_tex_desc.linear );
+  terrain.set_push_constant( "height_map", *height_map_tex_desc );
   terrain.set_push_constant( "normal_map", *normal_map_tex_desc );
 
 

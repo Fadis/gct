@@ -21,7 +21,7 @@ void main()  {
   const ivec2 image_pos = ivec2( gl_GlobalInvocationID.xy );
   const ivec2 image_size = imageSize( image_pool_2d[ push_constants.dest ] );
   const vec2 pos = vec2( image_pos )/ vec2( image_size ) * 8.0f;
-  const float v = noise_terrain2d( pos ) /** 0.5f + 0.5f*/;
+  const float v = noise_terrain2d( pos );
   imageStore( image_pool_2d[ push_constants.dest ], image_pos, vec4( v, 0.0f, 0.0f, 1.0f ) );
 }
 

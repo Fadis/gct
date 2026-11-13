@@ -162,16 +162,16 @@ void main() {
   // レイヤーが1つ上がる毎にミップレベルを1段階上げる
   wp0.y =
     out_of_range0 ? 0.0f :
-    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc0, 0 ).r * 1000.0f;
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc0, 0 ).r * 100.f;
   wp1.y =
     out_of_range1 ? 0.0f :
-    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc1, 0 ).r * 1000.0f;
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc1, 0 ).r * 100.f;
   wp2.y =
     out_of_range2 ? 0.0f :
-    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc2, 0 ).r * 1000.0f;
+    -textureLod( texture_pool_2d[ nonuniformEXT( push_constants.height_map ) ], tc2, 0 ).r * 100.f;
  
   // 法線マップからワールド空間での法線を得る
-  const float normal_scale = 1.0;//50000.0f/3000.0f;
+  const float normal_scale = 1.0;//5000.0f/3000.0f;
   const vec3 wn0 =
     out_of_range0 ? vec3( 0, -1, 0 ) :
     normalize( texture( texture_pool_2d[ nonuniformEXT( push_constants.normal_map ) ], tc0 ).xzy * vec3( normal_scale, 1, normal_scale ) * -2.0 + 1.0 );
@@ -187,9 +187,9 @@ void main() {
   gl_MeshVerticesEXT[ vertex_offset + 1u ].gl_Position = w2s * wp1;
   gl_MeshVerticesEXT[ vertex_offset + 2u ].gl_Position = w2s * wp2;
   // 頂点のワールド座標系での座標を出力先に書く
-  output_position[ vertex_offset ] = wp0;
-  output_position[ vertex_offset + 1u ] = wp1;
-  output_position[ vertex_offset + 2u ] = wp2;
+  output_position[ vertex_offset ] = wp0 * 10.f;
+  output_position[ vertex_offset + 1u ] = wp1 * 10.f;
+  output_position[ vertex_offset + 2u ] = wp2 * 10.f;
   // 頂点のワールド座標系での法線を出力先に書く
   output_normal[ vertex_offset ] = wn0;
   output_normal[ vertex_offset + 1u ] = wn1;

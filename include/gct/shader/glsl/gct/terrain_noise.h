@@ -27,10 +27,10 @@ float noise_terrain2d( vec2 P ) {
   vec2 Q = P + vec2(
     noise_simplex2d( P + x_offset ),
     noise_simplex2d( P + y_offset )
-  ) * 0.25f * 0.125f;
+  ) * 0.25f - 0.125f;
   vec2 c = noise_cellular2d( Q );
   float s = noise_simplex2d_fbm10( Q );
-  return ( -c.x + c.y ) / 3.0f + s * 2.0f / 3.0f;
+  return ( -c.x + c.y ) * 2.0f / 3.0f + s * 1.0f / 3.0f;
 }
 
 float noise_terrain2d( vec2 P, float ref ) {
@@ -45,7 +45,7 @@ float noise_terrain2d( vec2 P, float ref ) {
   vec2 Q = P + vec2(
     noise_simplex2d( P + x_offset ),
     noise_simplex2d( P + y_offset )
-  ) * 0.25f;
+  ) * 0.25f - 0.125f;
   vec2 c = noise_cellular2d( Q );
   float s = noise_simplex2d_fbm10( Q );
   return ( -c.x + c.y ) / 3.0f + s / 3.0f + ref / 3.0f;

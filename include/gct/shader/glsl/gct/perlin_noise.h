@@ -59,7 +59,6 @@ float noise_perlin2d( vec2 P ) {
   vec2 g01 = vec2( gx.z, gy.z );
   vec2 g11 = vec2( gx.w, gy.w );
 
-  // ?
   vec4 norm = noise_taylor_inv_sqrt(
     vec4( dot( g00, g00 ), dot( g01, g01 ), dot( g10, g10 ), dot( g11, g11 ) )
   );

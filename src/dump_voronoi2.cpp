@@ -11,7 +11,7 @@ int main(
   const char *argv[]
 ) {
   {
-    auto prev = gct::create_host_image_from_file( "test2.png", true, false, true );
+    auto prev = gct::create_host_image_from_file( "daichi.png", true, false, true );
     for( auto &v: prev.image ) {
       v *= 3000.f;
     }
@@ -22,13 +22,13 @@ int main(
         .set_stochastic( true )
         .set_previous_height( prev )
         .set_connect_lake( false )
-        //.set_erosion_rate( 2.0e-7f )
+        .set_erosion_rate( 2.0e-12f )
         //.set_max_uplift( 5.0e-3f )
-        .set_uplift( gct::create_host_image_from_file( "test2.png", true, false, true ) )
+        .set_uplift( gct::create_host_image_from_file( "daichi.png", true, false, true ) )
     );
     /*for( unsigned int i = 0u; i != 301u; ++i ) */{
       m.generate_river_tree();
-      m.erosion( 300 * 5.0e+3f );
+      m.erosion( 300 * 5.0e+5f );
       m.dump_river( "t2.txt" );
     }
     m.dump_triangle( "r2.txt" );
@@ -39,9 +39,9 @@ int main(
     m.rasterize( dest_image );
     for( auto &v: dest_image.image ) {
       v /= 1000.f;
-      v = std::min( std::max( v, 0.0f ), 1.0f );
+      //v = std::min( std::max( v, 0.0f ), 1.0f );
     }
-    gct::save_host_image( dest_image, "output2.png" );
+    gct::save_host_image( dest_image, "output2.exr" );
   }
   exit(0);
 }

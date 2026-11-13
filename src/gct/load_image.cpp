@@ -222,7 +222,7 @@ namespace gct {
         if( !out ) throw -1;
         ImageSpec spec( width, height, channels, oiio_type );
         if( !srgb ) {
-          spec.attribute ("oiio:ColorSpace", "scene_linear");
+          //spec.attribute ("oiio:ColorSpace", "scene_linear");
         }
         if( bgra ) {
           spec.channelnames.assign({ "B", "G", "R", "A" });

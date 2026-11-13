@@ -802,16 +802,15 @@ struct CalculateTVisitor : public boost::default_dfs_visitor {
     const float k = 2.0e-5f;
     const float p = 0.4f;
     const auto inv_a = 1.0f / pow( k * vj.area_sum, p ) * ds;
-    if( inv_a >= t ) {
+    if( inv_a + vi.t >= t ) {
       mesh.vertex[ mesh.river[ target( e, g ) ] ].dx0t = false;
-      mesh.vertex[ mesh.river[ target( e, g ) ] ].t = t;
     }
     else {
       mesh.vertex[ mesh.river[ target( e, g ) ] ].dx0t = true;
-      mesh.vertex[ mesh.river[ target( e, g ) ] ].t =
-        inv_a +
-        vi.t;
     }
+    mesh.vertex[ mesh.river[ target( e, g ) ] ].t =
+      inv_a +
+      vi.t;
     mesh.vertex[ mesh.river[ target( e, g ) ] ].x = vi.x + 1u;
   }
   terrain_mesh &mesh;
@@ -823,23 +822,53 @@ struct CalculateDVisitor : public boost::default_dfs_visitor {
   CalculateDVisitor(
     terrain_mesh &m_,
     terrain_river_tree_type::vertex_descriptor r_
-  ) : mesh( m_ ), root( r_ ) {}
+  ) : mesh( m_ ), root( r_ ) {
+    path.push_back( r_ );
+  }
   void tree_edge( const terrain_river_tree_type::edge_descriptor &e, const terrain_river_tree_type &g ) {
+    if( source( e, g ) != path.back() ) {
+      const auto s = std::find( path.begin(), path.end(), source( e, g ) );
+      path.erase( std::next( s ), path.end() );
+    }
+    path.push_back( target( e, g ) );
+
     const auto vi = mesh.vertex[ mesh.river[ source( e, g ) ] ];
     const auto vj = mesh.vertex[ mesh.river[ target( e, g ) ] ];
     const float dx = glm::distance( glm::vec2( vi.position ), glm::vec2( vj.position ) );
     const float k = mesh.get_props().erosion_rate;
     const float p = 0.4f;
+    
     const auto ax = pow( k * vj.area_sum, p );
-    const auto axi = pow( k * vi.area_sum, p );
+    const float dxax = dx/ax;
+
+
+    std::vector< terrain_river_tree_type::vertex_descriptor >::const_iterator xi;
+    auto d_begin = std::next( path.begin(), std::min( std::uint32_t( vi.d ), std::uint32_t( path.size() - 1u ) ) );
+    auto d_end = std::next( path.begin(), std::uint32_t( path.size() - 1u ) );
+
+    float t_sum = 0.0f;
+    for( auto iter = d_begin; iter != d_end; ++iter ) {
+      const auto vi = mesh.vertex[ mesh.river[ *iter ] ];
+      const auto vj = mesh.vertex[ mesh.river[ *std::next( iter ) ] ];
+      const float dx = glm::distance( glm::vec2( vi.position ), glm::vec2( vj.position ) );
+      const auto ax = pow( k * vj.area_sum, p );
+      t_sum += dx / ax;
+      if( t_sum >= dxax ) {
+        xi = iter;
+        break;
+      }
+    }
+    const auto vxi = mesh.vertex[ mesh.river[ *xi ] ];
+
+    const auto axi = pow( k * vxi.area_sum, p );
     if( !vj.dx0t ) {
       mesh.vertex[ mesh.river[ target( e, g ) ] ].d = 0.0f;
     }
     else {
-      mesh.vertex[ mesh.river[ target( e, g ) ] ].d = vi.x + axi * ( dx/ax - vi.t );
+      mesh.vertex[ mesh.river[ target( e, g ) ] ].d = vxi.x + axi * ( dx/ax - t_sum );
     }
   }
-  std::stack< std::uint32_t > path;
+  std::vector< terrain_river_tree_type::vertex_descriptor > path;
   terrain_mesh &mesh;
   terrain_river_tree_type::vertex_descriptor root;
 };
@@ -890,7 +919,7 @@ struct CalculateSVisitor : public boost::default_dfs_visitor {
       sd += dx * ux / ax;
     }
     sd *= sd_sign;
-    mesh.vertex[ mesh.river[ target( e, g ) ] ].s = vi.s + ( dx * ux / ax ); //- sd;
+    mesh.vertex[ mesh.river[ target( e, g ) ] ].s = vi.s + ( dx * ux / ax ) - sd;
     
     float z0 = 0.0f;
     if( mesh.get_props().initial_height.loaded ) {
