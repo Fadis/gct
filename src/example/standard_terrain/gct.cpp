@@ -472,7 +472,7 @@ int main( int argc, const char *argv[] ) {
         .set_dim( "src", { 1.f, -1.f } )
         .set_node_name( "terrain_erosion.shift" )
     )
-    .set_push_constant( "scale", 4.0f )
+    .set_push_constant( "scale", 10.0f )
     .set_push_constant( "shift", 0.0f )
   )(
     gct::shader_graph::vertex::combined_result_type()

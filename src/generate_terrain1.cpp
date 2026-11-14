@@ -29,8 +29,8 @@ int main(
         .set_point_count( /*160000*/40000 )
         .set_erosion_rate( 5.61e-10f )
         .set_delta_t( 2.5e+2 )
-        .set_uniform_grid( true )
-        .set_stochastic( true )
+        //.set_uniform_grid( true )
+        //.set_stochastic( true )
         //.set_connect_lake( false )
         .set_uplift( gct::create_host_image_from_file( vm[ "input" ].as< std::string >(), true, false, true ) )
     );
@@ -70,6 +70,5 @@ int main(
       dest_image.image = image;
     }
   }
-  exit( 0 );
 }
 

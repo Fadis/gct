@@ -23,6 +23,7 @@
  */
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -112,6 +113,8 @@ struct terrain_vertex {
   float s = 0.0f;
   std::uint32_t x = 0u;
   bool dx0t = false;
+  float optimized_height = 0.0f;
+  std::unordered_set< std::uint32_t > ncn;
   terrain_full_graph_type::vertex_descriptor full;
   std::optional< terrain_river_tree_type::vertex_descriptor > river;
   std::optional< terrain_river_tree_type::vertex_descriptor > root;
@@ -137,6 +140,10 @@ struct terrain_mesh :
   void dump_river( const std::string &filename );
   void dump_lake( const std::string &filename );
   void rasterize( host_image &dest );
+  float get_loss();
+  float get_loss_grad( std::uint32_t g );
+  void optimize( std::uint32_t c );
+  void generate_ncn();
   std::vector< terrain_vertex > vertex;
   std::vector< glm::ivec2 > edge;
   std::vector< glm::ivec3 > triangle;

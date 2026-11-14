@@ -191,40 +191,6 @@ terrain_mesh::terrain_mesh( const terrain_mesh_create_info &create_info ) :
     }
   }
 
- /* 
-    const auto sorted = glm::ivec2{
-      std::min( e.x, e.y ),
-      std::max( e.x, e.y )
-    };
-    jcv_edge_iter edge_b_iter;
-    jcv_edge edge_b;
-    jcv_site_get_edges( &diagram, &sites[ delaunay_edge.sites[ 1 ]->index ], &edge_b_iter );
-    while( jcv_edge_next( &edge_b_iter, &edge_b ) ) {
-      jcv_edge_iter edge_c_iter;
-      jcv_edge edge_c;
-      if( edge_b.sites[ 1 ] ) {
-        jcv_site_get_edges( &diagram, &sites[ edge_b.sites[ 1 ]->index ], &edge_c_iter );
-        while( jcv_edge_next( &edge_c_iter, &edge_c ) ) {
-          if( edge_c.sites[ 1 ] && edge_c.sites[ 1 ]->index == delaunay_edge.sites[ 0 ]->index ) {
-            const auto t = glm::ivec3{
-              delaunay_edge.sites[ 0 ]->index,
-              delaunay_edge.sites[ 1 ]->index,
-              edge_b.sites[ 1 ]->index
-            };
-            const auto sorted = sort_element( t );
-            const auto known = known_triangle.find( sorted );
-            if( known != known_triangle.end() ) {
-              ++known->second;
-            }
-            else {
-              known_triangle[ sorted ] = 1u;
-              triangle.push_back( t );
-            }
-          }
-        }
-      }
-    }
-  }*/
   std::unordered_map< glm::ivec2, std::size_t > known_edge;
   for( const auto &t: triangle ) {
     {
@@ -288,7 +254,6 @@ struct MarkRootVisitor : public boost::default_bfs_visitor {
   ) : mesh( m_ ), root( r_ ) {}
   void discover_vertex( terrain_river_tree_type::vertex_descriptor u, const terrain_river_tree_type & g ) const {
     assert( !mesh.vertex[ g[ u ] ].root );
-    //std::cout << "vertex " << g[ u ] << " root " << root << std::endl;
     mesh.vertex[ g[ u ] ].root = root;
   }
   terrain_mesh &mesh;
@@ -303,11 +268,8 @@ float terrain_mesh::calculate_area_sum( std::uint32_t start_index ) {
   for( auto iter = edge_begin; iter != edge_end; ++iter ) {
     const auto next_desc = target( *iter, river );
     const auto next_index = river[ next_desc ];
-    //std::cout << start_index << " -> " << next_index << std::endl;
     sum += calculate_area_sum( river[ next_desc ] );
   }
-  //std::cout << "vertex : " << start_index << " sum : " << sum << " self : " << vertex[ start_index ].area << std::endl;
-  //std::cout << "visited : " << start_index << std::endl;
   vertex[ start_index ].area_sum = sum;
   return sum;
 }
@@ -333,12 +295,10 @@ struct cycle_detector : public boost::dfs_visitor<> {
 void terrain_mesh::generate_river_tree() {
   river = terrain_river_tree_type();
   lake = terrain_full_graph_type();
-  //saturate = terrain_river_tree_type();
   for( unsigned int i = 0u; i != vertex.size(); ++i ) {
     vertex[ i ].river = add_vertex( river );
     vertex[ i ].root = std::nullopt;
     vertex[ i ].lake = std::nullopt;
-    //vertex[ i ].saturate = std::nullopt;
     river[ *vertex[ i ].river ] = i;
   }
   lake_index.clear();
@@ -377,24 +337,6 @@ void terrain_mesh::generate_river_tree() {
           lowest_vertex = target_index;
         }
       }
-      /*if( props.connect_upward && probability.empty() ) {
-        for( auto edge_iter = out_begin; edge_iter != out_end; ++edge_iter ) {
-          const auto target_desc = target( *edge_iter, graph );
-          const auto target_index = graph[ target_desc ];
-          const auto target_height = ( props.previous_height.loaded ) ?
-            vertex[ target_index ].previous_height :
-            vertex[ target_index ].position.z;
-          float height_diff = target_height - source_height;
-          if( height_diff < 0.5f ) {
-            probability.push_back( 0.5f - height_diff );
-            target_index_list.push_back( target_index );
-          }
-          if( lowest_height_diff > height_diff ) {
-            lowest_height_diff = height_diff;
-            lowest_vertex = target_index;
-          }
-        }
-      }*/
       if( !probability.empty() ) {
         std::discrete_distribution dist( probability.begin(), probability.end() );
         const std::uint32_t i = dist( get_rng() );
@@ -424,14 +366,6 @@ void terrain_mesh::generate_river_tree() {
         }
       }
     }
-    /*if( lowest_height_diff == 0.0f ) {
-      if( boost::graph::st_connected( river, *vertex[ *lowest_vertex ].river, *vertex[ i ].river ) ) {
-        lowest_vertex = std::nullopt;
-      }
-      else if( boost::graph::st_connected( river, *vertex[ i ].river, *vertex[ *lowest_vertex ].river ) ) {
-        lowest_vertex = std::nullopt;
-      }
-    }*/
     if( lowest_vertex ) {
       assert( vertex[ *lowest_vertex ].river );
       assert( vertex[ i ].river );
@@ -440,9 +374,7 @@ void terrain_mesh::generate_river_tree() {
     else {
       lake_index.insert( i );
       vertex[ i ].lake = add_vertex( lake );
-      //vertex[ i ].saturate = add_vertex( saturate );
       lake[ *vertex[ i ].lake ] = i;
-      //saturate[ *vertex[ i ].saturate ] = i;
     }
   }
 
@@ -507,7 +439,6 @@ void terrain_mesh::generate_river_tree() {
       add_edge( *from, *to, lake );
     }
  
-    //std::cout << "lake count 1 " << lake_index.size() << std::endl;
     {
       auto [vertex_begin,vertex_end] = vertices( lake );
       for( auto from_lake_iter = vertex_begin; from_lake_iter != vertex_end; ++from_lake_iter ) {
@@ -543,7 +474,6 @@ void terrain_mesh::generate_river_tree() {
               vertex[ b_index ].previous_height :
               vertex[ b_index ].position.z;
             const auto height_diff = to_height - from_lake_height;
-            //std::cout << "lowest_height_diff : " << lowest_height_diff << " height_diff : " << height_diff <<std::endl; 
             if( lowest_height_diff > height_diff ) {
               lowest_height_diff = height_diff;
               lowest_edge = path->second.second;
@@ -565,14 +495,9 @@ void terrain_mesh::generate_river_tree() {
               ( props.previous_height.loaded ) ?
               vertex[ b_root_index ].previous_height :
               vertex[ b_root_index ].position.z;
-            //assert( vertex[ from_lake_index ].saturate );
-            //assert( vertex[ b_root_index ].saturate );
-            //add_edge( *vertex[ from_lake_index ].saturate, *vertex[ b_root_index ].saturate, saturate );
             assert( vertex[ from_lake_index ].river );
             assert( vertex[ b_index ].river );
             if( to_lake_height < from_lake_height ) {
-            //if( !boost::edge( *vertex[ a_index ].river, *vertex[ b_root_index ].river, river ).second ) { ///////
-              //std::cout << "connect lake " << from_lake_index << " to " << b_root_index << " : "  << b_index << std::endl;
               add_edge( *vertex[ b_index ].river, *vertex[ from_lake_index ].river, river );
               lake_index.erase( from_lake_index );
             }
@@ -580,119 +505,15 @@ void terrain_mesh::generate_river_tree() {
         }
       }
     }
-    //std::cout << "lake count 2 " << lake_index.size() << std::endl;
   }
 
   {
     float sum = 0.0f;
     for( const auto &li: lake_index ) {
-      //std::cout << "init " << li << std::endl;
       sum += calculate_area_sum( li );
     }
-    //std::cout << "total " << sum << std::endl;
-    std::cout << "debug " << lake_index.size() << " " << sum << " " << props.distance_scale.x * props.distance_scale.y << std::endl;
     boost::depth_first_search( river, visitor( cycle_detector{} ) );
-    //assert( sum > 0.99f * props.distance_scale.x * props.distance_scale.y );
-    //assert( sum < 1.01f * props.distance_scale.x * props.distance_scale.y );
   }
-
-  /*std::vector< jcv_point > lake_points;
-  for( auto &l: lake_index ) {
-    jcv_point p;
-    p.x = vertex[ l ].position.x;
-    p.y = vertex[ l ].position.y;
-    lake_points.push_back( p );
-  }
-  jcv_rect bounding_box = { { 0.0f, 0.0f }, { 1.0f, 1.0f } };
-  jcv_diagram diagram;
-  memset(&diagram, 0, sizeof(jcv_diagram));
-  jcv_diagram_generate( lake_points.size(), lake_points.data(), &bounding_box, 0, &diagram );
-
-  jcv_delaunay_iter delaunay;
-  jcv_delaunay_edge delaunay_edge;
-
-  std::unordered_multimap< std::size_t, std::size_t > edge_connection;
-
-  jcv_delaunay_begin( &diagram, &delaunay );
-  while( jcv_delaunay_next( &delaunay, &delaunay_edge ) ) {
-    add_edge(
-      vertex[ lake_index[ delaunay_edge.sites[ 0 ]->index ] ].lake,
-      vertex[ lake_index[ delaunay_edge.sites[ 1 ]->index ] ].lake,
-      lake
-    );
-  }
-  const auto [sat_begin,sat_end] = vertices( saturate );
-  std::vector< terrain_river_tree_type::vertex_descriptor > current;
-  std::vector< terrain_river_tree_type::vertex_descriptor > next;
-  for( auto iter = sat_begin; iter != sat_end; ++iter ) {
-    if( vertex[ lake[*iter] ].border ) {
-      next.push_back( *iter );
-    }
-  }
-  while( !next.empty() ) {
-    std::swap( current, next );
-    next.clear();
-    for( auto &cs_desc: current ) {
-      const auto cl_desc = vertex[ saturate[ cs_desc ] ].lake;
-      const auto [next_lake_begin,next_lake_end] = out_edges( cl_desc, lake );
-      for( auto nl_iter = next_lake_begin; nl_iter != next_lake_end; ++nl_iter ) {
-        const auto nl_desc = target( *nl_iter, lake );
-        const bool is_border = vertex[ lake[ nl_desc ] ].border;
-        const float center_height = vertex[ lake[ nl_desc ] ].position.z;
-        const auto ns_desc = vertex[ lake[ nl_desc ] ].saturate;
-        const auto [existing_begin,existing_end] = out_edges( ns_desc, saturate );
-        if( !is_border && existing_begin == existing_end ) {
-          const auto [candidate_begin,candidate_end] = out_edges( nl_desc, lake );
-          float lowest_height_diff = std::numeric_limits< float >::max();
-          auto lowest_neighbor = nl_desc;
-          for( auto nnl_iter = candidate_begin; nnl_iter != candidate_end; ++nnl_iter ) {
-            const auto nnl_desc = target( *nnl_iter, lake );
-            const float neighbor_height = vertex[ lake[ nnl_desc ] ].position.z;
-            const float height_diff = center_height - neighbor_height;
-            if( height_diff < lowest_height_diff ) {
-              lowest_height_diff = height_diff;
-              lowest_neighbor = target( *nnl_iter, lake );
-            }
-          }
-          if( lowest_neighbor == cl_desc ) {
-            add_edge( ns_desc, cs_desc, saturate );
-            next.push_back( ns_desc );
-          }
-        }
-      }
-    }
-  }
-
-  const
-*/
-
-  /////////
-/*
-  const auto sites = jcv_diagram_get_sites( &diagram );
-  vertex.resize( diagram.numsites );
-  for( std::size_t i = 0u; i < diagram.numsites; ++i ) {
-    vertex[ sites[ i ].index ].set_position( glm::vec3{ sites[ i ].p.x, sites[ i ].p.y, 0.0f } );
-    
-    jcv_edge_iter edge_iter;
-    jcv_edge graph_edge;
-    jcv_site_get_edges(&diagram, &sites[i], &edge_iter);
-    std::vector< glm::vec2 > voronoi_vertex;
-    while (jcv_edge_next(&edge_iter, &graph_edge)) {
-      voronoi_vertex.push_back( glm::vec2( graph_edge.pos[ 0 ].x, graph_edge.pos[ 0 ].y ) );
-    }
-    vertex[ sites[ i ].index ].set_area( gct::area( voronoi_vertex ) );
-  }
-
-
-
-
-  for( const auto &e: edge ) {
-    if( vertex[ e.x ].position.z < vertex[ e.y ].position.z ) {
-    
-    }
-    add_edge( vertex[ e.x ].full, vertex[ e.y ].full, graph );
-  }
-  */
 }
 
 namespace {
@@ -704,7 +525,6 @@ struct ErosionVisitor : public boost::default_bfs_visitor {
     terrain_river_tree_type::vertex_descriptor r_
   ) : mesh( m_ ), root( r_ ) {}
   void tree_edge( const terrain_river_tree_type::edge_descriptor &e, const terrain_river_tree_type &g ) {
-    //std::cout << mesh.river[ source( e, g ) ] << " -> " << mesh.river[ target( e, g ) ] << " " << mesh.vertex[ mesh.river[ target( e, g ) ] ].area_sum << std::endl;
     const float k = mesh.get_props().erosion_rate;
     const float ami = mesh.vertex[ mesh.river[ target( e, g ) ] ].area_sum;
     const float ui = mesh.vertex[ mesh.river[ target( e, g ) ] ].uplift;
@@ -712,27 +532,8 @@ struct ErosionVisitor : public boost::default_bfs_visitor {
     const auto pj = mesh.vertex[ mesh.river[ source( e, g ) ] ].position;
     const float d = glm::distance( glm::vec2( pi ), glm::vec2( pj ) );
     const float delta_t = mesh.get_props().delta_t;
-    //if( pi.z > pj.z ) {
-      const float new_h = ( pi.z + delta_t * ( ui + k * ami / d ) ) / ( 1.0f + ( k * ami / d ) * delta_t );
-      //const float h_diff = new_h - pj.z;
-      //const float r = ( h_diff / d );
-      //if( r > 1.7320508075688767f ) {
-      //}
-      //else if( r > 0.5773502691896256f ) {
-      //  const auto ratio = ( r - 0.5773502691896256f ) / 1.154700538379251f;
-      //  mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
-      //    mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z * ( 1.0f - ratio ) +
-      //    new_h * ratio;
-      //}
-      //else {
-        mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z = new_h;
-      //}
-    //}
-    //else {
-    //  const float new_h = ( pi.z + delta_t * ( ui + k * ami / d ) ) / ( 1.0f + ( k * ami / d ) * delta_t );
-    //  mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z = new_h;
-    //}
-
+    const float new_h = ( pi.z + delta_t * ( ui + k * ami / d ) ) / ( 1.0f + ( k * ami / d ) * delta_t );
+    mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z = new_h;
   }
   terrain_mesh &mesh;
   terrain_river_tree_type::vertex_descriptor root;
@@ -748,20 +549,16 @@ struct ThermalErosionVisitor : public boost::default_bfs_visitor {
     const auto pj = mesh.vertex[ mesh.river[ source( e, g ) ] ].position;
     const float d = glm::distance( glm::vec2( pi ), glm::vec2( pj ) );
     const float h_diff = pi.z - pj.z;
-    const float r = ( h_diff / ( d /** 1000.f*/ ) );
+    const float r = ( h_diff / d );
     if( r > 0.5773502691896256f ) {
       const float ratio = ( r - 0.5773502691896256f ) / ( 1.7320508075688767f - 0.5773502691896256f );
        mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
-         pj.z + 0.5773502691896256f * d /** 1000.f*/;
-         //( pj.z + 0.5773502691896256f * d ) * ratio +
-         //pi.z * ( 1.0f - ratio );
+         pj.z + 0.5773502691896256f * d;
     }
     else if( r < -0.5773502691896256f ) {
       const float ratio = ( -r - 0.5773502691896256f ) / ( 1.7320508075688767f - 0.5773502691896256f );
        mesh.vertex[ mesh.river[ target( e, g ) ] ].position.z =
-         pj.z - 0.5773502691896256f * d /** 1000.f*/;
-         //( pj.z - 0.5773502691896256f * d ) * ratio +
-         //pi.z * ( 1.0f - ratio );
+         pj.z - 0.5773502691896256f * d;
     }
   }
   terrain_mesh &mesh;
@@ -882,11 +679,6 @@ struct CalculateSVisitor : public boost::default_dfs_visitor {
   }
   void tree_edge( const terrain_river_tree_type::edge_descriptor &e, const terrain_river_tree_type &g ) {
     if( source( e, g ) != path.back() ) {
-      /*std::cout << "debug ";
-      for( const auto &v : path ) {
-        std::cout << " " << v;
-      }
-      std::cout << " " << source( e, g ) << " " << target( e, g ) << std::endl;*/
       const auto s = std::find( path.begin(), path.end(), source( e, g ) );
       path.erase( std::next( s ), path.end() );
     }
@@ -949,7 +741,6 @@ void terrain_mesh::erosion( std::uint32_t t ) {
     if( props.initial_height.loaded ) {
       z0 = linear_interpolation( props.initial_height, 0u, glm::vec2( vertex[ li ].position ) / props.distance_scale );
     }
-    //vertex[ li ].position.z = z0 + t * vertex[ li ].uplift;// / std::pow( k * vertex[ li ].area_sum, p );
     vertex[ li ].t = t;
     vertex[ li ].d = 0;
     vertex[ li ].s = 0;
@@ -971,7 +762,106 @@ void terrain_mesh::erosion( std::uint32_t t ) {
     }
   }
 }
+void terrain_mesh::generate_ncn() {
+  for( auto &v : vertex ) {
+    v.ncn.clear();
+    std::unordered_set< std::uint32_t > cn;
+    auto river_in = in_edges( *v.river, river );
+    for( auto edge = river_in.first; edge != river_in.second; ++edge ) {
+      cn.insert( river[ source( *edge, river ) ] );
+    }
+    auto river_out = out_edges( *v.river, river );
+    for( auto edge = river_out.first; edge != river_out.second; ++edge ) {
+      cn.insert( river[ target( *edge, river ) ] );
+    }
+    auto edges = in_edges( v.full, graph );
+    for( auto edge = edges.first; edge != edges.second; ++edge ) {
+      if( cn.find( graph[ source( *edge, graph ) ] ) == cn.end() ) {
+        v.ncn.insert( graph[ source( *edge, graph ) ] );
+      }
+    }
+  }
+}
 
+float terrain_mesh::get_loss_grad( std::uint32_t g ) {
+  float lr_loss = 0.0f;
+  float ld_loss = 0.0f;
+  for( std::uint32_t i = 0u; i != vertex.size(); ++ i ) {
+    auto &v = vertex[ i ];
+    auto ledge = in_edges( *v.river, river );
+    float dc_bar = 0.0f;
+    if( std::distance( ledge.first ,ledge.second ) > 0 ) {
+      const auto &r = vertex[ river[ source( *ledge.first, river ) ] ];
+      const float dc = v.optimized_height - r.optimized_height;
+      dc_bar = v.position.z - r.position.z;
+      if( river[ source( *ledge.first, river ) ] == g ) {
+        lr_loss += dc_bar - v.optimized_height + r.optimized_height;
+      }
+      if( i == g ) {
+        lr_loss +=  -dc_bar + v.optimized_height - r.optimized_height;
+      }
+    }
+    for( const auto &j : v.ncn ) {
+      const auto &n = vertex[ j ];
+      if( v.optimized_height - n.optimized_height - dc_bar > 0.0f ) {
+        if( i == g ) {
+          ld_loss += -dc_bar + v.optimized_height - n.optimized_height;
+        }
+        if( j == g ) {
+          ld_loss += dc_bar - v.optimized_height + n.optimized_height;
+        }
+      }
+    }
+  }
+  return 1.0f/3.0f * lr_loss + 2.0f/3.0f * ld_loss;
+}
+
+
+
+float terrain_mesh::get_loss() {
+  float lr_loss = 0.0f;
+  float ld_loss = 0.0f;
+  for( auto &v : vertex ) {
+    float dc_bar = 0.0f;
+    auto ledge = in_edges( *v.river, river );
+    if( std::distance( ledge.first ,ledge.second ) > 0 ) {
+      const auto &r = vertex[ river[ source( *ledge.first, river ) ] ];
+      const float dc = v.optimized_height - r.optimized_height;
+      dc_bar = v.position.z - r.position.z;
+      lr_loss += ( dc - dc_bar ) * ( dc - dc_bar ) / 2.0f;
+    }
+
+    for( const auto &i : v.ncn ) {
+      const auto &n = vertex[ i ];
+      const float d = std::max( v.optimized_height - n.optimized_height - dc_bar, 0.0f );
+      ld_loss += d * d / 2.0f;
+    }
+  }
+  return 1.0f/3.0f * lr_loss + 2.0f/3.0f * ld_loss;
+}
+
+void terrain_mesh::optimize( std::uint32_t cycle ) {
+  generate_ncn();
+  for( auto &v : vertex ) {
+    v.optimized_height = v.position.z;
+  }
+  for( unsigned int c = 0; c != cycle; ++c ) {
+    float loss = get_loss();
+    if( loss < 1000 ) break;
+    std::cout << "loss : " << loss << std::endl;
+    std::vector< float > diff;
+    for( std::uint32_t i = 0u; i != vertex.size(); ++i ) {
+      float grad = get_loss_grad( i );
+      diff.push_back( 0.1 * grad );
+    }
+    for( std::uint32_t i = 0u; i != vertex.size(); ++i ) {
+      vertex[ i ].optimized_height -= diff[ i ];
+    }
+  }
+  for( auto &v : vertex ) {
+    v.position.z = v.optimized_height;
+  }
+}
 
 void terrain_mesh::dump_triangle( const std::string &filename ) {
   std::fstream r( filename, std::ios::out );
@@ -1083,8 +973,6 @@ void terrain_mesh::rasterize( host_image &dest ) {
           float v_ds = p1.z - p0.z;
           float v_dt = p2.z - p0.z;
           dest.image[ ( left_top_pixel.x + x ) * dest.channels + ( left_top_pixel.y + y ) * dest.width * dest.channels ] = p0.z + s * v_ds + t * v_dt;
-          //dest.image[ 0 + ( left_top_pixel.x + x ) * dest.channels + ( left_top_pixel.y + y ) * dest.width * dest.channels ] = s;
-          //dest.image[ 1 + ( left_top_pixel.x + x ) * dest.channels + ( left_top_pixel.y + y ) * dest.width * dest.channels ] = t;
         }
       }
     }
@@ -1113,39 +1001,6 @@ void to_json( nlohmann::json &dest, const terrain_mesh &src ) {
     dest[ "triangle" ].push_back( temp );
   }
 }
-/*
-void from_json( const nlohmann::json &src, terrain_mesh &dest ) {
-  if( !src.is_object() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-  dest = terrain_mesh{};
-  if( src.find( "vertex" ) != src.end() ) {
-    if( !src[ "vertex" ].is_array() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-    for( const auto &v: src[ "vertex" ] ) {
-      dest.vertex.push_back( v );
-    }
-  }
-  if( src.find( "edge" ) != src.end() ) {
-    if( !src[ "edge" ].is_array() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-    for( const auto &v: src[ "edge" ] ) {
-      if( !v.is_array() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( v.size() != 2u ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( std::size_t( v[ 0 ] ) >= dest.vertex.size() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( std::size_t( v[ 1 ] ) >= dest.vertex.size() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      dest.edge.push_back( glm::ivec2{ std::size_t( v[ 0 ] ), std::size_t( v[ 1 ] ) } );
-    }
-  }
-  if( src.find( "triangle" ) != src.end() ) {
-    if( !src[ "triangle" ].is_array() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-    for( const auto &v: src[ "triangle" ] ) {
-      if( !v.is_array() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( v.size() != 3u ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( std::size_t( v[ 0 ] ) >= dest.vertex.size() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( std::size_t( v[ 1 ] ) >= dest.vertex.size() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      if( std::size_t( v[ 2 ] ) >= dest.vertex.size() ) throw incompatible_json( "The JSON is incompatible to terrain_mesh", __FILE__, __LINE__ );
-      dest.triangle.push_back( glm::ivec3{ std::size_t( v[ 0 ] ), std::size_t( v[ 1 ] ), std::size_t( v[ 2 ] ) } );
-    }
-  }
-}
-*/
 
 }
 

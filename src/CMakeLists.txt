@@ -738,12 +738,12 @@ target_link_libraries(
   Boost::program_options
 )
 
-add_executable( dump_voronoi2
-  dump_voronoi2.cpp
+add_executable( generate_terrain2
+  generate_terrain2.cpp
 )
 
 target_link_libraries(
-  dump_voronoi2
+  generate_terrain2
   gct
   Threads::Threads
   Boost::program_options
